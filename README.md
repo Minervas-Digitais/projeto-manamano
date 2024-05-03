@@ -1,6 +1,6 @@
 # Projeto ManaMano | Minerv@s Digitais
 
-O aplicativo voltado para a centralização e o armazenamento dos conteúdos ensinados para as microempreendedoras
+O aplicativo voltado para a centralização e o armazenamento dos conteúdos ensinados para as microempreendedoras pelo projeto Mana Mano.
  
 **Status do Projeto** : Em progresso
 
