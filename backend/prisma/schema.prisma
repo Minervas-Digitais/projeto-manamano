@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostType {
+  NORMAL
+  EVENT
+  CLASS
+}
+
+model User {
+  id           String        @id @default(uuid())
+  fullName     String
+  email        String        @unique
+  phone        String        @unique
+  hash         String
+  birthday     DateTime?
+  ethnicity    String?
+  neighborhood String?
+  expertise    String?
+  enterprise   String?
+  bio          String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  Participant  Participant[]
+  Post         Post[]
+}
+
+model Group {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  urlInvite   String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Participant Participant[]
+  Category    Category[]
+  Post        Post[]
+}
+
+model Participant {
+  userId    String
+  groupId   String
+  role      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@id([userId, groupId])
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  type      PostType
+  groupId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group Group  @relation(fields: [groupId], references: [id])
+  Post  Post[]
+}
+
+model Post {
+  id          String    @id @default(uuid())
+  type        PostType
+  input       String
+  title       String?
+  schedule    DateTime?
+  urlLive     String?
+  urlRecorded String?
+  categoryId  String
+  userId      String
+  groupId     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id])
+  group    Group    @relation(fields: [groupId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+  File     File[]
+}
+
+model File {
+  id        String   @id @default(uuid())
+  title     String?
+  url       String?
+  type      String
+  size      Bytes?
+  content   String?
+  postId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post Post @relation(fields: [postId], references: [id])
+}
