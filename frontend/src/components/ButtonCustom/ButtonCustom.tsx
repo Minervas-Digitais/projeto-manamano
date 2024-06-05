@@ -3,7 +3,7 @@ import React from 'react';
 import { useFonts } from 'expo-font';
 import { ButtonContainer, ButtonText } from './ButtonStyle';
 
-export default function ButtonCustom({ backColor, fontColor, text, onPress }: any) {
+export default function ButtonCustom({ backColor, fontColor, text, onPress, border }: any) {
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-SemiBold.ttf'),
   });
@@ -11,7 +11,7 @@ export default function ButtonCustom({ backColor, fontColor, text, onPress }: an
     return undefined;
   }
   return (
-    <ButtonContainer backgroundColor={backColor} onPress={onPress}>
+    <ButtonContainer backgroundColor={backColor} onPress={onPress} border={border}>
       <ButtonText fontColor={fontColor} fontFamily="inter-bold">
         {text}
       </ButtonText>

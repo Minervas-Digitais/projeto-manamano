@@ -1,12 +1,12 @@
 /* eslint-disable global-require */
 import { StyleSheet, View } from 'react-native';
 import React from 'react';
-import SignUp from './src/pages/SignUp/SignUp';
+import SignIn from './src/pages/SignIn/SignIn';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <SignUp />
+      <SignIn />
     </View>
   );
 }

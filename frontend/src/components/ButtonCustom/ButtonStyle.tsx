@@ -18,4 +18,5 @@ export const ButtonContainer = styled.TouchableOpacity<{
   justify-content: center;
   align-items: center;
   border-radius: 10px;
+  border: ${(prop) => (prop.border ? 'solid 2px #160E47' : 'none')};
 `;
