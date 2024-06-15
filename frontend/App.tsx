@@ -1,12 +1,12 @@
 /* eslint-disable global-require */
 import { StyleSheet, View } from 'react-native';
 import React from 'react';
-import SignIn from './src/pages/SignIn/SignIn';
+import SideMenu from './src/components/SideMenu/SideMenu';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <SignIn />
+      <SideMenu />
     </View>
   );
 }
