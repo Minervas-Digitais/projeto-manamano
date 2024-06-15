@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -15,28 +16,33 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @HttpCode(201)
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }
 
+  @HttpCode(200)
   @Get()
   findAll() {
     return this.userService.findAll();
   }
 
+  @HttpCode(200)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+    return this.userService.findOne(id);
   }
 
+  @HttpCode(201)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+    return this.userService.update(id, updateUserDto);
   }
 
+  @HttpCode(204)
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+    return this.userService.remove(id);
   }
 }
