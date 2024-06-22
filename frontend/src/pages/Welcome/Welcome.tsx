@@ -7,7 +7,7 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 
 export default function WelcomeScreen({ navigation }) {
   
-  const manamanoPattern = require('../../assets/Manamano-pattern-radom-size.svg');
+  const manamanoPattern = require('../../assets/Manamano-pattern-random.svg');
   const Logo = require('../../assets/logo-boas-vindas.svg');
 
   return (
