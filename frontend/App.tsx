@@ -1,13 +1,35 @@
 /* eslint-disable global-require */
 import { StyleSheet, View } from 'react-native';
 import React from 'react';
-import SideMenu from './src/components/SideMenu/SideMenu';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import SignIn from './src/pages/SignIn/SignIn';
+import SignUp from './src/pages/SignUp/SignUp';
+import WelcomeScreen from './src/pages/Welcome/Welcome';
+
+const Stack = createNativeStackNavigator();
+
+const MyTheme = {
+  dark: false,
+  colors: {
+    primary: '#FFF',
+    background: '#FFF',
+    card: '#FFF',
+    text: '#FFF',
+    border: '#160E47',
+    notification: '#FFF',
+  },
+};
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <SideMenu />
-    </View>
+    <NavigationContainer theme={MyTheme} independent>
+      <Stack.Navigator initialRouteName="Welcome">
+        <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
+        <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
