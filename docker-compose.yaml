@@ -5,6 +5,7 @@ services:
     build:  
       context: ./backend
       dockerfile: Dockerfile  
+    command: npm run start:dev
     environment:  
       HOST: $BACKEND_HOST
       PORT: $BACKEND_PORT
