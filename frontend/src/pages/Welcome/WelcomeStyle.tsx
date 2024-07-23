@@ -4,7 +4,7 @@ export const RectContainer = styled.View`
   align-items: center;
   justify-content: center;
   align-self: center;
-  background-color: #FFF;
+  background-color: #fff;
   border-radius: 20px;
   width: 85%;
   height: 90%;
@@ -15,4 +15,4 @@ export const ButtomContainer = styled.View`
   width: 95%;
   padding-top: 65vh;
   gap: 20px;
-  `;
+`;
