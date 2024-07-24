@@ -1,11 +1,18 @@
 /* eslint-disable global-require */
 import React, { useState } from 'react';
-import { Pressable, Image } from 'react-native';
-import { ConfigNotifText, NotifButtonContainer } from './NotificationButtonStyle';
+import { Image } from 'react-native';
+import {
+  ButtonImage,
+  ConfigNotifText,
+  NotifButtonContainer,
+  PressableCustom,
+} from './NotificationButtonStyle';
 
 export default function NotificationButton({ text, font }: any) {
-  const ellipse = require('../../assets/ellipse-confignotf.svg');
+  const ellipseb = require('../../assets/ellipse-confignotf.svg');
+  const ellipsew = require('../../assets/ellipsew.svg');
   const rect = require('../../assets/rect-confignotif.svg');
+  const rectactv = require('../../assets/rectactv-confignotif.svg');
   const [isMoved, setIsMoved] = useState(false);
   const handleClick = () => {
     setIsMoved(!isMoved);
@@ -13,15 +20,10 @@ export default function NotificationButton({ text, font }: any) {
   return (
     <NotifButtonContainer>
       <ConfigNotifText font={font}>{text}</ConfigNotifText>
-      <Pressable
-        onPress={handleClick}
-        style={{
-          transform: `translateX(${isMoved ? 28 : 0}px)`,
-          position: 'absolute',
-        }}>
-        <Image source={ellipse} style={{ marginLeft: '80vw', transform: `translateY(0.25vh)` }} />
-      </Pressable>
-      <Image source={rect} style={{ position: 'absolute', marginLeft: '80vw' }} />
+      <PressableCustom onPress={handleClick} isMoved={isMoved}>
+        <Image source={isMoved ? ellipsew : ellipseb} style={{ transform: 'translateY(0.25vh)' }} />
+      </PressableCustom>
+      <ButtonImage source={isMoved ? rectactv : rect} />
     </NotifButtonContainer>
   );
 }
