@@ -33,7 +33,7 @@ export class ParticipantService {
     try {
       const participant = await this.prismaService.participant.findUnique({
         where: {
-          participantId: {
+          userId_groupId: {
             userId: id.split(',')[0],
             groupId: id.split(',')[1],
           },
@@ -52,7 +52,7 @@ export class ParticipantService {
     try {
       const participant = await this.prismaService.participant.update({
         where: {
-          participantId: {
+          userId_groupId: {
             userId: id.split(',')[0],
             groupId: id.split(',')[1],
           },
@@ -72,7 +72,7 @@ export class ParticipantService {
     try {
       const participant = await this.prismaService.participant.delete({
         where: {
-          participantId: {
+          userId_groupId: {
             userId: id.split(',')[0],
             groupId: id.split(',')[1],
           },
