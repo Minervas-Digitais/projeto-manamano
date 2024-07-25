@@ -1,6 +1,6 @@
 FROM node:20.14.0-alpine3.19
 
-WORKDIR /usr/src/app  
+WORKDIR /app  
 
 COPY package*.json ./  
 COPY entrypoint.sh ./  
@@ -9,13 +9,13 @@ RUN npm install
 
 COPY . .
 
-RUN chmod +x /usr/src/app
-RUN chmod +x /usr/src/app/entrypoint.sh
+RUN chmod +x /app
+RUN chmod +x /app/entrypoint.sh
 
-RUN npx prisma generate --schema=/usr/src/app/prisma/schema.prisma  
+RUN npx prisma generate --schema=/app/prisma/schema.prisma  
 
 RUN npm run build
 
-ENTRYPOINT ["/usr/src/app/entrypoint.sh", "npm", "run", "start:prod"]  
+EXPOSE 3000
 
-CMD ["npm", "run", "start:prod"]
+CMD ["/app/entrypoint.sh"]
