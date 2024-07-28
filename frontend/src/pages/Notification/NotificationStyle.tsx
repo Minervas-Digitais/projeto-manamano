@@ -11,7 +11,7 @@ export const ConfigNotificationContainer = styled.View`
 export const NotificationInfoContainer = styled.View`
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 20px;
   margin-top: 10px;
 `;
 
@@ -20,7 +20,7 @@ export const NotificationInfoText = styled.Text<{ font: any }>`
   color: #160e47;
   font-family: ${(prop) => prop.font};
   font-size: 20px;
-  width: 380px;
+  width: 100%;
   text-align: center;
 `;
 
@@ -30,6 +30,8 @@ export const NotificationBodyContainer = styled.View`
   align-items: center;
   justify-content: space-between;
   height: 89vh;
+  overflow-y: auto;
+  gap: 20px;
 `;
 
 export const ConfigNotificationHeaderContainer = styled.View`
