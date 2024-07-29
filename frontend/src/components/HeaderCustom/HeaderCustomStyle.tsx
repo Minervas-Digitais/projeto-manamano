@@ -13,7 +13,7 @@ export const HeaderText = styled.Text<{ font?: string }>`
   color: #160e47;
   font-family: ${(prop) => prop.font};
 `;
-export const HeaderImage = styled.Image`
+export const HeaderTouchable = styled.TouchableOpacity`
   position: absolute;
   margin-right: 82vw;
 `;
