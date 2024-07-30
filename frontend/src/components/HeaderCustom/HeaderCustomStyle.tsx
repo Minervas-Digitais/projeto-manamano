@@ -6,7 +6,7 @@ export const HeaderContainer = styled.View`
   background-color: #f2f6fa;
   justify-content: center;
   align-items: center;
-  box-shadow: 0px 0px 5px black;
+  box-shadow: 0 4px 8px rgba(141, 140, 140, 0.2);
 `;
 export const HeaderText = styled.Text<{ font?: string }>`
   font-size: 20px;
