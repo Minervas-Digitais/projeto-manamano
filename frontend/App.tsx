@@ -1,4 +1,5 @@
 /* eslint-disable global-require */
+import EnterGroup from './src/pages/EnterGroup/EnterGroup';
 import ChangePassword from './src/pages/ChangePassword/ChangePassword';
 import { StyleSheet } from 'react-native';
 import React from 'react';
@@ -19,6 +20,7 @@ export default function App() {
     <NavigationContainer independent>
       <Stack.Navigator initialRouteName="Configurações">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
+        <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen
           name="MudarSenha"

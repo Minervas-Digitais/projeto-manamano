@@ -3,7 +3,7 @@ import styled from 'styled-components/native';
 export const HeaderContainer = styled.View`
   flex-direction: row;
   height: 10vh;
-  background-color: #fff;
+  background-color: #f2f6fa;
   justify-content: center;
   align-items: center;
   box-shadow: 0px 0px 5px black;
