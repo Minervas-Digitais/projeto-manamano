@@ -1,21 +1,19 @@
 import styled from 'styled-components/native';
 
 export const HeaderContainer = styled.View`
-  display: flex;
   flex-direction: row;
   height: 10vh;
-  align-self: center;
-  margin-top: 4vh;
-  background-color: #f2f6fa;
+  background-color: #fff;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0px 0px 5px black;
 `;
 export const HeaderText = styled.Text<{ font?: string }>`
   font-size: 20px;
   color: #160e47;
   font-family: ${(prop) => prop.font};
 `;
-export const HeaderImage = styled.Image<{ source?: any }>`
+export const HeaderImage = styled.Image`
   position: absolute;
-  margin-top: 4vh;
-  align-self: start;
-  margin-left: 2.7vh;
+  margin-right: 82vw;
 `;

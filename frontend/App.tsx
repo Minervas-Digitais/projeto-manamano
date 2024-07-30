@@ -4,6 +4,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Config from './src/pages/Configuration/Configuration';
+import ConfigNotification from './src/pages/ConfigNotification/ConfigNotification';
 import SignIn from './src/pages/SignIn/SignIn';
 import SignUp from './src/pages/SignUp/SignUp';
 import WelcomeScreen from './src/pages/Welcome/Welcome';
@@ -18,6 +19,11 @@ export default function App() {
       <Stack.Navigator initialRouteName="Configurações">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="Notificações"
+          component={ConfigNotification}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
         <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
         <Stack.Screen
