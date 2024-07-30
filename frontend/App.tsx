@@ -1,4 +1,5 @@
 /* eslint-disable global-require */
+import ChangePassword from './src/pages/ChangePassword/ChangePassword';
 import { StyleSheet } from 'react-native';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
@@ -19,6 +20,11 @@ export default function App() {
       <Stack.Navigator initialRouteName="Configurações">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="MudarSenha"
+          component={ChangePassword}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="Notificações"
           component={ConfigNotification}
