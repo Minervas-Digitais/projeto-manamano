@@ -1,9 +1,5 @@
 node_modules
-test
 README.md
-Dockerfiles
-yarn.lock
+Dockerfile
 .gitignore
-.git
-.prettierrc
-.dockerignore
+npm-debug.log  
