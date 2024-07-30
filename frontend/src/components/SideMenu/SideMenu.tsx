@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React from 'react';
-import { Image } from 'react-native';
+import { Image, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   SideMenuContainer,
@@ -9,10 +9,11 @@ import {
   SideMenuOptionsContainer,
   SideMenuLineContainer,
   SideMenuLine,
+  SideMenuContainerShadow,
 } from './SideMenuStyle';
 import SideMenuOptions from '../SideMenuOptions/SideMenuOptions';
 
-export default function SideMenu() {
+export default function SideMenu({ display, onPress }: any) {
   const logoManaMano = require('../../assets/manamano-icon-small.svg');
   const profile = require('../../assets/profile-blue-icon.svg');
   const seach = require('../../assets/lupa-icon.svg');
@@ -29,7 +30,7 @@ export default function SideMenu() {
     return undefined;
   }
   return (
-    <SideMenuPage>
+    <SideMenuPage display={display}>
       <SideMenuContainer>
         <SideMenuLogoContainer>
           <Image source={logoManaMano} />
@@ -52,6 +53,9 @@ export default function SideMenu() {
           <SideMenuOptions icon={config} text="Configurações" font="inter-bold" />
         </SideMenuOptionsContainer>
       </SideMenuContainer>
+      <TouchableOpacity activeOpacity={0} onPress={onPress}>
+        <SideMenuContainerShadow />
+      </TouchableOpacity>
     </SideMenuPage>
   );
 }
