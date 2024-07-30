@@ -7,6 +7,7 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { SignUpContainer, SignUpInputContainer, SignUpForm } from './SignUpStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
+import BackButton from '../../components/BackButton/BackButton';
 
 export default function SignUp() {
   const {
@@ -35,8 +36,7 @@ export default function SignUp() {
     <SignUpContainer>
       <SignUpForm>
         <View style={{ gap: '30px' }}>
-          <Image source={backButton} />
-
+          <BackButton />
           <View>
             <Text style={styles.redText}>Olá,</Text>
             <Text style={styles.blueText}>crie a sua conta!</Text>
