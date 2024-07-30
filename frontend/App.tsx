@@ -1,5 +1,5 @@
 /* eslint-disable global-require */
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import SignIn from './src/pages/SignIn/SignIn';
 import SignUp from './src/pages/SignUp/SignUp';
 import WelcomeScreen from './src/pages/Welcome/Welcome';
 import Notification from './src/pages/Notification/Notification';
+import Groups from './src/pages/Groups/Groups';
 
 const Stack = createNativeStackNavigator();
 
@@ -25,7 +26,7 @@ const MyTheme = {
 export default function App() {
   return (
     <NavigationContainer theme={MyTheme} independent>
-      <Stack.Navigator initialRouteName="Notification">
+      <Stack.Navigator initialRouteName="Groups">
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
         <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
@@ -34,6 +35,7 @@ export default function App() {
           component={Notification}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
