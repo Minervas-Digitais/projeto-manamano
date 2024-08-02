@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthEntity } from './entity/auth.entity';
@@ -27,7 +28,12 @@ export class AuthService {
         throw new NotFoundException('Usuário não encontrado.');
       }
 
-      if (user.hash !== createLoginDto.password) {
+      const isPasswordValid = await bcrypt.compare(
+        createLoginDto.password,
+        user.hash,
+      );
+
+      if (!isPasswordValid) {
         throw new UnauthorizedException('Senha incorreta.');
       }
 
