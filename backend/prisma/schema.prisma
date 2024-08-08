@@ -21,30 +21,34 @@ enum PostType {
 }
 
 model User {
-  id           String        @id @default(uuid())
+  id           String    @id @default(uuid())
   fullName     String
-  email        String        @unique
-  phone        String        @unique
+  email        String    @unique
+  phone        String    @unique
   hash         String
+  savedPost    String[]
   birthday     DateTime?
   ethnicity    String?
   neighborhood String?
   expertise    String?
   enterprise   String?
   bio          String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  Participant  Participant[]
-  Post         Post[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  Participant Participant[]
+  Post        Post[]
+  Comment     Comment[]
 }
 
 model Group {
-  id          String        @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  urlInvite   String        @unique
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  urlInvite   String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   Participant Participant[]
   Category    Category[]
   Post        Post[]
@@ -89,10 +93,11 @@ model Post {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  user     User     @relation(fields: [userId], references: [id])
-  group    Group    @relation(fields: [groupId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  group    Group     @relation(fields: [groupId], references: [id])
+  category Category  @relation(fields: [categoryId], references: [id])
   File     File[]
+  Comment  Comment[]
 }
 
 model File {
@@ -106,5 +111,17 @@ model File {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  post Post @relation(fields: [postId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
   post Post @relation(fields: [postId], references: [id])
 }
