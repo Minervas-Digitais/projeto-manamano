@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -19,9 +19,13 @@ export class PostService {
 
   async findAll() {
     try {
-      const posts = await this.prismaService.post.findMany();
+      const posts = await this.prismaService.post.findMany({
+        include: {
+          Comment: true,
+        },
+      });
       if (!posts) {
-        return 'Não há publicações feitas.';
+        throw new NotFoundException('Nenhuma publicação encontrada.');
       }
       return posts;
     } catch (error) {
@@ -35,9 +39,12 @@ export class PostService {
         where: {
           id,
         },
+        include: {
+          Comment: true,
+        },
       });
       if (!post) {
-        return 'Publicação não encontrada.';
+        throw new NotFoundException('Publicação não encontrada.');
       }
       return post;
     } catch (error) {
@@ -54,7 +61,7 @@ export class PostService {
         data: updatePostDto,
       });
       if (!post) {
-        return 'Publicação não encontrada.';
+        throw new NotFoundException('Publicação não encontrada.');
       }
       return post;
     } catch (error) {
@@ -70,7 +77,7 @@ export class PostService {
         },
       });
       if (!post) {
-        return 'Publicação não encontrada.';
+        throw new NotFoundException('Publicação não encontrada.');
       }
       return post;
     } catch (error) {
