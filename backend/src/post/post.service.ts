@@ -84,4 +84,79 @@ export class PostService {
       return error;
     }
   }
+
+  async savePost(postId: string, userId: string) {
+    try {
+      const user = await this.prismaService.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado.');
+      }
+      return await this.prismaService.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          savedPost: [...user.savedPost, postId],
+        },
+      });
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async removeSavedPost(postId: string, userId: string) {
+    try {
+      const user = await this.prismaService.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado.');
+      }
+      return await this.prismaService.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          savedPost: user.savedPost.filter((id) => id !== postId),
+        },
+      });
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async filterPosts(search: string) {
+    try {
+      const posts = await this.prismaService.post.findMany({
+        where: {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              input: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+      });
+      if (!posts) {
+        throw new NotFoundException('Nenhuma publicação encontrada.');
+      }
+      return posts;
+    } catch (error) {
+      return error;
+    }
+  }
 }
