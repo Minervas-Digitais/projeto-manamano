@@ -1,10 +1,11 @@
+/* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable global-require */
 import { Image, ImageBackground, StyleSheet } from 'react-native';
 import React from 'react';
 import { ButtomContainer, RectContainer } from './WelcomeStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 
-export default function WelcomeScreen({ navigation { navigate } }) {
+export default function WelcomeScreen({ navigation }: any) {
   const manamanoPattern = require('../../assets/Manamano-pattern-random.svg');
   const Logo = require('../../assets/logo-boas-vindas.svg');
 
@@ -17,14 +18,14 @@ export default function WelcomeScreen({ navigation { navigate } }) {
         <Image source={Logo} style={styles.logo} />
         <ButtomContainer>
           <ButtonCustom
-            onPress={() => navigate('SignUp')}
+            onPress={() => navigation.navigate('SignUp')}
             backColor="#160E47"
             fontColor="#FFF"
             text="Cadastre-se"
             border
           />
           <ButtonCustom
-            onPress={() => navigate('SignIn')}
+            onPress={() => navigation.navigate('SignIn')}
             backColor="transparent"
             fontColor="#160E47"
             text="Entrar"

@@ -5,14 +5,14 @@ import { ButtonContainer, ButtonText } from './ButtonStyle';
 
 export default function ButtonCustom({ backColor, fontColor, text, onPress, border }: any) {
   const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-SemiBold.ttf'),
+    'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
   });
   if (!fontsLoaded) {
     return undefined;
   }
   return (
     <ButtonContainer backgroundColor={backColor} onPress={onPress} border={border}>
-      <ButtonText fontColor={fontColor} fontFamily="inter-bold">
+      <ButtonText fontColor={fontColor} fontFamily="inter-semiBold">
         {text}
       </ButtonText>
     </ButtonContainer>
