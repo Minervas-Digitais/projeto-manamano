@@ -13,13 +13,15 @@ import Notification from './src/pages/Notification/Notification';
 import Groups from './src/pages/Groups/Groups';
 import GroupData from './src/pages/GroupData/GroupData';
 import About from './src/pages/About/About';
+import Home from './src/pages/Home/Home';
+import SideMenu from './src/components/SideMenu/SideMenu';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer independent>
-      <Stack.Navigator initialRouteName="About">
+      <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
@@ -40,9 +42,11 @@ export default function App() {
           component={Notification}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
         <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
         <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
         <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
+        <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
