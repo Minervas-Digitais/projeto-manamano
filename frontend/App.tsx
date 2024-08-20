@@ -12,13 +12,14 @@ import WelcomeScreen from './src/pages/Welcome/Welcome';
 import Notification from './src/pages/Notification/Notification';
 import Groups from './src/pages/Groups/Groups';
 import GroupData from './src/pages/GroupData/GroupData';
+import About from './src/pages/About/About';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer independent>
-      <Stack.Navigator initialRouteName="GroupData">
+      <Stack.Navigator initialRouteName="About">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
@@ -41,6 +42,7 @@ export default function App() {
         />
         <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
         <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
+        <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
