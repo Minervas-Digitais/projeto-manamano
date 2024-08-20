@@ -8,7 +8,7 @@ import {
   CommentCardSpaceBetween,
   CommentCardImageUser,
   CommentCardTag,
-} from './CommentCardStyle';
+} from './PostCardStyle';
 import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
 
 export default function CommentCard({

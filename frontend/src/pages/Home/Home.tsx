@@ -14,12 +14,12 @@ import {
 } from './HomeStyle';
 import { GroupDataLine, GroupDataText } from '../GroupData/GroupDataStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
-import CommentCard from '../../components/CommentCard/CommentCard';
+import CommentCard from '../../components/PostCard/PostCard';
 import {
   CommentCardIcons,
   CommentCardImageUser,
   CommentCardSpaceBetween,
-} from '../../components/CommentCard/CommentCardStyle';
+} from '../../components/PostCard/PostCardStyle';
 import SideMenu from '../../components/SideMenu/SideMenu';
 
 export default function Home() {
