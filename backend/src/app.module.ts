@@ -7,6 +7,7 @@ import { GroupModule } from './group/group.module';
 import { ParticipantModule } from './participant/participant.module';
 import { PostModule } from './post/post.module';
 import { UserModule } from './user/user.module';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UserModule } from './user/user.module';
     GroupModule,
     ParticipantModule,
     AuthModule,
+    CommentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
