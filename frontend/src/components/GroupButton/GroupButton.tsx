@@ -13,7 +13,7 @@ import {
   GroupButtonImage,
 } from './GroupButtonStyle';
 
-export default function GroupButton({ groupName, onlineMembers, size }: any) {
+export default function GroupButton({ groupName, onlineMembers, size, onPress }: any) {
   const [filter, setFilter] = useState(true);
   const filterOn = require('../../assets/filter-on-icon.svg');
   const filterOff = require('../../assets/filter-off-icon.svg');
@@ -25,9 +25,11 @@ export default function GroupButton({ groupName, onlineMembers, size }: any) {
   }
 
   return (
-    <GroupButtonContainer size={size}>
+    <GroupButtonContainer size={size} onPress={onPress}>
       <GroupTextContainer>
-        <GroupName fontFamily="inter-bold">{groupName}</GroupName>
+        <GroupName numberOfLines={2} fontFamily="inter-bold">
+          {groupName}
+        </GroupName>
         <GroupOnlineContainer>
           <GroupOnlineCircle />
           <GroupOnline fontFamily="inter-bold">
