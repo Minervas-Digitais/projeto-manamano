@@ -1,16 +1,21 @@
 /* eslint-disable global-require */
 import React from 'react';
-import { Image } from 'react-native';
-import { HeaderContainer, HeaderText, HeaderTouchable } from './HeaderCustomStyle';
+import { Image, TouchableOpacity } from 'react-native';
+import { HeaderContainer, HeaderText, NoIcon } from './HeaderCustomStyle';
+import BackButton from '../BackButton/BackButton';
 
-export default function HeaderCustom({ font, text }: any) {
-  const backbutton = require('../../assets/back-button-icon.svg');
+export default function HeaderCustom({ font, text, icon, onPress }: any) {
   return (
     <HeaderContainer>
-      <HeaderTouchable>
-        <Image source={backbutton} />
-      </HeaderTouchable>
+      <BackButton />
       <HeaderText font={font}>{text}</HeaderText>
+      {icon ? (
+        <TouchableOpacity onPress={onPress}>
+          <Image source={icon} />
+        </TouchableOpacity>
+      ) : (
+        <NoIcon />
+      )}
     </HeaderContainer>
   );
 }
