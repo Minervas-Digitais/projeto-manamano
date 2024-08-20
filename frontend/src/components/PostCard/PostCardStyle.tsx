@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import styled from 'styled-components/native';
 
-export const CommentCardContainer = styled.View`
+export const PostCardContainer = styled.View`
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -12,7 +12,7 @@ export const CommentCardContainer = styled.View`
   border: solid 1px #d8d7d7;
 `;
 
-export const CommentCardTag = styled.View`
+export const PostCardTag = styled.View`
   display: flex;
   width: 93px;
   height: 27px;
@@ -25,7 +25,7 @@ export const CommentCardTag = styled.View`
   padding: 0px 3px 0px 3px;
 `;
 
-export const CommentCardSpaceBetween = styled.View`
+export const PostCardSpaceBetween = styled.View`
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -33,7 +33,7 @@ export const CommentCardSpaceBetween = styled.View`
   width: 100%;
 `;
 
-export const CommentCardIcons = styled.View`
+export const PostCardIcons = styled.View`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -41,11 +41,11 @@ export const CommentCardIcons = styled.View`
   gap: 6px;
 `;
 
-export const CommentCardImage = styled.Image<{ width?: any; height?: any }>`
+export const PostCardImage = styled.Image<{ width?: any; height?: any }>`
   width: ${(prop) => (prop.width ? prop.width : 'auto')};
   height: ${(prop) => (prop.height ? prop.height : 'auto')};
 `;
-export const CommentCardImageUser = styled.Image`
+export const PostCardImageUser = styled.Image`
   width: 40px;
   height: 40px;
   border-radius: 50%;

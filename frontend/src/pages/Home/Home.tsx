@@ -14,13 +14,13 @@ import {
 } from './HomeStyle';
 import { GroupDataLine, GroupDataText } from '../GroupData/GroupDataStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
-import CommentCard from '../../components/PostCard/PostCard';
 import {
-  CommentCardIcons,
-  CommentCardImageUser,
-  CommentCardSpaceBetween,
+  PostCardIcons,
+  PostCardImageUser,
+  PostCardSpaceBetween,
 } from '../../components/PostCard/PostCardStyle';
 import SideMenu from '../../components/SideMenu/SideMenu';
+import PostCard from '../../components/PostCard/PostCard';
 
 export default function Home() {
   const [sideMenu, setSideMenu] = useState(true);
@@ -91,21 +91,21 @@ export default function Home() {
     <HomePageBlue>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <HomeContainerInfo>
-        <CommentCardSpaceBetween>
-          <CommentCardIcons>
+        <PostCardSpaceBetween>
+          <PostCardIcons>
             <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
               <Image source={menuIcon} />
             </TouchableOpacity>
-          </CommentCardIcons>
-          <CommentCardIcons style={{ gap: '25px' }}>
+          </PostCardIcons>
+          <PostCardIcons style={{ gap: '25px' }}>
             <TouchableOpacity>
               <Image source={lupa} />
             </TouchableOpacity>
             <TouchableOpacity>
-              <CommentCardImageUser style={{ border: 'solid 1.7px white' }} source={duckImage} />
+              <PostCardImageUser style={{ border: 'solid 1.7px white' }} source={duckImage} />
             </TouchableOpacity>
-          </CommentCardIcons>
-        </CommentCardSpaceBetween>
+          </PostCardIcons>
+        </PostCardSpaceBetween>
         <View>
           <GroupDataText font="inter-bold" color="#EF4036" size="20px">
             Olá,
@@ -141,7 +141,7 @@ export default function Home() {
           <HomeContainerListMural>
             {fakePosts?.length > 0 ? (
               fakePosts?.map((item: any) => (
-                <CommentCard
+                <PostCard
                   nameUser={item.nameUser}
                   imageUser={item.imageUser}
                   postContent={item.postContent}
