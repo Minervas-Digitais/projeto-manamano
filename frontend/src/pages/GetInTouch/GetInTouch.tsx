@@ -1,14 +1,16 @@
+/* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
-import { RedText } from './GetInTouchStyle';
+import { RedText, SemiBoldRedText } from './GetInTouchStyle';
 
 export default function GetInTouch() {
+  const arrowIcon = require('../../assets/arrow-icon.svg');
   const {
     control,
     handleSubmit,
@@ -19,8 +21,8 @@ export default function GetInTouch() {
     alert(JSON.stringify(data));
   };
   const [fontsLoaded] = useFonts({
-    // eslint-disable-next-line global-require
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
+    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
+    'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
   });
   if (!fontsLoaded) {
     return undefined;
@@ -67,10 +69,13 @@ export default function GetInTouch() {
             backColor="#160E47"
             fontColor="white"
             text="Enviar"
+            rightIcon={arrowIcon}
           />
           <RedText>
-            * Sua mensagem será encaminhada para o e-mail do ManaMano. Portanto, caso necessário,
-            confira seu e-mail para obter respostas.
+            * Sua mensagem será
+            <SemiBoldRedText> encaminhada </SemiBoldRedText>
+            para o <SemiBoldRedText>e-mail do ManaMano.</SemiBoldRedText> Portanto, caso necessário,{' '}
+            <SemiBoldRedText>confira seu e-mail para obter respostas. </SemiBoldRedText>
           </RedText>
         </SignInInputContainer>
       </SignInForm>
