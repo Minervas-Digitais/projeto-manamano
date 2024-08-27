@@ -1,5 +1,6 @@
 import { PostType } from '@prisma/client';
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsNotEmpty,
@@ -32,6 +33,10 @@ export class CreatePostDto {
   @IsString()
   @IsOptional()
   urlRecorded: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isPinned: boolean;
 
   @IsString()
   @IsNotEmpty()

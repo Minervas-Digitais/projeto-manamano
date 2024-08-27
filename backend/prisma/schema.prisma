@@ -96,6 +96,7 @@ model Post {
   categoryId  String
   userId      String
   groupId     String
+  isPinned    Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

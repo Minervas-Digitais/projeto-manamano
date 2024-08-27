@@ -131,6 +131,41 @@ export class PostService {
     }
   }
 
+  async pinPost(postId: string) {
+    try {
+      await this.prismaService.post.update({
+        where: { id: postId },
+        data: { isPinned: true },
+      });
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async unpinPost(postId: string) {
+    try {
+      await this.prismaService.post.update({
+        where: { id: postId },
+        data: { isPinned: false },
+      });
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getPinnedPosts(groupId: string) {
+    try {
+      return this.prismaService.post.findMany({
+        where: {
+          groupId,
+          isPinned: true,
+        },
+      });
+    } catch (error) {
+      return error;
+    }
+  }
+
   async filterPosts(search: string) {
     try {
       const posts = await this.prismaService.post.findMany({
