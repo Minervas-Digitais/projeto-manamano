@@ -21,8 +21,16 @@ export class ParticipantController {
   @HttpCode(201)
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(@Body() createParticipantDto: CreateParticipantDto) {
-    return this.participantService.create(createParticipantDto);
+  joinGroup(
+    @Body() createParticipantDto: CreateParticipantDto,
+    @Body() inviteCode: string,
+    @Body() userId: string,
+  ) {
+    return this.participantService.joinGroupWithInvite(
+      userId,
+      inviteCode,
+      createParticipantDto,
+    );
   }
 
   @HttpCode(200)

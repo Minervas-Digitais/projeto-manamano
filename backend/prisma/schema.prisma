@@ -20,6 +20,12 @@ enum PostType {
   CLASS
 }
 
+enum RoleType {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
 model User {
   id           String    @id @default(uuid())
   fullName     String
@@ -45,7 +51,7 @@ model Group {
   id          String   @id @default(uuid())
   name        String
   description String?
-  urlInvite   String   @unique
+  inviteCode  String   @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -57,7 +63,7 @@ model Group {
 model Participant {
   userId    String
   groupId   String
-  role      String
+  role      RoleType
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -90,6 +96,7 @@ model Post {
   categoryId  String
   userId      String
   groupId     String
+  isPinned    Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

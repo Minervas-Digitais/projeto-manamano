@@ -131,24 +131,68 @@ export class PostService {
     }
   }
 
-  async filterPosts(search: string) {
+  async pinPost(postId: string) {
+    try {
+      await this.prismaService.post.update({
+        where: { id: postId },
+        data: { isPinned: true },
+      });
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async unpinPost(postId: string) {
+    try {
+      await this.prismaService.post.update({
+        where: { id: postId },
+        data: { isPinned: false },
+      });
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getPinnedPosts(groupId: string) {
+    try {
+      return this.prismaService.post.findMany({
+        where: {
+          groupId,
+          isPinned: true,
+        },
+      });
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getGroupPosts(groupId: string) {
     try {
       const posts = await this.prismaService.post.findMany({
         where: {
-          OR: [
-            {
-              title: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-            {
-              input: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-          ],
+          groupId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+      if (!posts) {
+        throw new NotFoundException('Nenhuma publicação encontrada.');
+      }
+      return posts;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getCategoryPosts(categoryId: string) {
+    try {
+      const posts = await this.prismaService.post.findMany({
+        where: {
+          categoryId,
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       });
       if (!posts) {

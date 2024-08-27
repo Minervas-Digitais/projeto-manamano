@@ -52,4 +52,39 @@ export class PostController {
   remove(@Param('id') id: string) {
     return this.postService.remove(id);
   }
+
+  @HttpCode(201)
+  @Patch(':postId/pin')
+  @UseGuards(JwtAuthGuard)
+  async pinPost(@Param('postId') postId: string) {
+    await this.postService.pinPost(postId);
+  }
+
+  @HttpCode(201)
+  @Patch(':postId/unpin')
+  @UseGuards(JwtAuthGuard)
+  async unpinPost(@Param('postId') postId: string) {
+    await this.postService.unpinPost(postId);
+  }
+
+  @HttpCode(200)
+  @Get('group/:groupId/pinned')
+  @UseGuards(JwtAuthGuard)
+  async getPinnedPosts(@Param('groupId') groupId: string) {
+    return this.postService.getPinnedPosts(groupId);
+  }
+
+  @HttpCode(200)
+  @Get('group/:groupId')
+  @UseGuards(JwtAuthGuard)
+  async getGroupPosts(@Param('groupId') groupId: string) {
+    return this.postService.getGroupPosts(groupId);
+  }
+
+  @HttpCode(200)
+  @Get('category/:categoryId')
+  @UseGuards(JwtAuthGuard)
+  async getCategoryPosts(@Param('categoryId') categoryId: string) {
+    return this.postService.getCategoryPosts(categoryId);
+  }
 }
