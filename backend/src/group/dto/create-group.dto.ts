@@ -7,7 +7,7 @@ export class CreateGroupDto {
 
   @IsString()
   @IsNotEmpty()
-  urlInvite: string;
+  inviteCode: string;
 
   @IsString()
   @IsOptional()

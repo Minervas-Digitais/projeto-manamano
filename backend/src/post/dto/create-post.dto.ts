@@ -4,7 +4,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsOptional,
-  IsString
+  IsString,
 } from 'class-validator';
 
 export class CreatePostDto {
