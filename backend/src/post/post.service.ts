@@ -166,24 +166,33 @@ export class PostService {
     }
   }
 
-  async filterPosts(search: string) {
+  async getGroupPosts(groupId: string) {
     try {
       const posts = await this.prismaService.post.findMany({
         where: {
-          OR: [
-            {
-              title: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-            {
-              input: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-          ],
+          groupId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+      if (!posts) {
+        throw new NotFoundException('Nenhuma publicação encontrada.');
+      }
+      return posts;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getCategoryPosts(categoryId: string) {
+    try {
+      const posts = await this.prismaService.post.findMany({
+        where: {
+          categoryId,
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       });
       if (!posts) {

@@ -73,4 +73,18 @@ export class PostController {
   async getPinnedPosts(@Param('groupId') groupId: string) {
     return this.postService.getPinnedPosts(groupId);
   }
+
+  @HttpCode(200)
+  @Get('group/:groupId')
+  @UseGuards(JwtAuthGuard)
+  async getGroupPosts(@Param('groupId') groupId: string) {
+    return this.postService.getGroupPosts(groupId);
+  }
+
+  @HttpCode(200)
+  @Get('category/:categoryId')
+  @UseGuards(JwtAuthGuard)
+  async getCategoryPosts(@Param('categoryId') categoryId: string) {
+    return this.postService.getCategoryPosts(categoryId);
+  }
 }
