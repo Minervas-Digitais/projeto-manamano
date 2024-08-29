@@ -1,8 +1,9 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { useState } from 'react';
-import { TouchableOpacity, View, Image, Text } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
+import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import {
   BlueBackground,
@@ -18,6 +19,8 @@ import {
 } from './EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
+import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
+import { bairros, especialidades, etnias } from './EditProfileData';
 
 export default function EditProfile() {
   const {
@@ -95,7 +98,7 @@ export default function EditProfile() {
           />
           {errors.whatsApp && <ErrorWarning errorText="Campo obrigatório" />}
         </UpperPart>
-        <View style={{ gap: '3.5vw' }}>
+        <View style={{ gap: '3.5vw', marginBottom: 10 }}>
           <NamePart>
             <Controller
               control={control}
@@ -172,6 +175,9 @@ export default function EditProfile() {
               )}
             />
             {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
+            <DropdownComponent data={etnias} label="Etnia" />
+            <DropdownComponent data={especialidades} label="Especialidade" />
+            <DropdownComponent data={bairros} label="Bairro" />
             <Controller
               control={control}
               name="bio"
@@ -204,6 +210,12 @@ export default function EditProfile() {
               )}
             />
             {errors.enterprise && <ErrorWarning errorText="Campo obrigatório" />}
+            <ButtonCustom
+              onPress={handleSubmit(onSubmit)}
+              backColor="#32936F"
+              fontColor="white"
+              text="Salvar"
+            />
           </BottomPart>
         </View>
       </WhiteBackground>

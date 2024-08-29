@@ -13,7 +13,6 @@ export const WhiteBackground = styled.ScrollView`
   margin-top: 10vh;
   border-top-right-radius: 40px;
   border-top-left-radius: 40px;
-  position: absolute;
 `;
 export const EditImageButton = styled.Pressable`
   margin-left: 20px;

@@ -1,88 +1,84 @@
+/* eslint-disable global-require */
+import { useFonts } from 'expo-font';
 import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { Dropdown } from 'react-native-element-dropdown';
+import { LabelInputText } from '../InputText/InputTextCustomStyle';
 
-const data = [
-  { label: 'Item 1', value: '1' },
-  { label: 'Item 2', value: '2' },
-  { label: 'Item 3', value: '3' },
-  { label: 'Item 4', value: '4' },
-  { label: 'Item 5', value: '5' },
-  { label: 'Item 6', value: '6' },
-  { label: 'Item 7', value: '7' },
-  { label: 'Item 8', value: '8' },
-];
-
-function DropdownComponent() {
+export default function DropdownComponent({ data, label }: any) {
   const [value, setValue] = useState(null);
-  const [isFocus, setIsFocus] = useState(false);
-
-  const renderLabel = () => {
-    if (value || isFocus) {
-      return <Text style={[styles.label, isFocus && { color: 'blue' }]}>Dropdown label</Text>;
-    }
-    return null;
-  };
+  const [fontsLoaded] = useFonts({
+    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
+  });
+  if (!fontsLoaded) {
+    return undefined;
+  }
+  const renderItem = (item) => (
+    <View style={styles.item}>
+      <Text style={styles.textItem}>{item.label}</Text>
+      {item.value === value}
+    </View>
+  );
 
   return (
-    <View style={styles.container}>
-      {renderLabel()}
+    <View style={{ gap: 5 }}>
+      <LabelInputText>{label}</LabelInputText>
       <Dropdown
-        style={[styles.dropdown, isFocus && { borderColor: 'blue' }]}
+        style={styles.dropdown}
+        containerStyle={styles.containerStyle}
         placeholderStyle={styles.placeholderStyle}
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}
         iconStyle={styles.iconStyle}
         data={data}
         search
-        maxHeight={300}
+        fontFamily="inter-regular"
+        maxHeight={200}
         labelField="label"
         valueField="value"
-        placeholder={!isFocus ? 'Select item' : '...'}
-        searchPlaceholder="Search..."
+        placeholder="Selecionar"
+        searchPlaceholder="Pesquisar..."
         value={value}
-        onFocus={() => setIsFocus(true)}
-        onBlur={() => setIsFocus(false)}
         onChange={(item) => {
           setValue(item.value);
-          setIsFocus(false);
         }}
+        renderItem={renderItem}
       />
     </View>
   );
 }
 
-export default DropdownComponent;
-
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: 'white',
-    padding: 16,
-  },
   dropdown: {
-    height: 50,
-    borderColor: 'gray',
-    borderWidth: 0.5,
-    borderRadius: 8,
-    paddingHorizontal: 8,
+    height: 52,
+    borderRadius: 10,
+    borderColor: '#5e6366',
+    padding: 15,
+    backgroundColor: '#f2f6fa',
+    borderWidth: 1,
   },
   icon: {
     marginRight: 5,
   },
-  label: {
-    position: 'absolute',
-    backgroundColor: 'white',
-    left: 22,
-    top: 8,
-    zIndex: 999,
-    paddingHorizontal: 8,
-    fontSize: 14,
+  item: {
+    padding: 17,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  textItem: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: 'inter-regular',
   },
   placeholderStyle: {
     fontSize: 16,
+    color: '#5e6366',
   },
   selectedTextStyle: {
     fontSize: 16,
+    color: '#5e6366',
   },
   iconStyle: {
     width: 20,
@@ -91,5 +87,9 @@ const styles = StyleSheet.create({
   inputSearchStyle: {
     height: 40,
     fontSize: 16,
+    borderRadius: 10,
+  },
+  containerStyle: {
+    backgroundColor: '#f2f6fa',
   },
 });
