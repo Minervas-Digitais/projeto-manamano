@@ -48,17 +48,26 @@ export default function EditProfile() {
   const editButton = require('../../assets/edit-button.svg');
   const defaultProfImage = require('../../assets/test-profile-icon.png');
   const calendarIcon = require('../../assets/calendar-icon.svg');
-  const profileData: any = [
-    {
-      profileImage: defaultProfImage,
-      phoneNumber: '21912345678',
-      pName: 'Maria Fernanda',
-      email: 'marifer@gmail.com',
-    },
-  ];
-  setValue('whatsApp', profileData[0].phoneNumber);
-  setValue('fullName', profileData[0].pName);
-  setValue('email', profileData[0].email);
+  const profileData: any = {
+    profileImage: defaultProfImage,
+    phoneNumber: '21912345678',
+    pName: 'Maria Fernanda',
+    email: 'marifer@gmail.com',
+    etnia: 'parda',
+    dob: '15/09/1990',
+    cpf: '12345678900',
+    bio: 'bio exemplo teste',
+    especialidade: 'Costura e Moda',
+    bairro: 'Maré',
+    enterprise: 'Confeitaria da Maria',
+  };
+  setValue('whatsApp', profileData.phoneNumber);
+  setValue('fullName', profileData.pName);
+  setValue('email', profileData.email);
+  setValue('dob', profileData.dob);
+  setValue('cpf', profileData.cpf);
+  setValue('enterprise', profileData.enterprise);
+  setValue('bio', profileData.bio);
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
@@ -75,10 +84,10 @@ export default function EditProfile() {
         <UpperPart>
           <EditImageButton
             onPress={() => {
-              alert('oi');
+              alert('teste');
             }}
           />
-          <ProfilePic source={profileData[0].profileImage} />
+          <ProfilePic source={profileData.profileImage} />
           <PencilButton source={editButton} />
           <Controller
             control={control}
