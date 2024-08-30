@@ -1,4 +1,4 @@
-export const bairros = [
+export const district = [
   { label: 'Barra da Tijuca', value: '1' },
   { label: 'Barra Olímpica', value: '2' },
   { label: 'Camorim', value: '3' },
@@ -165,14 +165,14 @@ export const bairros = [
   { label: 'Urca', value: '164' },
   { label: 'Vidigal', value: '165' },
 ];
-export const etnias = [
+export const ethnicity = [
   { label: 'Amarela', value: '1' },
   { label: 'Branca', value: '2' },
   { label: 'Indígena', value: '3' },
   { label: 'Parda', value: '4' },
   { label: 'Preta', value: '5' },
 ];
-export const especialidades = [
+export const expertise = [
   { label: 'Confeitaria', value: '1' },
   { label: 'Manicure e Pedicure', value: '2' },
   { label: 'Costura e Moda', value: '3' },

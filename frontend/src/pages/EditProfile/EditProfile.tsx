@@ -20,7 +20,7 @@ import {
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import { bairros, especialidades, etnias } from './EditProfileData';
+import { district, ethnicity, expertise } from './EditProfileData';
 
 export default function EditProfile() {
   const {
@@ -53,12 +53,12 @@ export default function EditProfile() {
     phoneNumber: '21912345678',
     pName: 'Maria Fernanda',
     email: 'marifer@gmail.com',
-    etnia: 'parda',
+    ethnicity: 'parda',
     dob: '15/09/1990',
     cpf: '12345678900',
     bio: 'bio exemplo teste',
-    especialidade: 'Costura e Moda',
-    bairro: 'Maré',
+    expertise: 'Costura e Moda',
+    district: 'Maré',
     enterprise: 'Confeitaria da Maria',
   };
   setValue('whatsApp', profileData.phoneNumber);
@@ -184,9 +184,9 @@ export default function EditProfile() {
               )}
             />
             {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
-            <DropdownComponent data={etnias} label="Etnia" />
-            <DropdownComponent data={especialidades} label="Especialidade" />
-            <DropdownComponent data={bairros} label="Bairro" />
+            <DropdownComponent data={ethnicity} label="Etnia" />
+            <DropdownComponent data={expertise} label="Especialidade" />
+            <DropdownComponent data={district} label="Bairro" />
             <Controller
               control={control}
               name="bio"
