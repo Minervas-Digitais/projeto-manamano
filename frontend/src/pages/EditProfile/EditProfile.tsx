@@ -21,6 +21,7 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { district, ethnicity, expertise } from './EditProfileData';
+import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 
 export default function EditProfile() {
   const {
@@ -37,6 +38,9 @@ export default function EditProfile() {
       email: '',
       enterprise: '',
       bio: '',
+      ethnicity: '',
+      expertise: '',
+      district: '',
     },
   });
   const onSubmit = (data: any) => {
@@ -53,12 +57,12 @@ export default function EditProfile() {
     phoneNumber: '21912345678',
     pName: 'Maria Fernanda',
     email: 'marifer@gmail.com',
-    ethnicity: 'parda',
+    ethnicity: '2',
     dob: '15/09/1990',
     cpf: '12345678900',
-    bio: 'bio exemplo teste',
-    expertise: 'Costura e Moda',
-    district: 'Maré',
+    bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eget ligula eu lectus lobortis condimentum. Aliquam nonummy auctor massa. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nulla at risus. Quisque purus magna, auctor et, sagittis ac, posuere eu, lectus. Nam mattis, felis ut adipiscing',
+    expertise: '3',
+    district: '1',
     enterprise: 'Confeitaria da Maria',
   };
   setValue('whatsApp', profileData.phoneNumber);
@@ -68,6 +72,9 @@ export default function EditProfile() {
   setValue('cpf', profileData.cpf);
   setValue('enterprise', profileData.enterprise);
   setValue('bio', profileData.bio);
+  setValue('ethnicity', profileData.ethnicity);
+  setValue('expertise', profileData.expertise);
+  setValue('district', profileData.district);
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
@@ -184,9 +191,51 @@ export default function EditProfile() {
               )}
             />
             {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
-            <DropdownComponent data={ethnicity} label="Etnia" />
-            <DropdownComponent data={expertise} label="Especialidade" />
-            <DropdownComponent data={district} label="Bairro" />
+            <Controller
+              control={control}
+              name="ethnicity"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, value } }) => (
+                <DropdownComponent
+                  data={ethnicity}
+                  label="Etnia"
+                  onChange={onChange}
+                  value={value}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="expertise"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, value } }) => (
+                <DropdownComponent
+                  data={expertise}
+                  label="Especialidade"
+                  onChange={onChange}
+                  value={value}
+                />
+              )}
+            />
+            <Controller
+              control={control}
+              name="district"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, value } }) => (
+                <DropdownComponent
+                  data={district}
+                  label="Bairro"
+                  onChange={onChange}
+                  value={value}
+                />
+              )}
+            />
             <Controller
               control={control}
               name="bio"
@@ -194,7 +243,7 @@ export default function EditProfile() {
                 required: true,
               }}
               render={({ field: { onChange, value } }) => (
-                <InputTextCustom
+                <BigInputTextCustom
                   onChangeText={onChange}
                   value={value}
                   label="Bio"

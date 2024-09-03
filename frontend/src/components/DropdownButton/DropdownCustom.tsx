@@ -6,8 +6,7 @@ import { StyleSheet, View, Text } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { LabelInputText } from '../InputText/InputTextCustomStyle';
 
-export default function DropdownComponent({ data, label }: any) {
-  const [value, setValue] = useState(null);
+export default function DropdownComponent({ data, label, onChange, value }: any) {
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
@@ -41,7 +40,7 @@ export default function DropdownComponent({ data, label }: any) {
         searchPlaceholder="Pesquisar..."
         value={value}
         onChange={(item) => {
-          setValue(item.value);
+          onChange(item.value);
         }}
         renderItem={renderItem}
       />
