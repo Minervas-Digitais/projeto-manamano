@@ -8,6 +8,7 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { RedText, SemiBoldRedText } from './GetInTouchStyle';
+import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 
 export default function GetInTouch() {
   const arrowIcon = require('../../assets/arrow-icon.svg');
@@ -55,7 +56,7 @@ export default function GetInTouch() {
               required: true,
             }}
             render={({ field: { onChange, value } }) => (
-              <InputTextCustom
+              <BigInputTextCustom
                 onChangeText={onChange}
                 value={value}
                 label="Mensagem"
