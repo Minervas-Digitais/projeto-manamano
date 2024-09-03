@@ -51,4 +51,15 @@ export class UserController {
   remove(@Param('id') id: string) {
     return this.userService.remove(id);
   }
+
+  @HttpCode(201)
+  @Patch(':id/change-password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(
+    @Param('id') id: string,
+    @Body() oldPassword: string,
+    newPassword: string,
+  ) {
+    return this.userService.changePassword(id, oldPassword, newPassword);
+  }
 }

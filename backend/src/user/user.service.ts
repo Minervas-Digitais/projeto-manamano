@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -31,7 +31,7 @@ export class UserService {
     try {
       const users = await this.prismaService.user.findMany();
       if (!users) {
-        return 'Não há usuários cadastrados.';
+        throw new NotFoundException('Usuário não encontrado.');
       }
       return users;
     } catch (error) {
@@ -47,7 +47,7 @@ export class UserService {
         },
       });
       if (!user) {
-        return 'Usuário não encontrado.';
+        throw new NotFoundException('Usuário não encontrado.');
       }
       return user;
     } catch (error) {
@@ -71,7 +71,7 @@ export class UserService {
         data: updateUserDto,
       });
       if (!user) {
-        return 'Usuário não encontrado.';
+        throw new NotFoundException('Usuário não encontrado.');
       }
       return user;
     } catch (error) {
@@ -87,9 +87,40 @@ export class UserService {
         },
       });
       if (!user) {
-        return 'Usuário não encontrado.';
+        throw new NotFoundException('Usuário não encontrado.');
       }
       return user;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async changePassword(id: string, oldPassword: string, newPassword: string) {
+    try {
+      const user = await this.prismaService.user.findUnique({
+        where: {
+          id,
+        },
+      });
+      if (!user) {
+        throw new NotFoundException('Usuário não encontrado.');
+      }
+
+      const isPasswordValid = await bcrypt.compare(oldPassword, user.hash);
+      if (!isPasswordValid) {
+        throw new NotFoundException('Senha inválida.');
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, roundsOfHashing);
+
+      return await this.prismaService.user.update({
+        where: {
+          id,
+        },
+        data: {
+          hash: hashedPassword,
+        },
+      });
     } catch (error) {
       return error;
     }
