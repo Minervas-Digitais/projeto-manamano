@@ -100,7 +100,9 @@ export default function EditProfile() {
             control={control}
             name="whatsApp"
             rules={{
-              required: true,
+              required: 'Campo obrigatório',
+              minLength: { value: 11, message: 'Menos de 11 dígitos' },
+              maxLength: { value: 11, message: 'Menos de 11 dígitos' },
             }}
             render={({ field: { onChange, value } }) => (
               <InputTextCustom
@@ -112,7 +114,7 @@ export default function EditProfile() {
               />
             )}
           />
-          {errors.whatsApp && <ErrorWarning errorText="Campo obrigatório" />}
+          {errors.whatsApp && <ErrorWarning errorText={errors.whatsApp.message} />}
         </UpperPart>
         <View style={{ gap: '3.5vw', marginBottom: 10 }}>
           <NamePart>
@@ -120,7 +122,11 @@ export default function EditProfile() {
               control={control}
               name="fullName"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
+                pattern: {
+                  value: /^[A-Za-z\s]+$/,
+                  message: 'Apenas letras são permitidas',
+                },
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
@@ -131,7 +137,7 @@ export default function EditProfile() {
                 />
               )}
             />
-            {errors.fullName && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.fullName && <ErrorWarning errorText={errors.fullName.message} />}
           </NamePart>
           <MiddlePart>
             <View style={{ flex: 1, marginRight: `${6.27 / 2}vw` }}>
@@ -159,7 +165,8 @@ export default function EditProfile() {
                 control={control}
                 name="cpf"
                 rules={{
-                  required: true,
+                  minLength: 11,
+                  maxLength: 11,
                 }}
                 render={({ field: { onChange, value } }) => (
                   <InputTextCustom
@@ -171,7 +178,7 @@ export default function EditProfile() {
                   />
                 )}
               />
-              {errors.cpf && <ErrorWarning errorText="Campo obrigatório" />}
+              {errors.cpf && <ErrorWarning errorText="Menos de 11 números" />}
             </View>
           </MiddlePart>
           <BottomPart>
@@ -179,7 +186,11 @@ export default function EditProfile() {
               control={control}
               name="email"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: 'Endereço de e-mail inválido',
+                },
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
@@ -190,7 +201,7 @@ export default function EditProfile() {
                 />
               )}
             />
-            {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.email && <ErrorWarning errorText={errors.email.message} />}
             <Controller
               control={control}
               name="ethnicity"
@@ -240,7 +251,7 @@ export default function EditProfile() {
               control={control}
               name="bio"
               rules={{
-                required: true,
+                maxLength: { value: 500, message: 'Excedido o máximo de caracteres' },
               }}
               render={({ field: { onChange, value } }) => (
                 <BigInputTextCustom
@@ -251,7 +262,7 @@ export default function EditProfile() {
                 />
               )}
             />
-            {errors.bio && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.bio && <ErrorWarning errorText={errors.bio.message} />}
             <Controller
               control={control}
               name="enterprise"
