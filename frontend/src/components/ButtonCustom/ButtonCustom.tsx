@@ -14,7 +14,7 @@ export default function ButtonCustom({
   rightIcon,
 }: any) {
   const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-SemiBold.ttf'),
+    'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
   });
   if (!fontsLoaded) {
     return undefined;

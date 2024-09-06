@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React from 'react';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { Image, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   ConfigNotificationContainer,
@@ -12,9 +12,9 @@ import {
 } from './NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import NotificationCard from '../../components/NotificationCard/NotificationCard';
+import BackButton from '../../components/BackButton/BackButton';
 
 export default function Notification() {
-  const backButton = require('../../assets/back-button-icon.svg');
   const noNotification = require('../../assets/no-notification-icon.svg');
   const duckPhoto = require('../../assets/duck.png');
 
@@ -38,9 +38,7 @@ export default function Notification() {
   return (
     <ConfigNotificationContainer>
       <ConfigNotificationHeaderContainer>
-        <TouchableOpacity>
-          <Image source={backButton} />
-        </TouchableOpacity>
+        <BackButton />
         <ConfigNotificationTitle font="inter-bold">Notificações</ConfigNotificationTitle>
         <View />
       </ConfigNotificationHeaderContainer>

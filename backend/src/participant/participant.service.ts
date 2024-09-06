@@ -1,16 +1,49 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 
 @Injectable()
 export class ParticipantService {
   constructor(private prismaService: PrismaService) {}
 
-  async create(createParticipantDto: CreateParticipantDto) {
+  async joinGroupWithInvite(
+    userId: string,
+    inviteCode: string,
+    updateParticipantDto: UpdateParticipantDto,
+  ) {
     try {
-      return await this.prismaService.participant.create({
-        data: createParticipantDto,
+      const group = await this.prismaService.group.findUnique({
+        where: { inviteCode },
+      });
+
+      if (!group) {
+        throw new Error('Código de convite inválido');
+      }
+
+      const participant = await this.prismaService.participant.findUnique({
+        where: {
+          userId_groupId: {
+            userId: userId,
+            groupId: group.id,
+          },
+        },
+      });
+
+      if (participant) {
+        throw new Error('Você já está neste grupo');
+      }
+
+      const participantBody = { ...updateParticipantDto };
+      participantBody.role = 'MEMBER';
+
+      return await this.prismaService.participant.update({
+        where: {
+          userId_groupId: {
+            userId: userId,
+            groupId: group.id,
+          },
+        },
+        data: participantBody,
       });
     } catch (error) {
       return error;
