@@ -5,7 +5,7 @@ import React from 'react';
 import { ButtomContainer, RectContainer } from './WelcomeStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 
-export default function WelcomeScreen({ navigation }: any) {
+export default function WelcomeScreen({ navigation: { navigate } }) {
   const manamanoPattern = require('../../assets/Manamano-pattern-random.svg');
   const Logo = require('../../assets/logo-boas-vindas.svg');
 
