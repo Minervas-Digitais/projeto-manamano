@@ -8,6 +8,7 @@ import { ParticipantModule } from './participant/participant.module';
 import { PostModule } from './post/post.module';
 import { UserModule } from './user/user.module';
 import { CommentModule } from './comment/comment.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CommentModule } from './comment/comment.module';
     ParticipantModule,
     AuthModule,
     CommentModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
