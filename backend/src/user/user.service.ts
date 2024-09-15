@@ -18,6 +18,7 @@ export class UserService {
       );
 
       createUserDto.hash = hashedPassword;
+      createUserDto.savedPost = [];
 
       return await this.prismaService.user.create({
         data: createUserDto,
