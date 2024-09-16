@@ -91,6 +91,7 @@ export default function EditProfile() {
         <UpperPart>
           <EditImageButton
             onPress={() => {
+              // eslint-disable-next-line no-alert
               alert('teste');
             }}
           />
