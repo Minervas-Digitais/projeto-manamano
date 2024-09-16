@@ -100,9 +100,10 @@ export default function EditProfile() {
             control={control}
             name="whatsApp"
             rules={{
-              required: 'Campo obrigatório',
-              minLength: { value: 11, message: 'Menos de 11 dígitos' },
-              maxLength: { value: 11, message: 'Menos de 11 dígitos' },
+              pattern: {
+                value: /^[0-9]+$/,
+                message: 'Telefone inválido',
+              },
             }}
             render={({ field: { onChange, value } }) => (
               <InputTextCustom
@@ -165,8 +166,10 @@ export default function EditProfile() {
                 control={control}
                 name="cpf"
                 rules={{
-                  minLength: 11,
-                  maxLength: 11,
+                  pattern: {
+                    value: /^[0-9]+$/,
+                    message: 'CPF inválido',
+                  },
                 }}
                 render={({ field: { onChange, value } }) => (
                   <InputTextCustom
@@ -178,7 +181,7 @@ export default function EditProfile() {
                   />
                 )}
               />
-              {errors.cpf && <ErrorWarning errorText="Menos de 11 números" />}
+              {errors.cpf && <ErrorWarning errorText={errors.cpf.message} />}
             </View>
           </MiddlePart>
           <BottomPart>
