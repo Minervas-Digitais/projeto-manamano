@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
@@ -42,10 +42,32 @@ export default function EditProfile() {
       expertise: '',
       district: '',
     },
+    mode: 'onSubmit',
   });
   const onSubmit = (data: any) => {
     // eslint-disable-next-line no-alert
     alert(JSON.stringify(data));
+  };
+  const cpfInputRef = useRef(null);
+  const phoneInputRef = useRef(null);
+  const validatePhoneNumber = (value) => {
+    if (phoneInputRef.current) {
+      const rawValue = phoneInputRef.current.getRawValue();
+      if (rawValue.length < 11) {
+        return 'Telefone inválido';
+      }
+    }
+    return true;
+  };
+  const validateCPF = (value) => {
+    if (cpfInputRef.current) {
+      const rawValue = cpfInputRef.current.getRawValue();
+      const cpfField = cpfInputRef.current.isValid();
+      if (rawValue.length < 11 || !cpfField) {
+        return 'CPF inválido';
+      }
+    }
+    return true;
   };
   const [sideMenu, setSideMenu] = useState(true);
   const menu = require('../../assets/menuw-icon.svg');
@@ -100,12 +122,6 @@ export default function EditProfile() {
           <Controller
             control={control}
             name="whatsApp"
-            rules={{
-              pattern: {
-                value: /^[0-9]+$/,
-                message: 'Telefone inválido',
-              },
-            }}
             render={({ field: { onChange, value } }) => (
               <InputTextCustom
                 onChangeText={onChange}
@@ -113,8 +129,13 @@ export default function EditProfile() {
                 label="Telefone"
                 imageIcon={null}
                 type="cel-phone"
+                innerRef={(value) => (phoneInputRef.current = value)}
               />
             )}
+            rules={{
+              required: 'Telefone obrigatório!',
+              validate: validatePhoneNumber,
+            }}
           />
           {errors.whatsApp && <ErrorWarning errorText={errors.whatsApp.message} />}
         </UpperPart>
@@ -167,10 +188,7 @@ export default function EditProfile() {
                 control={control}
                 name="cpf"
                 rules={{
-                  pattern: {
-                    value: /^[0-9]+$/,
-                    message: 'CPF inválido',
-                  },
+                  validate: validateCPF,
                 }}
                 render={({ field: { onChange, value } }) => (
                   <InputTextCustom
@@ -179,6 +197,7 @@ export default function EditProfile() {
                     label="CPF"
                     imageIcon={null}
                     type="cpf"
+                    innerRef={(value) => (cpfInputRef.current = value)}
                   />
                 )}
               />
