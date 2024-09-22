@@ -46,7 +46,7 @@ export class GroupController {
     return this.groupService.update(id, updateGroupDto);
   }
 
-  @HttpCode(204)
+  @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
