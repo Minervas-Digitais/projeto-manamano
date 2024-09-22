@@ -22,7 +22,7 @@ export class CommentController {
     return this.commentService.create(createCommentDto);
   }
 
-  @HttpCode(204)
+  @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
