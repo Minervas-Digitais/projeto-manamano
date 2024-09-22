@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -21,7 +21,23 @@ export class CategoryService {
     try {
       const categories = await this.prismaService.category.findMany();
       if (!categories) {
-        return 'Não há categorias cadastradas.';
+        throw new NotFoundException('Não há categorias cadastradas.');
+      }
+      return categories;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async findCategoriesInGroup(groupId: string) {
+    try {
+      const categories = await this.prismaService.category.findMany({
+        where: {
+          groupId,
+        },
+      });
+      if (!categories) {
+        throw new NotFoundException('Não há categorias cadastradas.');
       }
       return categories;
     } catch (error) {
@@ -37,7 +53,7 @@ export class CategoryService {
         },
       });
       if (!category) {
-        return 'Categoria não encontrada.';
+        throw new NotFoundException('Categoria não encontrada.');
       }
       return category;
     } catch (error) {
@@ -47,16 +63,16 @@ export class CategoryService {
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
     try {
-      const category = await this.prismaService.category.update({
+      const category = await this.findOne(id);
+      if (typeof category === 'object' && category instanceof Error) {
+        return category;
+      }
+      return await this.prismaService.category.update({
         where: {
           id,
         },
         data: updateCategoryDto,
       });
-      if (!category) {
-        return 'Categoria não encontrada.';
-      }
-      return category;
     } catch (error) {
       return error;
     }
@@ -64,15 +80,15 @@ export class CategoryService {
 
   async remove(id: string) {
     try {
-      const category = await this.prismaService.category.delete({
+      const category = await this.findOne(id);
+      if (typeof category === 'object' && category instanceof Error) {
+        return category;
+      }
+      return await this.prismaService.category.delete({
         where: {
           id,
         },
       });
-      if (!category) {
-        return 'Categoria não encontrada.';
-      }
-      return category;
     } catch (error) {
       return error;
     }
