@@ -18,6 +18,8 @@ export default function InputTextCustom({
   isPassword,
   value,
   type,
+  options,
+  innerRef,
 }: any) {
   const [eyeIcon, setEyeIcon] = useState(true);
   const IconEyeOpen = require('../../assets/eye-open-icon.svg');
@@ -35,6 +37,8 @@ export default function InputTextCustom({
             value={value}
             onChangeText={onChangeText}
             style={styles.input}
+            options={options}
+            ref={innerRef}
           />
         ) : (
           <InputText

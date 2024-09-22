@@ -1,11 +1,9 @@
 /* eslint-disable global-require */
-
-import { StyleSheet } from 'react-native';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ChangePassword from './src/pages/ChangePassword/ChangePassword';
 import EnterGroup from './src/pages/EnterGroup/EnterGroup';
+import ChangePassword from './src/pages/ChangePassword/ChangePassword';
 import Config from './src/pages/Configuration/Configuration';
 import ConfigNotification from './src/pages/ConfigNotification/ConfigNotification';
 import SignIn from './src/pages/SignIn/SignIn';
@@ -13,6 +11,7 @@ import SignUp from './src/pages/SignUp/SignUp';
 import WelcomeScreen from './src/pages/Welcome/Welcome';
 import Notification from './src/pages/Notification/Notification';
 import Groups from './src/pages/Groups/Groups';
+import EditProfile from './src/pages/EditProfile/EditProfile';
 import GetInTouch from './src/pages/GetInTouch/GetInTouch';
 import GroupData from './src/pages/GroupData/GroupData';
 import About from './src/pages/About/About';
@@ -27,7 +26,7 @@ export default function App() {
       <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
-        <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />
         <Stack.Screen
           name="MudarSenha"
           component={ChangePassword}
