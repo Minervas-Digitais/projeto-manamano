@@ -1,5 +1,5 @@
 import { PostType } from '@prisma/client';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsString()
@@ -8,6 +8,7 @@ export class CreateCategoryDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsEnum(PostType)
   type: PostType;
 
   @IsString()

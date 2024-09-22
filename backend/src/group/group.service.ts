@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -9,11 +9,15 @@ export class GroupService {
 
   async create(createGroupDto: CreateGroupDto) {
     try {
+      const inviteCode = await this.generateUniqueInviteCode();
       const newGroup = await this.prismaService.group.create({
-        data: createGroupDto,
+        data: {
+          ...createGroupDto,
+          inviteCode,
+        },
       });
 
-      return await this.generateInvite(newGroup.id);
+      return newGroup;
     } catch (error) {
       return error;
     }
@@ -22,8 +26,8 @@ export class GroupService {
   async findAll() {
     try {
       const groups = await this.prismaService.group.findMany();
-      if (!groups) {
-        return 'Não há grupos cadastrados.';
+      if (groups.length === 0) {
+        throw new NotFoundException('Não há grupos cadastrados.');
       }
       return groups;
     } catch (error) {
@@ -39,7 +43,7 @@ export class GroupService {
         },
       });
       if (!group) {
-        return 'Grupo não encontrado.';
+        throw new NotFoundException('Grupo não encontrado.');
       }
       return group;
     } catch (error) {
@@ -49,16 +53,16 @@ export class GroupService {
 
   async update(id: string, updateGroupDto: UpdateGroupDto) {
     try {
-      const group = await this.prismaService.group.update({
+      const group = await this.findOne(id);
+      if (typeof group === 'object' && group instanceof Error) {
+        return group;
+      }
+      return await this.prismaService.group.update({
         where: {
           id,
         },
         data: updateGroupDto,
       });
-      if (!group) {
-        return 'Grupo não encontrado.';
-      }
-      return group;
     } catch (error) {
       return error;
     }
@@ -66,20 +70,22 @@ export class GroupService {
 
   async remove(id: string) {
     try {
-      const group = await this.prismaService.group.delete({
+      const group = await this.findOne(id);
+      if (typeof group === 'object' && group instanceof Error) {
+        return group;
+      }
+      await this.prismaService.group.delete({
         where: {
           id,
         },
       });
-      if (!group) {
-        return 'Grupo não encontrado.';
-      }
-      return group;
+      return 'Grupo deletado com sucesso.';
     } catch (error) {
       return error;
     }
   }
 
+  /* Funções auxiliares */
   private generateInviteCode(length: number = 8) {
     const characters =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -113,21 +119,6 @@ export class GroupService {
       } while (!isUnique);
 
       return inviteCode;
-    } catch (error) {
-      return error;
-    }
-  }
-
-  private async generateInvite(groupId: string) {
-    try {
-      const inviteCode = await this.generateUniqueInviteCode();
-
-      const updatedGroup = await this.prismaService.group.update({
-        where: { id: groupId },
-        data: { inviteCode },
-      });
-
-      return updatedGroup;
     } catch (error) {
       return error;
     }

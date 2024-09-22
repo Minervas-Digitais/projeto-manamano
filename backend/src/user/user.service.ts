@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -31,8 +35,8 @@ export class UserService {
   async findAll() {
     try {
       const users = await this.prismaService.user.findMany();
-      if (!users) {
-        throw new NotFoundException('Usuário não encontrado.');
+      if (users.length === 0) {
+        throw new NotFoundException('Não há usuários cadastrados.');
       }
       return users;
     } catch (error) {
@@ -58,23 +62,16 @@ export class UserService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     try {
-      if (updateUserDto.hash) {
-        updateUserDto.hash = await bcrypt.hash(
-          updateUserDto.hash,
-          roundsOfHashing,
-        );
+      const user = await this.findOne(id);
+      if (typeof user === 'object' && user instanceof Error) {
+        return user;
       }
-
-      const user = await this.prismaService.user.update({
+      return await this.prismaService.user.update({
         where: {
           id,
         },
         data: updateUserDto,
       });
-      if (!user) {
-        throw new NotFoundException('Usuário não encontrado.');
-      }
-      return user;
     } catch (error) {
       return error;
     }
@@ -82,15 +79,16 @@ export class UserService {
 
   async remove(id: string) {
     try {
-      const user = await this.prismaService.user.delete({
+      const user = await this.findOne(id);
+      if (typeof user === 'object' && user instanceof Error) {
+        return user;
+      }
+      await this.prismaService.user.delete({
         where: {
           id,
         },
       });
-      if (!user) {
-        throw new NotFoundException('Usuário não encontrado.');
-      }
-      return user;
+      return 'Usuário deletado com sucesso.';
     } catch (error) {
       return error;
     }
@@ -109,7 +107,7 @@ export class UserService {
 
       const isPasswordValid = await bcrypt.compare(oldPassword, user.hash);
       if (!isPasswordValid) {
-        throw new NotFoundException('Senha inválida.');
+        throw new UnauthorizedException('Senha inválida.');
       }
 
       const hashedPassword = await bcrypt.hash(newPassword, roundsOfHashing);
