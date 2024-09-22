@@ -46,7 +46,7 @@ export class PostController {
     return this.postService.update(id, updatePostDto);
   }
 
-  @HttpCode(204)
+  @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
@@ -54,21 +54,35 @@ export class PostController {
   }
 
   @HttpCode(201)
-  @Patch(':postId/pin')
+  @Patch('save/:ids')
   @UseGuards(JwtAuthGuard)
-  async pinPost(@Param('postId') postId: string) {
-    await this.postService.pinPost(postId);
+  async savePost(@Param('ids') ids: string) {
+    return this.postService.savePost(ids);
   }
 
   @HttpCode(201)
-  @Patch(':postId/unpin')
+  @Patch('unsave/:ids')
+  @UseGuards(JwtAuthGuard)
+  async removeSavedPost(@Param('ids') ids: string) {
+    return this.postService.removeSavedPost(ids);
+  }
+
+  @HttpCode(201)
+  @Patch('pin/:postId')
+  @UseGuards(JwtAuthGuard)
+  async pinPost(@Param('postId') postId: string) {
+    return this.postService.pinPost(postId);
+  }
+
+  @HttpCode(201)
+  @Patch('unpin/:postId')
   @UseGuards(JwtAuthGuard)
   async unpinPost(@Param('postId') postId: string) {
-    await this.postService.unpinPost(postId);
+    return this.postService.unpinPost(postId);
   }
 
   @HttpCode(200)
-  @Get('group/:groupId/pinned')
+  @Get('group/pinned/:groupId')
   @UseGuards(JwtAuthGuard)
   async getPinnedPosts(@Param('groupId') groupId: string) {
     return this.postService.getPinnedPosts(groupId);

@@ -54,16 +54,16 @@ export class PostService {
 
   async update(id: string, updatePostDto: UpdatePostDto) {
     try {
-      const post = await this.prismaService.post.update({
+      const post = await this.findOne(id);
+      if (typeof post === 'object' && post instanceof Error) {
+        return post;
+      }
+      return await this.prismaService.post.update({
         where: {
           id,
         },
         data: updatePostDto,
       });
-      if (!post) {
-        throw new NotFoundException('Publicação não encontrada.');
-      }
-      return post;
     } catch (error) {
       return error;
     }
@@ -71,22 +71,23 @@ export class PostService {
 
   async remove(id: string) {
     try {
-      const post = await this.prismaService.post.delete({
+      const post = await this.findOne(id);
+      if (typeof post === 'object' && post instanceof Error) {
+        return post;
+      }
+      return await this.prismaService.post.delete({
         where: {
           id,
         },
       });
-      if (!post) {
-        throw new NotFoundException('Publicação não encontrada.');
-      }
-      return post;
     } catch (error) {
       return error;
     }
   }
 
-  async savePost(postId: string, userId: string) {
+  async savePost(ids: string) {
     try {
+      const [postId, userId] = ids.split(',');
       const user = await this.prismaService.user.findUnique({
         where: {
           id: userId,
@@ -95,6 +96,18 @@ export class PostService {
       if (!user) {
         throw new NotFoundException('Usuário não encontrado.');
       }
+
+      const post = await this.prismaService.post.findUnique({
+        where: {
+          id: postId,
+        },
+      });
+      if (post.userId === userId) {
+        throw new NotFoundException(
+          'Você não pode salvar sua própria publicação.',
+        );
+      }
+
       return await this.prismaService.user.update({
         where: {
           id: userId,
@@ -108,8 +121,9 @@ export class PostService {
     }
   }
 
-  async removeSavedPost(postId: string, userId: string) {
+  async removeSavedPost(ids: string) {
     try {
+      const [postId, userId] = ids.split(',');
       const user = await this.prismaService.user.findUnique({
         where: {
           id: userId,
@@ -133,7 +147,11 @@ export class PostService {
 
   async pinPost(postId: string) {
     try {
-      await this.prismaService.post.update({
+      const post = await this.findOne(postId);
+      if (typeof post === 'object' && post instanceof Error) {
+        return post;
+      }
+      return await this.prismaService.post.update({
         where: { id: postId },
         data: { isPinned: true },
       });
@@ -144,7 +162,11 @@ export class PostService {
 
   async unpinPost(postId: string) {
     try {
-      await this.prismaService.post.update({
+      const post = await this.findOne(postId);
+      if (typeof post === 'object' && post instanceof Error) {
+        return post;
+      }
+      return await this.prismaService.post.update({
         where: { id: postId },
         data: { isPinned: false },
       });
