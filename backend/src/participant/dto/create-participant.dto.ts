@@ -14,4 +14,8 @@ export class CreateParticipantDto {
   @IsString()
   @IsNotEmpty()
   userId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  inviteCode: string;
 }
