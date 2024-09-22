@@ -1,9 +1,11 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { RoleType } from '@prisma/client';
+import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateParticipantDto {
   @IsString()
   @IsNotEmpty()
-  role: string;
+  @IsEnum(RoleType)
+  role: RoleType;
 
   @IsString()
   @IsNotEmpty()
@@ -12,4 +14,8 @@ export class CreateParticipantDto {
   @IsString()
   @IsNotEmpty()
   userId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  inviteCode: string;
 }

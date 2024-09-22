@@ -6,8 +6,8 @@ export class CreateGroupDto {
   name: string;
 
   @IsString()
-  @IsNotEmpty()
-  urlInvite: string;
+  @IsOptional()
+  inviteCode: string;
 
   @IsString()
   @IsOptional()

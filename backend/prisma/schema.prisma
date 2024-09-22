@@ -20,31 +20,41 @@ enum PostType {
   CLASS
 }
 
+enum RoleType {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
 model User {
-  id           String        @id @default(uuid())
+  id           String    @id @default(uuid())
   fullName     String
-  email        String        @unique
-  phone        String        @unique
+  email        String    @unique
+  phone        String    @unique
   hash         String
+  savedPost    String[]
   birthday     DateTime?
   ethnicity    String?
   neighborhood String?
   expertise    String?
   enterprise   String?
   bio          String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  Participant  Participant[]
-  Post         Post[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  Participant Participant[]
+  Post        Post[]
+  Comment     Comment[]
 }
 
 model Group {
-  id          String        @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  urlInvite   String        @unique
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  inviteCode  String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   Participant Participant[]
   Category    Category[]
   Post        Post[]
@@ -53,12 +63,12 @@ model Group {
 model Participant {
   userId    String
   groupId   String
-  role      String
+  role      RoleType
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user  User  @relation(fields: [userId], references: [id])
-  group Group @relation(fields: [groupId], references: [id])
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@id([userId, groupId])
 }
@@ -71,7 +81,7 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  group Group  @relation(fields: [groupId], references: [id])
+  group Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
   Post  Post[]
 }
 
@@ -86,13 +96,15 @@ model Post {
   categoryId  String
   userId      String
   groupId     String
+  isPinned    Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  user     User     @relation(fields: [userId], references: [id])
-  group    Group    @relation(fields: [groupId], references: [id])
-  category Category @relation(fields: [categoryId], references: [id])
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   File     File[]
+  Comment  Comment[]
 }
 
 model File {
@@ -107,4 +119,16 @@ model File {
   updatedAt DateTime @updatedAt
 
   post Post @relation(fields: [postId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
