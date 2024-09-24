@@ -8,6 +8,7 @@ import { GroupModule } from './group/group.module';
 import { MailModule } from './mail/mail.module';
 import { ParticipantModule } from './participant/participant.module';
 import { PostModule } from './post/post.module';
+import { SearchModule } from './search/search.module';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { UserModule } from './user/user.module';
     AuthModule,
     CommentModule,
     MailModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],
