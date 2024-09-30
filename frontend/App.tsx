@@ -17,6 +17,7 @@ import GroupData from './src/pages/GroupData/GroupData';
 import About from './src/pages/About/About';
 import Home from './src/pages/Home/Home';
 import SideMenu from './src/components/SideMenu/SideMenu';
+import Search from './src/pages/Search/Search';
 
 const Stack = createNativeStackNavigator();
 
@@ -50,6 +51,7 @@ export default function App() {
         <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
         <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
+        <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
