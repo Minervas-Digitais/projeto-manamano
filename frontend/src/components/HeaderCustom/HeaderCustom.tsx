@@ -4,10 +4,17 @@ import { Image, TouchableOpacity } from 'react-native';
 import { HeaderContainer, HeaderText, NoIcon } from './HeaderCustomStyle';
 import BackButton from '../BackButton/BackButton';
 
-export default function HeaderCustom({ font, text, icon, onPress }: any) {
+export default function HeaderCustom({ font, text, icon, onPress, menu }: any) {
+  const menuIcon = require('../../assets/menu-icon.svg');
   return (
     <HeaderContainer>
-      <BackButton />
+      {menu ? (
+        <TouchableOpacity>
+          <Image source={menuIcon} />
+        </TouchableOpacity>
+      ) : (
+        <BackButton />
+      )}
       <HeaderText font={font}>{text}</HeaderText>
       {icon ? (
         <TouchableOpacity onPress={onPress}>
