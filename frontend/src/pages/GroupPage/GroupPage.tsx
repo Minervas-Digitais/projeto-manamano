@@ -26,8 +26,9 @@ import PostCard from '../../components/PostCard/PostCard';
 import CategoryButton from '../../components/CategoryButton/CategoryButton';
 import LessonsCard from '../../components/LessonsCard/LessonsCard';
 import FileCard from '../../components/FileCard/FileCard';
+import SideMenu from '../../components/SideMenu/SideMenu';
 
-export default function GroupPage() {
+export default function GroupPage({ navigation }: nay) {
   const notificationIcon = require('../../assets/notification-icon.svg');
   const duckImage = require('../../assets/duck.png');
   const addPost = require('../../assets/add-post-icon.svg');
@@ -37,6 +38,7 @@ export default function GroupPage() {
   const [filesSelect, setFilesSelect] = useState(false);
   const [filterPosts, setFilterPosts] = useState('Geral');
   const [filterFiles, setFilterFiles] = useState('Fotos');
+  const [sideMenu, setSideMenu] = useState(true);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -189,11 +191,17 @@ export default function GroupPage() {
 
   return (
     <GroupPageContainer>
+      <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
+
       <HeaderCustom
         font="inter-bold"
         text={groupName}
         icon={notificationIcon}
-        onPress={() => {}}
+        onPressMenu={() => {
+          setSideMenu(!sideMenu);
+        }}
+        onPress={() => navigation.navigate('Notification')}
+        onPressTitle={() => navigation.navigate('GroupData')}
         menu
       />
       <GroupPageTabs style={style.line}>

@@ -11,7 +11,7 @@ import SideMenu from '../../components/SideMenu/SideMenu';
 import GroupButton from '../../components/GroupButton/GroupButton';
 import AddButton from '../../components/AddButton/AddButton';
 
-export default function Groups() {
+export default function Groups({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
   const menu = require('../../assets/menu-icon.svg');
   const add = require('../../assets/add-icon.svg');
@@ -22,7 +22,7 @@ export default function Groups() {
     return undefined;
   }
   const fakeGroups: any = [
-    { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
+    { groupName: 'Turma 24.1', onlineMembers: 23 },
     { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
     { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
     { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
@@ -43,14 +43,19 @@ export default function Groups() {
         <GroupsList>
           {fakeGroups?.length > 0 ? (
             fakeGroups.map((item: any) => (
-              <GroupButton groupName={item.groupName} onlineMembers={item.onlineMembers} size />
+              <GroupButton
+                groupName={item.groupName}
+                onlineMembers={item.onlineMembers}
+                size
+                onPress={() => navigation.navigate('GroupPage')}
+              />
             ))
           ) : (
             <View />
           )}
         </GroupsList>
       </GroupsBody>
-      <AddButton icon={add} />
+      <AddButton icon={add} onPress={() => navigation.navigate('EntrarGrupo')} />
     </GroupsContainer>
   );
 }
