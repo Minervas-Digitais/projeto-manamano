@@ -17,6 +17,7 @@ import GroupData from './src/pages/GroupData/GroupData';
 import About from './src/pages/About/About';
 import Home from './src/pages/Home/Home';
 import SideMenu from './src/components/SideMenu/SideMenu';
+import Post from './src/pages/Post/Post';
 import GroupPage from './src/pages/GroupPage/GroupPage';
 
 const Stack = createNativeStackNavigator();
@@ -24,8 +25,9 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer independent>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName="Post">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
+        <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
         <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />
         <Stack.Screen
@@ -47,7 +49,6 @@ export default function App() {
         />
         <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
         <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
-        <Stack.Screen name="FaleConosco" component={GetInTouch} options={{ headerShown: false }} />
         <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
         <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
