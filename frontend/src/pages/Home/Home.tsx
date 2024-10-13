@@ -148,6 +148,9 @@ export default function Home() {
                   numComments={item.numComments}
                   date={item.date}
                   originGroup={item.originGroup}
+                  tag
+                  save
+                  share
                 />
               ))
             ) : (
