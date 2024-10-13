@@ -2,12 +2,21 @@
 /* eslint-disable global-require */
 import { Image, ImageBackground, StyleSheet } from 'react-native';
 import React from 'react';
+import { useFonts } from 'expo-font';
 import { ButtomContainer, RectContainer } from './WelcomeStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 
-export default function WelcomeScreen({ navigation: { navigate } }) {
+export default function WelcomeScreen({ navigation }: any) {
   const manamanoPattern = require('../../assets/Manamano-pattern-random.svg');
   const Logo = require('../../assets/logo-boas-vindas.svg');
+  const [fontsLoaded] = useFonts({
+    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
+    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
+    'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
+  });
+  if (!fontsLoaded) {
+    return undefined;
+  }
 
   return (
     <ImageBackground

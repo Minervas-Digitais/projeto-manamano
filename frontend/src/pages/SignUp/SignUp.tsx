@@ -9,7 +9,7 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import BackButton from '../../components/BackButton/BackButton';
 
-export default function SignUp() {
+export default function SignUp({ navigation }: any) {
   const {
     control,
     handleSubmit,
@@ -19,12 +19,12 @@ export default function SignUp() {
   const onSubmit = (data: any) => {
     // eslint-disable-next-line no-alert
     alert(JSON.stringify(data));
+    navigation.navigate('SignIn');
   };
   const iconProfile = require('../../assets/profile-icon.svg');
   const iconEmail = require('../../assets/e-mail-icon.svg');
   const iconWhats = require('../../assets/whats-icon.svg');
   const iconPassword = require('../../assets/lock-icon.svg');
-  const backButton = require('../../assets/back-button-icon.svg');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
