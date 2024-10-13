@@ -6,8 +6,9 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { SignInContainer, SignInForm, SignInInputContainer } from './SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
+import BackButton from '../../components/BackButton/BackButton';
 
-export default function SignIn() {
+export default function SignIn({ navigation }: any) {
   const {
     control,
     handleSubmit,
@@ -17,17 +18,17 @@ export default function SignIn() {
   const onSubmit = (data: any) => {
     // eslint-disable-next-line no-alert
     alert(JSON.stringify(data));
+    navigation.navigate('Home');
   };
   const iconPassword = require('../../assets/lock-icon.svg');
   const iconEmail = require('../../assets/e-mail-icon.svg');
   const manaManoLogo = require('../../assets/logo-boas-vindas.svg');
-  const backButton = require('../../assets/back-button-icon.svg');
 
   return (
     <SignInContainer>
       <SignInForm>
         <View style={{ gap: '45px' }}>
-          <Image source={backButton} />
+          <BackButton />
 
           <Image source={manaManoLogo} />
           <SignInInputContainer>

@@ -22,7 +22,7 @@ import {
 import SideMenu from '../../components/SideMenu/SideMenu';
 import PostCard from '../../components/PostCard/PostCard';
 
-export default function Home() {
+export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
   const duckImage = require('../../assets/duck.png');
   const menuIcon = require('../../assets/menuWhite-icon.svg');
@@ -35,7 +35,7 @@ export default function Home() {
     return undefined;
   }
   const fakeGroups: any = [
-    { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
+    { groupName: 'Turma 24.1', onlineMembers: 23 },
     { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
     { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
     { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
@@ -101,7 +101,7 @@ export default function Home() {
             <TouchableOpacity>
               <Image source={lupa} />
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
               <PostCardImageUser style={{ border: 'solid 1.7px white' }} source={duckImage} />
             </TouchableOpacity>
           </PostCardIcons>
@@ -124,7 +124,11 @@ export default function Home() {
           <HomeContainerListGroup>
             {fakeGroups?.length > 0 ? (
               fakeGroups?.map((item: any) => (
-                <GroupButton groupName={item.groupName} onlineMembers={item.onlineMembers} />
+                <GroupButton
+                  groupName={item.groupName}
+                  onlineMembers={item.onlineMembers}
+                  onPress={() => navigation.navigate('GroupPage')}
+                />
               ))
             ) : (
               <GroupDataText font="inter-bold" color="#959393" size="20px">
@@ -148,6 +152,9 @@ export default function Home() {
                   numComments={item.numComments}
                   date={item.date}
                   originGroup={item.originGroup}
+                  tag
+                  save
+                  share
                 />
               ))
             ) : (

@@ -21,16 +21,8 @@ export class ParticipantController {
   @HttpCode(201)
   @Post()
   @UseGuards(JwtAuthGuard)
-  joinGroup(
-    @Body() createParticipantDto: CreateParticipantDto,
-    @Body() inviteCode: string,
-    @Body() userId: string,
-  ) {
-    return this.participantService.joinGroupWithInvite(
-      userId,
-      inviteCode,
-      createParticipantDto,
-    );
+  joinGroup(@Body() createParticipantDto: CreateParticipantDto) {
+    return this.participantService.joinGroupWithInvite(createParticipantDto);
   }
 
   @HttpCode(200)
@@ -38,6 +30,13 @@ export class ParticipantController {
   @UseGuards(JwtAuthGuard)
   findAll() {
     return this.participantService.findAll();
+  }
+
+  @HttpCode(200)
+  @Get('group/:groupId')
+  @UseGuards(JwtAuthGuard)
+  findUsersInGroup(@Param('groupId') groupId: string) {
+    return this.participantService.findUsersInGroup(groupId);
   }
 
   @HttpCode(200)
@@ -57,7 +56,7 @@ export class ParticipantController {
     return this.participantService.update(id, updateParticipantDto);
   }
 
-  @HttpCode(204)
+  @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {

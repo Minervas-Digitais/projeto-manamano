@@ -40,6 +40,7 @@ export class AuthService {
       const payload = { email: user.email };
       return {
         accessToken: this.jwtService.sign(payload),
+        loggedId: user.id,
       };
     } catch (error) {
       return error;

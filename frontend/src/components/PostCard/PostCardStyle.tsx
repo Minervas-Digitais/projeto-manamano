@@ -1,14 +1,15 @@
 /* eslint-disable import/prefer-default-export */
 import styled from 'styled-components/native';
 
-export const PostCardContainer = styled.View`
+export const PostCardContainer = styled.View<{ shadowColor?: string }>`
   display: flex;
   flex-direction: column;
-  width: 100%;
-  padding: 0px 14px 10px 14px;
+  position: relative;
+  width: 98%;
+  padding: 0px 15px 10px 20px;
   gap: 5px;
   border-radius: 15px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 3px 6px ${(prop) => (prop.shadowColor ? '#ef3f3688' : 'rgba(0, 0, 0, 0.1)')};
   border: solid 1px #d8d7d7;
 `;
 
@@ -38,7 +39,7 @@ export const PostCardIcons = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 3px;
 `;
 
 export const PostCardImage = styled.Image<{ width?: any; height?: any }>`

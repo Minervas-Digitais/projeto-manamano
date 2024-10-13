@@ -33,6 +33,13 @@ export class CategoryController {
   }
 
   @HttpCode(200)
+  @Get('group/:groupId')
+  @UseGuards(JwtAuthGuard)
+  findCategoriesInGroup(@Param('groupId') groupId: string) {
+    return this.categoryService.findCategoriesInGroup(groupId);
+  }
+
+  @HttpCode(200)
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
@@ -49,7 +56,7 @@ export class CategoryController {
     return this.categoryService.update(id, updateCategoryDto);
   }
 
-  @HttpCode(204)
+  @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
