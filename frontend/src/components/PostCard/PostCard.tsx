@@ -22,12 +22,14 @@ export default function PostCard({
   originGroup,
   share,
   save,
+  saved,
   dotsMenu,
   tag,
   fix,
 }: any) {
   const shareIcon = require('../../assets/share-icon.svg');
   const saveIcon = require('../../assets/save-icon.svg');
+  const savedIcon = require('../../assets/saved-icon.svg');
   const commentIcon = require('../../assets/comment-icon.svg');
   const fixIcon = require('../../assets/fix-icon.svg');
   const dotsMenuIcon = require('../../assets/dotsMenu-icon.svg');
@@ -74,6 +76,13 @@ export default function PostCard({
           {save ? (
             <TouchableOpacity>
               <PostCardImage width="20px" height="20px" source={saveIcon} />
+            </TouchableOpacity>
+          ) : (
+            <View />
+          )}
+          {saved ? (
+            <TouchableOpacity>
+              <PostCardImage width="20px" height="20px" source={savedIcon} />
             </TouchableOpacity>
           ) : (
             <View />

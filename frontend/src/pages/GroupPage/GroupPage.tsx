@@ -4,7 +4,7 @@
 /* eslint-disable global-require */
 import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
-import { StyleSheet, View, Text, Image, Dimensions } from 'react-native';
+import { StyleSheet, View, Image, Dimensions } from 'react-native';
 import {
   GroupPageAddPostButton,
   GroupPageCategoryContainer,
@@ -28,7 +28,7 @@ import LessonsCard from '../../components/LessonsCard/LessonsCard';
 import FileCard from '../../components/FileCard/FileCard';
 import SideMenu from '../../components/SideMenu/SideMenu';
 
-export default function GroupPage({ navigation }: nay) {
+export default function GroupPage({ navigation }: any) {
   const notificationIcon = require('../../assets/notification-icon.svg');
   const duckImage = require('../../assets/duck.png');
   const addPost = require('../../assets/add-post-icon.svg');
