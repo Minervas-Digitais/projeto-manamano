@@ -16,31 +16,27 @@ import {
   ProfileTabsContainer,
   ProfileTextContainer,
   ProfilePostsContainer,
-} from './ProfileStyle';
+} from '../Profile/ProfileStyle';
 import { HomePageBlue, HomePageWhite } from '../Home/HomeStyle';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
 import { GroupPageTabs } from '../GroupPage/GroupPageStyle';
 import PostCard from '../../components/PostCard/PostCard';
 import SideMenu from '../../components/SideMenu/SideMenu';
 
-export default function Profile({ navigation }: any) {
+export default function VisitorProfile({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
 
   const userName = 'Maria Fernanda';
   const city = 'Rio de Janeiro';
   const businessName = 'Doceria da Maria';
-  const id = 2343;
-
-  const [myPostsSelect, setMyPostsSelect] = useState(true);
-  const [savedPostsSelect, setSavedPostsSelect] = useState(false);
-  const [filterPosts, setFilterPosts] = useState('userPosts');
 
   const duckImage = require('../../assets/duck.png');
   const location = require('../../assets/location-icon.svg');
   const shareWhite = require('../../assets/share-white-icon.svg');
   const menuIcon = require('../../assets/menuWhite-icon.svg');
-  const pen = require('../../assets/pen-icon.svg');
   const business = require('../../assets/business-icon.svg');
+  const whatsapp = require('../../assets/whatsapp-icon.svg');
+  const email = require('../../assets/email-icon.svg');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -49,24 +45,6 @@ export default function Profile({ navigation }: any) {
   if (!fontsLoaded) {
     return undefined;
   }
-
-  const userPosts: any = [
-    {
-      nameUser: 'Maria Fernanda',
-      imageUser: duckImage,
-      postContent: 'Alguém mora perto de Bonsucesso?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-    },
-    {
-      nameUser: 'Maria Fernanda',
-      imageUser: duckImage,
-      postContent: 'Já postaram o link da aula?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-    },
-
-  ];
 
   const savedPosts: any = [
     {
@@ -133,9 +111,6 @@ export default function Profile({ navigation }: any) {
               <GroupDataText color="white" size="20px" font="inter-bold">
                 {userName}
               </GroupDataText>
-              <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
-                <ProfileImage height="24px" width="24px" radius={false} source={pen} />
-              </TouchableOpacity>
             </ProfileContainerData>
 
             <ProfileContainerData gap={10} center>
@@ -152,6 +127,14 @@ export default function Profile({ navigation }: any) {
               </GroupDataText>
             </ProfileContainerData>
           </View>
+          <View style={style.viewStyleInfo}>
+            <TouchableOpacity>
+              <ProfileImage height="24px" width="24px" radius={false} source={whatsapp} />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <ProfileImage height="24px" width="24px" radius={false} source={email} />
+            </TouchableOpacity>
+          </View>
         </ProfileContainerData>
       </ProfileContainerInfo>
       <HomePageWhite style={{ gap: 0 }}>
@@ -163,40 +146,9 @@ export default function Profile({ navigation }: any) {
           </GroupDataText>
         </ProfileTextContainer>
 
-        <GroupPageTabs style={style.line}>
-          <ProfileTabsContainer
-            onPress={() => {
-              setMyPostsSelect(true);
-              setSavedPostsSelect(false);
-              setFilterPosts('userPosts');
-            }}
-            style={myPostsSelect ? style.selectStyleTab : {}}
-            >
-            <GroupDataText
-              font="inter-bold"
-              size="18px"
-              color={myPostsSelect ? '#EF4036' : '#8F8F8F'}
-            >
-              Publicações
-            </GroupDataText>
-          </ProfileTabsContainer>
-          <ProfileTabsContainer
-            onPress={() => {
-              setMyPostsSelect(false);
-              setSavedPostsSelect(true);
-              setFilterPosts('savedPosts');
-            }}
-            style={savedPostsSelect ? style.selectStyleTab : {}}>
-            <GroupDataText
-              font="inter-bold"
-              size="18px"
-              color={savedPostsSelect ? '#EF4036' : '#8F8F8F'}>
-              Salvas
-            </GroupDataText>
-          </ProfileTabsContainer>
-        </GroupPageTabs>
+        <GroupPageTabs style={style.line} />
         <ProfilePostsContainer>
-          {filterPosts === 'userPosts' ? (userPosts?.length > 0 ? (userPosts?.map((item: any) => (
+          {savedPosts?.length > 0 ? (savedPosts?.map((item: any) => (
             <PostCard
               nameUser={item.nameUser}
               imageUser={item.imageUser}
@@ -204,18 +156,9 @@ export default function Profile({ navigation }: any) {
               numComments={item.numComments}
               date={item.date}
               share
+              save
             />
-          ))) : '') : (savedPosts?.length > 0 ? (savedPosts?.map((item: any) => (
-            <PostCard
-              nameUser={item.nameUser}
-              imageUser={item.imageUser}
-              postContent={item.postContent}
-              numComments={item.numComments}
-              date={item.date}
-              share
-              saved
-            />
-          ))) : '')}
+          ))) : ''}
         </ProfilePostsContainer>
       </HomePageWhite>
 
@@ -223,15 +166,16 @@ export default function Profile({ navigation }: any) {
   );
 }
 const style = StyleSheet.create({
-  selectStyleTab: {
-    borderBottomColor: '#EF4036',
-    borderBottomWidth: 2.5,
-  },
+
   line: {
     borderBottomColor: '#D9D9D9',
     borderBottomWidth: 1,
+    paddingTop: 25,
   },
-  viewPadding: {
-    padding: 25,
+  viewStyleInfo: {
+    display: 'flex',
+    gap: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

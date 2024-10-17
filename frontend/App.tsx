@@ -19,13 +19,14 @@ import Home from './src/pages/Home/Home';
 import SideMenu from './src/components/SideMenu/SideMenu';
 import GroupPage from './src/pages/GroupPage/GroupPage';
 import Profile from './src/pages/Profile/Profile';
+import VisitorProfile from './src/pages/VisitorProfile/VisitorProfile';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer independent>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName="VisitorProfile">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
         <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />
@@ -59,6 +60,11 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="VisitorProfile"
+          component={VisitorProfile}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
