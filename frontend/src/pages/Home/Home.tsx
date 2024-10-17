@@ -101,7 +101,7 @@ export default function Home({ navigation }: any) {
             <TouchableOpacity>
               <Image source={lupa} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
+            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
               <PostCardImageUser style={{ border: 'solid 1.7px white' }} source={duckImage} />
             </TouchableOpacity>
           </PostCardIcons>
@@ -159,7 +159,7 @@ export default function Home({ navigation }: any) {
               ))
             ) : (
               <GroupDataText font="inter-bold" color="#959393" size="20px">
-                Não há comentários...
+                Não há Posts...
               </GroupDataText>
             )}
           </HomeContainerListMural>
