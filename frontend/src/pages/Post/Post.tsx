@@ -20,10 +20,10 @@ import {
 import CommentCard from '../../components/CommentCard/CommentCard';
 import CommentInputTextCustom from '../../components/CommentInput/CommentInputText';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
+import DotsButton from '../../components/DotsButton/DotsButton';
 
 export default function Post() {
   const [isFocused, setIsFocused] = useState(false);
-  const optionsIcon = require('../../assets/options-icon.svg');
   const profileImage = require('../../assets/test-profile-icon.png');
   const fakePost: any = [
     {
@@ -69,7 +69,7 @@ export default function Post() {
   }
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: '#f2f6fa' }}>
-      <HeaderCustom font="inter-bold" text="Publicação" icon={optionsIcon} />
+      <HeaderCustom font="inter-bold" text="Publicação" headerButton={<DotsButton />} icon />
       <PostContainer>
         <PostUpperPart>
           <ProfileImage source={profileImage} />
@@ -134,3 +134,7 @@ export default function Post() {
     </ScrollView>
   );
 }
+function setModalOptions(arg0: boolean): void {
+  throw new Error('Function not implemented.');
+}
+

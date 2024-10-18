@@ -12,6 +12,7 @@ export default function HeaderCustom({
   onPressMenu,
   onPressTitle,
   menu,
+  headerButton,
 }: any) {
   const menuIcon = require('../../assets/menu-icon.svg');
   return (
@@ -29,6 +30,7 @@ export default function HeaderCustom({
       {icon ? (
         <TouchableOpacity onPress={onPress}>
           <Image source={icon} />
+          {headerButton}
         </TouchableOpacity>
       ) : (
         <NoIcon />
