@@ -19,6 +19,7 @@ import Home from './src/pages/Home/Home';
 import SideMenu from './src/components/SideMenu/SideMenu';
 import Post from './src/pages/Post/Post';
 import GroupPage from './src/pages/GroupPage/GroupPage';
+import Profile from './src/pages/Profile/Profile';
 
 const Stack = createNativeStackNavigator();
 
@@ -58,6 +59,7 @@ export default function App() {
           component={WelcomeScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -13,7 +13,7 @@ export const HomePageBlue = styled.View`
 export const HomePageWhite = styled.View`
   display: flex;
   width: 100vw;
-  height: 80vh;
+  flex: 1;
   background-color: #ffffff;
   border-radius: 40px 40px 0px 0px;
   padding: 25px 0px 30px 0px;
@@ -44,7 +44,7 @@ export const HomeContainerListGroup = styled.View`
 
 export const HomeContainerMural = styled.View`
   display: flex;
-  padding: 0px 25px 25px 25px;
+  padding: 0px 25px 25px 30px;
   gap: 25px;
   flex: 1;
 `;
