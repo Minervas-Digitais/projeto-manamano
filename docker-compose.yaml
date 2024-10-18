@@ -1,0 +1,42 @@
+services:  
+  backend:    
+    container_name: "manamano-backend"  
+    restart: unless-stopped  
+    build:  
+      context: ./backend
+      dockerfile: Dockerfile  
+    environment:  
+      HOST: $BACKEND_HOST
+      PORT: $BACKEND_PORT
+      POSTGRES_HOST: postgres_db  
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?schema=public
+    env_file:
+      - .env
+    ports:
+      - ${BACKEND_PORT}:${BACKEND_PORT}  
+    depends_on:  
+      - postgres_db
+    volumes:
+      - ./backend:/app  
+    networks:  
+      - "main"
+
+  postgres_db:    
+    image: postgres:latest
+    container_name: "manamano-db"
+    restart: unless-stopped
+    environment:  
+      POSTGRES_USER: ${POSTGRES_USER}  
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./database:/var/lib/postgresql/data
+    networks:
+      - "main"
+
+volumes:  
+  postgres_data: 
+
+networks:
+  main:
+    name: "manamano-net"

@@ -21,7 +21,8 @@ module.exports = {
       },
     ],
     '@typescript-eslint/no-use-before-define': 'off',
-    'react/style-prop-object': 'off'
+    'react/style-prop-object': 'off',
+    'object-curly-newline': 'off'
   }, 
   plugins: ['prettier'],
 }
