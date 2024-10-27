@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,10 +20,11 @@ import {
 import CommentCard from '../../components/CommentCard/CommentCard';
 import CommentInputTextCustom from '../../components/CommentInput/CommentInputText';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
+import { PostCardImage } from '../../components/PostCard/PostCardStyle';
+import ModalOptions from '../../components/ModalOptions/ModalOptions';
 
 export default function Post() {
   const [isFocused, setIsFocused] = useState(false);
-  const optionsIcon = require('../../assets/options-icon.svg');
   const profileImage = require('../../assets/test-profile-icon.png');
   const fakePost: any = [
     {
@@ -42,6 +43,8 @@ export default function Post() {
   ];
   const postDate = new Date(fakePost[0].createdAt);
   const formattedDate = format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR });
+  const [modalOptions, setModalOptions] = useState(false);
+  const dotsMenuIcon = require('../../assets/dotsMenu-icon.svg');
   const {
     control,
     handleSubmit,
@@ -69,7 +72,19 @@ export default function Post() {
   }
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: '#f2f6fa' }}>
-      <HeaderCustom font="inter-bold" text="Publicação" icon={optionsIcon} />
+      <HeaderCustom
+        font="inter-bold"
+        text="Publicação"
+        headerButton={(
+          <View>
+            {modalOptions ? <ModalOptions /> : ''}
+            <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
+              <PostCardImage width="30px" height="30px" source={dotsMenuIcon} />
+            </TouchableOpacity>
+          </View>
+        )}
+        icon
+      />
       <PostContainer>
         <PostUpperPart>
           <ProfileImage source={profileImage} />
@@ -133,4 +148,7 @@ export default function Post() {
       </PostContainer>
     </ScrollView>
   );
+}
+function setModalOptions(arg0: boolean): void {
+  throw new Error('Function not implemented.');
 }
