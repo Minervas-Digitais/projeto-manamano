@@ -21,17 +21,19 @@ import Post from './src/pages/Post/Post';
 import GroupPage from './src/pages/GroupPage/GroupPage';
 import Profile from './src/pages/Profile/Profile';
 import VisitorProfile from './src/pages/VisitorProfile/VisitorProfile';
+import NewPost from './src/pages/NewPost/NewPost';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer independent>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName="NewPost">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
         <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />
+        <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
         <Stack.Screen
           name="MudarSenha"
           component={ChangePassword}
