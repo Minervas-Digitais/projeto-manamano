@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Image, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -26,6 +26,8 @@ export default function NewPost() {
   const linkIcon = require('../../assets/comment-link-icon.svg');
   const calendarIcon = require('../../assets/calendar-icon.svg');
   const [filterPosts, setFilterPosts] = useState('Geral');
+  const dateRef = useRef(null);
+  const hourRef = useRef(null);
   const {
     control,
     handleSubmit,
@@ -49,6 +51,34 @@ export default function NewPost() {
     }
     // eslint-disable-next-line no-alert
     alert(JSON.stringify(filteredData));
+  };
+  const validateDate = () => {
+    const inputDate = new Date(dateRef.current.getRawValue());
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    if (!dateRef.current.isValid() || inputDate < currentDate) {
+      return 'Data inválida';
+    }
+    return true;
+  };
+  const validateHour = () => {
+    const inputDate = new Date(dateRef.current.getRawValue());
+    const currentDate = new Date();
+    const currentHours = currentDate.getHours();
+    const currentMinutes = currentDate.getMinutes();
+    const currentHourMin = `${currentHours}:${currentMinutes}`;
+    const inputDateHours = new Date(hourRef.current.getRawValue());
+    const inputHours = inputDateHours.getHours();
+    const inputMinutes = inputDateHours.getMinutes();
+    const inputHourMin = `${inputHours}:${inputMinutes}`;
+    currentDate.setHours(0, 0, 0, 0);
+    if (!hourRef.current.isValid()) {
+      return 'Hora inválida';
+    }
+    if (inputDate.getTime() === currentDate.getTime() && currentHourMin > inputHourMin) {
+      return 'Esta hora já passou';
+    }
+    return true;
   };
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -144,7 +174,8 @@ export default function NewPost() {
                   control={control}
                   name="date"
                   rules={{
-                    required: true,
+                    required: 'Campo Obrigatório',
+                    validate: validateDate,
                   }}
                   render={({ field: { onChange, value } }) => (
                     <InputTextCustom
@@ -154,17 +185,19 @@ export default function NewPost() {
                       imageIcon={calendarIcon}
                       type="datetime"
                       options={{ format: 'DD/MM/YYYY' }}
+                      innerRef={(value) => (dateRef.current = value)}
                     />
                   )}
                 />
-                {errors.date && <ErrorWarning errorText="Campo obrigatório" />}
+                {errors.date && <ErrorWarning errorText={errors.date.message} />}
               </View>
               <View style={{ flex: 1, marginLeft: `${6.27 / 2}vw` }}>
                 <Controller
                   control={control}
                   name="hour"
                   rules={{
-                    required: true,
+                    required: 'Campo Obrigatório',
+                    validate: validateHour,
                   }}
                   render={({ field: { onChange, value } }) => (
                     <InputTextCustom
@@ -174,10 +207,11 @@ export default function NewPost() {
                       imageIcon={null}
                       type="datetime"
                       options={{ format: 'HH:mm' }}
+                      innerRef={(value) => (hourRef.current = value)}
                     />
                   )}
                 />
-                {errors.hour && <ErrorWarning errorText="Campo obrigatório" />}
+                {errors.hour && <ErrorWarning errorText={errors.hour.message} />}
               </View>
             </MiddlePart>
             <BottomPartContainer>
