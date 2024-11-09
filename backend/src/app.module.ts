@@ -10,6 +10,7 @@ import { ParticipantModule } from './participant/participant.module';
 import { PostModule } from './post/post.module';
 import { SearchModule } from './search/search.module';
 import { UserModule } from './user/user.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UserModule } from './user/user.module';
     CommentModule,
     MailModule,
     SearchModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
