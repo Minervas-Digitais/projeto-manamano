@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react/jsx-one-expression-per-line */
 /* eslint-disable global-require */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { Image, TouchableOpacity, View } from 'react-native';
+import { MMKV } from 'react-native-mmkv';
 import {
   HomeContainerGroup,
   HomeContainerInfo,
@@ -21,12 +23,15 @@ import {
 } from '../../components/PostCard/PostCardStyle';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import PostCard from '../../components/PostCard/PostCard';
+import { storage } from '../SignIn/SignIn';
 
 export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
   const duckImage = require('../../assets/duck.png');
   const menuIcon = require('../../assets/menuWhite-icon.svg');
   const lupa = require('../../assets/lupaWhite-icon.svg');
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [accessTokenState, setAccessTokenState] = useState('');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -87,8 +92,17 @@ export default function Home({ navigation }: any) {
       originGroup: 'Calouros 23.2',
     },
   ];
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+    }
+  }, []);
+
   return (
-    <HomePageBlue>
+    <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <HomeContainerInfo>
         <PostCardSpaceBetween>
