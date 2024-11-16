@@ -27,6 +27,8 @@ export const LinkIcon = styled.TouchableOpacity`
   align-self: end;
   margin-top: 20px;
   margin-right: 5px;
+  flex-direction: row;
+  gap: 20px;
 `;
 
 export const NewEventInputContainer = styled.View`
