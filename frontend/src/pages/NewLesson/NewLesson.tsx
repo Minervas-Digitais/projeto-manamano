@@ -1,19 +1,34 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
-import { NewEventInputContainer, NewPostContainer } from '../NewPost/NewPostStyle';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
-import { LessonBottomPartContainer, LinkPart } from './NewLessonStyle';
+import { LinkPart, NewLessonContainer } from './NewLessonStyle';
 import ArchiveCard from '../../components/ArchiveCard/ArchiveCard';
 
 export default function NewLesson() {
+  const archiveId = [{ id: 1 }, { id: 2 }, { id: 3 }];
+  const [visibility, setVisibility] = useState(
+    archiveId.reduce(
+      (acc: Record<number, boolean>, item) => {
+        acc[item.id] = false;
+        return acc;
+      },
+      {} as Record<number, boolean>,
+    ),
+  );
+  const handleClick = (id) => {
+    setVisibility((prevState) => ({
+      ...prevState,
+      [id]: !prevState[id],
+    }));
+  };
   const arrowIcon = require('../../assets/arrow-icon.svg');
   const linkIcon = require('../../assets/input-link-icon.svg');
   const calendarIcon = require('../../assets/calendar-icon.svg');
@@ -70,145 +85,143 @@ export default function NewLesson() {
       contentContainerStyle={{ minHeight: '100%' }}>
       {' '}
       <HeaderCustom font="inter-bold" text="Publicação" />
-      <NewPostContainer>
-        <NewEventInputContainer>
-          <NamePart>
-            <Controller
-              control={control}
-              name="title"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
-              render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Título da aula"
-                  imageIcon={null}
-                />
-              )}
-            />
-            {errors.title && <ErrorWarning errorText={errors.title.message} />}
-          </NamePart>
-          <MiddlePart>
-            <View style={{ flex: 1, marginRight: `${6.27 / 2}vw` }}>
-              <Controller
-                control={control}
-                name="date"
-                rules={{
-                  required: 'Campo Obrigatório',
-                  validate: validateDate,
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <InputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="Data"
-                    imageIcon={calendarIcon}
-                    type="datetime"
-                    options={{ format: 'DD/MM/YYYY' }}
-                    innerRef={(value) => (dateRef.current = value)}
-                  />
-                )}
+      <NewLessonContainer>
+        <NamePart>
+          <Controller
+            control={control}
+            name="title"
+            rules={{
+              required: 'Campo obrigatório',
+            }}
+            render={({ field: { onChange, value } }) => (
+              <InputTextCustom
+                onChangeText={onChange}
+                value={value}
+                label="Título da aula"
+                imageIcon={null}
               />
-              {errors.date && <ErrorWarning errorText={errors.date.message} />}
-            </View>
-            <View style={{ flex: 1, marginLeft: `${6.27 / 2}vw` }}>
-              <Controller
-                control={control}
-                name="hour"
-                rules={{
-                  required: 'Campo Obrigatório',
-                  validate: validateHour,
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <InputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="Horário"
-                    imageIcon={null}
-                    type="datetime"
-                    options={{ format: 'HH:mm' }}
-                    innerRef={(value: null) => (hourRef.current = value)}
-                  />
-                )}
-              />
-              {errors.hour && <ErrorWarning errorText={errors.hour.message} />}
-            </View>
-          </MiddlePart>
-          <LinkPart>
+            )}
+          />
+          {errors.title && <ErrorWarning errorText={errors.title.message} />}
+        </NamePart>
+        <MiddlePart>
+          <View style={{ flex: 1, marginRight: `${6.27 / 2}vw` }}>
             <Controller
               control={control}
-              name="link"
+              name="date"
               rules={{
-                required: 'Campo obrigatório',
+                required: 'Campo Obrigatório',
+                validate: validateDate,
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
                   onChangeText={onChange}
                   value={value}
-                  label="Link"
-                  imageIcon={linkIcon}
+                  label="Data"
+                  imageIcon={calendarIcon}
+                  type="datetime"
+                  options={{ format: 'DD/MM/YYYY' }}
+                  innerRef={(value) => (dateRef.current = value)}
                 />
               )}
             />
-            {errors.link && <ErrorWarning errorText={errors.link.message} />}
+            {errors.date && <ErrorWarning errorText={errors.date.message} />}
+          </View>
+          <View style={{ flex: 1, marginLeft: `${6.27 / 2}vw` }}>
             <Controller
               control={control}
-              name="vod"
+              name="hour"
               rules={{
-                required: 'Campo obrigatório',
+                required: 'Campo Obrigatório',
+                validate: validateHour,
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
                   onChangeText={onChange}
                   value={value}
-                  label="Aula gravada"
-                  imageIcon={linkIcon}
-                />
-              )}
-            />
-            {errors.vod && <ErrorWarning errorText={errors.vod.message} />}
-          </LinkPart>
-          <LessonBottomPartContainer>
-            <Controller
-              control={control}
-              name="description"
-              rules={{
-                required: true,
-              }}
-              render={({ field: { onChange, value } }) => (
-                <BigInputTextCustom
-                  onChangeText={onChange}
-                  value={value}
+                  label="Horário"
                   imageIcon={null}
-                  label="Descrição da aula"
+                  type="datetime"
+                  options={{ format: 'HH:mm' }}
+                  innerRef={(value: null) => (hourRef.current = value)}
                 />
               )}
             />
-            {errors.description && <ErrorWarning errorText="Campo obrigatório" />}
-            <ScrollView
-              showsHorizontalScrollIndicator={false}
-              horizontal
-              style={{ flex: 1, paddingBottom: 65, paddingTop: 65 }}
-              contentContainerStyle={{ gap: 15, alignItems: 'center' }}>
-              <ArchiveCard archive />
-              <ArchiveCard archive />
-              <ArchiveCard archive />
-              <ArchiveCard archive />
-              <ArchiveCard archive />
-              <ArchiveCard />
-            </ScrollView>
-            <ButtonCustom
-              onPress={handleSubmit(onSubmit)}
-              backColor="#160E47"
-              fontColor="white"
-              text="Publicar"
-              rightIcon={arrowIcon}
-            />
-          </LessonBottomPartContainer>
-        </NewEventInputContainer>
-      </NewPostContainer>
+            {errors.hour && <ErrorWarning errorText={errors.hour.message} />}
+          </View>
+        </MiddlePart>
+        <LinkPart>
+          <Controller
+            control={control}
+            name="link"
+            rules={{
+              required: 'Campo obrigatório',
+            }}
+            render={({ field: { onChange, value } }) => (
+              <InputTextCustom
+                onChangeText={onChange}
+                value={value}
+                label="Link"
+                imageIcon={linkIcon}
+              />
+            )}
+          />
+          {errors.link && <ErrorWarning errorText={errors.link.message} />}
+          <Controller
+            control={control}
+            name="vod"
+            rules={{
+              required: 'Campo obrigatório',
+            }}
+            render={({ field: { onChange, value } }) => (
+              <InputTextCustom
+                onChangeText={onChange}
+                value={value}
+                label="Aula gravada"
+                imageIcon={linkIcon}
+              />
+            )}
+          />
+          {errors.vod && <ErrorWarning errorText={errors.vod.message} />}
+          <Controller
+            control={control}
+            name="description"
+            rules={{
+              required: true,
+            }}
+            render={({ field: { onChange, value } }) => (
+              <BigInputTextCustom
+                onChangeText={onChange}
+                value={value}
+                imageIcon={null}
+                label="Descrição da aula"
+              />
+            )}
+          />
+          {errors.description && <ErrorWarning errorText="Campo obrigatório" />}
+          <ScrollView
+            showsHorizontalScrollIndicator={false}
+            horizontal
+            style={{ flex: 1, paddingTop: 10, paddingBottom: 10 }}
+            contentContainerStyle={{ alignItems: 'center' }}>
+            {archiveId.map((item: any) => (
+              <ArchiveCard
+                archive
+                removed={visibility[item.id]}
+                onPress={() => handleClick(item.id)}
+              />
+            ))}
+            <ArchiveCard />
+          </ScrollView>
+          <ButtonCustom
+            onPress={handleSubmit(onSubmit)}
+            backColor="#160E47"
+            fontColor="white"
+            text="Publicar"
+            rightIcon={arrowIcon}
+          />
+        </LinkPart>
+      </NewLessonContainer>
     </ScrollView>
   );
 }

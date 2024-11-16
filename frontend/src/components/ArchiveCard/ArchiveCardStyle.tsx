@@ -10,6 +10,7 @@ export const ArchiveCardContainer = styled.View`
   border: #757474;
   border-radius: 8px;
   flex-shrink: 1;
+  margin-right: 15px;
 `;
 
 export const MagnifyingGlassIcon = styled.Image`
@@ -22,14 +23,19 @@ export const PaperclipIcon = styled.Image`
   height: 43px;
   position: absolute;
 `;
-export const AddRemoveArchiveIcon = styled.Image`
+export const AddRemoveArchiveIcon = styled.Pressable`
   width: 20px;
   height: 20px;
   position: absolute;
   top: -6px;
   right: -6px;
+  border-radius: 10px;
 `;
 export const ArchivePressable = styled.Pressable`
   width: 75px;
   height: 100px;
+`;
+export const Empty = styled.View`
+  width: 0px;
+  height: 0px;
 `;

@@ -1,15 +1,18 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
+import { View, Image } from 'react-native';
 import {
   AddRemoveArchiveIcon,
   ArchiveCardContainer,
   ArchivePressable,
+  Empty,
   MagnifyingGlassIcon,
   PaperclipIcon,
 } from './ArchiveCardStyle';
 
-export default function ArchiveCard({ archive }: any) {
+export default function ArchiveCard({ archive, removed, onPress }: any) {
   const addArchive = require('../../assets/add-archive.svg');
   const removeArchive = require('../../assets/remove-archive.svg');
   const noArchive = require('../../assets/paperclip.svg');
@@ -22,23 +25,40 @@ export default function ArchiveCard({ archive }: any) {
     return undefined;
   }
   return (
-    <ArchivePressable
-      onPress={() => {
-        alert('link');
-      }}>
-      <ArchiveCardContainer>
-        {archive ? (
-          <ArchiveCardContainer>
-            <MagnifyingGlassIcon source={magnifyingGlass} />
-            <AddRemoveArchiveIcon source={removeArchive} />
-          </ArchiveCardContainer>
+    <View>
+      {archive ? (
+        removed ? (
+          <Empty />
         ) : (
           <ArchiveCardContainer>
-            <PaperclipIcon source={noArchive} />
-            <AddRemoveArchiveIcon source={addArchive} />
+            <ArchivePressable
+              onPress={() => {
+                alert('link');
+              }}>
+              <ArchiveCardContainer>
+                <MagnifyingGlassIcon source={magnifyingGlass} />
+                <AddRemoveArchiveIcon onPress={onPress}>
+                  <Image source={removeArchive} />
+                </AddRemoveArchiveIcon>
+              </ArchiveCardContainer>
+            </ArchivePressable>
           </ArchiveCardContainer>
-        )}
-      </ArchiveCardContainer>
-    </ArchivePressable>
+        )
+      ) : (
+        <ArchiveCardContainer>
+          <ArchivePressable
+            onPress={() => {
+              alert('link');
+            }}>
+            <ArchiveCardContainer>
+              <PaperclipIcon source={noArchive} />
+              <AddRemoveArchiveIcon>
+                <Image source={addArchive} />
+              </AddRemoveArchiveIcon>
+            </ArchiveCardContainer>
+          </ArchivePressable>
+        </ArchiveCardContainer>
+      )}
+    </View>
   );
 }
