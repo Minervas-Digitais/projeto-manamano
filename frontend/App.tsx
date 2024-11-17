@@ -29,7 +29,8 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer independent>
-      <Stack.Navigator initialRouteName="NewLesson">
+      <Stack.Navigator initialRouteName="WelcomeScreen">
+        <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
@@ -41,11 +42,7 @@ export default function App() {
           component={ChangePassword}
           options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="Notificações"
-          component={ConfigNotification}
-          options={{ headerShown: false }}
-        />
+
         <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
         <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
         <Stack.Screen
@@ -59,11 +56,7 @@ export default function App() {
         <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
         <Stack.Screen name="GroupPage" component={GroupPage} options={{ headerShown: false }} />
-        <Stack.Screen
-          name="WelcomeScreen"
-          component={WelcomeScreen}
-          options={{ headerShown: false }}
-        />
+
         <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
         <Stack.Screen
           name="VisitorProfile"
