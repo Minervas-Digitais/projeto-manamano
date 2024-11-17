@@ -35,8 +35,8 @@ export const NewEventInputContainer = styled.View`
 `;
 
 export const BottomPartContainer = styled.View`
-  padding-right: 25px;
-  padding-left: 25px;
+  width: 88vw;
+  margin-left: 5.81vw;
   justify-content: space-between;
   flex: 1;
   padding-bottom: 30;

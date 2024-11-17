@@ -22,6 +22,7 @@ import GroupPage from './src/pages/GroupPage/GroupPage';
 import Profile from './src/pages/Profile/Profile';
 import VisitorProfile from './src/pages/VisitorProfile/VisitorProfile';
 import NewPost from './src/pages/NewPost/NewPost';
+import NewLesson from './src/pages/NewLesson/NewLesson';
 
 const Stack = createNativeStackNavigator();
 
@@ -35,6 +36,7 @@ export default function App() {
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
         <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />
         <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
+        <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
         <Stack.Screen
           name="MudarSenha"
           component={ChangePassword}
