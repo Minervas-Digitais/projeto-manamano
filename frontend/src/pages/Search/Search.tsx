@@ -1,5 +1,5 @@
 /* eslint-disable global-require */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Image,
   TouchableOpacity,
@@ -8,7 +8,7 @@ import {
   TextInput,
   ScrollView,
   Dimensions,
-} from 'react-native'; 
+} from 'react-native';
 import {
   PageContainer,
   SearchHeader,
@@ -20,71 +20,104 @@ import {
   Avatar,
 } from './SearchStyle';
 import { useFonts } from 'expo-font';
-import ResultSection from '../../components/ResultSection/ResultSection'; 
+import ResultSection from '../../components/ResultSection/ResultSection';
+import BackButton from '../../components/BackButton/BackButton';
+import { MMKV } from 'react-native-mmkv';
 
-// Interface para definir a estrutura de um usuário
+// Setup MMKV storage
+const storage = new MMKV();
+
+// Interface for a user
 interface User {
   id: number;
   name: string;
   avatar: any;
 }
 
-// Lista de usuários recentes com id, nome e avatar
-const recentUsers: User[] = [
-  { id: 1, name: 'Suzana Souza', avatar: require('../../assets/avatar1.png') },
-  { id: 2, name: 'Mariana Fernandes', avatar: require('../../assets/avatar2.png') },
-  { id: 3, name: 'Maria Isabela', avatar: require('../../assets/avatar3.png') },
-  { id: 4, name: 'Carla Dias', avatar: require('../../assets/nicolasBastos.png') },
-  { id: 5, name: 'Lucas Almeida', avatar: require('../../assets/pedroMateus.png') },
-  { id: 6, name: 'Suzana', avatar: require('../../assets/avatar1.png') },
-  { id: 7, name: 'Mariana Fernandes', avatar: require('../../assets/avatar2.png') },
-  { id: 8, name: 'Maria', avatar: require('../../assets/avatar3.png') },
-];
-
-// Componente principal da página de busca
+// Main Search Component
 export default function Search() {
-  // Carregamento dos ícones
   const BackArrow = require('../../assets/back-arrow.svg');
   const Lupa = require('../../assets/lupa-search.svg');
 
-  // Carrega as fontes personalizadas
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
 
-  // Estado para armazenar o texto da busca
   const [searchText, setSearchText] = useState<string>('');
+  const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [recentUsers, setRecentUsers] = useState<User[]>([]);
 
-  // Função chamada ao clicar no avatar
+  // Fetch recent users from MMKV on mount
+  useEffect(() => {
+    const storedUsers = storage.getString('recentUsers');
+    if (storedUsers) {
+      setRecentUsers(JSON.parse(storedUsers));
+    }
+  }, []);
+
+  const saveRecentUser = (user: User) => {
+    // Check if user already exists in recent users
+    const updatedUsers = [user, ...recentUsers.filter((u) => u.id !== user.id)];
+    // Save to state
+    setRecentUsers(updatedUsers);
+    // Save to MMKV
+    storage.set('recentUsers', JSON.stringify(updatedUsers));
+  };
+
   const handleAvatarPress = (userId: number) => {
     console.log(`Avatar clicked: ${userId}`);
   };
 
-  // Atualiza o texto da busca
-  const handleSearchChange = (text: string) => {
-    setSearchText(text);
-  };
-
-  // Largura da tela do dispositivo
   const screenWidth = Dimensions.get('window').width;
 
-  // Verifica se as fontes estão carregadas
+  useEffect(() => {
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [timeoutId]);
+
   if (!fontsLoaded) {
-    return undefined; // Ou um carregador de sua escolha
+    return undefined; // Or a loader of your choice
   }
 
+
+  const handleSearchChange = (text: string) => {
+    setSearchText(text);
+  
+    // Clear previous timeout
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  
+    // Set a new timeout
+    const id = setTimeout(() => {
+      setDebouncedSearchText(text);
+  
+      // Save the search text as a recent user
+      if (text.trim().length > 0) {
+        saveRecentUser({
+          id: Date.now(), // Use a unique ID (e.g., timestamp)
+          name: text.trim(),
+          avatar: require('../../assets/duck.png'), // Default avatar
+        });
+      }
+    }, 2000);
+    setTimeoutId(id);
+  };
+  
   return (
     <PageContainer>
       <SearchHeader>
-        <TouchableOpacity>
-          <Image source={BackArrow} />
-        </TouchableOpacity>
+        <BackButton />
         <Title style={{ fontFamily: 'inter-bold' }}>Pesquisa</Title>
       </SearchHeader>
-
+  
       <ContentContainer style={{ flex: 1 }}>
-        {/* Campo de entrada para busca */}
         <SearchInputWrapper>
           <SearchIcon>
             <Image source={Lupa} />
@@ -102,28 +135,36 @@ export default function Search() {
               borderWidth: 0,
               outline: 'none',
               boxShadow: 'none',
-              fontFamily: 'inter-regular', // Aplicando a fonte regular
+              fontFamily: 'inter-regular',
             }}
           />
         </SearchInputWrapper>
-
-        {/* Exibe ResultSection se houver texto na busca, caso contrário, exibe usuários recentes */}
-        {searchText.length > 0 ? (
-          <ResultSection />
+  
+        {debouncedSearchText.length > 0 ? (
+          <ResultSection searchText={debouncedSearchText} />
         ) : (
           <RecentSection>
-            <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#515151'}}>
-              Recentes
-            </Text>
+            {recentUsers.length > 0 && (
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  marginBottom: 10,
+                  fontFamily: 'inter-bold',
+                  color: '#515151',
+                }}
+              >
+                Recentes
+              </Text>
+            )}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               nestedScrollEnabled={true}
               style={{ flexDirection: 'row', paddingLeft: 10 }}
             >
-              {/* Mapeia os usuários recentes para exibir seus avatares e nomes */}
               {recentUsers.map((user) => {
-                const nameParts = user.name.split(' '); 
+                const nameParts = user.name.split(' ');
                 return (
                   <View key={user.id} style={{ alignItems: 'center', marginRight: 20 }}>
                     <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
@@ -132,27 +173,49 @@ export default function Search() {
                         style={{
                           width: screenWidth / 8,
                           height: screenWidth / 8,
-                          borderRadius: screenWidth / 8 / 2, // Faz o avatar ser circular
+                          borderRadius: screenWidth / 8 / 2,
                         }}
                       />
                     </TouchableOpacity>
-
-                    {/* Divide o nome em partes se houver mais de um nome */}
+  
                     {nameParts.length >= 2 ? (
                       <View>
                         <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
-                          <Text style={{ textAlign: 'center', fontFamily: 'inter-regular', fontSize: 10 }}>{nameParts[0]}</Text>
-                          <Text style={{ textAlign: 'center', fontFamily: 'inter-regular', fontSize: 10 }}>{nameParts[1]}</Text>
+                          <Text
+                            style={{
+                              textAlign: 'center',
+                              fontFamily: 'inter-regular',
+                              fontSize: 10,
+                            }}
+                          >
+                            {nameParts[0]}
+                          </Text>
+                          <Text
+                            style={{
+                              textAlign: 'center',
+                              fontFamily: 'inter-regular',
+                              fontSize: 10,
+                            }}
+                          >
+                            {nameParts[1]}
+                          </Text>
                         </TouchableOpacity>
                       </View>
                     ) : (
                       <View>
                         <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
-                          <Text style={{ textAlign: 'center', fontFamily: 'inter-regular', fontSize: 10 }}>{user.name}</Text>
+                          <Text
+                            style={{
+                              textAlign: 'center',
+                              fontFamily: 'inter-regular',
+                              fontSize: 10,
+                            }}
+                          >
+                            {user.name}
+                          </Text>
                         </TouchableOpacity>
                       </View>
                     )}
-                    
                   </View>
                 );
               })}
@@ -162,4 +225,5 @@ export default function Search() {
       </ContentContainer>
     </PageContainer>
   );
+  
 }

@@ -59,7 +59,7 @@ export default function About() {
           para além da crise da Covid-19.
         </GroupDataText>
         <GroupDataText font="inter-semiBold" color="#160E47" size="18px">
-          Quem fez
+          Quem fez o App
         </GroupDataText>
         {devMembers?.length > 0 ? (
           devMembers?.map((item: any) => (

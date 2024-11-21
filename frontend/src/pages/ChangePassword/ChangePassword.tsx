@@ -82,7 +82,7 @@ export default function ChangePassword() {
               />
             )}
           />
-          {errors.confirmedpassword && <ErrorWarning errorText="Campo obrigatório" />}
+          {errors.confirmedpassword && <ErrorWarning errorText="Senhas não coincidem" />}
         </SignInInputContainer>
         <View style={{ marginBottom: 100 }}>
           <ButtonCustom

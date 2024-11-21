@@ -1,9 +1,9 @@
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   Param,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -15,14 +15,14 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @HttpCode(200)
-  @Get()
+  @Post()
   @UseGuards(JwtAuthGuard)
   search(@Body() createSearchDto: CreateSearchDto) {
     return this.searchService.search(createSearchDto);
   }
 
   @HttpCode(200)
-  @Get('filter/:filter')
+  @Post('filter/:filter')
   @UseGuards(JwtAuthGuard)
   searchByFilter(
     @Body() createSearchDto: CreateSearchDto,

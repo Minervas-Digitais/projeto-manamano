@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react/jsx-one-expression-per-line */
 /* eslint-disable global-require */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { Image, TouchableOpacity, View } from 'react-native';
+import { MMKV } from 'react-native-mmkv';
 import {
   HomeContainerGroup,
   HomeContainerInfo,
@@ -21,12 +23,15 @@ import {
 } from '../../components/PostCard/PostCardStyle';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import PostCard from '../../components/PostCard/PostCard';
+import { storage } from '../SignIn/SignIn';
 
-export default function Home() {
+export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
   const duckImage = require('../../assets/duck.png');
   const menuIcon = require('../../assets/menuWhite-icon.svg');
   const lupa = require('../../assets/lupaWhite-icon.svg');
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [accessTokenState, setAccessTokenState] = useState('');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -35,7 +40,7 @@ export default function Home() {
     return undefined;
   }
   const fakeGroups: any = [
-    { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
+    { groupName: 'Turma 24.1', onlineMembers: 23 },
     { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
     { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
     { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
@@ -87,8 +92,17 @@ export default function Home() {
       originGroup: 'Calouros 23.2',
     },
   ];
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+    }
+  }, []);
+
   return (
-    <HomePageBlue>
+    <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <HomeContainerInfo>
         <PostCardSpaceBetween>
@@ -98,10 +112,10 @@ export default function Home() {
             </TouchableOpacity>
           </PostCardIcons>
           <PostCardIcons style={{ gap: '25px' }}>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Search')}>
               <Image source={lupa} />
             </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
               <PostCardImageUser style={{ border: 'solid 1.7px white' }} source={duckImage} />
             </TouchableOpacity>
           </PostCardIcons>
@@ -124,7 +138,11 @@ export default function Home() {
           <HomeContainerListGroup>
             {fakeGroups?.length > 0 ? (
               fakeGroups?.map((item: any) => (
-                <GroupButton groupName={item.groupName} onlineMembers={item.onlineMembers} />
+                <GroupButton
+                  groupName={item.groupName}
+                  onlineMembers={item.onlineMembers}
+                  onPress={() => navigation.navigate('GroupPage')}
+                />
               ))
             ) : (
               <GroupDataText font="inter-bold" color="#959393" size="20px">
@@ -148,11 +166,14 @@ export default function Home() {
                   numComments={item.numComments}
                   date={item.date}
                   originGroup={item.originGroup}
+                  tag
+                  save
+                  share
                 />
               ))
             ) : (
               <GroupDataText font="inter-bold" color="#959393" size="20px">
-                Não há comentários...
+                Não há Posts...
               </GroupDataText>
             )}
           </HomeContainerListMural>

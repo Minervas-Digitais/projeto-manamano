@@ -17,6 +17,12 @@ import GroupData from './src/pages/GroupData/GroupData';
 import About from './src/pages/About/About';
 import Home from './src/pages/Home/Home';
 import SideMenu from './src/components/SideMenu/SideMenu';
+import Post from './src/pages/Post/Post';
+import GroupPage from './src/pages/GroupPage/GroupPage';
+import Profile from './src/pages/Profile/Profile';
+import VisitorProfile from './src/pages/VisitorProfile/VisitorProfile';
+import NewPost from './src/pages/NewPost/NewPost';
+import NewLesson from './src/pages/NewLesson/NewLesson';
 import Search from './src/pages/Search/Search';
 
 const Stack = createNativeStackNavigator();
@@ -24,22 +30,23 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer independent>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName="WelcomeScreen">
+        <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
+        <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
         <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />
+        <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
+        <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
         <Stack.Screen
           name="MudarSenha"
           component={ChangePassword}
           options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="Notificações"
-          component={ConfigNotification}
-          options={{ headerShown: false }}
-        />
+
         <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
         <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
+        <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
         <Stack.Screen
           name="Notification"
           component={Notification}
@@ -47,11 +54,17 @@ export default function App() {
         />
         <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
         <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
-        <Stack.Screen name="FaleConosco" component={GetInTouch} options={{ headerShown: false }} />
         <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
         <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
-        <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
+        <Stack.Screen name="GroupPage" component={GroupPage} options={{ headerShown: false }} />
+
+        <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="VisitorProfile"
+          component={VisitorProfile}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

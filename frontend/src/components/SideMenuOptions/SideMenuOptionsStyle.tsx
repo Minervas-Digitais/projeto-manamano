@@ -6,8 +6,8 @@ export const SideMenuOptionsButtonsContainer = styled.TouchableOpacity`
   flex-direction: row;
   gap: 15px;
 `;
-export const SideMenuOptionsButtonsText = styled.Text<{ font?: string }>`
+export const SideMenuOptionsButtonsText = styled.Text<{ font?: string; color?: any }>`
   font-size: 20px;
-  color: #170e49;
+  color: ${(prop) => (prop.color ? prop.color : '#170e49')};
   font-family: ${(prop) => prop.font};
 `;

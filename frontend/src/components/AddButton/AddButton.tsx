@@ -3,9 +3,9 @@ import React from 'react';
 import { Image } from 'react-native';
 import { GroupsAddButton } from './AddButtonStyle';
 
-export default function AddButton({ icon }: any) {
+export default function AddButton({ icon, onPress }: any) {
   return (
-    <GroupsAddButton>
+    <GroupsAddButton onPress={onPress}>
       <Image source={icon} />
     </GroupsAddButton>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Avatar,
   Card,
@@ -10,212 +10,302 @@ import {
 } from './ResultSectionStyle';
 import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, Text, ScrollView, Dimensions } from 'react-native';
-import PostCard from '../PostCard/PostCard';
+import { storage } from '../../pages/SignIn/SignIn';
+import PostItem from '../PostItem/PostItem';
 
-// Dados fictícios para pessoas, grupos e postagens
-const people = [
-  { id: 1, name: 'Ana Hickmann', avatar: 'https://via.placeholder.com/50' },
-  { id: 2, name: 'Ana Maria Braga', avatar: 'https://via.placeholder.com/50' },
-  { id: 3, name: 'Ana Clara Lima', avatar: 'https://via.placeholder.com/50' },
-];
+interface User {
+  id: string;
+  fullName: string;
+}
 
-const groups = [
-  { id: 1, name: 'Doceiras Bacanas', avatar: 'https://via.placeholder.com/50' },
-  { id: 2, name: 'Análise de Mercado', avatar: 'https://via.placeholder.com/50' },
-  { id: 3, name: 'Baianas do ManaMano', avatar: 'https://via.placeholder.com/50' },
-];
+interface Group {
+  id: string;
+  name: string;
+}
 
-const posts = [
-  { id: 1, name: 'post 1', avatar: 'https://via.placeholder.com/50' },
-  { id: 2, name: 'post 2', avatar: 'https://via.placeholder.com/50' },
-  { id: 3, name: 'post 3', avatar: 'https://via.placeholder.com/50' },
-];
+interface Post {
+  id: string;
+  userId: string;
+  groupId: string;
+  nameUser: string;
+  input: string;
+  numComments: number;
+  createdAt: string;
+  originGroup: string;
+}
 
-// Componente principal da seção de resultados
-export default function ResultSection() {
-  const [selectedSection, setSelectedSection] = useState(''); // Controla a seção atualmente visível
-  const duckImage = require('../../assets/duck.png'); // Imagem do pato utilizada nos posts
+interface ResultSectionProps {
+  searchText: string;
+}
 
-  // Função para alternar entre seções quando um filtro é pressionado
-  const handleFilterPress = (section: string) => {
-    setSelectedSection(selectedSection === section ? '' : section);
-  };
+interface DataState {
+  users: User[];
+  groups: Group[];
+  posts: Post[];
+}
 
-  const screenWidth = Dimensions.get('window').width; // Largura da tela do dispositivo
-  const screenHeight = Dimensions.get('window').height; // Altura da tela do dispositivo
+export default function ResultSection({ searchText }: ResultSectionProps) {
+  const [selectedSection, setSelectedSection] = useState('');
+  const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-  // Carrega as fontes personalizadas
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
 
-  if (!fontsLoaded) {
-    return null; // Retorna null enquanto as fontes não estão carregadas
-  }
+  useEffect(() => {
+    // Retrieve the access token from storage
+    const token = storage.getString('accessToken');
+    if (token) setAccessToken(token);
+  }, []);
 
-  // Dados fictícios para posts
-  const fakePosts: any = [
-    {
-      id: 1,
-      nameUser: 'Jhennifer Moreira',
-      imageUser: duckImage,
-      postContent: 'Alguém mora perto de Bonsucesso?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Vetereanos 22.1',
-    },
-    {
-      id: 2,
-      nameUser: 'Juliana Silva',
-      imageUser: duckImage,
-      postContent: 'Já postaram o link da aula?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Calouros 23.2',
-    },
-    {
-      id: 3,
-      nameUser: 'Jhennifer Moreira',
-      imageUser: duckImage,
-      postContent: 'Alguém mora perto de Bonsucesso?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Vetereanos 22.1',
-    },
-  ];
+  const fetchData = async (url: string, sectionKey?: keyof DataState): Promise<void> => {
+    if (!accessToken) {
+      console.error('No access token available.');
+      return;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ input: searchText }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const json = await response.json();
+      const parsedData = { users: [], groups: [], posts: [] };
+
+      if (sectionKey) {
+        parsedData[sectionKey] = json;
+      } else {
+        Object.assign(parsedData, json);
+      }
+
+      setData(parsedData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (searchText && !selectedSection) {
+      fetchData('http://localhost:3000/search');
+    }
+  }, [searchText, accessToken]);
+
+  useEffect(() => {
+    if (selectedSection) {
+      const url = `http://localhost:3000/search/filter/${selectedSection.toLowerCase()}`;
+      fetchData(url, selectedSection as keyof DataState);
+    }
+  }, [selectedSection, accessToken]);
+
+  const fetchUserName = async (userId: string): Promise<string> => {
+    if (!accessToken) {
+      console.error('No access token available.');
+      return 'Nome não encontrado';
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3000/user/${userId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const user = await response.json();
+      const fullName = user.fullName.split(' ');
+      return `${fullName[0]} ${fullName[1] || ''}`;
+    } catch (error) {
+      console.error('Error fetching user name:', error);
+      return 'Nome não encontrado';
+    }
+  };
+
+  const fetchNumComments = async (postId: string): Promise<number> => {
+    if (!accessToken) {
+      console.error('No access token available.');
+      return 0;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3000/post/${postId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const postDetails = await response.json();
+      return postDetails.Comment ? postDetails.Comment.length : 0;
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      return 0;
+    }
+  };
+
+  const handleFilterPress = (section: string): void => {
+    // Toggle section selection
+    const newSection = selectedSection === section ? '' : section;
+  
+    // Reset data state to ensure fresh fetch
+    setData({ users: [], groups: [], posts: [] });
+    
+    // Set selected section to trigger useEffect and fetch data
+    setSelectedSection(newSection);
+  
+    // Fetch all sections when no specific filter is selected
+    if (!newSection) {
+      fetchData('http://localhost:3000/search');
+    } else {
+      const url = `http://localhost:3000/search/filter/${newSection.toLowerCase()}`;
+      fetchData(url, newSection as keyof DataState);
+    }
+  };
+  
+
+  if (!fontsLoaded || !accessToken) {
+    return null;
+  }
 
   return (
     <Container>
-      {/* Título da seção de filtros */}
-      <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#515151', marginTop: 20}}>Filtros</Text>
+      <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#515151', marginTop: 20 }}>Filtros</Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 10, marginBottom: 10 }}>
-        {/* Botão para filtro de Pessoas */}
         <TouchableOpacity
           style={{
             padding: 10,
-            backgroundColor: selectedSection === 'Pessoas' ? '#FFA8A6' : '#E0E0E0', // Cor de fundo muda se selecionado
+            backgroundColor: selectedSection === 'users' ? '#FFA8A6' : '#E0E0E0',
             borderRadius: 30,
-            alignContent: 'center',
             width: screenWidth / 3.6,
             height: screenHeight / 28.3,
             justifyContent: 'center',
             alignItems: 'center',
-            flexDirection: 'column',
           }}
-          onPress={() => handleFilterPress('Pessoas')}
+          onPress={() => handleFilterPress('users')}
         >
           <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Pessoas</Text>
         </TouchableOpacity>
-
-        {/* Botão para filtro de Grupos */}
+        
         <TouchableOpacity
           style={{
             padding: 10,
-            backgroundColor: selectedSection === 'Grupos' ? '#FFA8A6' : '#E0E0E0',
+            backgroundColor: selectedSection === 'groups' ? '#FFA8A6' : '#E0E0E0',
             borderRadius: 30,
             width: screenWidth / 3.6,
             height: screenHeight / 28.3,
             justifyContent: 'center',
             alignItems: 'center',
-            flexDirection: 'column',
           }}
-          onPress={() => handleFilterPress('Grupos')}
+          onPress={() => handleFilterPress('groups')}
         >
           <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Grupos</Text>
         </TouchableOpacity>
-
-        {/* Botão para filtro de Publicações */}
+        
         <TouchableOpacity
           style={{
             padding: 10,
-            backgroundColor: selectedSection === 'Publicações' ? '#FFA8A6' : '#E0E0E0',
+            backgroundColor: selectedSection === 'posts' ? '#FFA8A6' : '#E0E0E0',
             borderRadius: 30,
-            alignContent: 'center',
             width: screenWidth / 3.6,
             height: screenHeight / 28.3,
             justifyContent: 'center',
             alignItems: 'center',
-            flexDirection: 'column',
           }}
-          onPress={() => handleFilterPress('Publicações')}
+          onPress={() => handleFilterPress('posts')}
         >
           <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Publicações</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={{ height: '100%' }}>
-        {/* Seção de Pessoas */}
-        {(selectedSection === 'Pessoas' || selectedSection === '') && (
+      {(selectedSection === 'users' || selectedSection === '') && (
           <Section>
-            <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D'}}>Pessoas</SectionTitle>
-            {people.map((person) => (
-              <Card key={person.id}>
-                <TouchableOpacity>
-                  <Avatar source={{ uri: person.avatar }} /> {/* Avatar da pessoa */}
-                </TouchableOpacity>
-
-                <TouchableOpacity>
-                  <Name style={{ fontFamily: 'inter-regular' }}>{person.name}</Name> {/* Nome da pessoa */}
-                </TouchableOpacity>
-              </Card>
-            ))}
+            <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Pessoas</SectionTitle>
+            {data.users.map((person) => {
+              const fullName = person.fullName.split(' ');
+              return (
+                <Card key={person.id}>
+                  <TouchableOpacity>
+                    <Name style={{ fontFamily: 'inter-regular' }}>
+                      {fullName[0]} {fullName[1] || ''} {/* Garante que não mostre 'undefined' caso não haja segundo nome */}
+                    </Name>
+                  </TouchableOpacity>
+                </Card>
+              );
+            })}
             {selectedSection === '' && (
-              <StyledButton onPress={() => handleFilterPress('Pessoas')}>
-                <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D'}}>Ver todos os resultados de pessoas</Text>
+              <StyledButton onPress={() => handleFilterPress('users')}>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Ver todos os resultados de Pessoas</Text>
               </StyledButton>
             )}
           </Section>
         )}
 
-        {/* Seção de Grupos */}
-        {(selectedSection === 'Grupos' || selectedSection === '') && (
+        {(selectedSection === 'groups' || selectedSection === '') && (
           <Section>
-            <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D'}}>Grupos</SectionTitle>
-            {groups.map((group) => (
+            <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Grupos</SectionTitle>
+            {data.groups.map((group) => (
               <Card key={group.id}>
                 <TouchableOpacity>
-                  <Avatar source={{ uri: group.avatar }} /> {/* Avatar do grupo */}
-                </TouchableOpacity>
-
-                <TouchableOpacity>
-                  <Name style={{ fontFamily: 'inter-regular' }}>{group.name}</Name> {/* Nome do grupo */}
+                  <Name style={{ fontFamily: 'inter-regular' }}>{group.name}</Name>
                 </TouchableOpacity>
               </Card>
             ))}
             {selectedSection === '' && (
-              <StyledButton onPress={() => handleFilterPress('Grupos')}>
-                <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D'}}>Ver todos os resultados de grupos</Text>
+              <StyledButton onPress={() => handleFilterPress('groups')}>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Ver todos os resultados de Grupos</Text>
               </StyledButton>
             )}
           </Section>
         )}
 
-        {/* Seção de Publicações */}
-        {(selectedSection === 'Publicações' || selectedSection === '') && (
-          <Section>
-            <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D'}}>Publicações</SectionTitle>
-            {fakePosts.map((item: any) => (
-              <View style={{marginBottom: 20}} key={item.id}>
-                <TouchableOpacity>                
-                  <PostCard
-                    nameUser={item.nameUser} // Nome do usuário
-                    imageUser={item.imageUser} // Imagem do usuário
-                    postContent={item.postContent} // Conteúdo da postagem
-                    numComments={item.numComments} // Número de comentários
-                    date={item.date} // Data da postagem
-                    originGroup={item.originGroup} // Grupo de origem da postagem
-                  />
-                </TouchableOpacity>
-                </View>
-            ))}
-            {selectedSection === '' && (
-              <StyledButton onPress={() => handleFilterPress('Publicações')}>
-                <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D'}}>Ver todos os resultados de publicações</Text>
-              </StyledButton>
-            )}
-          </Section>
-        )}
+      {(selectedSection === 'posts' || selectedSection === '') && (
+        <Section>
+          <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Publicações</SectionTitle>
+
+          {data.posts.map((item) => {
+            const date = new Date(item.createdAt);
+            const formattedDate = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}, ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+            return (
+              <PostItem
+                key={item.id}
+                post={item}
+                formattedDate={formattedDate}
+                fetchUserName={fetchUserName}
+                fetchNumComments={fetchNumComments}
+              />
+            );
+          })}
+
+          {selectedSection === '' && (
+            <StyledButton onPress={() => handleFilterPress('posts')}>
+              <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Ver todos os resultados de Posts</Text>
+            </StyledButton>
+          )}
+        </Section>
+      )}
+
       </ScrollView>
     </Container>
   );

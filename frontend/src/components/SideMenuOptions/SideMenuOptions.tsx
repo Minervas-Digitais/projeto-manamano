@@ -6,11 +6,13 @@ import {
   SideMenuOptionsButtonsText,
 } from './SideMenuOptionsStyle';
 
-export default function SideMenuOptions({ icon, font, text, onPress }: any) {
+export default function SideMenuOptions({ icon, font, text, color, onPress }: any) {
   return (
     <SideMenuOptionsButtonsContainer onPress={onPress}>
       <Image source={icon} />
-      <SideMenuOptionsButtonsText font={font}>{text}</SideMenuOptionsButtonsText>
+      <SideMenuOptionsButtonsText font={font} color={color}>
+        {text}
+      </SideMenuOptionsButtonsText>
     </SideMenuOptionsButtonsContainer>
   );
 }

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -8,8 +10,12 @@ import { SignUpContainer, SignUpInputContainer, SignUpForm } from './SignUpStyle
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import BackButton from '../../components/BackButton/BackButton';
+import api from '../../services/api';
 
-export default function SignUp() {
+export default function SignUp({ navigation }: any) {
+  function cleanPhoneNumber(num: string): string {
+    return num.replace(/\D/g, '');
+  }
   const {
     control,
     handleSubmit,
@@ -17,14 +23,24 @@ export default function SignUp() {
   } = useForm({});
 
   const onSubmit = (data: any) => {
-    // eslint-disable-next-line no-alert
     alert(JSON.stringify(data));
+    const onlyNumPhone = cleanPhoneNumber(data.phone);
+    const updatedData = { ...data, phone: onlyNumPhone };
+    api.post('/user', updatedData).then((res) => {
+      if (res?.data.code === 'P2002') {
+        alert(
+          'Não foi possível criar uma conta. O e-mail ou o celular já está associado a outra conta!',
+        );
+      } else if (res?.data.code !== 'P2002') {
+        alert(JSON.stringify(data));
+        navigation.navigate('SignIn');
+      }
+    });
   };
   const iconProfile = require('../../assets/profile-icon.svg');
   const iconEmail = require('../../assets/e-mail-icon.svg');
   const iconWhats = require('../../assets/whats-icon.svg');
   const iconPassword = require('../../assets/lock-icon.svg');
-  const backButton = require('../../assets/back-button-icon.svg');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -32,6 +48,7 @@ export default function SignUp() {
   if (!fontsLoaded) {
     return undefined;
   }
+
   return (
     <SignUpContainer>
       <SignUpForm>
@@ -78,7 +95,7 @@ export default function SignUp() {
 
             <Controller
               control={control}
-              name="whatsApp"
+              name="phone"
               rules={{
                 required: true,
               }}
@@ -96,7 +113,7 @@ export default function SignUp() {
 
             <Controller
               control={control}
-              name="password"
+              name="hash"
               rules={{
                 required: true,
               }}

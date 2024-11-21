@@ -2,6 +2,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
+import { useNavigation } from '@react-navigation/native';
 import SideMenuOptions from '../../components/SideMenuOptions/SideMenuOptions';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 
@@ -9,6 +10,7 @@ export default function Config() {
   const notification = require('../../assets/notification-licon.svg');
   const lock = require('../../assets/lock-licon.svg');
   const about = require('../../assets/about-icon.svg');
+  const navigation = useNavigation();
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
@@ -18,10 +20,25 @@ export default function Config() {
   return (
     <View style={{ backgroundColor: '#F2F6FA', flex: 1 }}>
       <HeaderCustom font="inter-bold" text="Configurações" />
-      <View style={{ gap: 25, backgroundColor: '#F2F6FA', marginLeft: 25 }}>
-        <SideMenuOptions icon={notification} text="Notificações" font="inter-bold" />
-        <SideMenuOptions icon={about} text="Sobre" font="inter-bold" />
-        <SideMenuOptions icon={lock} text="Mudar senha" font="inter-bold" />
+      <View style={{ gap: 25, backgroundColor: '#F2F6FA', marginLeft: 25, paddingTop: '25px' }}>
+        <SideMenuOptions
+          icon={notification}
+          text="Notificações"
+          font="inter-bold"
+          onPress={() => navigation.navigate('Notificações')}
+        />
+        <SideMenuOptions
+          icon={about}
+          text="Sobre"
+          font="inter-bold"
+          onPress={() => navigation.navigate('About')}
+        />
+        <SideMenuOptions
+          icon={lock}
+          text="Mudar senha"
+          font="inter-bold"
+          onPress={() => navigation.navigate('MudarSenha')}
+        />
       </View>
     </View>
   );

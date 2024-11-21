@@ -7,7 +7,7 @@ export const SideMenuPage = styled.View<{ display?: any }>`
   width: 100vw;
   height: 100vh;
   position: absolute;
-  z-index: 1;
+  z-index: 20;
 `;
 
 export const SideMenuContainerShadow = styled.View`
@@ -24,7 +24,7 @@ export const SideMenuContainer = styled.View`
   background-color: #f2f6fa;
 `;
 
-export const SideMenuLogoContainer = styled.View`
+export const SideMenuLogoContainer = styled.TouchableOpacity`
   display: flex;
   justify-content: center;
   align-items: center;
