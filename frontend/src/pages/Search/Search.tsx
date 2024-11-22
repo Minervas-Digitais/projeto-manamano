@@ -60,8 +60,15 @@ export default function Search() {
   const saveRecentUser = (user: User) => {
     // Check if user already exists in recent users
     const updatedUsers = [user, ...recentUsers.filter((u) => u.id !== user.id)];
+
+    // Enforce a limit of 10 users (FIFO)
+    if (updatedUsers.length > 10) {
+      updatedUsers.pop();
+    }
+
     // Save to state
     setRecentUsers(updatedUsers);
+
     // Save to MMKV
     storage.set('recentUsers', JSON.stringify(updatedUsers));
   };
@@ -85,38 +92,30 @@ export default function Search() {
     return undefined; // Or a loader of your choice
   }
 
-
   const handleSearchChange = (text: string) => {
     setSearchText(text);
-  
+
     // Clear previous timeout
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
-  
+
     // Set a new timeout
     const id = setTimeout(() => {
       setDebouncedSearchText(text);
-  
-      // Save the search text as a recent user
-      if (text.trim().length > 0) {
-        saveRecentUser({
-          id: Date.now(), // Use a unique ID (e.g., timestamp)
-          name: text.trim(),
-          avatar: require('../../assets/duck.png'), // Default avatar
-        });
-      }
+
+      // Only update debouncedSearchText; no recent user addition here
     }, 2000);
     setTimeoutId(id);
   };
-  
+
   return (
     <PageContainer>
       <SearchHeader>
         <BackButton />
         <Title style={{ fontFamily: 'inter-bold' }}>Pesquisa</Title>
       </SearchHeader>
-  
+
       <ContentContainer style={{ flex: 1 }}>
         <SearchInputWrapper>
           <SearchIcon>
@@ -139,9 +138,12 @@ export default function Search() {
             }}
           />
         </SearchInputWrapper>
-  
+
         {debouncedSearchText.length > 0 ? (
-          <ResultSection searchText={debouncedSearchText} />
+          <ResultSection
+            searchText={debouncedSearchText}
+            saveRecentUser={saveRecentUser}
+          />
         ) : (
           <RecentSection>
             {recentUsers.length > 0 && (
@@ -177,7 +179,7 @@ export default function Search() {
                         }}
                       />
                     </TouchableOpacity>
-  
+
                     {nameParts.length >= 2 ? (
                       <View>
                         <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
@@ -225,5 +227,4 @@ export default function Search() {
       </ContentContainer>
     </PageContainer>
   );
-  
 }

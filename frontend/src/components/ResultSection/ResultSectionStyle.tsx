@@ -41,7 +41,6 @@ export const Name = styled.Text`
 
 export const StyledButton = styled.TouchableOpacity`
   width: 100%;
-  padding: 10px;
   background-color: #ffffff;
   border-radius: 8px;
   margin-top: 15px;

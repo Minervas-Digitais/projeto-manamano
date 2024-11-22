@@ -36,7 +36,9 @@ interface Post {
 
 interface ResultSectionProps {
   searchText: string;
+  saveRecentUser: (user: { id: number; name: string; avatar: any }) => void;
 }
+
 
 interface DataState {
   users: User[];
@@ -44,7 +46,7 @@ interface DataState {
   posts: Post[];
 }
 
-export default function ResultSection({ searchText }: ResultSectionProps) {
+export default function ResultSection({ searchText, saveRecentUser }: ResultSectionProps) {
   const [selectedSection, setSelectedSection] = useState('');
   const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });
   const screenWidth = Dimensions.get('window').width;
@@ -240,48 +242,68 @@ export default function ResultSection({ searchText }: ResultSectionProps) {
       <ScrollView style={{ height: '100%' }}>
       {(selectedSection === 'users' || selectedSection === '') && (
           <Section>
-            <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Pessoas</SectionTitle>
+            <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 25, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Pessoas</SectionTitle>
             {data.users.map((person) => {
               const fullName = person.fullName.split(' ');
               return (
-                <Card key={person.id}>
-                  <TouchableOpacity>
-                    <Name style={{ fontFamily: 'inter-regular' }}>
-                      {fullName[0]} {fullName[1] || ''} {/* Garante que não mostre 'undefined' caso não haja segundo nome */}
-                    </Name>
+                <Card key={person.id} style={{marginBottom: 10}}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      saveRecentUser({
+                        id: parseInt(person.id, 10),
+                        name: person.fullName,
+                        avatar: require('../../assets/duck.png'),
+                      });
+                    }}
+                  >
+                    <Name>{`${fullName[0]} ${fullName[1] || ''}`}</Name>
                   </TouchableOpacity>
                 </Card>
               );
             })}
             {selectedSection === '' && (
+              <View style={{width: "100%", marginTop: 20}}>
+              <View style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }} />
               <StyledButton onPress={() => handleFilterPress('users')}>
                 <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Ver todos os resultados de Pessoas</Text>
               </StyledButton>
+              </View>
             )}
           </Section>
         )}
 
         {(selectedSection === 'groups' || selectedSection === '') && (
           <Section>
-            <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Grupos</SectionTitle>
+            <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 25, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Grupos</SectionTitle>
             {data.groups.map((group) => (
-              <Card key={group.id}>
-                <TouchableOpacity>
-                  <Name style={{ fontFamily: 'inter-regular' }}>{group.name}</Name>
+              <Card key={group.id} style={{marginBottom: 10}}>
+                <TouchableOpacity
+                  onPress={() => {
+                    saveRecentUser({
+                      id: parseInt(group.id, 10),
+                      name: group.name,
+                      avatar: require('../../assets/duck.png'),
+                    });
+                  }}
+                >
+                  <Name>{group.name}</Name>
                 </TouchableOpacity>
               </Card>
             ))}
             {selectedSection === '' && (
+              <View style={{width: "100%", marginTop: 20}}>
+              <View style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }} />
               <StyledButton onPress={() => handleFilterPress('groups')}>
                 <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Ver todos os resultados de Grupos</Text>
               </StyledButton>
+              </View>
             )}
           </Section>
         )}
 
       {(selectedSection === 'posts' || selectedSection === '') && (
         <Section>
-          <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Publicações</SectionTitle>
+          <SectionTitle style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 25, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Publicações</SectionTitle>
 
           {data.posts.map((item) => {
             const date = new Date(item.createdAt);
@@ -299,9 +321,12 @@ export default function ResultSection({ searchText }: ResultSectionProps) {
           })}
 
           {selectedSection === '' && (
+            <View style={{width: "100%", marginTop: 20}}>
+            <View style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }} />
             <StyledButton onPress={() => handleFilterPress('posts')}>
               <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 10, fontFamily: 'inter-bold', color: '#3F3D3D' }}>Ver todos os resultados de Posts</Text>
             </StyledButton>
+            </View>
           )}
         </Section>
       )}
