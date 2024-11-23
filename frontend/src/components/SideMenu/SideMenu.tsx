@@ -49,7 +49,12 @@ export default function SideMenu({ display, onPress }: any) {
             font="inter-bold"
             onPress={() => navigation.navigate('Profile')}
           />
-          <SideMenuOptions icon={seach} text="Pesquisar" font="inter-bold" />
+          <SideMenuOptions 
+            icon={seach} 
+            text="Pesquisar" 
+            font="inter-bold" 
+            onPress={() => navigation.navigate('Search')}
+            />
           <SideMenuOptions
             icon={group}
             text="Grupos"

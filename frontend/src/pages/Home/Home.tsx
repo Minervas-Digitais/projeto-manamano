@@ -112,7 +112,7 @@ export default function Home({ navigation }: any) {
             </TouchableOpacity>
           </PostCardIcons>
           <PostCardIcons style={{ gap: '25px' }}>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Search')}>
               <Image source={lupa} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Profile')}>

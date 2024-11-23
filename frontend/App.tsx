@@ -23,6 +23,7 @@ import Profile from './src/pages/Profile/Profile';
 import VisitorProfile from './src/pages/VisitorProfile/VisitorProfile';
 import NewPost from './src/pages/NewPost/NewPost';
 import NewLesson from './src/pages/NewLesson/NewLesson';
+import Search from './src/pages/Search/Search';
 
 const Stack = createNativeStackNavigator();
 
@@ -45,6 +46,7 @@ export default function App() {
 
         <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
         <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
+        <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
         <Stack.Screen
           name="Notification"
           component={Notification}
