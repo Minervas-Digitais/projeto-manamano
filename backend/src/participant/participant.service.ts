@@ -57,6 +57,31 @@ export class ParticipantService {
     }
   }
 
+  async findUserGroups(userId: string) {
+    try {
+      const groups = await this.prismaService.participant.findMany({
+        where: {
+          userId,
+        },
+        select: {
+          role: true,
+          groupId: true,
+          group: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+      if (groups.length < 1) {
+        throw new NotFoundException('Você não está em nenhum grupo.');
+      }
+      return groups;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async findUsersInGroup(groupId: string) {
     try {
       const users = await this.prismaService.participant.findMany({
