@@ -40,6 +40,13 @@ export class ParticipantController {
   }
 
   @HttpCode(200)
+  @Get('groups/:id')
+  @UseGuards(JwtAuthGuard)
+  findUserGroups(@Param('id') id: string) {
+    return this.participantService.findUserGroups(id);
+  }
+
+  @HttpCode(200)
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
