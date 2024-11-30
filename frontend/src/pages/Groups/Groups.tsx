@@ -60,7 +60,7 @@ export default function Groups() {
           setUserData(fetchedUserData);
 
           // Only show the popup if the user ID matches the specific one
-          if (fetchedUserData.id === "47ce3369-b6ee-4cce-8d5e-e1df625b3392") {
+          if (fetchedUserData.role === "INSTRUCTOR") {
             setShowPopup(true); // Show the popup only if the user is the one with the ID
           } else {
             setShowPopup(false); // Hide the popup for users without the right ID
@@ -94,7 +94,7 @@ export default function Groups() {
     });
 
     // Handle the AddButton press logic
-    if (userData && userData.id === "47ce3369-b6ee-4cce-8d5e-e1df625b3392") {
+    if (userData && userData.role === "INSTRUCTOR") {
       setShowPopup(true); // Show the popup only if the user is the one with the ID
     } else {
       // If the user doesn't have the correct ID, navigate to EntrarGrupo
