@@ -24,6 +24,7 @@ import VisitorProfile from './src/pages/VisitorProfile/VisitorProfile';
 import NewPost from './src/pages/NewPost/NewPost';
 import NewLesson from './src/pages/NewLesson/NewLesson';
 import Search from './src/pages/Search/Search';
+import CreateGroup from './src/pages/CreateGroup/CreateGroup';
 
 const Stack = createNativeStackNavigator();
 
@@ -54,6 +55,7 @@ export default function App() {
         />
         <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
         <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
+        <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
         <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
         <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
