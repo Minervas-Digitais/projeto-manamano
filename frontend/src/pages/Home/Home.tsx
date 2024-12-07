@@ -106,6 +106,9 @@ export default function Home({ navigation }: any) {
         })
         .then((res) => {
           setGroups(res.data);
+          storage.set('UserGroups', res?.data);
+
+          alert(JSON.stringify(res.data));
         });
     }
   }, []);
