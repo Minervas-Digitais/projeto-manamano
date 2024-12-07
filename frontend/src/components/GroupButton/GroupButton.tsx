@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable global-require */
 import React, { useState } from 'react';
 import { Image } from 'react-native';
@@ -13,16 +14,23 @@ import {
   GroupButtonImage,
 } from './GroupButtonStyle';
 
-export default function GroupButton({ groupName, onlineMembers, size, onPress }: any) {
-  const [filter, setFilter] = useState(true);
-  const filterOn = require('../../assets/filter-on-icon.svg');
-  const filterOff = require('../../assets/filter-off-icon.svg');
+export default function GroupButton({
+  groupName,
+  onlineMembers,
+  size,
+  onPress,
+  onPressFilter,
+  filterIcon,
+}: any) {
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-SemiBold.ttf'),
   });
   if (!fontsLoaded) {
     return undefined;
   }
+  const filterOn = require('../../assets/filter-on-icon.svg');
+  const filterOff = require('../../assets/filter-off-icon.svg');
+  const [filter, setFilter] = useState(filterIcon);
 
   return (
     <GroupButtonContainer size={size} onPress={onPress}>
@@ -39,7 +47,13 @@ export default function GroupButton({ groupName, onlineMembers, size, onPress }:
         </GroupOnlineContainer>
       </GroupTextContainer>
       <GroupFilterContainer>
-        <GroupButtonImage onPress={() => setFilter(!filter)} size={size}>
+        <GroupButtonImage
+          onPress={() => {
+            onPressFilter();
+            setFilter(!filter);
+          }}
+          size={size}
+        >
           <Image source={filter ? filterOn : filterOff} />
         </GroupButtonImage>
       </GroupFilterContainer>

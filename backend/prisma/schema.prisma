@@ -48,8 +48,9 @@ model User {
 }
 
 model Group {
-  id          String   @id @default(uuid())
-  name        String
+  id       String   @id @default(uuid())
+  name     String
+  posts    Post[]   // Relacionamento com os posts
   description String?
   inviteCode  String   @unique
   createdAt   DateTime @default(now())

@@ -31,7 +31,11 @@ export default function App() {
   return (
     <NavigationContainer independent>
       <Stack.Navigator initialRouteName="WelcomeScreen">
-        <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="WelcomeScreen"
+          component={WelcomeScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
@@ -63,6 +67,12 @@ export default function App() {
         <Stack.Screen
           name="VisitorProfile"
           component={VisitorProfile}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="FaleConosco" component={GetInTouch} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="Config Notifications"
+          component={ConfigNotification}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

@@ -27,28 +27,24 @@ export class ParticipantController {
 
   @HttpCode(200)
   @Get()
-  @UseGuards(JwtAuthGuard)
   findAll() {
     return this.participantService.findAll();
   }
 
   @HttpCode(200)
   @Get('group/:groupId')
-  @UseGuards(JwtAuthGuard)
   findUsersInGroup(@Param('groupId') groupId: string) {
     return this.participantService.findUsersInGroup(groupId);
   }
 
   @HttpCode(200)
   @Get('groups/:id')
-  @UseGuards(JwtAuthGuard)
   findUserGroups(@Param('id') id: string) {
     return this.participantService.findUserGroups(id);
   }
 
   @HttpCode(200)
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
     return this.participantService.findOne(id);
   }

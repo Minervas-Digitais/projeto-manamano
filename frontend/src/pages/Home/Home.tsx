@@ -1,6 +1,12 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react/jsx-one-expression-per-line */
+/* eslint-disable no-confusing-arrow */
+/* eslint-disable implicit-arrow-linebreak */
+/* eslint-disable no-nested-ternary */
+/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable global-require */
+/* eslint-disable max-len */
+/* eslint-disable react/no-array-index-key */
+/* eslint-disable react/jsx-no-useless-fragment */
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { Image, TouchableOpacity, View } from 'react-native';
@@ -24,6 +30,9 @@ import {
 import SideMenu from '../../components/SideMenu/SideMenu';
 import PostCard from '../../components/PostCard/PostCard';
 import { storage } from '../SignIn/SignIn';
+import api from '../../services/api';
+
+export const storageHome = new MMKV();
 
 export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
@@ -32,6 +41,9 @@ export default function Home({ navigation }: any) {
   const lupa = require('../../assets/lupaWhite-icon.svg');
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [groups, setGroups] = useState([]);
+  const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -39,67 +51,78 @@ export default function Home({ navigation }: any) {
   if (!fontsLoaded) {
     return undefined;
   }
-  const fakeGroups: any = [
-    { groupName: 'Turma 24.1', onlineMembers: 23 },
-    { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
-    { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
-    { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
-    { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
-    { groupName: 'Vetereanos 22.1', onlineMembers: 23 },
-  ];
 
-  const nameUser = 'Jhennifer Moreira';
+  function formatRelativeDate(postDate: string): string {
+    const currentDate = new Date();
+    const postDateObj = new Date(postDate);
 
-  const fakePosts: any = [
-    {
-      nameUser: 'Jhennifer Moreira',
-      imageUser: duckImage,
-      postContent: 'Alguém mora perto de Bonsucesso?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Vetereanos 22.1',
-    },
-    {
-      nameUser: 'Juliana Silva',
-      imageUser: duckImage,
-      postContent: 'Já postaram o link da aula?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Calouros 23.2',
-    },
-    {
-      nameUser: 'Jhennifer Moreira',
-      imageUser: duckImage,
-      postContent: 'Alguém mora perto de Bonsucesso?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Vetereanos 22.1',
-    },
-    {
-      nameUser: 'Juliana Silva',
-      imageUser: duckImage,
-      postContent: 'Já postaram o link da aula?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Calouros 23.2',
-    },
-    {
-      nameUser: 'Juliana Silva',
-      imageUser: duckImage,
-      postContent: 'Já postaram o link da aula?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Calouros 23.2',
-    },
-  ];
+    const differenceInMilliseconds = currentDate.getTime() - postDateObj.getTime();
+    const differenceInMinutes = Math.floor(differenceInMilliseconds / (1000 * 60));
+    const differenceInHours = Math.floor(differenceInMinutes / 60);
+    const differenceInDays = Math.floor(differenceInHours / 24);
+
+    const hours = postDateObj.getHours();
+    const minutes = postDateObj.getMinutes();
+    const formattedTime = `${hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
+
+    if (differenceInMinutes < 60) {
+      return `hoje, ${formattedTime}`;
+    }
+    if (differenceInHours < 24) {
+      return `ontem, ${formattedTime}`;
+    }
+    if (differenceInDays < 3) {
+      return `há ${differenceInDays} dia${differenceInDays !== 1 ? 's' : ''}`;
+    }
+    return postDateObj.toLocaleDateString('pt-BR');
+  }
+
+  function onPressPostAction(id: string) {
+    storageHome.set('idPost', id);
+    navigation.navigate('Post');
+  }
+
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
     if (loggedId && accessToken) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
+      api
+        .get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => {
+          setFullName(res.data.fullName);
+        });
+
+      api
+        .get(`participant/groups/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => {
+          setGroups(res.data);
+        });
     }
   }, []);
+
+  const toggleGroupFilter = (groupId: string) => {
+    setHiddenGroupIds((prev) =>
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],
+    );
+  };
+
+  const filteredGroups = groups.map((group: any) => ({
+    ...group,
+    group: {
+      ...group.group,
+      Post: hiddenGroupIds.includes(group.groupId) ? [] : group.group.Post,
+    },
+  }));
 
   return (
     <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
@@ -112,7 +135,7 @@ export default function Home({ navigation }: any) {
             </TouchableOpacity>
           </PostCardIcons>
           <PostCardIcons style={{ gap: '25px' }}>
-            <TouchableOpacity onPress={() => navigation.navigate('Search')}>
+            <TouchableOpacity>
               <Image source={lupa} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
@@ -125,7 +148,7 @@ export default function Home({ navigation }: any) {
             Olá,
           </GroupDataText>
           <GroupDataText numberOfLines={1} font="inter-bold" color="#ffff" size="20px">
-            {nameUser}!
+            {fullName}!
           </GroupDataText>
         </View>
       </HomeContainerInfo>
@@ -136,12 +159,20 @@ export default function Home({ navigation }: any) {
             Grupos
           </GroupDataText>
           <HomeContainerListGroup>
-            {fakeGroups?.length > 0 ? (
-              fakeGroups?.map((item: any) => (
+            {groups?.length > 0 ? (
+              groups?.map((item: any) => (
                 <GroupButton
-                  groupName={item.groupName}
-                  onlineMembers={item.onlineMembers}
-                  onPress={() => navigation.navigate('GroupPage')}
+                  key={item.groupId}
+                  groupName={item.group.name}
+                  onlineMembers={item.participantCount}
+                  onPress={() => {
+                    navigation.navigate('GroupPage');
+                    storage.set('groupInfo', item);
+                  }}
+                  onPressFilter={() => {
+                    toggleGroupFilter(item.groupId);
+                  }}
+                  filterIcon={!hiddenGroupIds.includes(item.groupId)}
                 />
               ))
             ) : (
@@ -157,19 +188,31 @@ export default function Home({ navigation }: any) {
             Mural
           </GroupDataText>
           <HomeContainerListMural>
-            {fakePosts?.length > 0 ? (
-              fakePosts?.map((item: any) => (
-                <PostCard
-                  nameUser={item.nameUser}
-                  imageUser={item.imageUser}
-                  postContent={item.postContent}
-                  numComments={item.numComments}
-                  date={item.date}
-                  originGroup={item.originGroup}
-                  tag
-                  save
-                  share
-                />
+            {filteredGroups?.length > 0 ? (
+              filteredGroups.map((item: any) => (
+                <>
+                  {item.group.Post.length > 0 ? (
+                    item.group.Post.map((post: any, postIndex: number) => (
+                      <PostCard
+                        key={postIndex}
+                        nameUser={post.user.fullName}
+                        imageUser={duckImage}
+                        postContent={post.input}
+                        numComments={post.commentsCount}
+                        date={formatRelativeDate(post.createdAt)}
+                        originGroup={item.group.name}
+                        tag
+                        save
+                        share
+                        onPressPost={() => onPressPostAction(post.id)}
+                      />
+                    ))
+                  ) : hiddenGroupIds.includes(item.groupId) ? null : (
+                    <GroupDataText font="inter-bold" color="#959393" size="20px">
+                      Não há Posts...
+                    </GroupDataText>
+                  )}
+                </>
               ))
             ) : (
               <GroupDataText font="inter-bold" color="#959393" size="20px">
