@@ -107,16 +107,13 @@ export default function Home({ navigation }: any) {
         .then((res) => {
           setGroups(res.data);
           storage.set('UserGroups', res?.data);
-
-          alert(JSON.stringify(res.data));
         });
     }
   }, []);
 
   const toggleGroupFilter = (groupId: string) => {
     setHiddenGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],
-    );
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],);
   };
 
   const filteredGroups = groups.map((group: any) => ({
