@@ -26,9 +26,18 @@ import NewPost from './src/pages/NewPost/NewPost';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const linking = {
+    prefixes: ['manamano://'],
+    config: {
+      screens: {
+        Post: 'post/:id',
+        Profile: 'profile/:id',
+      },
+    },
+  };
   return (
-    <NavigationContainer independent>
-      <Stack.Navigator initialRouteName="NewPost">
+    <NavigationContainer independent linking={linking}>
+      <Stack.Navigator initialRouteName="Profile">
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />

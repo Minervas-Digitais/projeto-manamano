@@ -6,7 +6,7 @@
 /* eslint-disable global-require */
 import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
-import { Image, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Image, TouchableOpacity, View, StyleSheet, Share } from 'react-native';
 
 import {
   ProfileContainerButtons,
@@ -24,6 +24,18 @@ import PostCard from '../../components/PostCard/PostCard';
 import SideMenu from '../../components/SideMenu/SideMenu';
 
 export default function Profile({ navigation }: any) {
+  const [profileId, setProfileId] = useState(1);
+  const createDeepLink = () => `manamano://profile/${profileId}`;
+  const onShare = async () => {
+    const deepLink = createDeepLink();
+    try {
+      await Share.share({
+        message: `Confira este perfil: ${deepLink}`,
+      });
+    } catch (error) {
+      console.error('Erro ao compartilhar:', error);
+    }
+  };
   const [sideMenu, setSideMenu] = useState(true);
 
   const userName = 'Maria Fernanda';
@@ -65,7 +77,6 @@ export default function Profile({ navigation }: any) {
       numComments: 5,
       date: 'Ontem, 21:32',
     },
-
   ];
 
   const savedPosts: any = [
@@ -89,7 +100,8 @@ export default function Profile({ navigation }: any) {
       postContent: 'Já postaram o link da aula?',
       numComments: 5,
       date: 'Ontem, 21:32',
-    }, {
+    },
+    {
       nameUser: 'Jhennifer Moreira',
       imageUser: duckImage,
       postContent: 'Alguém mora perto de Bonsucesso?',
@@ -110,7 +122,6 @@ export default function Profile({ navigation }: any) {
       numComments: 5,
       date: 'Ontem, 21:32',
     },
-
   ];
 
   return (
@@ -121,7 +132,7 @@ export default function Profile({ navigation }: any) {
           <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
             <Image source={menuIcon} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={onShare}>
             <Image source={shareWhite} />
           </TouchableOpacity>
         </ProfileContainerButtons>
@@ -158,8 +169,8 @@ export default function Profile({ navigation }: any) {
         <ProfileTextContainer style={{ padding: '25px 0px 25px 0px' }}>
           <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vel quam vel libero
-            consequat interdum. Vivamus at ex nec arcu interdum fringilla. Nulla facilisi.
-            Maecenas ut sapien vel justo aliquam congue.
+            consequat interdum. Vivamus at ex nec arcu interdum fringilla. Nulla facilisi. Maecenas
+            ut sapien vel justo aliquam congue.
           </GroupDataText>
         </ProfileTextContainer>
 
@@ -170,13 +181,11 @@ export default function Profile({ navigation }: any) {
               setSavedPostsSelect(false);
               setFilterPosts('userPosts');
             }}
-            style={myPostsSelect ? style.selectStyleTab : {}}
-            >
+            style={myPostsSelect ? style.selectStyleTab : {}}>
             <GroupDataText
               font="inter-bold"
               size="18px"
-              color={myPostsSelect ? '#EF4036' : '#8F8F8F'}
-            >
+              color={myPostsSelect ? '#EF4036' : '#8F8F8F'}>
               Publicações
             </GroupDataText>
           </ProfileTabsContainer>
@@ -196,29 +205,36 @@ export default function Profile({ navigation }: any) {
           </ProfileTabsContainer>
         </GroupPageTabs>
         <ProfilePostsContainer>
-          {filterPosts === 'userPosts' ? (userPosts?.length > 0 ? (userPosts?.map((item: any) => (
-            <PostCard
-              nameUser={item.nameUser}
-              imageUser={item.imageUser}
-              postContent={item.postContent}
-              numComments={item.numComments}
-              date={item.date}
-              share
-            />
-          ))) : '') : (savedPosts?.length > 0 ? (savedPosts?.map((item: any) => (
-            <PostCard
-              nameUser={item.nameUser}
-              imageUser={item.imageUser}
-              postContent={item.postContent}
-              numComments={item.numComments}
-              date={item.date}
-              share
-              saved
-            />
-          ))) : '')}
+          {filterPosts === 'userPosts'
+            ? userPosts?.length > 0
+              ? userPosts?.map((item: any) => (
+                  <PostCard
+                    nameUser={item.nameUser}
+                    imageUser={item.imageUser}
+                    postContent={item.postContent}
+                    numComments={item.numComments}
+                    date={item.date}
+                    share
+                    postId="123"
+                  />
+                ))
+              : ''
+            : savedPosts?.length > 0
+              ? savedPosts?.map((item: any) => (
+                  <PostCard
+                    nameUser={item.nameUser}
+                    imageUser={item.imageUser}
+                    postContent={item.postContent}
+                    numComments={item.numComments}
+                    date={item.date}
+                    share
+                    saved
+                    postId="321"
+                  />
+                ))
+              : ''}
         </ProfilePostsContainer>
       </HomePageWhite>
-
     </HomePageBlue>
   );
 }
