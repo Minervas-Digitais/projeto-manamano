@@ -26,6 +26,7 @@ export default function PostCard({
   dotsMenu,
   tag,
   fix,
+  onPressPost,
 }: any) {
   const shareIcon = require('../../assets/share-icon.svg');
   const saveIcon = require('../../assets/save-icon.svg');
@@ -43,7 +44,7 @@ export default function PostCard({
     return undefined;
   }
   return (
-    <PostCardContainer shadowColor={fix}>
+    <PostCardContainer shadowColor={fix} onPress={onPressPost}>
       {modalOptions ? <ModalOptions /> : ''}
       <PostCardSpaceBetween style={{ position: 'relative' }}>
         {tag ? (

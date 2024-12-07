@@ -60,7 +60,7 @@ export default function GroupPage({ navigation }: any) {
       categoryName: 'Geral',
     },
     {
-      nameUser: 'Geral Silva',
+      nameUser: 'Jorgelina Silva',
       imageUser: duckImage,
       postContent: 'Já postaram o link da aula?',
       numComments: 5,
@@ -257,6 +257,7 @@ export default function GroupPage({ navigation }: any) {
                     originGroup={item.originGroup}
                     dotsMenu
                     fix
+                    onPressPost={() => navigation.navigate('Post')}
                   />
                 ))
               ) : (
@@ -296,6 +297,7 @@ export default function GroupPage({ navigation }: any) {
                         date={item.date}
                         originGroup={item.originGroup}
                         dotsMenu
+                        onPressPost={() => navigation.navigate('Post')}
                       />
                     );
                   }
