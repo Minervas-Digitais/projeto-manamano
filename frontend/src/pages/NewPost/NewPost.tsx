@@ -24,6 +24,7 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 export default function NewPost() {
   const arrowIcon = require('../../assets/arrow-icon.svg');
   const linkIcon = require('../../assets/comment-link-icon.svg');
+  const attachmentIcon = require('../../assets/add-attachment-icon.svg');
   const calendarIcon = require('../../assets/calendar-icon.svg');
   const [filterPosts, setFilterPosts] = useState('Geral');
   const dateRef = useRef(null);
@@ -135,6 +136,7 @@ export default function NewPost() {
               />
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
               <LinkIcon>
+                <Image source={attachmentIcon} />
                 <Image source={linkIcon} />
               </LinkIcon>
             </NewPostInputTextContainer>

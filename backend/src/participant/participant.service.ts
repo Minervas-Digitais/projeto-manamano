@@ -57,6 +57,75 @@ export class ParticipantService {
     }
   }
 
+  async findUserGroups(userId: string) {
+    try {
+      const groups = await this.prismaService.participant.findMany({
+        where: { userId },
+        select: {
+          role: true,
+          groupId: true,
+          group: {
+            select: {
+              name: true,
+              Post: {
+                select: {
+                  id: true,
+                  title: true,
+                  input: true,
+                  createdAt: true,
+                  user: {
+                    select: {
+                      fullName: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (groups.length < 1) {
+        throw new NotFoundException('Você não está em nenhum grupo.');
+      }
+
+      const groupsWithCounts = await Promise.all(
+        groups.map(async (group) => {
+          // Contar participantes do grupo
+          const participantCount = await this.prismaService.participant.count({
+            where: { groupId: group.groupId },
+          });
+
+          // Adicionar contagem de comentários para cada post
+          const postsWithCommentsCount = await Promise.all(
+            group.group.Post.map(async (post) => {
+              const commentsCount = await this.prismaService.comment.count({
+                where: { postId: post.id },
+              });
+              return {
+                ...post,
+                commentsCount, // Adiciona o número de comentários no post
+              };
+            }),
+          );
+
+          return {
+            ...group,
+            participantCount,
+            group: {
+              ...group.group,
+              Post: postsWithCommentsCount,
+            },
+          };
+        }),
+      );
+
+      return groupsWithCounts;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async findUsersInGroup(groupId: string) {
     try {
       const users = await this.prismaService.participant.findMany({

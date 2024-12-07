@@ -60,7 +60,7 @@ export default function GroupPage({ navigation }: any) {
       categoryName: 'Geral',
     },
     {
-      nameUser: 'Geral Silva',
+      nameUser: 'Jorgelina Silva',
       imageUser: duckImage,
       postContent: 'Já postaram o link da aula?',
       numComments: 5,

@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import styled from 'styled-components/native';
 
-export const PostCardContainer = styled.View<{ shadowColor?: string }>`
+export const PostCardContainer = styled.TouchableOpacity<{ shadowColor?: string }>`
   display: flex;
   flex-direction: column;
   position: relative;

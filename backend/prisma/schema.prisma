@@ -26,12 +26,18 @@ enum RoleType {
   MEMBER
 }
 
+enum UserRole {
+  STUDENT
+  INSTRUCTOR
+}
+
 model User {
   id           String    @id @default(uuid())
   fullName     String
   email        String    @unique
   phone        String    @unique
   hash         String
+  role         UserRole? @default(STUDENT)
   savedPost    String[]
   birthday     DateTime?
   ethnicity    String?
@@ -48,8 +54,9 @@ model User {
 }
 
 model Group {
-  id          String   @id @default(uuid())
-  name        String
+  id       String   @id @default(uuid())
+  name     String
+  posts    Post[]   // Relacionamento com os posts
   description String?
   inviteCode  String   @unique
   createdAt   DateTime @default(now())
