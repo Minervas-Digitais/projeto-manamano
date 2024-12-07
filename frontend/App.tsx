@@ -29,8 +29,17 @@ import CreateGroup from './src/pages/CreateGroup/CreateGroup';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const linking = {
+    prefixes: ['manamano://'],
+    config: {
+      screens: {
+        Post: 'post/:id',
+        Profile: 'profile/:id',
+      },
+    },
+  };
   return (
-    <NavigationContainer independent>
+    <NavigationContainer independent linking={linking}>
       <Stack.Navigator initialRouteName="WelcomeScreen">
         <Stack.Screen
           name="WelcomeScreen"

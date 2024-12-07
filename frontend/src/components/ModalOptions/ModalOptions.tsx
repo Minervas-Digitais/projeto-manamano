@@ -1,7 +1,8 @@
+/* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
-import { Image } from 'react-native';
+import { Image, Share } from 'react-native';
 
 import {
   ModalOptionsContainer,
@@ -9,7 +10,7 @@ import {
   ModalOptionsOptionsText,
 } from './ModalOptionsStyle';
 
-export default function ModalOptions() {
+export default function ModalOptions({ onShare }: any) {
   const share = require('../../assets/share-icon.svg');
   const fix = require('../../assets/fix-blue-icon.svg');
   const save = require('../../assets/save-icon.svg');
@@ -24,7 +25,7 @@ export default function ModalOptions() {
     <ModalOptionsContainer>
       <ModalOptionsOptionsContainer>
         <Image source={share} />
-        <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px">
+        <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px" onPress={onShare}>
           Compartilhar
         </ModalOptionsOptionsText>
       </ModalOptionsOptionsContainer>
