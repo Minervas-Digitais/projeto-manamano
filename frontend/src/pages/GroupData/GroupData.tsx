@@ -1,5 +1,7 @@
+/* eslint-disable consistent-return */
+/* eslint-disable array-callback-return */
 /* eslint-disable global-require */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import {
   GroupDataPage,
@@ -13,11 +15,48 @@ import {
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import GroupMembers from '../../components/GroupMembers/GroupMembers';
+import { storage } from '../SignIn/SignIn';
+import api from '../../services/api';
 
 export default function GroupData({ navigation }: any) {
   const notificationIcon = require('../../assets/notification-icon.svg');
   const duckPhoto = require('../../assets/duck.png');
-  const groupName = 'Turma 24.1';
+  const [groupInfo, setGroupInfo] = useState<any>();
+  const [groupParticipant, setGroupParticipant] = useState<any>();
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [accessTokenState, setAccessTokenState] = useState('');
+
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const groupId = storage.getString('groupId');
+    const loggedId = storage.getString('loggedId');
+
+    if (groupId && accessToken && loggedId) {
+      setLoggedIdState(loggedId);
+      setAccessTokenState(accessToken);
+
+      api
+        .get(`/group/${groupId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => {
+          setGroupInfo(res.data);
+        });
+
+      api
+        .get(`/participant/group/${groupId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => {
+          setGroupParticipant(res.data);
+        });
+    }
+  }, []);
+
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -27,14 +66,18 @@ export default function GroupData({ navigation }: any) {
     return undefined;
   }
 
-  const fakeMembers: any = [
-    { user: 'Maria Joana', image: duckPhoto },
-    { user: 'Maria Joana', image: duckPhoto },
-    { user: 'Maria Joana', image: duckPhoto },
-    { user: 'Maria Joana', image: duckPhoto },
-    { user: 'Maria Joana', image: duckPhoto },
-    { user: 'Maria Joana', image: duckPhoto },
-  ];
+  function handleRemoveParticipant() {
+    const groupId = storage.getString('groupId');
+    api
+      .delete(`/participant/${loggedIdState},${groupId}`, {
+        headers: {
+          Authorization: `Bearer ${accessTokenState}`,
+        },
+      })
+      .then((res) => {
+        navigation.navigate('Home');
+      });
+  }
   return (
     <GroupDataPage>
       <HeaderCustom
@@ -46,20 +89,14 @@ export default function GroupData({ navigation }: any) {
       <GroupDataContainer>
         <GroupDataContainerInfo>
           <GroupDataText color="#EF4036" font="inter-bold" size="20">
-            {groupName}
+            {groupInfo?.name || 'Erro'}
           </GroupDataText>
           <GroupDataText color="#160E47" font="inter-semiBold" size="18">
             Descrição
           </GroupDataText>
           <GroupDataScrollView size="12vh">
             <GroupDataText color="#515151" font="inter-regular" size="13">
-              Grupo dos membros do ManaMano do ano de 2024.1. Classroom: XYEYEHN Drive: link aqui
-              Reuniões toda quarta às 18:00 Google meet: link aqui Grupo dos membros do ManaMano do
-              ano de 2024.1. Classroom: XYEYEHN Drive: link aqui Reuniões toda quarta às 18:00
-              Google meet: link aquiGrupo dos membros do ManaMano do ano de 2024.1. Classroom:
-              XYEYEHN Drive: link aqui Reuniões toda quarta às 18:00 Google meet: link aqui Grupo
-              dos membros do ManaMano do ano de 2024.1. Classroom: XYEYEHN Drive: link aqui Reuniões
-              toda quarta às 18:00 Google meet: link aqui
+              {groupInfo?.description || 'Erro carregar os dados'}
             </GroupDataText>
           </GroupDataScrollView>
         </GroupDataContainerInfo>
@@ -73,8 +110,12 @@ export default function GroupData({ navigation }: any) {
             <GroupDataText color="#3F3D3D" font="inter-bold" size="14">
               Docentes
             </GroupDataText>
-            {fakeMembers?.length > 0 ? (
-              fakeMembers?.map((item: any) => <GroupMembers user={item.user} image={item.image} />)
+            {groupParticipant?.length > 0 ? (
+              groupParticipant?.map((item: any) => {
+                if (item.role !== 'MEMBER') {
+                  return <GroupMembers user={item.user.fullName} image={duckPhoto} />;
+                }
+              })
             ) : (
               <GroupDataText color="#515151" font="inter-regular" size="12">
                 Vazio...
@@ -83,8 +124,12 @@ export default function GroupData({ navigation }: any) {
             <GroupDataText color="#3F3D3D" font="inter-bold" size="14">
               Colegas
             </GroupDataText>
-            {fakeMembers?.length > 0 ? (
-              fakeMembers?.map((item: any) => <GroupMembers user={item.user} image={item.image} />)
+            {groupParticipant?.length > 0 ? (
+              groupParticipant?.map((item: any) => {
+                if (item.role === 'MEMBER') {
+                  return <GroupMembers user={item.user.fullName} image={duckPhoto} />;
+                }
+              })
             ) : (
               <GroupDataText color="#515151" font="inter-regular" size="12">
                 Vazio...
@@ -96,7 +141,9 @@ export default function GroupData({ navigation }: any) {
           <ButtonCustom
             backColor="#EF4036"
             fontColor="#FFFFFF"
-            onPress={() => {}}
+            onPress={() => {
+              handleRemoveParticipant();
+            }}
             border={false}
             text="Sair do Grupo"
           />

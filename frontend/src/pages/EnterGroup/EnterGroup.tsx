@@ -6,17 +6,48 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
+import api from '../../services/api';
+import { storage } from '../SignIn/SignIn';
 
-export default function EnterGroup() {
+export default function EnterGroup({ navigation }: any) {
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({});
   const onSubmit = (data: any) => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    let participantData = {
+      userId: loggedId,
+      role: 'MEMBER',
+      inviteCode: data.inviteCode,
+      groupId: '',
+    };
     // eslint-disable-next-line no-alert
-    alert(JSON.stringify(data));
+    api
+      .get('/group', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      .then((res) => {
+        const groupIdFind = res?.data.find((item: any) => item.inviteCode === data.inviteCode);
+        if (groupIdFind) {
+          participantData = { ...participantData, groupId: groupIdFind.id };
+          console.log(` groupIdFind: ${JSON.stringify(groupIdFind)}`);
+          api
+            .post('/participant', participantData, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            })
+            .then((resp) => {});
+        }
+      });
+    navigation.navigate('Groups');
   };
+
   const [fontsLoaded] = useFonts({
     // eslint-disable-next-line global-require
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -31,7 +62,7 @@ export default function EnterGroup() {
         <SignInInputContainer style={{ gap: 30 }}>
           <Controller
             control={control}
-            name="groupcode"
+            name="inviteCode"
             rules={{
               required: true,
             }}
