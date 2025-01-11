@@ -257,7 +257,7 @@ export default function GroupPage({ navigation }: any) {
                     originGroup={item.originGroup}
                     dotsMenu
                     fix
-                    onPressPost={() => navigation.navigate('Post')}
+                    postId="123"
                   />
                 ))
               ) : (
@@ -297,7 +297,7 @@ export default function GroupPage({ navigation }: any) {
                         date={item.date}
                         originGroup={item.originGroup}
                         dotsMenu
-                        onPressPost={() => navigation.navigate('Post')}
+                        postId="123"
                       />
                     );
                   }

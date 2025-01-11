@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
 import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
-import { TouchableOpacity, View } from 'react-native';
+import { Share, TouchableOpacity, View } from 'react-native';
 import {
   PostCardContainer,
   PostCardIcons,
@@ -26,8 +26,19 @@ export default function PostCard({
   dotsMenu,
   tag,
   fix,
-  onPressPost,
+  postId,
 }: any) {
+  const createDeepLink = () => `manamano://post/${postId}`;
+  const onShare = async () => {
+    const deepLink = createDeepLink();
+    try {
+      await Share.share({
+        message: `Confira este perfil: ${deepLink}`,
+      });
+    } catch (error) {
+      console.error('Erro ao compartilhar:', error);
+    }
+  };
   const shareIcon = require('../../assets/share-icon.svg');
   const saveIcon = require('../../assets/save-icon.svg');
   const savedIcon = require('../../assets/saved-icon.svg');
@@ -44,8 +55,8 @@ export default function PostCard({
     return undefined;
   }
   return (
-    <PostCardContainer shadowColor={fix} onPress={onPressPost}>
-      {modalOptions ? <ModalOptions /> : ''}
+    <PostCardContainer shadowColor={fix}>
+      {modalOptions ? <ModalOptions onShare={onShare} /> : ''}
       <PostCardSpaceBetween style={{ position: 'relative' }}>
         {tag ? (
           <PostCardTag>
@@ -68,7 +79,7 @@ export default function PostCard({
             right: 0,
           }}>
           {share ? (
-            <TouchableOpacity>
+            <TouchableOpacity onPress={onShare}>
               <PostCardImage width="20px" height="20px" source={shareIcon} />
             </TouchableOpacity>
           ) : (

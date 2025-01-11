@@ -1,8 +1,8 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
-import { useState } from 'react';
+import { Linking, Pressable, ScrollView, Share, TouchableOpacity, View } from 'react-native';
+import { SetStateAction, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -24,6 +24,8 @@ import { PostCardImage } from '../../components/PostCard/PostCardStyle';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
 
 export default function Post() {
+  const [postId, setPostId] = useState(123);
+  const createDeepLink = () => `manamano://post/${postId}`;
   const [isFocused, setIsFocused] = useState(false);
   const profileImage = require('../../assets/test-profile-icon.png');
   const fakePost: any = [
@@ -71,19 +73,21 @@ export default function Post() {
     return undefined;
   }
   return (
-    <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: '#f2f6fa' }}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      style={{ backgroundColor: '#f2f6fa', height: '100%' }}>
       <HeaderCustom
         font="inter-bold"
         text="Publicação"
+        icon
         headerButton={(
           <View>
-            {modalOptions ? <ModalOptions /> : ''}
+            {modalOptions ? <ModalOptions createDeepLink={createDeepLink} /> : ''}
             <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
               <PostCardImage width="30px" height="30px" source={dotsMenuIcon} />
             </TouchableOpacity>
           </View>
         )}
-        icon
       />
       <PostContainer>
         <PostUpperPart>
@@ -148,7 +152,4 @@ export default function Post() {
       </PostContainer>
     </ScrollView>
   );
-}
-function setModalOptions(arg0: boolean): void {
-  throw new Error('Function not implemented.');
 }
