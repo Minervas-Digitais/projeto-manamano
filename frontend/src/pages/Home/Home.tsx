@@ -34,6 +34,8 @@ import api from '../../services/api';
 
 export const storageHome = new MMKV();
 
+// ...
+
 export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
   const duckImage = require('../../assets/duck.png');
@@ -42,7 +44,7 @@ export default function Home({ navigation }: any) {
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [fullName, setFullName] = useState('');
-  const [groups, setGroups] = useState([]);
+  const [groups, setGroups] = useState<any[]>([]);
   const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
 
   const [fontsLoaded] = useFonts({
@@ -106,17 +108,16 @@ export default function Home({ navigation }: any) {
         })
         .then((res) => {
           setGroups(res.data);
-          storage.set('UserGroups', res?.data);
         });
     }
   }, []);
 
   const toggleGroupFilter = (groupId: string) => {
     setHiddenGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],);
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]);
   };
 
-  const filteredGroups = groups.map((group: any) => ({
+  const filteredGroups = (groups || []).map((group: any) => ({
     ...group,
     group: {
       ...group.group,
@@ -167,7 +168,7 @@ export default function Home({ navigation }: any) {
                   onlineMembers={item.participantCount}
                   onPress={() => {
                     navigation.navigate('GroupPage');
-                    storage.set('groupInfo', item);
+                    storage.set('groupId', item.groupId);
                   }}
                   onPressFilter={() => {
                     toggleGroupFilter(item.groupId);
@@ -207,10 +208,8 @@ export default function Home({ navigation }: any) {
                         onPressPost={() => onPressPostAction(post.id)}
                       />
                     ))
-                  ) : hiddenGroupIds.includes(item.groupId) ? null : (
-                    <GroupDataText font="inter-bold" color="#959393" size="20px">
-                      Não há Posts...
-                    </GroupDataText>
+                  ) : (
+                    <></>
                   )}
                 </>
               ))
