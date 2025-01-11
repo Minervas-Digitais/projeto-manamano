@@ -48,9 +48,8 @@ model User {
 }
 
 model Group {
-  id       String   @id @default(uuid())
-  name     String
-  posts    Post[]   // Relacionamento com os posts
+  id          String   @id @default(uuid())
+  name        String
   description String?
   inviteCode  String   @unique
   createdAt   DateTime @default(now())
@@ -58,7 +57,7 @@ model Group {
 
   Participant Participant[]
   Category    Category[]
-  Post        Post[]
+  posts       Post[]
 }
 
 model Participant {
