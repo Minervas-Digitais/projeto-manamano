@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { RoleType } from '@prisma/client';
 
 export const roundsOfHashing = 10;
 
@@ -123,5 +124,15 @@ export class UserService {
     } catch (error) {
       return error;
     }
+  }
+  async updateUserRole(userId: string, role: RoleType) {
+    const user = await this.prismaService.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return this.prismaService.user.update({
+      where: { id: userId },
+      data: { role },
+    });
   }
 }

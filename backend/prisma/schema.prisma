@@ -51,6 +51,13 @@ model User {
   Participant Participant[]
   Post        Post[]
   Comment     Comment[]
+
+  role        RoleType   @default(MEMBER)
+
+  notificationsSent     Notification[] @relation("SentNotifications")
+
+  notificationsReceived Notification[] @relation("ReceivedNotifications")
+
 }
 
 model Group {
@@ -139,3 +146,19 @@ model Comment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
+
+
+model Notification {
+
+  id           String   @id @default(uuid())
+  sender       User     @relation("SentNotifications", fields: [senderId], references: [id])
+  senderId     String
+  recipient    User     @relation("ReceivedNotifications", fields: [recipientId], references: [id])
+  recipientId  String
+  body         String
+
+  isRead       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+}
+
