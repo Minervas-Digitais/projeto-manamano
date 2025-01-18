@@ -10,6 +10,11 @@ import { ParticipantModule } from './participant/participant.module';
 import { PostModule } from './post/post.module';
 import { SearchModule } from './search/search.module';
 import { UserModule } from './user/user.module';
+<<<<<<< HEAD
+=======
+import { NotificationModule } from './notification/notification.module';
+import { ArchiveModule } from './archive/archive.module'
+>>>>>>> bfa2654 (:sparkles: estrutura de envio e processamento de arquivos em base64)
 
 @Module({
   imports: [
@@ -22,6 +27,11 @@ import { UserModule } from './user/user.module';
     CommentModule,
     MailModule,
     SearchModule,
+<<<<<<< HEAD
+=======
+    NotificationModule,
+    ArchiveModule,
+>>>>>>> bfa2654 (:sparkles: estrutura de envio e processamento de arquivos em base64)
   ],
   controllers: [AppController],
   providers: [AppService],
