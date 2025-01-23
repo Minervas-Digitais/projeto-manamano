@@ -27,6 +27,8 @@ export const LinkIcon = styled.TouchableOpacity`
   align-self: end;
   margin-top: 20px;
   margin-right: 5px;
+  flex-direction: row;
+  gap: 20px;
 `;
 
 export const NewEventInputContainer = styled.View`
@@ -35,8 +37,8 @@ export const NewEventInputContainer = styled.View`
 `;
 
 export const BottomPartContainer = styled.View`
-  padding-right: 25px;
-  padding-left: 25px;
+  width: 88vw;
+  margin-left: 5.81vw;
   justify-content: space-between;
   flex: 1;
   padding-bottom: 30;

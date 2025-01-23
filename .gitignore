@@ -1,3 +1,4 @@
+backend/.env
 .env
-pgdata
-database
+database/
+backend/node_modules/

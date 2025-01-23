@@ -26,12 +26,18 @@ enum RoleType {
   MEMBER
 }
 
+enum UserRole {
+  STUDENT
+  INSTRUCTOR
+}
+
 model User {
   id           String    @id @default(uuid())
   fullName     String
   email        String    @unique
   phone        String    @unique
   hash         String
+  role         UserRole? @default(STUDENT)
   savedPost    String[]
   birthday     DateTime?
   ethnicity    String?
@@ -42,11 +48,6 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-<<<<<<< HEAD
-  Participant Participant[]
-  Post        Post[]
-  Comment     Comment[]
-=======
   Participant  Participant[]
   Post         Post[]
   Comment      Comment[]
@@ -57,9 +58,11 @@ model User {
   notificationsReceived Notification[] @relation("ReceivedNotifications")
 
   archives    Archive[]  // Relacionamento com Archive
->>>>>>> bfa2654 (:sparkles: estrutura de envio e processamento de arquivos em base64)
-}
 
+  notificationsSent     Notification[] @relation("SentNotifications")
+
+  notificationsReceived Notification[] @relation("ReceivedNotifications")
+}
 
 model Group {
   id          String   @id @default(uuid())
@@ -71,11 +74,9 @@ model Group {
 
   Participant Participant[]
   Category    Category[]
-  Post        Post[]
-
   archives    Archive[]  // Relacionamento com Archive
+  posts       Post[]
 }
-
 
 model Participant {
   userId    String
@@ -149,12 +150,8 @@ model Comment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
-<<<<<<< HEAD
-=======
-
 
 model Notification {
-
   id           String   @id @default(uuid())
   sender       User     @relation("SentNotifications", fields: [senderId], references: [id])
   senderId     String
@@ -166,7 +163,6 @@ model Notification {
   createdAt    DateTime @default(now())
 
 }
-
 
 model Archive {
   id            String   @id @default(uuid())
@@ -180,7 +176,3 @@ model Archive {
   User          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   Group         Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
 }
-
-
-
->>>>>>> bfa2654 (:sparkles: estrutura de envio e processamento de arquivos em base64)

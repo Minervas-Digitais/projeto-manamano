@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "manamano",
     "name": "frontend",
     "slug": "frontend",
     "version": "1.0.0",
@@ -15,7 +16,8 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "android.frontend"
     },
     "web": {},
     "plugins": [
