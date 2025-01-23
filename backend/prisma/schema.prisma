@@ -48,16 +48,20 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  Participant Participant[]
-  Post        Post[]
-  Comment     Comment[]
+  Participant  Participant[]
+  Post         Post[]
+  Comment      Comment[]
 
-  role        RoleType   @default(MEMBER)
+  role         RoleType   @default(MEMBER)
+
+  notificationsSent     Notification[] @relation("SentNotifications")
+  notificationsReceived Notification[] @relation("ReceivedNotifications")
+
+  archives    Archive[]  // Relacionamento com Archive
 
   notificationsSent     Notification[] @relation("SentNotifications")
 
   notificationsReceived Notification[] @relation("ReceivedNotifications")
-
 }
 
 model Group {
@@ -70,6 +74,7 @@ model Group {
 
   Participant Participant[]
   Category    Category[]
+  archives    Archive[]  // Relacionamento com Archive
   posts       Post[]
 }
 
@@ -146,9 +151,7 @@ model Comment {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
-
 model Notification {
-
   id           String   @id @default(uuid())
   sender       User     @relation("SentNotifications", fields: [senderId], references: [id])
   senderId     String
@@ -161,3 +164,15 @@ model Notification {
 
 }
 
+model Archive {
+  id            String   @id @default(uuid())
+  name          String
+  mimeType      String
+  contentBase64 String
+  userId        String?
+  groupId       String?
+  uploadDate    DateTime @default(now())
+
+  User          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Group         Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}

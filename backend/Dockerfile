@@ -12,10 +12,9 @@ COPY . .
 RUN chmod +x /app
 RUN chmod +x /app/entrypoint.sh
 
-RUN npx prisma generate --schema=/app/prisma/schema.prisma  
-RUN npx prisma migrate deploy --schema=/app/prisma/schema.prisma  
-RUN npx prisma generate --schema=/app/prisma/schema.prisma  
-RUN npx prisma migrate dev --name init --schema=/app/prisma/schema.prisma
+RUN npx prisma generate --schema=/app/prisma/schema.prisma
+
+RUN node verifyPrisma.js
 
 RUN npm run build
 
