@@ -225,4 +225,23 @@ export class PostService {
       return error;
     }
   }
+
+  async getUserPosts(userId: string) {
+    try {
+      const posts = await this.prismaService.post.findMany({
+        where: {
+          userId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+      if (!posts) {
+        throw new NotFoundException('Nenhuma publicação encontrada.');
+      }
+      return posts;
+    } catch (error) {
+      return error;
+    }
+  }
 }
