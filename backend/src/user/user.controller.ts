@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,13 +9,12 @@ import {
   Patch,
   Post,
   UseGuards,
-  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
-import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 
 @Controller('user')
 export class UserController {
@@ -66,7 +66,10 @@ export class UserController {
   }
 
   @Patch(':id/role')
-  async updateRole(@Param('id') id: string, @Body() updateUserRoleDto: UpdateUserRoleDto) {
+  async updateRole(
+    @Param('id') id: string,
+    @Body() updateUserRoleDto: UpdateUserRoleDto,
+  ) {
     const { role } = updateUserRoleDto;
     if (!role) {
       throw new BadRequestException('Role is required');

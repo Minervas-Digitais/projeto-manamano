@@ -2,6 +2,7 @@
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
+import { useEffect, useState } from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
@@ -9,27 +10,68 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { RedText, SemiBoldRedText } from './GetInTouchStyle';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
+import { storage } from '../SignIn/SignIn';
+import api from '../../services/api';
 
 export default function GetInTouch() {
   const arrowIcon = require('../../assets/arrow-icon.svg');
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [accessTokenState, setAccessTokenState] = useState('');
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+      api.get(`/user/${loggedId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    }
+  }, []);
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({});
-  const onSubmit = (data: any) => {
-    // eslint-disable-next-line no-alert
-    alert(JSON.stringify(data));
+  const onSubmit = async (data: any) => {
+    try {
+      const response = await api.post(
+        '/mail',
+        {
+          userId: loggedIdState,
+          subject: data.subject,
+          text: data.getintouch,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        },
+      );
+      alert('Mensagem enviada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      alert('Erro ao enviar mensagem. Tente novamente mais tarde.');
+    }
   };
+
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
+    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
   if (!fontsLoaded) {
     return undefined;
   }
   return (
-    <View style={{ flex: 1, backgroundColor: '#f2f6fa' }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: '#f2f6fa',
+        display: loggedIdState && accessTokenState ? 'flex' : 'none',
+      }}>
       <HeaderCustom font="inter-bold" text="Fale Conosco" />
       <SignInForm>
         <SignInInputContainer style={{ gap: 30 }}>
