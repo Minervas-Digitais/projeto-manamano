@@ -37,7 +37,7 @@ model User {
   email        String    @unique
   phone        String    @unique
   hash         String
-  UserRole         UserRole? @default(STUDENT)
+  role         UserRole? @default(STUDENT)
   savedPost    String[]
   birthday     DateTime?
   ethnicity    String?
@@ -52,12 +52,11 @@ model User {
   Post        Post[]
   Comment     Comment[]
 
-  role        RoleType   @default(MEMBER)
+  role RoleType @default(MEMBER)
 
-  notificationsSent     Notification[] @relation("SentNotifications")
+  notificationsSent Notification[] @relation("SentNotifications")
 
   notificationsReceived Notification[] @relation("ReceivedNotifications")
-
 }
 
 model Group {
@@ -146,18 +145,14 @@ model Comment {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
-
 model Notification {
+  id          String @id @default(uuid())
+  sender      User   @relation("SentNotifications", fields: [senderId], references: [id])
+  senderId    String
+  recipient   User   @relation("ReceivedNotifications", fields: [recipientId], references: [id])
+  recipientId String
+  body        String
 
-  id           String   @id @default(uuid())
-  sender       User     @relation("SentNotifications", fields: [senderId], references: [id])
-  senderId     String
-  recipient    User     @relation("ReceivedNotifications", fields: [recipientId], references: [id])
-  recipientId  String
-  body         String
-
-  isRead       Boolean  @default(false)
-  createdAt    DateTime @default(now())
-
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
-
