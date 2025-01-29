@@ -1,7 +1,8 @@
 /* eslint-disable global-require */
-import React, { useEffect, useState } from 'react';
-import { useFonts } from 'expo-font';
+import React, { useEffect, useRef, useState } from 'react';
 import { TouchableOpacity, View, Image, Dimensions } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
 import {
   ConfigNotificationHeaderContainer,
@@ -10,33 +11,13 @@ import {
 import SideMenu from '../../components/SideMenu/SideMenu';
 import GroupButton from '../../components/GroupButton/GroupButton';
 import AddButton from '../../components/AddButton/AddButton';
-import api from '../../services/api';
-import { storage } from '../../pages/SignIn/SignIn';
+import { storage } from '../SignIn/SignIn';
 import ShowPopup from '../../components/GroupPopup/GroupPopup';
-import { useNavigation } from '@react-navigation/native';
-import { useFonts } from 'expo-font'; // Add this import if missing
 
 export default function Groups() {
   const [sideMenu, setSideMenu] = useState(true);
-  const [groups, setGroups] = useState([]);
   const menu = require('../../assets/menu-icon.svg');
   const add = require('../../assets/add-icon.svg');
-
-  useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      api
-        .get(`participant/groups/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
-          setGroups(res.data);
-        });
-    }
-  }, []);
   const navigation = useNavigation(); // Use navigation instance
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -79,7 +60,7 @@ export default function Groups() {
           setUserData(fetchedUserData);
 
           // Only show the popup if the user ID matches the specific one
-          if (fetchedUserData.role === "INSTRUCTOR") {
+          if (fetchedUserData.role === 'INSTRUCTOR') {
             setShowPopup(true); // Show the popup only if the user is the one with the ID
           } else {
             setShowPopup(false); // Hide the popup for users without the right ID
@@ -113,7 +94,7 @@ export default function Groups() {
     });
 
     // Handle the AddButton press logic
-    if (userData && userData.role === "INSTRUCTOR") {
+    if (userData && userData.role === 'INSTRUCTOR') {
       setShowPopup(true); // Show the popup only if the user is the one with the ID
     } else {
       // If the user doesn't have the correct ID, navigate to EntrarGrupo
@@ -153,17 +134,6 @@ export default function Groups() {
       </ConfigNotificationHeaderContainer>
       <GroupsBody>
         <GroupsList>
-          {groups?.length > 0 ? (
-            groups.map((item: any) => (
-              <GroupButton
-                key={item.groupId}
-                groupName={item.group.name}
-                onlineMembers={item.participantCount}
-                onPress={() => {
-                  navigation.navigate('GroupPage');
-                  storage.set('groupInfo', item);
-                }}
-                size
           {fakeGroups?.length > 0 ? (
             fakeGroups.map((item: any, index: number) => (
               <GroupButton
@@ -179,11 +149,10 @@ export default function Groups() {
           )}
         </GroupsList>
       </GroupsBody>
-      <View ref={addButtonRef}> {/* Wrap AddButton with a View for measuring */}
-        <AddButton
-          icon={require('../../assets/add-icon.svg')}
-          onPress={handleAddButtonPress}
-        />
+      <View ref={addButtonRef}>
+        {' '}
+        {/* Wrap AddButton with a View for measuring */}
+        <AddButton icon={require('../../assets/add-icon.svg')} onPress={handleAddButtonPress} />
       </View>
       <ShowPopup
         visible={showPopup}
@@ -191,7 +160,6 @@ export default function Groups() {
         onClose={() => setShowPopup(false)}
         onOptionSelect={handlePopupOption}
       />
-
     </GroupsContainer>
   );
 }

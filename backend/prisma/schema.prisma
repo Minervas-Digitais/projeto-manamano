@@ -37,7 +37,7 @@ model User {
   email        String    @unique
   phone        String    @unique
   hash         String
-  role         UserRole? @default(STUDENT)
+  UserRole         UserRole? @default(STUDENT)
   savedPost    String[]
   birthday     DateTime?
   ethnicity    String?
