@@ -3,6 +3,7 @@
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
+import { TouchableOpacity, Image, View } from 'react-native';
 import {
   GroupDataPage,
   GroupDataText,
@@ -25,6 +26,7 @@ export default function GroupData({ navigation }: any) {
   const [groupParticipant, setGroupParticipant] = useState<any>();
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
+  const editIcon = require('../../assets/edit-icon.svg');
 
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
@@ -88,9 +90,15 @@ export default function GroupData({ navigation }: any) {
       />
       <GroupDataContainer>
         <GroupDataContainerInfo>
-          <GroupDataText color="#EF4036" font="inter-bold" size="20">
-            {groupInfo?.name || 'Erro'}
-          </GroupDataText>
+          <View style={{ flexDirection: 'row', gap: 3 }}>
+            <GroupDataText color="#EF4036" font="inter-bold" size="20">
+              {groupInfo?.name || 'Erro'}
+            </GroupDataText>
+            <TouchableOpacity onPress={() => navigation.navigate('EditGroup')}>
+              <Image source={editIcon} />
+            </TouchableOpacity>
+          </View>
+
           <GroupDataText color="#160E47" font="inter-semiBold" size="18">
             Descrição
           </GroupDataText>

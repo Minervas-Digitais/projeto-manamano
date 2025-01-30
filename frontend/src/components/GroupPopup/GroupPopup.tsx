@@ -37,15 +37,26 @@ export default function ShowPopup({ visible, position, onClose, onOptionSelect }
         <ModalOverlay>
           <TouchableWithoutFeedback>
             {/* Popup container with dynamic position styling */}
-            <PopupContainer>
+            <PopupContainer
+              style={{
+                position: 'absolute', // Absolute positioning for the popup
+                top: bottom < 100 ? undefined : top, // If bottom space is insufficient, use top for positioning
+                left: right < 100 ? undefined : left, // If right space is insufficient, use left for positioning
+                bottom: bottom < 100 ? bottom : undefined, // If there is little space at the bottom, use it for positioning
+                right: right < 100 ? right : undefined, // If there is little space at the right, use it for positioning
+              }}>
               {/* Option for creating a new group */}
               <PopupOption onPress={() => onOptionSelect('Criar Grupo')}>
-                <PopupText>Criar Grupo</PopupText> {/* Option text */}
+                <PopupText>Criar Grupo</PopupText>
+                {' '}
+                {/* Option text */}
               </PopupOption>
 
               {/* Option for joining an existing group */}
               <PopupOption onPress={() => onOptionSelect('Entrar Grupo')}>
-                <PopupText>Entrar em Grupo</PopupText> {/* Option text */}
+                <PopupText>Entrar em Grupo</PopupText>
+                {' '}
+                {/* Option text */}
               </PopupOption>
             </PopupContainer>
           </TouchableWithoutFeedback>
