@@ -1,15 +1,15 @@
 /* eslint-disable react/jsx-one-expression-per-line */
-/* eslint-disable no-confusing-arrow */
-/* eslint-disable implicit-arrow-linebreak */
-/* eslint-disable no-nested-ternary */
 /* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable global-require */
-/* eslint-disable max-len */
+/* eslint-disable @typescript-eslint/indent */
+/* eslint-disable no-confusing-arrow */
 /* eslint-disable react/no-array-index-key */
-/* eslint-disable react/jsx-no-useless-fragment */
+/* eslint-disable react/jsx-indent-props */
+/* eslint-disable react/jsx-indent */
+/* eslint-disable implicit-arrow-linebreak */
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { Image, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
 import {
   HomeContainerGroup,
@@ -34,8 +34,6 @@ import api from '../../services/api';
 
 export const storageHome = new MMKV();
 
-// ...
-
 export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
   const duckImage = require('../../assets/duck.png');
@@ -44,20 +42,20 @@ export default function Home({ navigation }: any) {
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [fullName, setFullName] = useState('');
-  const [groups, setGroups] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]); // Garantir array
   const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
+
   if (!fontsLoaded) {
-    return undefined;
+    return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
   function formatRelativeDate(postDate: string): string {
     const currentDate = new Date();
     const postDateObj = new Date(postDate);
-
     const differenceInMilliseconds = currentDate.getTime() - postDateObj.getTime();
     const differenceInMinutes = Math.floor(differenceInMilliseconds / (1000 * 60));
     const differenceInHours = Math.floor(differenceInMinutes / 60);
@@ -90,15 +88,15 @@ export default function Home({ navigation }: any) {
     if (loggedId && accessToken) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
+
       api
         .get(`/user/${loggedId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
         })
-        .then((res) => {
-          setFullName(res.data.fullName);
-        });
+        .then((res) => setFullName(res.data.fullName))
+        .catch(() => setFullName('Usuário'));
 
       api
         .get(`participant/groups/${loggedId}`, {
@@ -106,24 +104,25 @@ export default function Home({ navigation }: any) {
             Authorization: `Bearer ${accessToken}`,
           },
         })
-        .then((res) => {
-          setGroups(res.data);
-        });
+        .then((res) => setGroups(res.data || []))
+        .catch(() => setGroups([]));
     }
   }, []);
 
   const toggleGroupFilter = (groupId: string) => {
     setHiddenGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]);
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],);
   };
 
-  const filteredGroups = (groups || []).map((group: any) => ({
-    ...group,
-    group: {
-      ...group.group,
-      Post: hiddenGroupIds.includes(group.groupId) ? [] : group.group.Post,
-    },
-  }));
+  const filteredGroups = Array.isArray(groups)
+    ? groups.map((group: any) => ({
+        ...group,
+        group: {
+          ...group.group,
+          Post: hiddenGroupIds.includes(group.groupId) ? [] : group.group.Post || [],
+        },
+      }))
+    : [];
 
   return (
     <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
@@ -161,7 +160,7 @@ export default function Home({ navigation }: any) {
           </GroupDataText>
           <HomeContainerListGroup>
             {groups?.length > 0 ? (
-              groups?.map((item: any) => (
+              groups.map((item: any) => (
                 <GroupButton
                   key={item.groupId}
                   groupName={item.group.name}
@@ -170,9 +169,7 @@ export default function Home({ navigation }: any) {
                     navigation.navigate('GroupPage');
                     storage.set('groupId', item.groupId);
                   }}
-                  onPressFilter={() => {
-                    toggleGroupFilter(item.groupId);
-                  }}
+                  onPressFilter={() => toggleGroupFilter(item.groupId)}
                   filterIcon={!hiddenGroupIds.includes(item.groupId)}
                 />
               ))
@@ -190,29 +187,23 @@ export default function Home({ navigation }: any) {
           </GroupDataText>
           <HomeContainerListMural>
             {filteredGroups?.length > 0 ? (
-              filteredGroups.map((item: any) => (
-                <>
-                  {item.group.Post.length > 0 ? (
-                    item.group.Post.map((post: any, postIndex: number) => (
-                      <PostCard
-                        key={postIndex}
-                        nameUser={post.user.fullName}
-                        imageUser={duckImage}
-                        postContent={post.input}
-                        numComments={post.commentsCount}
-                        date={formatRelativeDate(post.createdAt)}
-                        originGroup={item.group.name}
-                        tag
-                        save
-                        share
-                        onPressPost={() => onPressPostAction(post.id)}
-                      />
-                    ))
-                  ) : (
-                    <></>
-                  )}
-                </>
-              ))
+              filteredGroups.map((item: any) =>
+                item.group.Post.map((post: any, postIndex: number) => (
+                  <PostCard
+                    key={postIndex}
+                    nameUser={post.user.fullName}
+                    imageUser={duckImage}
+                    postContent={post.input}
+                    numComments={post.commentsCount}
+                    date={formatRelativeDate(post.createdAt)}
+                    originGroup={item.group.name}
+                    tag
+                    save
+                    share
+                    onPressPost={() => onPressPostAction(post.id)}
+                  />
+                )),
+              )
             ) : (
               <GroupDataText font="inter-bold" color="#959393" size="20px">
                 Não há Posts...
