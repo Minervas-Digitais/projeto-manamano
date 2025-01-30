@@ -1,7 +1,7 @@
 import {
   Body,
   Controller,
-  Get,
+  Post,
   HttpCode,
   Param,
   UseGuards,
@@ -14,15 +14,15 @@ import { SearchService } from './search.service';
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
-  @HttpCode(200)
-  @Get()
+  @HttpCode(201)
+  @Post()
   @UseGuards(JwtAuthGuard)
   search(@Body() createSearchDto: CreateSearchDto) {
     return this.searchService.search(createSearchDto);
   }
 
   @HttpCode(200)
-  @Get('filter/:filter')
+  @Post('filter/:filter')
   @UseGuards(JwtAuthGuard)
   searchByFilter(
     @Body() createSearchDto: CreateSearchDto,
