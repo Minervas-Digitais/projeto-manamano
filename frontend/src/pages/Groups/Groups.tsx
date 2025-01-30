@@ -13,6 +13,7 @@ import GroupButton from '../../components/GroupButton/GroupButton';
 import AddButton from '../../components/AddButton/AddButton';
 import { storage } from '../SignIn/SignIn';
 import ShowPopup from '../../components/GroupPopup/GroupPopup';
+import api from '../../services/api';
 
 export default function Groups() {
   const [sideMenu, setSideMenu] = useState(true);
@@ -25,15 +26,29 @@ export default function Groups() {
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [showPopup, setShowPopup] = useState(false); // Initially the popup is hidden
-  const [popupPosition, setPopupPosition] = useState<{ top: number; left: number } | null>(null); // State for popup position
+  const [popupPosition, setPopupPosition] = useState<{ top: number; left: number } | null>(null);
   const [userData, setUserData] = useState<any>(null); // State to hold user data
   const addButtonRef = useRef<View>(null); // Ref for the "AddButton"
+  const [groups, setGroups] = useState([]);
 
   useEffect(() => {
     // Retrieve the access token from storage
     const token = storage.getString('accessToken');
     if (token) setAccessToken(token);
     console.log(token);
+
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && token) {
+      api
+        .get(`participant/groups/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then((res: any) => {
+          setGroups(res.data);
+        });
+    }
 
     // Fetch user information to check the "tipo"
     const fetchUserTipo = async () => {
@@ -60,7 +75,7 @@ export default function Groups() {
           setUserData(fetchedUserData);
 
           // Only show the popup if the user ID matches the specific one
-          if (fetchedUserData.role === 'INSTRUCTOR') {
+          if (fetchedUserData.role === 'MODERATOR') {
             setShowPopup(true); // Show the popup only if the user is the one with the ID
           } else {
             setShowPopup(false); // Hide the popup for users without the right ID
@@ -94,7 +109,7 @@ export default function Groups() {
     });
 
     // Handle the AddButton press logic
-    if (userData && userData.role === 'INSTRUCTOR') {
+    if (userData && userData.role === 'MODERATOR') {
       setShowPopup(true); // Show the popup only if the user is the one with the ID
     } else {
       // If the user doesn't have the correct ID, navigate to EntrarGrupo
@@ -113,15 +128,6 @@ export default function Groups() {
     }
   };
 
-  const fakeGroups: any = [
-    { groupName: 'Turma 24.1', onlineMembers: 23 },
-    { groupName: 'Veteranos 22.1', onlineMembers: 23 },
-    { groupName: 'Veteranos 22.1', onlineMembers: 23 },
-    { groupName: 'Veteranos 22.1', onlineMembers: 23 },
-    { groupName: 'Veteranos 22.1', onlineMembers: 23 },
-    { groupName: 'Veteranos 22.1', onlineMembers: 23 },
-  ];
-
   return (
     <GroupsContainer>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
@@ -134,14 +140,17 @@ export default function Groups() {
       </ConfigNotificationHeaderContainer>
       <GroupsBody>
         <GroupsList>
-          {fakeGroups?.length > 0 ? (
-            fakeGroups.map((item: any, index: number) => (
+          {groups?.length > 0 ? (
+            groups.map((item: any, index: number) => (
               <GroupButton
-                key={index} // Added unique key
-                groupName={item.groupName}
-                onlineMembers={item.onlineMembers}
+                key={item.groupId}
+                groupName={item.group.name}
+                onlineMembers={item.participantCount}
+                onPress={() => {
+                  navigation.navigate('GroupPage');
+                  storage.set('groupInfo', item);
+                }}
                 size
-                onPress={() => navigation.navigate('GroupPage')} // Navigate to GroupPage
               />
             ))
           ) : (

@@ -111,7 +111,8 @@ export default function Home({ navigation }: any) {
 
   const toggleGroupFilter = (groupId: string) => {
     setHiddenGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],);
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],
+    );
   };
 
   const filteredGroups = Array.isArray(groups)
@@ -202,8 +203,7 @@ export default function Home({ navigation }: any) {
                     share
                     onPressPost={() => onPressPostAction(post.id)}
                   />
-                )),
-              )
+                )))
             ) : (
               <GroupDataText font="inter-bold" color="#959393" size="20px">
                 Não há Posts...

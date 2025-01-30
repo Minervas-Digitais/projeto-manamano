@@ -9,6 +9,8 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { useFonts } from 'expo-font';
+import { MMKV } from 'react-native-mmkv';
 import {
   PageContainer,
   SearchHeader,
@@ -19,10 +21,8 @@ import {
   ContentContainer,
   Avatar,
 } from './SearchStyle';
-import { useFonts } from 'expo-font';
 import ResultSection from '../../components/ResultSection/ResultSection';
 import BackButton from '../../components/BackButton/BackButton';
-import { MMKV } from 'react-native-mmkv';
 
 // Setup MMKV storage
 const storage = new MMKV();
@@ -79,14 +79,16 @@ export default function Search() {
 
   const screenWidth = Dimensions.get('window').width;
 
-  useEffect(() => {
-    // Cleanup timeout on unmount
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [timeoutId]);
+  useEffect(
+    () =>
+      // Cleanup timeout on unmount
+      () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      },
+    [timeoutId],
+  );
 
   if (!fontsLoaded) {
     return undefined; // Or a loader of your choice
@@ -140,10 +142,7 @@ export default function Search() {
         </SearchInputWrapper>
 
         {debouncedSearchText.length > 0 ? (
-          <ResultSection
-            searchText={debouncedSearchText}
-            saveRecentUser={saveRecentUser}
-          />
+          <ResultSection searchText={debouncedSearchText} saveRecentUser={saveRecentUser} />
         ) : (
           <RecentSection>
             {recentUsers.length > 0 && (
@@ -162,7 +161,7 @@ export default function Search() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              nestedScrollEnabled={true}
+              nestedScrollEnabled
               style={{ flexDirection: 'row', paddingLeft: 10 }}
             >
               {recentUsers.map((user) => {
