@@ -17,8 +17,9 @@ export class ArchiveController {
       groupId,
     });
   }
-  
-  
 
-
+  @Get(':id')
+  async getArchive(@Param('id') id: string) {
+    return this.archiveService.getArchiveById(id);
+  }
 }

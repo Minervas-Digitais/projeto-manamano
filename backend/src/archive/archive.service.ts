@@ -1,7 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ArchiveEntity } from './entity/archive.entity';
-
 
 @Injectable()
 export class ArchiveService {
@@ -25,7 +24,16 @@ export class ArchiveService {
     });
     return new ArchiveEntity(createdArchive);
   }
-  
-  
-  
+
+  async getArchiveById(id: string): Promise<ArchiveEntity> {
+    const archive = await this.prisma.archive.findUnique({
+      where: { id },
+    });
+
+    if (!archive) {
+      throw new NotFoundException('Archive not found');
+    }
+
+    return new ArchiveEntity(archive);
+  }
 }
