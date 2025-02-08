@@ -10,7 +10,6 @@ import SignIn from './src/pages/SignIn/SignIn';
 import SignUp from './src/pages/SignUp/SignUp';
 import WelcomeScreen from './src/pages/Welcome/Welcome';
 import Notification from './src/pages/Notification/Notification';
-import Groups from './src/pages/Groups/Groups';
 import EditProfile from './src/pages/EditProfile/EditProfile';
 import GetInTouch from './src/pages/GetInTouch/GetInTouch';
 import GroupData from './src/pages/GroupData/GroupData';
@@ -40,7 +39,7 @@ export default function App() {
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="WelcomeScreen">
+      <Stack.Navigator initialRouteName="NewPost">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}
@@ -67,7 +66,6 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
-        <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
         <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
         <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
         <Stack.Screen name="About" component={About} options={{ headerShown: false }} />

@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Image, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -20,6 +20,8 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
+import api from '../../services/api';
+import { storage } from '../SignIn/SignIn';
 
 export default function NewPost() {
   const arrowIcon = require('../../assets/arrow-icon.svg');
@@ -29,26 +31,74 @@ export default function NewPost() {
   const [filterPosts, setFilterPosts] = useState('Geral');
   const dateRef = useRef(null);
   const hourRef = useRef(null);
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [accessTokenState, setAccessTokenState] = useState('');
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+      api.get(`/user/${loggedId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    }
+  }, []);
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({});
-  const onSubmit = (data: any) => {
-    let filteredData;
-    if (filterPosts === 'Geral') {
-      filteredData = {
-        type: filterPosts,
-        input: data.input,
-      };
+  const onSubmit = async (data: any) => {
+    if (filterPosts != 'Eventos') {
+      try {
+        const response = await api.post(
+          '/post',
+          {
+            type: 'NORMAL',
+            userId: loggedIdState,
+            input: data.input,
+            categoryId: ...,
+            groupId: ...,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${accessTokenState}`,
+            },
+          },
+        );
+        alert('Post enviada com sucesso!');
+      } catch (error) {
+        console.error('Erro ao enviar post:', error);
+        alert('Erro ao enviar post. Tente novamente mais tarde.');
+      }
     } else {
       const datetimeISO = `${data.date}T${data.hour}Z`;
-      filteredData = {
-        type: filterPosts,
-        title: data.title,
-        datetime: datetimeISO,
-        description: data.description,
-      };
+      try {
+        const response = await api.post(
+          '/post',
+          {
+            type: 'EVENT',
+            userId: loggedIdState,
+            input: data.input,
+            categoryId: ...,
+            groupId: ...,
+            schedule: datetimeISO,
+            title: data.title,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${accessTokenState}`,
+            },
+          },
+        );
+        alert('Post enviada com sucesso!');
+      } catch (error) {
+        console.error('Erro ao enviar post:', error);
+        alert('Erro ao enviar post. Tente novamente mais tarde.');
+      }
     }
     // eslint-disable-next-line no-alert
     alert(JSON.stringify(filteredData));
@@ -121,7 +171,7 @@ export default function NewPost() {
             />
           </GroupPageCategoryList>
         </GroupPageCategoryContainer>
-        {filterPosts === 'Geral' ? (
+        {filterPosts != 'Eventos' ? (
           <NewPostInputContainer>
             <NewPostInputTextContainer>
               <Controller
@@ -219,7 +269,7 @@ export default function NewPost() {
             <BottomPartContainer>
               <Controller
                 control={control}
-                name="description"
+                name="input"
                 rules={{
                   required: true,
                 }}
