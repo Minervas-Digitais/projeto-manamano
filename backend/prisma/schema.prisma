@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl"]
@@ -12,6 +6,135 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String         @id @default(uuid())
+  fullName              String
+  email                 String         @unique
+  phone                 String         @unique
+  hash                  String
+  role                  UserRole?      @default(STUDENT)
+  savedPost             String[]
+  birthday              DateTime?
+  ethnicity             String?
+  neighborhood          String?
+  expertise             String?
+  enterprise            String?
+  bio                   String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  sysRole               RoleType?      @default(MEMBER)
+  archives              Archive[]
+  Comment               Comment[]
+  notificationsReceived Notification[] @relation("ReceivedNotifications")
+  notificationsSent     Notification[] @relation("SentNotifications")
+  Participant           Participant[]
+  post                  Post[]
+}
+
+model Group {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  inviteCode  String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  archives    Archive[]
+  Category    Category[]
+  Participant Participant[]
+  posts       Post[]
+}
+
+model Participant {
+  userId    String
+  groupId   String
+  role      RoleType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  type      PostType
+  groupId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  Post      Post[]
+}
+
+model Post {
+  id          String    @id @default(uuid())
+  type        PostType
+  input       String
+  title       String?
+  schedule    DateTime?
+  urlLive     String?
+  urlRecorded String?
+  categoryId  String
+  userId      String
+  groupId     String
+  isPinned    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Comment     Comment[]
+  File        File[]
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model File {
+  id        String   @id @default(uuid())
+  title     String?
+  url       String?
+  type      String
+  size      Bytes?
+  content   String?
+  postId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  senderId    String
+  recipientId String
+  body        String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  recipient   User     @relation("ReceivedNotifications", fields: [recipientId], references: [id])
+  sender      User     @relation("SentNotifications", fields: [senderId], references: [id])
+}
+
+model Archive {
+  id            String   @id @default(uuid())
+  name          String
+  mimeType      String
+  contentBase64 String
+  userId        String?
+  groupId       String?
+  uploadDate    DateTime @default(now())
+  Group         Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  User          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum PostType {
@@ -29,145 +152,4 @@ enum RoleType {
 enum UserRole {
   STUDENT
   INSTRUCTOR
-}
-
-model User {
-  id           String    @id @default(uuid())
-  fullName     String
-  email        String    @unique
-  phone        String    @unique
-  hash         String
-  role         UserRole? @default(STUDENT)
-  savedPost    String[]
-  birthday     DateTime?
-  ethnicity    String?
-  neighborhood String?
-  expertise    String?
-  enterprise   String?
-  bio          String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  Participant Participant[]
-  post        Post[]
-  Comment     Comment[]
-
-  sysRole RoleType? @default(MEMBER)
-
-  notificationsSent     Notification[] @relation("SentNotifications")
-  notificationsReceived Notification[] @relation("ReceivedNotifications")
-
-  archives Archive[] // Relacionamento com Archive
-}
-
-model Group {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  inviteCode  String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  Participant Participant[]
-  Category    Category[]
-  archives    Archive[] // Relacionamento com Archive
-  posts       Post[]
-}
-
-model Participant {
-  userId    String
-  groupId   String
-  role      RoleType
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
-  @@id([userId, groupId])
-}
-
-model Category {
-  id        String   @id @default(uuid())
-  name      String
-  type      PostType
-  groupId   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  group Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  Post  Post[]
-}
-
-model Post {
-  id          String    @id @default(uuid())
-  type        PostType
-  input       String
-  title       String?
-  schedule    DateTime?
-  urlLive     String?
-  urlRecorded String?
-  categoryId  String
-  userId      String
-  groupId     String
-  isPinned    Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  category Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  File     File[]
-  Comment  Comment[]
-}
-
-model File {
-  id        String   @id @default(uuid())
-  title     String?
-  url       String?
-  type      String
-  size      Bytes?
-  content   String?
-  postId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  post Post @relation(fields: [postId], references: [id])
-}
-
-model Comment {
-  id        String   @id @default(uuid())
-  content   String
-  userId    String
-  postId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-}
-
-model Notification {
-  id          String @id @default(uuid())
-  sender      User   @relation("SentNotifications", fields: [senderId], references: [id])
-  senderId    String
-  recipient   User   @relation("ReceivedNotifications", fields: [recipientId], references: [id])
-  recipientId String
-  body        String
-
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
-model Archive {
-  id            String   @id @default(uuid())
-  name          String
-  mimeType      String
-  contentBase64 String
-  userId        String?
-  groupId       String?
-  uploadDate    DateTime @default(now())
-
-  User  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  Group Group? @relation(fields: [groupId], references: [id], onDelete: Cascade)
 }
