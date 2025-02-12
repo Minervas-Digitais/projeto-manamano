@@ -35,6 +35,7 @@ export default function App() {
       screens: {
         Post: 'post/:id',
         Profile: 'profile/:id',
+        NewPost: 'newpost/:groupId',
       },
     },
   };

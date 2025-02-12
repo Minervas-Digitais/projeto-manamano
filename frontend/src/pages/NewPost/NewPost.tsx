@@ -1,7 +1,9 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, View } from 'react-native';
+import { useRoute } from '@react-navigation/native';
+import * as DocumentPicker from 'expo-document-picker';
+import { Image, View, Text } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import CategoryButton from '../../components/CategoryButton/CategoryButton';
@@ -22,18 +24,28 @@ import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import api from '../../services/api';
 import { storage } from '../SignIn/SignIn';
+import { Empty } from '../../components/ArchiveCard/ArchiveCardStyle';
 
-export default function NewPost(groupId: any) {
+export default function NewPost() {
+  const route = useRoute();
+  const { groupId } = route.params as { groupId: string };
+  const [files, setFiles] = useState<Array<{ name: string; uri: string; mimeType?: string }>>([]);
   const [categories, setCategories] = useState([]);
+  const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
   const arrowIcon = require('../../assets/arrow-icon.svg');
   const linkIcon = require('../../assets/comment-link-icon.svg');
   const attachmentIcon = require('../../assets/add-attachment-icon.svg');
   const calendarIcon = require('../../assets/calendar-icon.svg');
+  const padlockIcon = require('../../assets/padlock-icon.svg');
   const [filterPosts, setFilterPosts] = useState('Geral');
   const dateRef = useRef(null);
   const hourRef = useRef(null);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
+  useEffect(() => {
+    const selectedCategory = categories.find((category) => category.name === filterPosts);
+    setSelectedCategoryType(selectedCategory ? selectedCategory.type : null);
+  }, [filterPosts, categories]);
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
@@ -48,9 +60,10 @@ export default function NewPost(groupId: any) {
     }
   }, []);
   useEffect(() => {
+    if (!accessTokenState) return;
     const fetchCategories = async () => {
       try {
-        const response = await api.get(`group/${groupId}`, {
+        const response = await api.get(`category/group/${groupId}`, {
           headers: {
             Authorization: `Bearer ${accessTokenState}`,
           },
@@ -68,6 +81,10 @@ export default function NewPost(groupId: any) {
     handleSubmit,
     formState: { errors },
   } = useForm({});
+  function formatDate(date: string): string {
+    const [day, month, year] = date.split('/');
+    return `${year}-${month}-${day}`;
+  }
   const onSubmit = async (data: any) => {
     const selectedCategory = categories.find((category) => category.name === filterPosts);
     if (!selectedCategory) {
@@ -75,7 +92,7 @@ export default function NewPost(groupId: any) {
       return;
     }
     const categoryId = selectedCategory.id;
-    if (filterPosts !== 'Eventos') {
+    if (selectedCategoryType !== 'EVENT') {
       try {
         const response = await api.post(
           '/post',
@@ -97,8 +114,35 @@ export default function NewPost(groupId: any) {
         console.error('Erro ao enviar post:', error);
         alert('Erro ao enviar post. Tente novamente mais tarde.');
       }
+      try {
+        await Promise.all(
+          files.map(async (file) => {
+            await api.post(
+              '/archives',
+              {
+                name: file.name,
+                userId: loggedIdState,
+                mimeType: file.mimeType,
+                groupId,
+                contentBase64: file.uri,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${accessTokenState}`,
+                },
+              },
+            );
+          }),
+        );
+        alert('Arquivos enviados com sucesso!');
+        setFiles([]);
+      } catch (error) {
+        console.error('Erro ao enviar arquivos:', error);
+        alert('Erro ao enviar arquivos. Tente novamente mais tarde.');
+      }
     } else {
-      const datetimeISO = `${data.date}T${data.hour}Z`;
+      const formattedDate = formatDate(data.date);
+      const datetimeISO = `${formattedDate}T${data.hour}:00.000Z`;
       try {
         const response = await api.post(
           '/post',
@@ -123,6 +167,9 @@ export default function NewPost(groupId: any) {
         alert('Erro ao enviar post. Tente novamente mais tarde.');
       }
     }
+  };
+  const removeFile = () => {
+    setFile(null);
   };
   const validateDate = () => {
     const inputDate = new Date(dateRef.current.getRawValue());
@@ -152,6 +199,29 @@ export default function NewPost(groupId: any) {
     }
     return true;
   };
+  const pickFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        multiple: true,
+      });
+
+      if (result.assets && result.assets.length > 0) {
+        const newFiles = result.assets.map((file) => ({
+          name: file.name,
+          uri: file.uri,
+          mimeType: file.mimeType,
+        }));
+
+        setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+      } else {
+        alert('Nenhum arquivo selecionado.');
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar os arquivos: ', error);
+      alert('Erro ao selecionar os arquivos.');
+    }
+  };
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -166,7 +236,7 @@ export default function NewPost(groupId: any) {
       <NewPostContainer>
         <GroupPageCategoryContainer>
           <GroupDataText color="#4E4E4E" font="inter-semiBold" size="18px">
-            Categorias
+            Categoria
           </GroupDataText>
           <GroupPageCategoryList>
             {categories.map((category) => (
@@ -178,7 +248,7 @@ export default function NewPost(groupId: any) {
             ))}
           </GroupPageCategoryList>
         </GroupPageCategoryContainer>
-        {filterPosts !== 'Eventos' ? (
+        {selectedCategoryType !== 'EVENT' ? (
           <NewPostInputContainer>
             <NewPostInputTextContainer>
               <Controller
@@ -193,7 +263,17 @@ export default function NewPost(groupId: any) {
               />
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 20 }}>
-                <LinkIcon>
+                <View
+                  style={{
+                    backgroundColor: 'gray',
+                    top: 10,
+                  }}>
+                  {File.name !== null ? <Text> {File.name}</Text> : <Empty />}
+                </View>
+                <LinkIcon onPress={removeFile}>
+                  <Image source={padlockIcon} />
+                </LinkIcon>
+                <LinkIcon onPress={pickFile}>
                   <Image source={attachmentIcon} />
                 </LinkIcon>
                 <LinkIcon>
