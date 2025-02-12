@@ -23,7 +23,8 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import api from '../../services/api';
 import { storage } from '../SignIn/SignIn';
 
-export default function NewPost() {
+export default function NewPost(groupId: any) {
+  const [categories, setCategories] = useState([]);
   const arrowIcon = require('../../assets/arrow-icon.svg');
   const linkIcon = require('../../assets/comment-link-icon.svg');
   const attachmentIcon = require('../../assets/add-attachment-icon.svg');
@@ -46,13 +47,35 @@ export default function NewPost() {
       });
     }
   }, []);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get(`group/${groupId}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar categorias', error);
+        alert('Erro ao buscar categorias');
+      }
+    };
+    fetchCategories();
+  }, [accessTokenState, groupId]);
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({});
   const onSubmit = async (data: any) => {
-    if (filterPosts != 'Eventos') {
+    const selectedCategory = categories.find((category) => category.name === filterPosts);
+    if (!selectedCategory) {
+      alert('Categoria não encontrada');
+      return;
+    }
+    const categoryId = selectedCategory.id;
+    if (filterPosts !== 'Eventos') {
       try {
         const response = await api.post(
           '/post',
@@ -60,8 +83,8 @@ export default function NewPost() {
             type: 'NORMAL',
             userId: loggedIdState,
             input: data.input,
-            categoryId: ...,
-            groupId: ...,
+            categoryId,
+            groupId,
           },
           {
             headers: {
@@ -83,8 +106,8 @@ export default function NewPost() {
             type: 'EVENT',
             userId: loggedIdState,
             input: data.input,
-            categoryId: ...,
-            groupId: ...,
+            categoryId,
+            groupId,
             schedule: datetimeISO,
             title: data.title,
           },
@@ -100,8 +123,6 @@ export default function NewPost() {
         alert('Erro ao enviar post. Tente novamente mais tarde.');
       }
     }
-    // eslint-disable-next-line no-alert
-    alert(JSON.stringify(filteredData));
   };
   const validateDate = () => {
     const inputDate = new Date(dateRef.current.getRawValue());
@@ -148,30 +169,16 @@ export default function NewPost() {
             Categorias
           </GroupDataText>
           <GroupPageCategoryList>
-            <CategoryButton
-              categoryName="Geral"
-              onPress={() => {
-                setFilterPosts('Geral');
-              }}
-              filter={filterPosts}
-            />
-            <CategoryButton
-              categoryName="Eventos"
-              onPress={() => {
-                setFilterPosts('Eventos');
-              }}
-              filter={filterPosts}
-            />
-            <CategoryButton
-              categoryName="Avisos"
-              onPress={() => {
-                setFilterPosts('Avisos');
-              }}
-              filter={filterPosts}
-            />
+            {categories.map((category) => (
+              <CategoryButton
+                categoryName={category.name}
+                onPress={() => setFilterPosts(category.name)}
+                filter={filterPosts}
+              />
+            ))}
           </GroupPageCategoryList>
         </GroupPageCategoryContainer>
-        {filterPosts != 'Eventos' ? (
+        {filterPosts !== 'Eventos' ? (
           <NewPostInputContainer>
             <NewPostInputTextContainer>
               <Controller
@@ -185,10 +192,14 @@ export default function NewPost() {
                 )}
               />
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-              <LinkIcon>
-                <Image source={attachmentIcon} />
-                <Image source={linkIcon} />
-              </LinkIcon>
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 20 }}>
+                <LinkIcon>
+                  <Image source={attachmentIcon} />
+                </LinkIcon>
+                <LinkIcon>
+                  <Image source={linkIcon} />
+                </LinkIcon>
+              </View>
             </NewPostInputTextContainer>
             <View style={{ paddingBottom: 30 }}>
               <ButtonCustom
