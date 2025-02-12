@@ -101,4 +101,11 @@ export class PostController {
   async getCategoryPosts(@Param('categoryId') categoryId: string) {
     return this.postService.getCategoryPosts(categoryId);
   }
+
+  @HttpCode(200)
+  @Get(':id/posts')
+  @UseGuards(JwtAuthGuard)
+  async findUserPosts(@Param('id') id: string) {
+    return this.postService.getUserPosts(id);
+  }
 }

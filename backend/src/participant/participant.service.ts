@@ -67,7 +67,7 @@ export class ParticipantService {
           group: {
             select: {
               name: true,
-              Post: {
+              posts: {
                 select: {
                   id: true,
                   title: true,
@@ -98,7 +98,7 @@ export class ParticipantService {
 
           // Adicionar contagem de comentários para cada post
           const postsWithCommentsCount = await Promise.all(
-            group.group.Post.map(async (post) => {
+            group.group.posts.map(async (post) => {
               const commentsCount = await this.prismaService.comment.count({
                 where: { postId: post.id },
               });
