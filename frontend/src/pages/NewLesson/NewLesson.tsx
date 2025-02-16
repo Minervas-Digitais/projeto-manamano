@@ -1,8 +1,10 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import * as DocumentPicker from 'expo-document-picker';
 import { ScrollView, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
+import { useRoute } from '@react-navigation/native';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
@@ -11,8 +13,17 @@ import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import { LinkPart, NewLessonContainer } from './NewLessonStyle';
 import ArchiveCard from '../../components/ArchiveCard/ArchiveCard';
+import { storage } from '../SignIn/SignIn';
+import api from '../../services/api';
 
 export default function NewLesson() {
+  const route = useRoute();
+  const { groupId } = route.params as { groupId: string };
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [accessTokenState, setAccessTokenState] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [files, setFiles] = useState<{ name: string; uri: string; mimeType?: string }[]>([]);
+  const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
   const archiveId = [{ id: 1 }, { id: 2 }, { id: 3 }];
   const [visibility, setVisibility] = useState(
     archiveId.reduce(
@@ -24,11 +35,102 @@ export default function NewLesson() {
     ),
   );
   const handleClick = (id) => {
+    setFiles([]);
     setVisibility((prevState) => ({
       ...prevState,
       [id]: !prevState[id],
     }));
   };
+  useEffect(() => {
+    if (!accessTokenState) return;
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get(`category/group/${groupId}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar categorias', error);
+        alert('Erro ao buscar categorias');
+      }
+    };
+    fetchCategories();
+  }, [accessTokenState, groupId]);
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+      api.get(`/user/${loggedId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    }
+  }, []);
+  function formatDate(date: string): string {
+    const [day, month, year] = date.split('/');
+    return `${year}-${month}-${day}`;
+  }
+  const onSubmit = async (data: any) => {
+    try {
+      await Promise.all(
+        files.map(async (file) => {
+          await api.post(
+            '/archives',
+            {
+              name: file.name,
+              userId: loggedIdState,
+              mimeType: file.mimeType,
+              groupId,
+              contentBase64: file.uri,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${accessTokenState}`,
+              },
+            },
+          );
+        }),
+      );
+      alert('Arquivos enviados com sucesso!');
+      setFiles([]);
+    } catch (error) {
+      console.error('Erro ao enviar arquivos:', error);
+      alert('Erro ao enviar arquivos. Tente novamente mais tarde.');
+    }
+    const formattedDate = formatDate(data.date);
+    const datetimeISO = `${formattedDate}T${data.hour}:00.000Z`;
+    try {
+      const response = await api.post(
+        '/post',
+        {
+          type: 'EVENT',
+          userId: loggedIdState,
+          input: data.input,
+          categoryId,
+          groupId,
+          schedule: datetimeISO,
+          title: data.title,
+          urlLive: data.link,
+          urlRecorded: data.vod,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        },
+      );
+      alert('Post enviada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao enviar post:', error);
+      alert('Erro ao enviar post. Tente novamente mais tarde.');
+    }
+  };
+
   const arrowIcon = require('../../assets/arrow-icon.svg');
   const linkIcon = require('../../assets/input-link-icon.svg');
   const calendarIcon = require('../../assets/calendar-icon.svg');
@@ -39,10 +141,6 @@ export default function NewLesson() {
     handleSubmit,
     formState: { errors },
   } = useForm({});
-  const onSubmit = (data: any) => {
-    // eslint-disable-next-line no-alert
-    alert(JSON.stringify(data));
-  };
   const validateDate = () => {
     const inputDate = new Date(dateRef.current.getRawValue());
     const currentDate = new Date();
@@ -70,6 +168,29 @@ export default function NewLesson() {
       return 'Esta hora já passou';
     }
     return true;
+  };
+  const pickFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        multiple: true,
+      });
+
+      if (result.assets && result.assets.length > 0) {
+        const newFiles = result.assets.map((file) => ({
+          name: file.name,
+          uri: file.uri,
+          mimeType: file.mimeType,
+        }));
+
+        setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+      } else {
+        alert('Nenhum arquivo selecionado.');
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar os arquivos: ', error);
+      alert('Erro ao selecionar os arquivos.');
+    }
   };
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -185,7 +306,7 @@ export default function NewLesson() {
           {errors.vod && <ErrorWarning errorText={errors.vod.message} />}
           <Controller
             control={control}
-            name="description"
+            name="input"
             rules={{
               required: true,
             }}
@@ -211,7 +332,7 @@ export default function NewLesson() {
                 onPress={() => handleClick(item.id)}
               />
             ))}
-            <ArchiveCard />
+            <ArchiveCard onClick={pickFile} />
           </ScrollView>
           <ButtonCustom
             onPress={handleSubmit(onSubmit)}
