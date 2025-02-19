@@ -7,3 +7,4 @@ import { PrismaService } from '../prisma/prisma.service';
   providers: [ArchiveService, PrismaService],
 })
 export class ArchiveModule {}
+
