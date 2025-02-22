@@ -31,12 +31,11 @@ export default function ArchiveCard({ archive, removed, onPress, onClick, name }
           <Empty />
         ) : (
           <ArchiveCardContainer>
-            <ArchivePressable
-              onPress={() => {
-                alert('link');
-              }}>
+            <ArchivePressable>
               <ArchiveCardContainer>
-                <ArchiveCardText font="inter-semibold" size="12px"> {name} </ArchiveCardText>
+                <ArchiveCardText font="inter-semibold" size="12px">
+                  {name}
+                </ArchiveCardText>
                 <AddRemoveArchiveIcon onPress={onPress}>
                   <Image source={removeArchive} />
                 </AddRemoveArchiveIcon>
@@ -46,10 +45,7 @@ export default function ArchiveCard({ archive, removed, onPress, onClick, name }
         )
       ) : (
         <ArchiveCardContainer>
-          <ArchivePressable
-            onPress={() => {
-              alert('link');
-            }}>
+          <ArchivePressable>
             <ArchiveCardContainer>
               <PaperclipIcon source={noArchive} />
               <AddRemoveArchiveIcon onPress={onClick}>
