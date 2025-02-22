@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRoute } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
-import { Image, View, Text } from 'react-native';
+import { Image, View, ScrollView } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import CategoryButton from '../../components/CategoryButton/CategoryButton';
@@ -24,24 +24,35 @@ import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import api from '../../services/api';
 import { storage } from '../SignIn/SignIn';
-import { Empty } from '../../components/ArchiveCard/ArchiveCardStyle';
+import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
 
 export default function NewPost() {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
-  const [files, setFiles] = useState<Array<{ name: string; uri: string; mimeType?: string }>>([]);
+  const [files, setFiles] = useState<
+    { id: number; name: string; uri: string; mimeType?: string }[]
+  >([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
   const arrowIcon = require('../../assets/arrow-icon.svg');
   const linkIcon = require('../../assets/comment-link-icon.svg');
   const attachmentIcon = require('../../assets/add-attachment-icon.svg');
   const calendarIcon = require('../../assets/calendar-icon.svg');
-  const padlockIcon = require('../../assets/padlock-icon.svg');
   const [filterPosts, setFilterPosts] = useState('Geral');
   const dateRef = useRef(null);
   const hourRef = useRef(null);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
+  const [visibility, setVisibility] = useState({});
+  const handleClick = (id) => {
+    setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
+    setVisibility((prevState) => {
+      const updatedState = { ...prevState };
+      delete updatedState[id];
+      return updatedState;
+    });
+  };
+
   useEffect(() => {
     const selectedCategory = categories.find((category) => category.name === filterPosts);
     setSelectedCategoryType(selectedCategory ? selectedCategory.type : null);
@@ -94,6 +105,26 @@ export default function NewPost() {
     const categoryId = selectedCategory.id;
     if (selectedCategoryType !== 'EVENT') {
       try {
+        await Promise.all(
+          files.map(async (file) => {
+            await api.post(
+              '/archives',
+              {
+                name: file.name,
+                userId: loggedIdState,
+                mimeType: file.mimeType,
+                groupId,
+                contentBase64: file.uri,
+                type: file.mimeType,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${accessTokenState}`,
+                },
+              },
+            );
+          }),
+        );
         const response = await api.post(
           '/post',
           {
@@ -109,36 +140,12 @@ export default function NewPost() {
             },
           },
         );
+        setFiles([]);
         alert('Post enviada com sucesso!');
       } catch (error) {
+        setFiles([]);
         console.error('Erro ao enviar post:', error);
         alert('Erro ao enviar post. Tente novamente mais tarde.');
-      }
-      try {
-        await Promise.all(
-          files.map(async (file) => {
-            await api.post(
-              '/archives',
-              {
-                name: file.name,
-                userId: loggedIdState,
-                mimeType: file.mimeType,
-                groupId,
-                contentBase64: file.uri,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${accessTokenState}`,
-                },
-              },
-            );
-          }),
-        );
-        alert('Arquivos enviados com sucesso!');
-        setFiles([]);
-      } catch (error) {
-        console.error('Erro ao enviar arquivos:', error);
-        alert('Erro ao enviar arquivos. Tente novamente mais tarde.');
       }
     } else {
       const formattedDate = formatDate(data.date);
@@ -167,9 +174,6 @@ export default function NewPost() {
         alert('Erro ao enviar post. Tente novamente mais tarde.');
       }
     }
-  };
-  const removeFile = () => {
-    setFile(null);
   };
   const validateDate = () => {
     const inputDate = new Date(dateRef.current.getRawValue());
@@ -208,12 +212,20 @@ export default function NewPost() {
 
       if (result.assets && result.assets.length > 0) {
         const newFiles = result.assets.map((file) => ({
+          id: Date.now() + Math.random(),
           name: file.name,
           uri: file.uri,
           mimeType: file.mimeType,
         }));
 
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+        setVisibility((prevState) => {
+          const updatedVisibility = { ...prevState };
+          newFiles.forEach((file) => {
+            updatedVisibility[file.id] = false;
+          });
+          return updatedVisibility;
+        });
       } else {
         alert('Nenhum arquivo selecionado.');
       }
@@ -231,7 +243,12 @@ export default function NewPost() {
     return undefined;
   }
   return (
-    <View style={{ backgroundColor: '#f2f6fa', height: '100%' }}>
+    <View
+      style={{
+        backgroundColor: '#f2f6fa',
+        height: '100%',
+        display: loggedIdState && accessTokenState ? 'flex' : 'none',
+      }}>
       <HeaderCustom font="inter-bold" text="Publicação" />
       <NewPostContainer>
         <GroupPageCategoryContainer>
@@ -239,13 +256,15 @@ export default function NewPost() {
             Categoria
           </GroupDataText>
           <GroupPageCategoryList>
-            {categories.map((category) => (
-              <CategoryButton
-                categoryName={category.name}
-                onPress={() => setFilterPosts(category.name)}
-                filter={filterPosts}
-              />
-            ))}
+            {categories
+              .filter((category) => category.name !== 'Aulas')
+              .map((category) => (
+                <CategoryButton
+                  categoryName={category.name}
+                  onPress={() => setFilterPosts(category.name)}
+                  filter={filterPosts}
+                />
+              ))}
           </GroupPageCategoryList>
         </GroupPageCategoryContainer>
         {selectedCategoryType !== 'EVENT' ? (
@@ -262,22 +281,27 @@ export default function NewPost() {
                 )}
               />
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 20 }}>
-                <View
-                  style={{
-                    backgroundColor: 'gray',
-                    top: 10,
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <ScrollView
+                  horizontal
+                  contentContainerStyle={{
+                    flexDirection: 'row',
+                    flexGrow: 1,
+                    gap: 10,
+                    maxWidth: 300,
                   }}>
-                  {File.name !== null ? <Text> {File.name}</Text> : <Empty />}
-                </View>
-                <LinkIcon onPress={removeFile}>
-                  <Image source={padlockIcon} />
-                </LinkIcon>
+                  {files.map((item: any) => (
+                    <NewPostArchive
+                      key={item.id}
+                      name={item.name}
+                      archive
+                      removed={visibility[item.id]}
+                      onPress={() => handleClick(item.id)}
+                    />
+                  ))}
+                </ScrollView>
                 <LinkIcon onPress={pickFile}>
                   <Image source={attachmentIcon} />
-                </LinkIcon>
-                <LinkIcon>
-                  <Image source={linkIcon} />
                 </LinkIcon>
               </View>
             </NewPostInputTextContainer>

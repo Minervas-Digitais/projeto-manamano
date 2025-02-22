@@ -5,6 +5,7 @@ import { Linking, Pressable, ScrollView, Share, TouchableOpacity, View } from 'r
 import { SetStateAction, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useRoute } from '@react-navigation/native';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import PostAttachment from '../../components/PostAttachmentCard/PostAttachment';
 import {
@@ -22,20 +23,66 @@ import CommentInputTextCustom from '../../components/CommentInput/CommentInputTe
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { PostCardImage } from '../../components/PostCard/PostCardStyle';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
+import { storage } from '../SignIn/SignIn';
+import api from '../../services/api';
 
 export default function Post() {
-  const [postId, setPostId] = useState(123);
+  const route = useRoute();
+  const { postId } = route.params as { postId: string };
   const createDeepLink = () => `manamano://post/${postId}`;
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [accessTokenState, setAccessTokenState] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [post, setPost] = useState(null);
+  const [user, setUser] = useState(null);
   const profileImage = require('../../assets/test-profile-icon.png');
-  const fakePost: any = [
-    {
-      input:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris egestas urna vLorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris egestas urna vel nisi dictum, a accumsan libero imperdiet. Nullam lacinia conLorem ipsum dolor sit amet, consecte.',
-      createdAt: '2024-05-08T21:33:30Z',
-      fullName: 'Jorgelina Silva',
-    },
-  ];
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+      api.get(`/user/${loggedId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    }
+  }, []);
+  useEffect(() => {
+    if (!accessTokenState) return;
+    const fetchPost = async () => {
+      try {
+        const response = await api.get(`post/${postId}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+        setPost(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar publicação', error);
+        alert('Erro ao buscar publicação');
+      }
+    };
+    fetchPost();
+  }, [accessTokenState, postId]);
+  useEffect(() => {
+    if (!accessTokenState) return;
+    const fetchUser = async () => {
+      try {
+        const response = await api.get(`user/${post?.userId}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+        setUser(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar usuário', error);
+        alert('Erro ao buscar usuário');
+      }
+    };
+    fetchUser();
+  }, [accessTokenState, postId]);
   const fakeComment: any = [
     { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
     { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
@@ -43,7 +90,7 @@ export default function Post() {
     { fullName: 'Jorgelina Silva', createdAt: '2024-07-18T21:33:30Z', input: 'Falou e disse!' },
     { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
   ];
-  const postDate = new Date(fakePost[0].createdAt);
+  const postDate = new Date(post?.createdAt);
   const formattedDate = format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR });
   const [modalOptions, setModalOptions] = useState(false);
   const dotsMenuIcon = require('../../assets/dotsMenu-icon.svg');
@@ -64,7 +111,6 @@ export default function Post() {
     }
   };
   const [fontsLoaded] = useFonts({
-    // eslint-disable-next-line global-require
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -75,27 +121,28 @@ export default function Post() {
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
-      style={{ backgroundColor: '#f2f6fa', height: '100%' }}>
+      style={{ backgroundColor: '#f2f6fa', height: '100%' }}
+      contentContainerStyle={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
       <HeaderCustom
         font="inter-bold"
         text="Publicação"
         icon
-        headerButton={(
+        headerButton={
           <View>
             {modalOptions ? <ModalOptions createDeepLink={createDeepLink} /> : ''}
             <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
               <PostCardImage width="30px" height="30px" source={dotsMenuIcon} />
             </TouchableOpacity>
           </View>
-        )}
+        }
       />
       <PostContainer>
         <PostUpperPart>
           <ProfileImage source={profileImage} />
-          <ProfileName font="inter-bold">{fakePost[0].fullName}</ProfileName>
+          <ProfileName font="inter-bold">{user?.fullName}</ProfileName>
           <PostDate font="inter-semibold">{formattedDate}</PostDate>
         </PostUpperPart>
-        <PostText font="inter-regular">{fakePost[0].input}</PostText>
+        <PostText font="inter-regular">{post?.input}</PostText>
         <ScrollView
           showsHorizontalScrollIndicator={false}
           horizontal
@@ -132,7 +179,7 @@ export default function Post() {
             )}
           />
           {errors.groupcode && <ErrorWarning errorText="Campo obrigatório" />}
-          {fakeComment?.length > 0 ? (
+          {post?.Comment?.length > 0 ? (
             fakeComment.map((item: any) => {
               let formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
                 locale: ptBR,
