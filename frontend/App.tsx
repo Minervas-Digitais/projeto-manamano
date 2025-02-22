@@ -33,7 +33,7 @@ export default function App() {
     prefixes: ['manamano://'],
     config: {
       screens: {
-        Post: 'post/:id',
+        Post: 'post/:postId',
         Profile: 'profile/:id',
         NewPost: 'newpost/:groupId',
       },
@@ -41,7 +41,7 @@ export default function App() {
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="NewPost">
+      <Stack.Navigator initialRouteName="Post">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}

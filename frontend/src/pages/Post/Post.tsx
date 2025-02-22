@@ -1,11 +1,11 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { Linking, Pressable, ScrollView, Share, TouchableOpacity, View } from 'react-native';
-import { SetStateAction, useEffect, useState } from 'react';
+import { Linking, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import PostAttachment from '../../components/PostAttachmentCard/PostAttachment';
 import {
@@ -29,12 +29,14 @@ import api from '../../services/api';
 export default function Post() {
   const route = useRoute();
   const { postId } = route.params as { postId: string };
+  const navigation = useNavigation();
   const createDeepLink = () => `manamano://post/${postId}`;
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [post, setPost] = useState(null);
-  const [user, setUser] = useState(null);
+  const [postUser, setPostUser] = useState(null);
+  const [commentUsers, setCommentUsers] = useState({});
   const profileImage = require('../../assets/test-profile-icon.png');
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
@@ -66,31 +68,61 @@ export default function Post() {
     };
     fetchPost();
   }, [accessTokenState, postId]);
+
   useEffect(() => {
-    if (!accessTokenState) return;
-    const fetchUser = async () => {
+    if (!accessTokenState || !post?.userId) return;
+
+    const fetchPostUser = async () => {
       try {
-        const response = await api.get(`user/${post?.userId}`, {
+        const response = await api.get(`user/${post.userId}`, {
           headers: {
             Authorization: `Bearer ${accessTokenState}`,
           },
         });
-        setUser(response.data);
+
+        setPostUser(response.data);
       } catch (error) {
-        console.error('Erro ao buscar usuário', error);
-        alert('Erro ao buscar usuário');
+        console.error('Erro ao buscar usuário do post', error);
+        alert('Erro ao buscar usuário do post');
       }
     };
-    fetchUser();
-  }, [accessTokenState, postId]);
-  const fakeComment: any = [
-    { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
-    { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
-    { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
-    { fullName: 'Jorgelina Silva', createdAt: '2024-07-18T21:33:30Z', input: 'Falou e disse!' },
-    { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
-  ];
-  const postDate = new Date(post?.createdAt);
+
+    fetchPostUser();
+  }, [accessTokenState, post?.userId]);
+
+  useEffect(() => {
+    if (!accessTokenState || !post?.Comment?.length) return;
+
+    const fetchCommentUsers = async () => {
+      try {
+        const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
+
+        const usersData = await Promise.all(
+          uniqueUserIds.map(async (userId) => {
+            const response = await api.get(`user/${userId}`, {
+              headers: {
+                Authorization: `Bearer ${accessTokenState}`,
+              },
+            });
+            return { userId, data: response.data };
+          }),
+        );
+
+        const usersMap = usersData.reduce((acc, user) => {
+          acc[user.userId] = user.data;
+          return acc;
+        }, {});
+
+        setCommentUsers(usersMap);
+      } catch (error) {
+        console.error('Erro ao buscar usuários dos comentários', error);
+        alert('Erro ao buscar usuários dos comentários');
+      }
+    };
+
+    fetchCommentUsers();
+  }, [accessTokenState, post?.Comment]);
+  const postDate = post?.createdAt ? new Date(post.createdAt) : null;
   const formattedDate = format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR });
   const [modalOptions, setModalOptions] = useState(false);
   const dotsMenuIcon = require('../../assets/dotsMenu-icon.svg');
@@ -100,9 +132,27 @@ export default function Post() {
     formState: { errors },
     getValues,
   } = useForm({});
-  const onSubmit = (data: any) => {
-    // eslint-disable-next-line no-alert
-    alert(JSON.stringify(data));
+  const onSubmit = async (data: any) => {
+    try {
+      const response = await api.post(
+        '/comment',
+        {
+          userId: loggedIdState,
+          content: data.input,
+          postId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        },
+      );
+      alert('Comentário enviada com sucesso!');
+      navigation.replace('Post', { postId });
+    } catch (error) {
+      console.error('Erro ao enviar comentário:', error);
+      alert('Erro ao enviar comentário. Tente novamente mais tarde.');
+    }
   };
   const handleBlur = () => {
     const comment = getValues('input');
@@ -139,7 +189,7 @@ export default function Post() {
       <PostContainer>
         <PostUpperPart>
           <ProfileImage source={profileImage} />
-          <ProfileName font="inter-bold">{user?.fullName}</ProfileName>
+          <ProfileName font="inter-bold">{postUser?.fullName}</ProfileName>
           <PostDate font="inter-semibold">{formattedDate}</PostDate>
         </PostUpperPart>
         <PostText font="inter-regular">{post?.input}</PostText>
@@ -179,15 +229,16 @@ export default function Post() {
             )}
           />
           {errors.groupcode && <ErrorWarning errorText="Campo obrigatório" />}
-          {post?.Comment?.length > 0 ? (
-            fakeComment.map((item: any) => {
+          {post?.Comment.length > 0 ? (
+            post?.Comment.map((item: any) => {
               let formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
                 locale: ptBR,
               });
+              const commentUser = commentUsers[item.userId];
               return (
                 <CommentCard
-                  fullName={item.fullName}
-                  input={item.input}
+                  fullName={commentUser?.fullName || 'Usuário desconhecido'}
+                  input={item.content}
                   createdAt={formattedDate}
                 />
               );
