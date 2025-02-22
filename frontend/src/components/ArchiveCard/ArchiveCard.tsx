@@ -7,12 +7,12 @@ import {
   AddRemoveArchiveIcon,
   ArchiveCardContainer,
   ArchivePressable,
+  ArchiveCardText,
   Empty,
-  MagnifyingGlassIcon,
   PaperclipIcon,
 } from './ArchiveCardStyle';
 
-export default function ArchiveCard({ archive, removed, onPress, onClick }: any) {
+export default function ArchiveCard({ archive, removed, onPress, onClick, name }: any) {
   const addArchive = require('../../assets/add-archive.svg');
   const removeArchive = require('../../assets/remove-archive.svg');
   const noArchive = require('../../assets/paperclip.svg');
@@ -36,7 +36,7 @@ export default function ArchiveCard({ archive, removed, onPress, onClick }: any)
                 alert('link');
               }}>
               <ArchiveCardContainer>
-                <MagnifyingGlassIcon source={magnifyingGlass} />
+                <ArchiveCardText font="inter-semibold" size="12px"> {name} </ArchiveCardText>
                 <AddRemoveArchiveIcon onPress={onPress}>
                   <Image source={removeArchive} />
                 </AddRemoveArchiveIcon>

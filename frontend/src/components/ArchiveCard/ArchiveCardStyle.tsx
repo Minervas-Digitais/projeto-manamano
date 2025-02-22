@@ -39,3 +39,14 @@ export const Empty = styled.View`
   width: 0px;
   height: 0px;
 `;
+export const ArchiveCardText = styled.Text<{ font?: string; size?: string }>`
+  font-family: ${(prop) => prop.font};
+  font-size: ${(prop) => prop.size};
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #4e4e4e;
+  padding-right: 10px;
+  max-width: 75px;
+  padding-left: 10px;
+  word-break: break-word;
+`;

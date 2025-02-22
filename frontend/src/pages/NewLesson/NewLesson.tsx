@@ -23,23 +23,14 @@ export default function NewLesson() {
   const [accessTokenState, setAccessTokenState] = useState('');
   const [categories, setCategories] = useState([]);
   const [files, setFiles] = useState<{ name: string; uri: string; mimeType?: string }[]>([]);
-  const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
-  const archiveId = [{ id: 1 }, { id: 2 }, { id: 3 }];
-  const [visibility, setVisibility] = useState(
-    archiveId.reduce(
-      (acc: Record<number, boolean>, item) => {
-        acc[item.id] = false;
-        return acc;
-      },
-      {} as Record<number, boolean>,
-    ),
-  );
+  const [visibility, setVisibility] = useState({});
   const handleClick = (id) => {
-    setFiles([]);
-    setVisibility((prevState) => ({
-      ...prevState,
-      [id]: !prevState[id],
-    }));
+    setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
+    setVisibility((prevState) => {
+      const updatedState = { ...prevState };
+      delete updatedState[id];
+      return updatedState;
+    });
   };
   useEffect(() => {
     if (!accessTokenState) return;
@@ -76,6 +67,7 @@ export default function NewLesson() {
     return `${year}-${month}-${day}`;
   }
   const onSubmit = async (data: any) => {
+    const selectedCategory = categories.find((category) => category.name === 'Aulas');
     try {
       await Promise.all(
         files.map(async (file) => {
@@ -87,6 +79,7 @@ export default function NewLesson() {
               mimeType: file.mimeType,
               groupId,
               contentBase64: file.uri,
+              type: file.mimeType,
             },
             {
               headers: {
@@ -96,22 +89,15 @@ export default function NewLesson() {
           );
         }),
       );
-      alert('Arquivos enviados com sucesso!');
-      setFiles([]);
-    } catch (error) {
-      console.error('Erro ao enviar arquivos:', error);
-      alert('Erro ao enviar arquivos. Tente novamente mais tarde.');
-    }
-    const formattedDate = formatDate(data.date);
-    const datetimeISO = `${formattedDate}T${data.hour}:00.000Z`;
-    try {
+      const formattedDate = formatDate(data.date);
+      const datetimeISO = `${formattedDate}T${data.hour}:00.000Z`;
       const response = await api.post(
         '/post',
         {
-          type: 'EVENT',
+          type: 'CLASS',
           userId: loggedIdState,
           input: data.input,
-          categoryId,
+          categoryId: selectedCategory.id,
           groupId,
           schedule: datetimeISO,
           title: data.title,
@@ -125,7 +111,9 @@ export default function NewLesson() {
         },
       );
       alert('Post enviada com sucesso!');
+      setFiles([]);
     } catch (error) {
+      setFiles([]);
       console.error('Erro ao enviar post:', error);
       alert('Erro ao enviar post. Tente novamente mais tarde.');
     }
@@ -178,12 +166,20 @@ export default function NewLesson() {
 
       if (result.assets && result.assets.length > 0) {
         const newFiles = result.assets.map((file) => ({
+          id: Date.now() + Math.random(),
           name: file.name,
           uri: file.uri,
           mimeType: file.mimeType,
         }));
 
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+        setVisibility((prevState) => {
+          const updatedVisibility = { ...prevState };
+          newFiles.forEach((file) => {
+            updatedVisibility[file.id] = false;
+          });
+          return updatedVisibility;
+        });
       } else {
         alert('Nenhum arquivo selecionado.');
       }
@@ -325,8 +321,9 @@ export default function NewLesson() {
             horizontal
             style={{ flex: 1, paddingTop: 10, paddingBottom: 10 }}
             contentContainerStyle={{ alignItems: 'center' }}>
-            {archiveId.map((item: any) => (
+            {files.map((item: any) => (
               <ArchiveCard
+                name={item.name}
                 archive
                 removed={visibility[item.id]}
                 onPress={() => handleClick(item.id)}
