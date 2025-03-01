@@ -117,13 +117,14 @@ export default function Home({ navigation }: any) {
       prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]);
   };
 
-  const filteredGroups = (groups || []).map((group: any) => ({
+  const filteredGroups = (Array.isArray(groups) ? groups : []).map((group: any) => ({
     ...group,
     group: {
       ...group.group,
       Post: hiddenGroupIds.includes(group.groupId) ? [] : group.group.Post,
     },
   }));
+  
 
   return (
     <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
