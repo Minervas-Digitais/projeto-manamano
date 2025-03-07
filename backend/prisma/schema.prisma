@@ -114,15 +114,23 @@ model Comment {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum NotificationType {
+  COMMENT
+  WARNING
+}
+
 model Notification {
-  id          String   @id @default(uuid())
-  senderId    String
-  recipientId String
-  body        String
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  recipient   User     @relation("ReceivedNotifications", fields: [recipientId], references: [id])
-  sender      User     @relation("SentNotifications", fields: [senderId], references: [id])
+  id           String   @id @default(uuid())
+  sender       User     @relation("SentNotifications", fields: [senderId], references: [id])
+  senderId     String
+  recipient    User     @relation("ReceivedNotifications", fields: [recipientId], references: [id])
+  recipientId  String
+  body         String
+  type         NotificationType
+  groupName    String?   // Opcional
+  senderName   String?   // Opcional
+  isRead       Boolean  @default(false)
+  createdAt    DateTime @default(now())
 }
 
 model Archive {
