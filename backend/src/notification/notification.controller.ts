@@ -3,20 +3,14 @@ import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 
-
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post()
   async create(@Body() createNotificationDto: CreateNotificationDto, @Body('role') role: string) {
-    if (role !== 'MODERATOR' && role !== 'ADMIN') {
-      throw new ForbiddenException('Permission denied: Only moderators or admins can create notifications.');
-    }
-    const { senderId, recipientId, body } = createNotificationDto;
-    return this.notificationService.createNotification(senderId, recipientId, body);
+    return this.notificationService.createNotification(createNotificationDto, role);
   }
-
 
   @Get('user/:userId')
   async getUserNotifications(@Param('userId') userId: string) {
