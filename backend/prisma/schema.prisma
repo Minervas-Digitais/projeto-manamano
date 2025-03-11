@@ -88,6 +88,7 @@ model Post {
   category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  archives    Archive[]
 }
 
 model File {
@@ -140,9 +141,12 @@ model Archive {
   contentBase64 String
   userId        String?
   groupId       String?
+  postId        String?
   uploadDate    DateTime @default(now())
   Group         Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
   User          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Post          Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
 }
 
 enum PostType {
