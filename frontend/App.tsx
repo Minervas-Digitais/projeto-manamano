@@ -26,6 +26,7 @@ import NewLesson from './src/pages/NewLesson/NewLesson';
 import Search from './src/pages/Search/Search';
 import CreateGroup from './src/pages/CreateGroup/CreateGroup';
 import EditGroup from './src/pages/EditGroup/EditGroup';
+import NotificationPage from './src/pages/NotificationPage/NotificationPage';
 
 const Stack = createNativeStackNavigator();
 
@@ -36,13 +37,12 @@ export default function App() {
       screens: {
         Post: 'post/:id',
         Profile: 'profile/:id',
-        NewLesson: 'newlesson/:groupId',
       },
     },
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="NewLesson">
+      <Stack.Navigator initialRouteName="Notification">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}
@@ -89,6 +89,11 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="EditGroup" component={EditGroup} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="NotificationPage"
+          component={NotificationPage}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -13,6 +13,8 @@ export const NotificationInfoContainer = styled.View`
   align-items: center;
   gap: 20px;
   margin-top: 10px;
+  width: 100%;
+  height: 100%;
 `;
 
 export const NotificationInfoText = styled.Text<{ font: any }>`
