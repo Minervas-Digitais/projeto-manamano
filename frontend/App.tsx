@@ -25,6 +25,7 @@ import NewLesson from './src/pages/NewLesson/NewLesson';
 import Search from './src/pages/Search/Search';
 import CreateGroup from './src/pages/CreateGroup/CreateGroup';
 import EditGroup from './src/pages/EditGroup/EditGroup';
+import NotificationPage from './src/pages/NotificationPage/NotificationPage';
 
 const Stack = createNativeStackNavigator();
 
@@ -87,6 +88,11 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="EditGroup" component={EditGroup} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="NotificationPage"
+          component={NotificationPage}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

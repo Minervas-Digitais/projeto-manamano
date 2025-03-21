@@ -19,6 +19,22 @@ export const NotificationTextContainer = styled.View`
   flex-direction: row;
   gap: 14px;
 `;
+
+export const NotificationTextContainerWarning = styled.View<{ height?: any }>`
+  display: flex;
+  width: 100%;
+  height: ${(prop) => prop.height};
+  flex-direction: row;
+  gap: 8.5px;
+`;
+
+export const NotificationTextGreyWarning = styled.Text<{ font?: any }>`
+  color: #515151;
+  font-size: 14px;
+  height: min-content;
+  font-family: ${(prop) => prop.font};
+  overflow: hidden;
+`;
 export const NotificationTextRed = styled.Text<{ font?: any }>`
   color: #ef4036;
   font-size: 14px;

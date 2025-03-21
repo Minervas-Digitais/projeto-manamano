@@ -1,5 +1,6 @@
+/* eslint-disable no-alert */
 /* eslint-disable global-require */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
@@ -13,10 +14,21 @@ import {
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import NotificationCard from '../../components/NotificationCard/NotificationCard';
 import BackButton from '../../components/BackButton/BackButton';
+import { storage } from '../SignIn/SignIn';
+import api from '../../services/api';
 
-export default function Notification() {
+export default function Notification({ navigation }: any) {
   const noNotification = require('../../assets/no-notification-icon.svg');
   const duckPhoto = require('../../assets/duck.png');
+  const [notification, setNotification] = useState([]);
+
+  useEffect(() => {
+    const loggedId = storage.getString('loggedId');
+    if (loggedId) {
+      api.get(`notifications/user/${loggedId}`).then((res) => setNotification(res.data));
+    }
+    storage.delete('body');
+  }, []);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -24,16 +36,16 @@ export default function Notification() {
   if (!fontsLoaded) {
     return undefined;
   }
-  const fakeNotification: any = [
-    { user: 'MariaJoaquina', group: 'Veteranos 24.1', date: 'Ontem, 21:43', image: duckPhoto },
-    { user: 'MariaJoaquina', group: 'Veteranos 24.1', date: 'Ontem, 21:43', image: duckPhoto },
-    { user: 'MariaJoaquina', group: 'Veteranos 24.1', date: 'Ontem, 21:43', image: duckPhoto },
-    { user: 'MariaJoaquina', group: 'Veteranos 24.1', date: 'Ontem, 21:43', image: duckPhoto },
-    { user: 'MariaJoaquina', group: 'Veteranos 24.1', date: 'Ontem, 21:43', image: duckPhoto },
-    { user: 'MariaJoaquina', group: 'Veteranos 24.1', date: 'Ontem, 21:43', image: duckPhoto },
-    { user: 'MariaJoaquina', group: 'Veteranos 24.1', date: 'Ontem, 21:43', image: duckPhoto },
-    { user: 'MariaJoaquina', group: 'Veteranos 24.1', date: 'Ontem, 21:43', image: duckPhoto },
-  ];
+
+  const onPressActions = (body: string, id: string, type: string) => {
+    storage.set('body', body);
+    api.patch(`notifications/${id}`, {
+      isRead: true,
+    });
+    if (type !== 'COMMENT') {
+      navigation.navigate('NotificationPage');
+    }
+  };
 
   return (
     <ConfigNotificationContainer>
@@ -45,14 +57,18 @@ export default function Notification() {
 
       <NotificationBodyContainer>
         <NotificationInfoContainer>
-          {fakeNotification?.length > 0 ? (
-            fakeNotification?.map((item: any) => (
+          {notification?.length > 0 ? (
+            notification?.map((item: any) => (
               <NotificationCard
-                user={item.user}
-                group={item.group}
-                date={item.date}
-                image={item.image}
-                onPress={() => {}}
+                user={item.senderName}
+                group={item.groupName}
+                image={duckPhoto}
+                onPress={() => {
+                  onPressActions(item.body, item.id, item.type);
+                }}
+                type={item.type}
+                body={item.body}
+                date={item.createdAt}
               />
             ))
           ) : (
@@ -64,7 +80,7 @@ export default function Notification() {
             </>
           )}
         </NotificationInfoContainer>
-        {fakeNotification?.length > 0 ? (
+        {notification?.length > 0 ? (
           <View />
         ) : (
           <ButtonCustom
