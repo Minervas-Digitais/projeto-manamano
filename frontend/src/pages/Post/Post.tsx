@@ -1,10 +1,11 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { Linking, Pressable, ScrollView, Share, TouchableOpacity, View } from 'react-native';
-import { SetStateAction, useEffect, useState } from 'react';
+import { Linking, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import PostAttachment from '../../components/PostAttachmentCard/PostAttachment';
 import {
@@ -22,28 +23,106 @@ import CommentInputTextCustom from '../../components/CommentInput/CommentInputTe
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { PostCardImage } from '../../components/PostCard/PostCardStyle';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
+import { storage } from '../SignIn/SignIn';
+import api from '../../services/api';
 
 export default function Post() {
-  const [postId, setPostId] = useState(123);
+  const route = useRoute();
+  const { postId } = route.params as { postId: string };
+  const navigation = useNavigation();
   const createDeepLink = () => `manamano://post/${postId}`;
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [accessTokenState, setAccessTokenState] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [post, setPost] = useState(null);
+  const [postUser, setPostUser] = useState(null);
+  const [commentUsers, setCommentUsers] = useState({});
   const profileImage = require('../../assets/test-profile-icon.png');
-  const fakePost: any = [
-    {
-      input:
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris egestas urna vLorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris egestas urna vel nisi dictum, a accumsan libero imperdiet. Nullam lacinia conLorem ipsum dolor sit amet, consecte.',
-      createdAt: '2024-05-08T21:33:30Z',
-      fullName: 'Jorgelina Silva',
-    },
-  ];
-  const fakeComment: any = [
-    { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
-    { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
-    { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
-    { fullName: 'Jorgelina Silva', createdAt: '2024-07-18T21:33:30Z', input: 'Falou e disse!' },
-    { fullName: 'Jorgelina Silva', createdAt: '2024-05-08T21:33:30Z', input: 'Falou e disse!' },
-  ];
-  const postDate = new Date(fakePost[0].createdAt);
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+      api.get(`/user/${loggedId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    }
+  }, []);
+  useEffect(() => {
+    if (!accessTokenState) return;
+    const fetchPost = async () => {
+      try {
+        const response = await api.get(`post/${postId}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+        setPost(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar publicação', error);
+        alert('Erro ao buscar publicação');
+      }
+    };
+    fetchPost();
+  }, [accessTokenState, postId]);
+
+  useEffect(() => {
+    if (!accessTokenState || !post?.userId) return;
+
+    const fetchPostUser = async () => {
+      try {
+        const response = await api.get(`user/${post.userId}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+
+        setPostUser(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar usuário do post', error);
+        alert('Erro ao buscar usuário do post');
+      }
+    };
+
+    fetchPostUser();
+  }, [accessTokenState, post?.userId]);
+
+  useEffect(() => {
+    if (!accessTokenState || !post?.Comment?.length) return;
+
+    const fetchCommentUsers = async () => {
+      try {
+        const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
+
+        const usersData = await Promise.all(
+          uniqueUserIds.map(async (userId) => {
+            const response = await api.get(`user/${userId}`, {
+              headers: {
+                Authorization: `Bearer ${accessTokenState}`,
+              },
+            });
+            return { userId, data: response.data };
+          }),
+        );
+
+        const usersMap = usersData.reduce((acc, user) => {
+          acc[user.userId] = user.data;
+          return acc;
+        }, {});
+
+        setCommentUsers(usersMap);
+      } catch (error) {
+        console.error('Erro ao buscar usuários dos comentários', error);
+        alert('Erro ao buscar usuários dos comentários');
+      }
+    };
+
+    fetchCommentUsers();
+  }, [accessTokenState, post?.Comment]);
+  const postDate = post?.createdAt ? new Date(post.createdAt) : null;
   const formattedDate = format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR });
   const [modalOptions, setModalOptions] = useState(false);
   const dotsMenuIcon = require('../../assets/dotsMenu-icon.svg');
@@ -53,9 +132,27 @@ export default function Post() {
     formState: { errors },
     getValues,
   } = useForm({});
-  const onSubmit = (data: any) => {
-    // eslint-disable-next-line no-alert
-    alert(JSON.stringify(data));
+  const onSubmit = async (data: any) => {
+    try {
+      const response = await api.post(
+        '/comment',
+        {
+          userId: loggedIdState,
+          content: data.input,
+          postId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        },
+      );
+      alert('Comentário enviada com sucesso!');
+      navigation.replace('Post', { postId });
+    } catch (error) {
+      console.error('Erro ao enviar comentário:', error);
+      alert('Erro ao enviar comentário. Tente novamente mais tarde.');
+    }
   };
   const handleBlur = () => {
     const comment = getValues('input');
@@ -64,7 +161,6 @@ export default function Post() {
     }
   };
   const [fontsLoaded] = useFonts({
-    // eslint-disable-next-line global-require
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -75,27 +171,28 @@ export default function Post() {
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
-      style={{ backgroundColor: '#f2f6fa', height: '100%' }}>
+      style={{ backgroundColor: '#f2f6fa', height: '100%' }}
+      contentContainerStyle={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
       <HeaderCustom
         font="inter-bold"
         text="Publicação"
         icon
-        headerButton={(
+        headerButton={
           <View>
             {modalOptions ? <ModalOptions createDeepLink={createDeepLink} /> : ''}
             <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
               <PostCardImage width="30px" height="30px" source={dotsMenuIcon} />
             </TouchableOpacity>
           </View>
-        )}
+        }
       />
       <PostContainer>
         <PostUpperPart>
           <ProfileImage source={profileImage} />
-          <ProfileName font="inter-bold">{fakePost[0].fullName}</ProfileName>
+          <ProfileName font="inter-bold">{postUser?.fullName}</ProfileName>
           <PostDate font="inter-semibold">{formattedDate}</PostDate>
         </PostUpperPart>
-        <PostText font="inter-regular">{fakePost[0].input}</PostText>
+        <PostText font="inter-regular">{post?.input}</PostText>
         <ScrollView
           showsHorizontalScrollIndicator={false}
           horizontal
@@ -132,15 +229,16 @@ export default function Post() {
             )}
           />
           {errors.groupcode && <ErrorWarning errorText="Campo obrigatório" />}
-          {fakeComment?.length > 0 ? (
-            fakeComment.map((item: any) => {
+          {post?.Comment.length > 0 ? (
+            post?.Comment.map((item: any) => {
               let formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
                 locale: ptBR,
               });
+              const commentUser = commentUsers[item.userId];
               return (
                 <CommentCard
-                  fullName={item.fullName}
-                  input={item.input}
+                  fullName={commentUser?.fullName || 'Usuário desconhecido'}
+                  input={item.content}
                   createdAt={formattedDate}
                 />
               );
