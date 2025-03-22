@@ -105,26 +105,6 @@ export default function NewPost() {
     const categoryId = selectedCategory.id;
     if (selectedCategoryType !== 'EVENT') {
       try {
-        await Promise.all(
-          files.map(async (file) => {
-            await api.post(
-              '/archives',
-              {
-                name: file.name,
-                userId: loggedIdState,
-                mimeType: file.mimeType,
-                groupId,
-                contentBase64: file.uri,
-                type: file.mimeType,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${accessTokenState}`,
-                },
-              },
-            );
-          }),
-        );
         const response = await api.post(
           '/post',
           {
@@ -139,6 +119,28 @@ export default function NewPost() {
               Authorization: `Bearer ${accessTokenState}`,
             },
           },
+        );
+        const { id } = response.data;
+        await Promise.all(
+          files.map(async (file) => {
+            await api.post(
+              '/archives',
+              {
+                name: file.name,
+                userId: loggedIdState,
+                mimeType: file.mimeType,
+                groupId,
+                contentBase64: file.uri,
+                type: file.mimeType,
+                postId: id,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${accessTokenState}`,
+                },
+              },
+            );
+          }),
         );
         setFiles([]);
         alert('Post enviada com sucesso!');
