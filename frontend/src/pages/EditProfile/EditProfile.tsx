@@ -1,6 +1,7 @@
 /* eslint-disable global-require */
+import { storage } from '../../pages/SignIn/SignIn';
 import { useFonts } from 'expo-font';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
@@ -22,6 +23,7 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { district, ethnicity, expertise } from './EditProfileData';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
+import { format } from 'date-fns';
 
 export default function EditProfile() {
   const {
@@ -31,25 +33,68 @@ export default function EditProfile() {
     setValue,
   } = useForm({
     defaultValues: {
-      whatsApp: '',
+      phone: '',
       fullName: '',
-      dob: '',
-      cpf: '',
+      birthday: '',
       email: '',
       enterprise: '',
       bio: '',
       ethnicity: '',
       expertise: '',
-      district: '',
+      neighborhood: '',
     },
     mode: 'onSubmit',
   });
-  const onSubmit = (data: any) => {
-    // eslint-disable-next-line no-alert
-    alert(JSON.stringify(data));
+
+  const onSubmit = async (data: any) => {
+    try {
+      console.log("Form submitted with data:", data);
+  
+      // Convert birthday to ISO string (if it's not already)
+      if (data.birthday) {
+        const [day, month, year] = data.birthday.split('/'); // Split the date string into day, month, year
+        const formattedBirthday = new Date(`${year}-${month}-${day}`).toISOString(); // Create a new Date object and convert to ISO string
+        data.birthday = formattedBirthday;
+      }
+  
+      const token = storage.getString('accessToken');
+      const userId = storage.getString('loggedId');
+      if (!token || !userId) {
+        console.log('Missing token or user ID.');
+        alert('No access token or user ID found. Please sign in again.');
+        return;
+      }
+  
+      console.log('Sending request to API...');
+      const response = await fetch(`http://localhost:3000/user/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+  
+      console.log('API response:', response);
+  
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        console.error('Failed to save data:', errorResponse);
+        alert('Failed to save data');
+        return;
+      }
+  
+      alert('Changes saved successfully!');
+    } catch (error) {
+      console.error('Error saving user data:', error);
+      alert('There was an error saving your changes. Please try again.');
+    }
   };
+  
+
   const cpfInputRef = useRef(null);
   const phoneInputRef = useRef(null);
+
   const validatePhoneNumber = (value) => {
     if (phoneInputRef.current) {
       const rawValue = phoneInputRef.current.getRawValue();
@@ -59,50 +104,79 @@ export default function EditProfile() {
     }
     return true;
   };
-  const validateCPF = (value) => {
-    if (cpfInputRef.current) {
-      const rawValue = cpfInputRef.current.getRawValue();
-      const cpfField = cpfInputRef.current.isValid();
-      if (rawValue.length < 11 || !cpfField) {
-        return 'CPF inválido';
-      }
-    }
-    return true;
-  };
+
   const [sideMenu, setSideMenu] = useState(true);
+  const [profileData, setProfileData] = useState<any>(null); // State to store the fetched profile data
+
   const menu = require('../../assets/menuw-icon.svg');
   const editButton = require('../../assets/edit-button.svg');
   const defaultProfImage = require('../../assets/test-profile-icon.png');
   const calendarIcon = require('../../assets/calendar-icon.svg');
-  const profileData: any = {
-    profileImage: defaultProfImage,
-    phoneNumber: '21912345678',
-    pName: 'Maria Fernanda',
-    email: 'marifer@gmail.com',
-    ethnicity: '2',
-    dob: '15/09/1990',
-    cpf: '12345678900',
-    bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam eget ligula eu lectus lobortis condimentum. Aliquam nonummy auctor massa. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nulla at risus. Quisque purus magna, auctor et, sagittis ac, posuere eu, lectus. Nam mattis, felis ut adipiscing',
-    expertise: '3',
-    district: '1',
-    enterprise: 'Confeitaria da Maria',
+
+  const formatDateToDDMMYYYY = (dateString) => {
+    const date = new Date(dateString);
+    return format(date, 'dd/MM/yyyy'); // Using date-fns for formatting (optional)
   };
-  setValue('whatsApp', profileData.phoneNumber);
-  setValue('fullName', profileData.pName);
-  setValue('email', profileData.email);
-  setValue('dob', profileData.dob);
-  setValue('cpf', profileData.cpf);
-  setValue('enterprise', profileData.enterprise);
-  setValue('bio', profileData.bio);
-  setValue('ethnicity', profileData.ethnicity);
-  setValue('expertise', profileData.expertise);
-  setValue('district', profileData.district);
+
+  useEffect(() => {
+    // Retrieve the access token from storage
+    const token = storage.getString('accessToken');
+    if (token) {
+      // Fetch user information to check the "tipo"
+      const fetchUser = async () => {
+        try {
+          const userId = storage.getString('loggedId');
+          const response = await fetch(`http://localhost:3000/user/${userId}`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          const userData = await response.json();
+
+          // Fetch the user posts to set profile info
+          const profileInfo = {
+            profileImage: defaultProfImage,
+            phone: userData.phone || '',
+            fullName: userData.fullName || '',
+            email: userData.email || '',
+            ethnicity: userData.ethnicity || '',
+            birthday: userData.birthday ? formatDateToDDMMYYYY(userData.birthday) : '', // Convert birthday to DD/MM/YYYY
+            bio: userData.bio || '',
+            expertise: userData.expertise || '',
+            neighborhood: userData.neighborhood || '',
+            enterprise: userData.enterprise || '',
+          };
+
+          setProfileData(profileInfo);
+
+          // Set form values with the fetched data
+          setValue('phone', profileInfo.phone);
+          setValue('fullName', profileInfo.fullName);
+          setValue('email', profileInfo.email);
+          setValue('birthday', profileInfo.birthday);
+          setValue('enterprise', profileInfo.enterprise);
+          setValue('bio', profileInfo.bio);
+          setValue('ethnicity', profileInfo.ethnicity);
+          setValue('expertise', profileInfo.expertise);
+          setValue('neighborhood', profileInfo.neighborhood);
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      };
+      fetchUser();
+    }
+  }, []);
+
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
   if (!fontsLoaded) {
     return undefined;
   }
+
   return (
     <BlueBackground>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
@@ -117,11 +191,11 @@ export default function EditProfile() {
               alert('teste');
             }}
           />
-          <ProfilePic source={profileData.profileImage} />
+          <ProfilePic source={profileData ? profileData.profileImage : defaultProfImage} />
           <PencilButton source={editButton} />
           <Controller
             control={control}
-            name="whatsApp"
+            name="phone"
             render={({ field: { onChange, value } }) => (
               <InputTextCustom
                 onChangeText={onChange}
@@ -137,7 +211,7 @@ export default function EditProfile() {
               validate: validatePhoneNumber,
             }}
           />
-          {errors.whatsApp && <ErrorWarning errorText={errors.whatsApp.message} />}
+          {errors.phone && <ErrorWarning errorText={errors.phone.message} />}
         </UpperPart>
         <View style={{ gap: '3.5vw', marginBottom: 10 }}>
           <NamePart>
@@ -163,46 +237,24 @@ export default function EditProfile() {
             {errors.fullName && <ErrorWarning errorText={errors.fullName.message} />}
           </NamePart>
           <MiddlePart>
-            <View style={{ flex: 1, marginRight: `${6.27 / 2}vw` }}>
-              <Controller
-                control={control}
-                name="dob"
-                rules={{
-                  required: true,
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <InputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="Data de Nascimento"
-                    imageIcon={calendarIcon}
-                    type="datetime"
-                    options={{ format: 'DD/MM/YYYY' }}
-                  />
-                )}
-              />
-              {errors.dob && <ErrorWarning errorText="Campo obrigatório" />}
-            </View>
-            <View style={{ flex: 1, marginLeft: `${6.27 / 2}vw` }}>
-              <Controller
-                control={control}
-                name="cpf"
-                rules={{
-                  validate: validateCPF,
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <InputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="CPF"
-                    imageIcon={null}
-                    type="cpf"
-                    innerRef={(value) => (cpfInputRef.current = value)}
-                  />
-                )}
-              />
-              {errors.cpf && <ErrorWarning errorText={errors.cpf.message} />}
-            </View>
+            <Controller
+              control={control}
+              name="birthday"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, value } }) => (
+                <InputTextCustom
+                  onChangeText={onChange}
+                  value={value}
+                  label="Data de Nascimento"
+                  imageIcon={calendarIcon}
+                  type="datetime"
+                  options={{ format: 'DD/MM/YYYY' }}
+                />
+              )}
+            />
+            {errors.birthday && <ErrorWarning errorText="Campo obrigatório" />}
           </MiddlePart>
           <BottomPart>
             <Controller
@@ -257,7 +309,7 @@ export default function EditProfile() {
             />
             <Controller
               control={control}
-              name="district"
+              name="neighborhood"
               rules={{
                 required: true,
               }}
@@ -303,11 +355,26 @@ export default function EditProfile() {
             />
             {errors.enterprise && <ErrorWarning errorText="Campo obrigatório" />}
             <ButtonCustom
-              onPress={handleSubmit(onSubmit)}
+              onPress={handleSubmit((data) => {
+                console.log('Form is being submitted...');
+                console.log('handleSubmit called with data:', data);
+                onSubmit(data); // Directly call onSubmit after handleSubmit
+              }, (errors) => {
+                const errorMessages = Object.values(errors).map(error => error.message).join('\n');
+
+                if (errorMessages) {
+                  alert('Erros:\n' + errorMessages);
+                } else {
+                  alert('A submissão falhou por erros desconhecidos.');
+                }
+
+                console.log('Form submission failed due to validation errors:', errors);
+              })}
               backColor="#32936F"
               fontColor="white"
               text="Salvar"
             />
+
           </BottomPart>
         </View>
       </WhiteBackground>

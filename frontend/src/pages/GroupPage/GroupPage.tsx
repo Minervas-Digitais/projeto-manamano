@@ -2,8 +2,9 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable global-require */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
+import { storage } from '../../pages/SignIn/SignIn';
 import { StyleSheet, View, Image, Dimensions } from 'react-native';
 import {
   GroupPageAddPostButton,
@@ -39,90 +40,22 @@ export default function GroupPage({ navigation }: any) {
   const [filterPosts, setFilterPosts] = useState('Geral');
   const [filterFiles, setFilterFiles] = useState('Fotos');
   const [sideMenu, setSideMenu] = useState(true);
+  const [categories, setCategories] = useState<any[]>([]); // State for storing categories
+  const [posts, setPosts] = useState<any[]>([]); // State for storing posts
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
   });
+
   if (!fontsLoaded) {
     return undefined;
   }
+
   const groupName = 'Turma 24.1';
-  const fakePosts: any = [
-    {
-      nameUser: 'Geral Moreira',
-      imageUser: duckImage,
-      postContent: 'Alguém mora perto de Bonsucesso? Alguém mora perto de Bonsucesso?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Vetereanos 22.1',
-      categoryName: 'Geral',
-    },
-    {
-      nameUser: 'Jorgelina Silva',
-      imageUser: duckImage,
-      postContent: 'Já postaram o link da aula?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Calouros 23.2',
-      categoryName: 'Geral',
-    },
-    {
-      nameUser: 'Geral Moreira',
-      imageUser: duckImage,
-      postContent: 'Alguém mora perto de Bonsucesso? Alguém mora perto de Bonsucesso?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Vetereanos 22.1',
-      categoryName: 'Geral',
-    },
-    {
-      nameUser: 'Geral Silva',
-      imageUser: duckImage,
-      postContent: 'Já postaram o link da aula?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Calouros 23.2',
-      categoryName: 'Geral',
-    },
-    {
-      nameUser: 'Avisos Moreira',
-      imageUser: duckImage,
-      postContent: 'Alguém mora perto de Bonsucesso?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Vetereanos 22.1',
-      categoryName: 'Avisos',
-    },
-    {
-      nameUser: 'Eventos Silva',
-      imageUser: duckImage,
-      postContent: 'Já postaram o link da aula?',
-      numComments: 5,
-      date: 'Ontem, 21:32',
-      originGroup: 'Calouros 23.2',
-      categoryName: 'Eventos',
-    },
-    {
-      nameUser: 'Outros Silva',
-      imageUser: duckImage,
-      postContent: 'Já postaram o link da aula?',
-      numComments: 656,
-      date: 'Ontem, 21:32',
-      originGroup: 'Calouros 23.2',
-      categoryName: 'Outros',
-    },
-  ];
 
-  const fakeCategoryList = [
-    { categoryName: 'Geral' },
-    { categoryName: 'Avisos' },
-    { categoryName: 'Eventos' },
-    { categoryName: 'Outros' },
-  ];
-
-  const fakeCategory = [
+  const fileCategory = [
     { categoryName: 'Fotos' },
     { categoryName: 'Links' },
     { categoryName: 'Documentos' },
@@ -134,6 +67,7 @@ export default function GroupPage({ navigation }: any) {
     { title: 'Aula 3', date: '12/11/24', time: '13:30' },
     { title: 'Aula 4', date: '20/11/24', time: '17:00' },
   ];
+
   const fakeFiles: any = [
     { file: duckImage, type: 'Fotos' },
     { file: duckImage, type: 'Fotos' },
@@ -189,6 +123,66 @@ export default function GroupPage({ navigation }: any) {
     },
   ];
 
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  useEffect(() => {
+    const token = storage.getString('accessToken');
+    if (token) setAccessToken(token);
+  }, []);
+
+  // Fetch the posts from the API
+  const getGroupPosts = async (groupId: string) => {
+    if (!accessToken) {
+      console.error('Access token is missing.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3000/post/group/${groupId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      setPosts(data); // Assuming the response is a list of posts
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+  };
+
+  useEffect(() => {
+    const groupId = 'your-group-id'; // Replace with actual group ID
+    getGroupPosts(groupId);
+  }, [accessToken]);
+
+  // Fetch the categories from the API
+  const getGroupCategory = async (groupId: string) => {
+    if (!accessToken) {
+      console.error('Access token is missing.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3000/group/${groupId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+      setCategories(data.categories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  useEffect(() => {
+    const groupId = 'your-group-id'; // Replace with actual group ID
+    getGroupCategory(groupId);
+  }, [accessToken]);
+
   return (
     <GroupPageContainer>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
@@ -223,10 +217,7 @@ export default function GroupPage({ navigation }: any) {
             setFilesSelect(false);
           }}
           style={classesSelect ? style.selectStyleTab : {}}>
-          <GroupDataText
-            font="inter-bold"
-            size="18px"
-            color={classesSelect ? '#EF4036' : '#8F8F8F'}>
+          <GroupDataText font="inter-bold" size="18px" color={classesSelect ? '#EF4036' : '#8F8F8F'}>
             Aulas
           </GroupDataText>
         </GroupPageTabsContainer>
@@ -246,20 +237,22 @@ export default function GroupPage({ navigation }: any) {
         {muralSelect ? (
           <>
             <GroupPageListFixPost>
-              {fakePosts?.length > 0 ? (
-                fakePosts?.map((item: any) => (
-                  <PostCard
-                    nameUser={item.nameUser}
-                    imageUser={item.imageUser}
-                    postContent={item.postContent}
-                    numComments={item.numComments}
-                    date={item.date}
-                    originGroup={item.originGroup}
-                    dotsMenu
-                    fix
-                    postId="123"
-                  />
-                ))
+              {posts.length > 0 ? (
+                posts
+                  .filter((item: any) => item.isPinned) // Filter pinned posts
+                  .map((item: any) => (
+                    <PostCard
+                      nameUser={item.nameUser}
+                      imageUser={item.imageUser}
+                      postContent={item.postContent}
+                      numComments={item.numComments}
+                      date={item.date}
+                      originGroup={item.originGroup}
+                      dotsMenu
+                      fix
+                      postId="123"
+                    />
+                  ))
               ) : (
                 <View />
               )}
@@ -269,8 +262,8 @@ export default function GroupPage({ navigation }: any) {
                 Categorias
               </GroupDataText>
               <GroupPageCategoryList>
-                {fakeCategoryList?.length > 0 ? (
-                  fakeCategoryList?.map((item: any) => (
+                {categories?.length > 0 ? (
+                  categories.map((item: any) => (
                     <CategoryButton
                       categoryName={item.categoryName}
                       onPress={() => {
@@ -285,8 +278,8 @@ export default function GroupPage({ navigation }: any) {
               </GroupPageCategoryList>
             </GroupPageCategoryContainer>
             <GroupPagePostList>
-              {fakePosts?.length > 0 ? (
-                fakePosts?.map((item: any) => {
+              {posts?.length > 0 ? (
+                posts?.map((item: any) => {
                   if (filterPosts === item.categoryName) {
                     return (
                       <PostCard
@@ -323,8 +316,8 @@ export default function GroupPage({ navigation }: any) {
         ) : (
           <>
             <GroupPageLessonsContainer style={{ justifyContent: 'center', flexDirection: 'row' }}>
-              {fakeCategory?.length > 0 ? (
-                fakeCategory?.map((item: any) => (
+              {fileCategory?.length > 0 ? (
+                fileCategory?.map((item: any) => (
                   <CategoryButton
                     categoryName={item.categoryName}
                     onPress={() => {
@@ -372,6 +365,7 @@ export default function GroupPage({ navigation }: any) {
     </GroupPageContainer>
   );
 }
+
 const style = StyleSheet.create({
   selectStyleTab: {
     borderBottomColor: '#EF4036',
