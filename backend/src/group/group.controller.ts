@@ -13,6 +13,8 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { GroupService } from './group.service';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/roles.decorator';
 
 @Controller('group')
 export class GroupController {
@@ -27,7 +29,8 @@ export class GroupController {
 
   @HttpCode(200)
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   findAll() {
     return this.groupService.findAll();
   }
@@ -41,14 +44,16 @@ export class GroupController {
 
   @HttpCode(201)
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   update(@Param('id') id: string, @Body() updateGroupDto: UpdateGroupDto) {
     return this.groupService.update(id, updateGroupDto);
   }
 
   @HttpCode(200)
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   remove(@Param('id') id: string) {
     return this.groupService.remove(id);
   }

@@ -15,6 +15,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/roles.decorator';
 
 @Controller('user')
 export class UserController {
@@ -28,7 +30,8 @@ export class UserController {
 
   @HttpCode(200)
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   findAll() {
     return this.userService.findAll();
   }
@@ -49,7 +52,8 @@ export class UserController {
 
   @HttpCode(204)
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @Roles('ADMIN')
   remove(@Param('id') id: string) {
     return this.userService.remove(id);
   }

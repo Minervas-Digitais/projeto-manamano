@@ -1,23 +1,40 @@
-import { Controller, Post, Get, Patch, Delete, Body, Param, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete } from '@nestjs/common';
+import { Body, Param, Request, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Roles } from 'src/auth/roles.decorator';
+import { RolesGuard } from 'src/auth/roles.guard';
 
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post()
-  async create(@Body() createNotificationDto: CreateNotificationDto, @Body('role') role: string) {
-    return this.notificationService.createNotification(createNotificationDto, role);
+  @UseGuards(JwtAuthGuard)
+  async create(@Body() createNotificationDto: CreateNotificationDto) {
+    return this.notificationService.createNotification(createNotificationDto, 'MEMBER');
+  }
+
+  @Post('/global')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async createGlobal(@Body() dto: CreateNotificationDto, @Request() req) {
+    return this.notificationService.createGlobalNotification({
+      ...dto,
+      senderId: req.user.id,
+    });
   }
 
   @Get('user/:userId')
+  @UseGuards(JwtAuthGuard)
   async getUserNotifications(@Param('userId') userId: string) {
     return this.notificationService.getNotificationsForUser(userId);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async markAsRead(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
     const { isRead } = updateNotificationDto;
     if (isRead) {
@@ -26,6 +43,7 @@ export class NotificationController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   async deleteNotification(@Param('id') id: string) {
     return this.notificationService.deleteNotification(id);
   }
