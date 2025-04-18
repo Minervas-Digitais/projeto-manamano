@@ -39,6 +39,7 @@ export default function ModalOptionsNotification({ type, display, id, height, st
   const optionsStorage = () => {
     storage.set('idNotif', id);
     storage.set('displayNotif', true);
+    setDisplayConfirm(false);
   };
 
   return (
