@@ -1,8 +1,8 @@
 /* eslint-disable react/jsx-no-useless-fragment */
 /* eslint-disable global-require */
 /* eslint-disable react/jsx-one-expression-per-line */
-import React from 'react';
-import { Image, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, TouchableOpacity, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   NotificationContainer,
@@ -15,9 +15,25 @@ import {
   NotificationTextContainerWarning,
   NotificationTextGreyWarning,
 } from './NotificationCardStyle';
+import { PostCardImage } from '../PostCard/PostCardStyle';
+import ModalOptionsNotification from '../ModalOptionsNotification/ModalOptionsNotification';
 
-export default function NotificationCard({ user, group, date, image, onPress, type, body }: any) {
+export default function NotificationCard({
+  user,
+  group,
+  date,
+  image,
+  onPress,
+  type,
+  body,
+  isread,
+  confirm,
+  idNotif,
+}: any) {
   const megaPhone = require('../../assets/megaphone-icon.svg');
+  const fixed = require('../../assets/fixed-icon.svg');
+  const dotsMenuIcon = require('../../assets/dotsMenuBig.svg');
+  const [display, setDisplay] = useState(false);
 
   const [fontsLoaded] = useFonts({
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -54,9 +70,10 @@ export default function NotificationCard({ user, group, date, image, onPress, ty
   const formattedDate = formatRelativeDate(date);
 
   return (
-    <>
+    <View style={{ width: '100%' }}>
       {type === 'COMMENT' ? (
-        <NotificationContainer onPress={onPress}>
+        <NotificationContainer onPress={onPress} isread={isread}>
+          <ModalOptionsNotification display={display} id={idNotif} />
           <NotificationTextContainer>
             <NotificationImage source={image} />
             <NotificationTextGrey font="inter-semiBold">
@@ -64,20 +81,35 @@ export default function NotificationCard({ user, group, date, image, onPress, ty
               no grupo <NotificationTextRed font="inter-semiBold">{group}</NotificationTextRed>{' '}
               comentou no seu post! Clique para visualizar!
             </NotificationTextGrey>
+            <TouchableOpacity onPress={() => setDisplay(!display)}>
+              <Image source={dotsMenuIcon} />
+            </TouchableOpacity>
           </NotificationTextContainer>
           <NotificationTextDateContainer>
             <NotificationTextDate font="inter-regular">{formattedDate}</NotificationTextDate>
           </NotificationTextDateContainer>
         </NotificationContainer>
       ) : (
+        <View />
+      )}
+
+      {type === 'WARNING' ? (
         <NotificationContainer
           onPress={onPress}
           style={{ gap: 3, justifyContent: 'space-between' }}
-        >
+          isread={isread}>
+          <ModalOptionsNotification display={display} id={idNotif} />
+
           <View>
             <NotificationTextContainerWarning height="min-content">
-              <Image source={megaPhone} />
-              <NotificationTextRed font="inter-bold">Comunicado: </NotificationTextRed>
+              <View style={{ flexDirection: 'row', gap: 3 }}>
+                <Image source={megaPhone} />
+                <NotificationTextRed font="inter-bold">Comunicado: </NotificationTextRed>
+              </View>
+
+              <TouchableOpacity onPress={() => setDisplay(!display)}>
+                <Image source={dotsMenuIcon} />
+              </TouchableOpacity>
             </NotificationTextContainerWarning>
             <NotificationTextContainerWarning height={39}>
               <NotificationTextGreyWarning font="inter-semiBold" numberOfLines={2}>
@@ -89,7 +121,51 @@ export default function NotificationCard({ user, group, date, image, onPress, ty
             <NotificationTextDate font="inter-regular">{formattedDate}</NotificationTextDate>
           </NotificationTextDateContainer>
         </NotificationContainer>
+      ) : (
+        <View />
       )}
-    </>
+
+      {type === 'FIXED' ? (
+        <NotificationContainer
+          onPress={onPress}
+          style={{ gap: 3, justifyContent: 'space-between' }}
+          isread={isread}>
+          <ModalOptionsNotification display={display} id={idNotif} />
+          <View>
+            <NotificationTextContainerWarning height="min-content">
+              <View
+                style={{
+                  flexDirection: 'row',
+                  gap: 3,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Image source={fixed} />
+                <NotificationTextRed font="inter-bold">Publicação fixada: </NotificationTextRed>
+              </View>
+              <TouchableOpacity onPress={() => setDisplay(!display)}>
+                <Image source={dotsMenuIcon} />
+              </TouchableOpacity>
+            </NotificationTextContainerWarning>
+            <NotificationTextContainerWarning height={39}>
+              <NotificationTextGrey font="inter-semiBold">
+                Uma pubçicação foi fixada no grupo{' '}
+                <NotificationTextRed font="inter-semiBold" numberOfLines={1}>
+                  {group}
+                </NotificationTextRed>
+                . Clique para visualizar!
+              </NotificationTextGrey>
+            </NotificationTextContainerWarning>
+          </View>
+          <NotificationTextDateContainer>
+            <NotificationTextDate font="inter-regular">{formattedDate}</NotificationTextDate>
+          </NotificationTextDateContainer>
+        </NotificationContainer>
+      ) : (
+        <View />
+      )}
+    </View>
   );
 }
