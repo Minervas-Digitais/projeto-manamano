@@ -8,7 +8,6 @@ export class NotificationService {
   constructor(private prisma: PrismaService) {}
 
   async createNotification(dto: CreateNotificationDto, userRole: string): Promise<Notification> {
-    // Verifica se a notificação é WARNING e se o usuário é ADMIN
     if (dto.type === NotificationType.WARNING && userRole !== 'ADMIN') {
       throw new ForbiddenException('Apenas ADMIN podem criar notificações do tipo WARNING');
     }
@@ -43,5 +42,22 @@ export class NotificationService {
     return this.prisma.notification.delete({
       where: { id: notificationId },
     });
+  }
+
+  async createGlobalNotification(dto: CreateNotificationDto): Promise<{ count: number }> {
+    const users = await this.prisma.user.findMany({
+      where: { id: { not: dto.senderId } },
+    });
+
+    const data = users.map(user => ({
+      senderId: dto.senderId,
+      recipientId: user.id,
+      body: dto.body,
+      type: dto.type,
+      groupName: dto.groupName || null,
+      senderName: dto.senderName || null,
+    }));
+
+    return this.prisma.notification.createMany({ data });
   }
 }
