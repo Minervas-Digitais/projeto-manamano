@@ -55,7 +55,7 @@ export class GroupService {
     try {
       const group = await this.findOne(id);
       if (typeof group === 'object' && group instanceof Error) {
-        return group;
+        throw group;
       }
       return await this.prismaService.group.update({
         where: {
@@ -72,7 +72,7 @@ export class GroupService {
     try {
       const group = await this.findOne(id);
       if (typeof group === 'object' && group instanceof Error) {
-        return group;
+        throw group;
       }
       await this.prismaService.group.delete({
         where: {
