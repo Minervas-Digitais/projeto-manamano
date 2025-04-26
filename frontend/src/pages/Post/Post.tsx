@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { Linking, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,6 +37,7 @@ export default function Post() {
   const [post, setPost] = useState(null);
   const [postUser, setPostUser] = useState(null);
   const [commentUsers, setCommentUsers] = useState({});
+  const [postArchives, setPostArchives] = useState([]);
   const profileImage = require('../../assets/test-profile-icon.png');
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
@@ -61,6 +62,7 @@ export default function Post() {
           },
         });
         setPost(response.data);
+        console.log(response.data);
       } catch (error) {
         console.error('Erro ao buscar publicação', error);
         alert('Erro ao buscar publicação');
@@ -71,7 +73,6 @@ export default function Post() {
 
   useEffect(() => {
     if (!accessTokenState || !post?.userId) return;
-
     const fetchPostUser = async () => {
       try {
         const response = await api.get(`user/${post.userId}`, {
@@ -79,24 +80,40 @@ export default function Post() {
             Authorization: `Bearer ${accessTokenState}`,
           },
         });
-
         setPostUser(response.data);
+        console.log(response.data);
       } catch (error) {
         console.error('Erro ao buscar usuário do post', error);
         alert('Erro ao buscar usuário do post');
       }
     };
-
     fetchPostUser();
   }, [accessTokenState, post?.userId]);
+  useEffect(() => {
+    if (!accessTokenState) return;
+    const fetchArchives = async () => {
+      try {
+        const response = await api.get(`archives/post/${postId}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+        setPostArchives(response.data);
+        console.log('Arquivos do post:', response.data);
+      } catch (error) {
+        console.error('Erro ao buscar arquivos do post', error);
+        alert('Erro ao buscar arquivos do post');
+      }
+    };
+
+    fetchArchives();
+  }, [accessTokenState, postId]);
 
   useEffect(() => {
     if (!accessTokenState || !post?.Comment?.length) return;
-
     const fetchCommentUsers = async () => {
       try {
         const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
-
         const usersData = await Promise.all(
           uniqueUserIds.map(async (userId) => {
             const response = await api.get(`user/${userId}`, {
@@ -107,12 +124,10 @@ export default function Post() {
             return { userId, data: response.data };
           }),
         );
-
         const usersMap = usersData.reduce((acc, user) => {
           acc[user.userId] = user.data;
           return acc;
         }, {});
-
         setCommentUsers(usersMap);
       } catch (error) {
         console.error('Erro ao buscar usuários dos comentários', error);
@@ -198,12 +213,9 @@ export default function Post() {
           horizontal
           contentContainerStyle={{ gap: 15 }}
           style={{ maxHeight: 85 }}>
-          <PostAttachment text="Aula 1 - Whatsapp" />
-          <PostAttachment archive text="Aula 1 - Drive" />
-          <PostAttachment text="asfwhjeineif" />
-          <PostAttachment text="asfwhjeineif" />
-          <PostAttachment archive text="sdaghjsae8ig" />
-          <PostAttachment text="asfwhjeineif" />
+          {postArchives.map((archive) => (
+            <PostAttachment archive text={archive.name} file={archive} />
+          ))}
         </ScrollView>
         <View style={{ width: '100%', left: '-6vw' }}>
           <HorizontalSeparator />
