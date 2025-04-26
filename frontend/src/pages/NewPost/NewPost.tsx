@@ -6,6 +6,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Image, View, ScrollView } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
+import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import CategoryButton from '../../components/CategoryButton/CategoryButton';
 import { GroupPageCategoryContainer, GroupPageCategoryList } from '../GroupPage/GroupPageStyle';
@@ -27,7 +28,9 @@ import api from '../../services/api';
 import { storage } from '../SignIn/SignIn';
 import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
+import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 
+export default function NewPost({ navigation }: any) {
 export default function NewPost({ navigation }: any) {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
@@ -88,6 +91,10 @@ export default function NewPost({ navigation }: any) {
           type: 'error',
           text1: 'Erro ao buscar categorias.',
         });
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar categorias.',
+        });
       }
     };
     fetchCategories();
@@ -104,6 +111,10 @@ export default function NewPost({ navigation }: any) {
   const onSubmit = async (data: any) => {
     const selectedCategory = categories.find((category) => category.name === filterPosts);
     if (!selectedCategory) {
+      Toast.show({
+        type: 'error',
+        text1: 'Categoria não encontrada.',
+      });
       Toast.show({
         type: 'error',
         text1: 'Categoria não encontrada.',
@@ -158,9 +169,17 @@ export default function NewPost({ navigation }: any) {
         setTimeout(() => {
           navigation.goBack();
         }, 500);
+        setTimeout(() => {
+          navigation.goBack();
+        }, 500);
       } catch (error) {
         console.error('Erro ao enviar publicação:', error);
+        console.error('Erro ao enviar publicação:', error);
         setFiles([]);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao enviar publicação. Tente novamente mais tarde.',
+        });
         Toast.show({
           type: 'error',
           text1: 'Erro ao enviar publicação. Tente novamente mais tarde.',
@@ -194,7 +213,19 @@ export default function NewPost({ navigation }: any) {
         setTimeout(() => {
           navigation.goBack();
         }, 500);
+        Toast.show({
+          type: 'success',
+          text1: 'Publicação enviada com sucesso!',
+        });
+        setTimeout(() => {
+          navigation.goBack();
+        }, 500);
       } catch (error) {
+        console.error('Erro ao enviar publicação:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao enviar publicação. Tente novamente mais tarde.',
+        });
         console.error('Erro ao enviar publicação:', error);
         Toast.show({
           type: 'error',
@@ -259,9 +290,17 @@ export default function NewPost({ navigation }: any) {
           type: 'error',
           text1: 'Nenhum arquivo selecionado.',
         });
+        Toast.show({
+          type: 'error',
+          text1: 'Nenhum arquivo selecionado.',
+        });
       }
     } catch (error) {
       console.error('Erro ao selecionar os arquivos: ', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao selecionar os arquivos.',
+      });
       Toast.show({
         type: 'error',
         text1: 'Erro ao selecionar os arquivos.',
@@ -338,6 +377,7 @@ export default function NewPost({ navigation }: any) {
                   <Image source={attachmentIcon} />
                 </LinkIcon>
               </View>
+              <Toast config={toastConfig} />
               <Toast config={toastConfig} />
             </NewPostInputTextContainer>
             <View style={{ paddingBottom: 30 }}>
@@ -417,6 +457,7 @@ export default function NewPost({ navigation }: any) {
               </View>
             </MiddlePart>
             <Toast config={toastConfig} />
+            <Toast config={toastConfig} />
             <BottomPartContainer>
               <Controller
                 control={control}
@@ -433,6 +474,7 @@ export default function NewPost({ navigation }: any) {
                   />
                 )}
               />
+              {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
               <ButtonCustom
                 onPress={handleSubmit(onSubmit)}
