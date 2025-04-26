@@ -6491,6 +6491,11 @@ react-native-text-input-mask@^3.2.0:
   resolved "https://registry.yarnpkg.com/react-native-text-input-mask/-/react-native-text-input-mask-3.2.0.tgz#d8c4f45e6a2ae34f2b704b2c9c1c5441d109e4e0"
   integrity sha512-YAV1MeZr5ME/GOUBSPCjAVCcDMPNcyoXw5FOdPkA8GK9Q+t1TcvD2QOGWglVxc9vAKMddub7EZ2wQhk2ph+ElQ==
 
+react-native-toast-message@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/react-native-toast-message/-/react-native-toast-message-2.3.0.tgz#c25fb40d7af4388f6a798efbfca479d53916ed00"
+  integrity sha512-d7LldTK1ei1Bl7RFhoOYw8hVQ4oKPQHORYI//xR9Pyz3HxSlFlvQbueE5X3KLoemRRgBrOUg3zY6DxXnxrVLRg==
+
 react-native-web@~0.19.10:
   version "0.19.11"
   resolved "https://registry.yarnpkg.com/react-native-web/-/react-native-web-0.19.11.tgz#1b96ac3cea9af4e1280fd5fa3b606b471f66edc3"

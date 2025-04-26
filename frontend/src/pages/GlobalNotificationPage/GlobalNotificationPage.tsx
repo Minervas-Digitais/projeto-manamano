@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { View } from 'react-native';
+import { ToastAndroid, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -8,7 +8,8 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
 import { storage } from '../SignIn/SignIn';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
-import { GlobalNotificationContainer } from './GlobalNotificationPageStyle';
+import { GlobalNotificationContainer, toastConfig } from './GlobalNotificationPageStyle';
+import Toast from 'react-native-toast-message';
 
 export default function GlobalNotificationPage({ navigation }: any) {
   const {
@@ -18,12 +19,16 @@ export default function GlobalNotificationPage({ navigation }: any) {
   } = useForm({});
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
+
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
+
     if (loggedId && accessToken) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
+
       api.get(`/user/${loggedId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -46,10 +51,19 @@ export default function GlobalNotificationPage({ navigation }: any) {
           },
         },
       );
-      alert('Comunicado enviado com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Comunicado enviado com sucesso!',
+      });
+      setTimeout(() => {
+        navigation.goBack();
+      }, 500);
     } catch (error) {
       console.error('Erro ao enviar comunicado:', error);
-      alert('Erro ao enviar comunicado. Tente novamente mais tarde.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao enviar comunicado. Tente novamente mais tarde.',
+      });
     }
   };
 
@@ -79,7 +93,8 @@ export default function GlobalNotificationPage({ navigation }: any) {
             />
           )}
         />
-        {errors.groupcode && <ErrorWarning errorText="Campo obrigatório" />}
+        {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
+        <Toast config={toastConfig} />
         <ButtonCustom
           onPress={handleSubmit(onSubmit)}
           backColor="#160E47"
