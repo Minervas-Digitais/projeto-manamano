@@ -2,6 +2,7 @@ import { useFonts } from 'expo-font';
 import { ToastAndroid, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
+import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
@@ -9,7 +10,6 @@ import api from '../../services/api';
 import { storage } from '../SignIn/SignIn';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import { GlobalNotificationContainer, toastConfig } from './GlobalNotificationPageStyle';
-import Toast from 'react-native-toast-message';
 
 export default function GlobalNotificationPage({ navigation }: any) {
   const {

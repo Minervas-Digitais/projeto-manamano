@@ -10,6 +10,8 @@ export const GlobalNotificationContainer = styled.View`
 `;
 
 export const ToastContainer = styled.View`
+  border-width: 2px;
+  border-color: rgba(141, 140, 140, 0.2);
   border-left-width: 5px;
   border-left-color: #160e47;
   background-color: #ffffff;

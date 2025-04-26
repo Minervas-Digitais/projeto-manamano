@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import PostAttachment from '../../components/PostAttachmentCard/PostAttachment';
 import {
@@ -25,6 +26,7 @@ import { PostCardImage } from '../../components/PostCard/PostCardStyle';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 
 export default function Post() {
   const route = useRoute();
@@ -62,10 +64,12 @@ export default function Post() {
           },
         });
         setPost(response.data);
-        console.log(response.data);
       } catch (error) {
         console.error('Erro ao buscar publicação', error);
-        alert('Erro ao buscar publicação');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar publicação. Tente novamente mais tarde.',
+        });
       }
     };
     fetchPost();
@@ -81,10 +85,12 @@ export default function Post() {
           },
         });
         setPostUser(response.data);
-        console.log(response.data);
       } catch (error) {
         console.error('Erro ao buscar usuário do post', error);
-        alert('Erro ao buscar usuário do post');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar usuário da publicação. Tente novamente mais tarde.',
+        });
       }
     };
     fetchPostUser();
@@ -99,10 +105,12 @@ export default function Post() {
           },
         });
         setPostArchives(response.data);
-        console.log('Arquivos do post:', response.data);
       } catch (error) {
         console.error('Erro ao buscar arquivos do post', error);
-        alert('Erro ao buscar arquivos do post');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar arquivos da publicação. Tente novamente mais tarde.',
+        });
       }
     };
 
@@ -131,7 +139,10 @@ export default function Post() {
         setCommentUsers(usersMap);
       } catch (error) {
         console.error('Erro ao buscar usuários dos comentários', error);
-        alert('Erro ao buscar usuários dos comentários');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar usuários dos comentários. Tente novamente mais tarde.',
+        });
       }
     };
 
@@ -162,11 +173,19 @@ export default function Post() {
           },
         },
       );
-      alert('Comentário enviada com sucesso!');
-      navigation.replace('Post', { postId });
+      Toast.show({
+        type: 'success',
+        text1: 'Comentário enviado com sucesso!',
+      });
+      setTimeout(() => {
+        navigation.replace('Post', { postId });
+      }, 500);
     } catch (error) {
       console.error('Erro ao enviar comentário:', error);
-      alert('Erro ao enviar comentário. Tente novamente mais tarde.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao enviar comentário. Tente novamente mais tarde.',
+      });
     }
   };
   const handleBlur = () => {
@@ -259,6 +278,7 @@ export default function Post() {
             <View />
           )}
         </CommentsContainer>
+        <Toast config={toastConfig} />
       </PostContainer>
     </ScrollView>
   );
