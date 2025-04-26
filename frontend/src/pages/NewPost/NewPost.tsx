@@ -5,6 +5,7 @@ import { useRoute } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 import { Image, View, ScrollView } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
+import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import CategoryButton from '../../components/CategoryButton/CategoryButton';
 import { GroupPageCategoryContainer, GroupPageCategoryList } from '../GroupPage/GroupPageStyle';
@@ -25,8 +26,9 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import api from '../../services/api';
 import { storage } from '../SignIn/SignIn';
 import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
+import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 
-export default function NewPost() {
+export default function NewPost({ navigation }: any) {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
   const [files, setFiles] = useState<
@@ -82,7 +84,10 @@ export default function NewPost() {
         setCategories(response.data);
       } catch (error) {
         console.error('Erro ao buscar categorias', error);
-        alert('Erro ao buscar categorias');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar categorias.',
+        });
       }
     };
     fetchCategories();
@@ -99,7 +104,10 @@ export default function NewPost() {
   const onSubmit = async (data: any) => {
     const selectedCategory = categories.find((category) => category.name === filterPosts);
     if (!selectedCategory) {
-      alert('Categoria não encontrada');
+      Toast.show({
+        type: 'error',
+        text1: 'Categoria não encontrada.',
+      });
       return;
     }
     const categoryId = selectedCategory.id;
@@ -140,12 +148,21 @@ export default function NewPost() {
             },
           },
         );
+        Toast.show({
+          type: 'success',
+          text1: 'Publicação enviada com sucesso!',
+        });
         setFiles([]);
-        alert('Post enviada com sucesso!');
+        setTimeout(() => {
+          navigation.goBack();
+        }, 500);
       } catch (error) {
+        console.error('Erro ao enviar publicação:', error);
         setFiles([]);
-        console.error('Erro ao enviar post:', error);
-        alert('Erro ao enviar post. Tente novamente mais tarde.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao enviar publicação. Tente novamente mais tarde.',
+        });
       }
     } else {
       const formattedDate = formatDate(data.date);
@@ -168,10 +185,19 @@ export default function NewPost() {
             },
           },
         );
-        alert('Post enviada com sucesso!');
+        Toast.show({
+          type: 'success',
+          text1: 'Publicação enviada com sucesso!',
+        });
+        setTimeout(() => {
+          navigation.goBack();
+        }, 500);
       } catch (error) {
-        console.error('Erro ao enviar post:', error);
-        alert('Erro ao enviar post. Tente novamente mais tarde.');
+        console.error('Erro ao enviar publicação:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao enviar publicação. Tente novamente mais tarde.',
+        });
       }
     }
   };
@@ -227,11 +253,17 @@ export default function NewPost() {
           return updatedVisibility;
         });
       } else {
-        alert('Nenhum arquivo selecionado.');
+        Toast.show({
+          type: 'error',
+          text1: 'Nenhum arquivo selecionado.',
+        });
       }
     } catch (error) {
       console.error('Erro ao selecionar os arquivos: ', error);
-      alert('Erro ao selecionar os arquivos.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao selecionar os arquivos.',
+      });
     }
   };
   const [fontsLoaded] = useFonts({
@@ -304,6 +336,7 @@ export default function NewPost() {
                   <Image source={attachmentIcon} />
                 </LinkIcon>
               </View>
+              <Toast config={toastConfig} />
             </NewPostInputTextContainer>
             <View style={{ paddingBottom: 30 }}>
               <ButtonCustom
@@ -381,6 +414,7 @@ export default function NewPost() {
                 {errors.hour && <ErrorWarning errorText={errors.hour.message} />}
               </View>
             </MiddlePart>
+            <Toast config={toastConfig} />
             <BottomPartContainer>
               <Controller
                 control={control}
@@ -397,7 +431,7 @@ export default function NewPost() {
                   />
                 )}
               />
-              {errors.description && <ErrorWarning errorText="Campo obrigatório" />}
+              {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
               <ButtonCustom
                 onPress={handleSubmit(onSubmit)}
                 backColor="#160E47"

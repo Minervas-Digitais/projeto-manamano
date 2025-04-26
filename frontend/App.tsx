@@ -39,12 +39,13 @@ export default function App() {
         Post: 'post/:postId',
         Profile: 'profile/:id',
         NewPost: 'newpost/:groupId',
+        NewLesson: 'newlesson/:groupId',
       },
     },
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="GlobalNotification">
+      <Stack.Navigator initialRouteName="NewLesson">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}

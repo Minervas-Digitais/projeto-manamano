@@ -5,6 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { ScrollView, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { useRoute } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
@@ -15,8 +16,9 @@ import { LinkPart, NewLessonContainer } from './NewLessonStyle';
 import ArchiveCard from '../../components/ArchiveCard/ArchiveCard';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 
-export default function NewLesson() {
+export default function NewLesson({ navigation }: any) {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
   const [loggedIdState, setLoggedIdState] = useState('');
@@ -43,8 +45,10 @@ export default function NewLesson() {
         });
         setCategories(response.data);
       } catch (error) {
-        console.error('Erro ao buscar categorias', error);
-        alert('Erro ao buscar categorias');
+        Toast.show({
+          type: 'error',
+          text1: 'Categoria não encontrada.',
+        });
       }
     };
     fetchCategories();
@@ -110,12 +114,21 @@ export default function NewLesson() {
           },
         },
       );
-      alert('Post enviada com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Aula criada com sucesso!',
+      });
       setFiles([]);
+      setTimeout(() => {
+        navigation.goBack();
+      }, 500);
     } catch (error) {
       setFiles([]);
       console.error('Erro ao enviar post:', error);
-      alert('Erro ao enviar post. Tente novamente mais tarde.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao criar aula. Tente novamente mais tarde.',
+      });
     }
   };
 
@@ -181,11 +194,17 @@ export default function NewLesson() {
           return updatedVisibility;
         });
       } else {
-        alert('Nenhum arquivo selecionado.');
+        Toast.show({
+          type: 'error',
+          text1: 'Nenhum arquivo selecionado.',
+        });
       }
     } catch (error) {
       console.error('Erro ao selecionar os arquivos: ', error);
-      alert('Erro ao selecionar os arquivos.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao selecionar os arquivos.',
+      });
     }
   };
   const [fontsLoaded] = useFonts({
@@ -331,6 +350,7 @@ export default function NewLesson() {
             ))}
             <ArchiveCard onClick={pickFile} />
           </ScrollView>
+          <Toast config={toastConfig} />
           <ButtonCustom
             onPress={handleSubmit(onSubmit)}
             backColor="#160E47"
