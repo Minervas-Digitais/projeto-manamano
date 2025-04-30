@@ -16,7 +16,6 @@ import { PostService } from './post.service';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 
-
 @Controller('post')
 export class PostController {
   constructor(private readonly postService: PostService) {}
