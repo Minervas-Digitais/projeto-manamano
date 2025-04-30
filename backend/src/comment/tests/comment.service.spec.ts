@@ -5,9 +5,6 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { CreateCommentDto } from "../dto/create-comment.dto";
 import { NotFoundException } from "@nestjs/common";
 
-// AINDA NAO TA FUNCIONANDO!
-// o arquivo da erros na parte de remove, vou olhar depois
-
 describe("CommentService", () => {
     let service: CommentService;
     let prismaService: PrismaService;
@@ -21,6 +18,8 @@ describe("CommentService", () => {
                     useValue: {
                         comment: {
                             create: jest.fn(),
+                            findUnique: jest.fn(),
+                            delete: jest.fn(),
                             remove: jest.fn()
                         },
                     },
@@ -82,6 +81,7 @@ describe("CommentService", () => {
                 updatedAt: new Date(),
             };
 
+            jest.spyOn(prismaService.comment, "findUnique").mockResolvedValue(response);
             jest.spyOn(prismaService.comment, "delete").mockResolvedValue(response);
 
             const result = await service.remove(id);
