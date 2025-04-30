@@ -5,6 +5,9 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { CreateCommentDto } from "../dto/create-comment.dto";
 import { NotFoundException } from "@nestjs/common";
 
+// AINDA NAO TA FUNCIONANDO!
+// o arquivo da erros na parte de remove, vou olhar depois
+
 describe("CommentService", () => {
     let service: CommentService;
     let prismaService: PrismaService;
