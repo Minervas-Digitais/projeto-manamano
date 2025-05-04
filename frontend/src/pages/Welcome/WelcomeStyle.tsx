@@ -1,4 +1,5 @@
 import styled from 'styled-components/native';
+import Logo from '../../assets/logo-boas-vindas.svg';
 
 export const RectContainer = styled.View`
   align-items: center;
@@ -15,4 +16,6 @@ export const ButtomContainer = styled.View`
   width: 95%;
   padding-top: 65vh;
   gap: 20px;
+`;
+export const LogoSVG = styled(Logo)`
 `;

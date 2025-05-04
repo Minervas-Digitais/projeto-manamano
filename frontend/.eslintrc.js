@@ -1,11 +1,6 @@
 // https://docs.expo.dev/guides/using-eslint/
 module.exports = {
-  extends: [
-    'expo',
-    'prettier',
-    'airbnb',
-    'airbnb-typescript',
-  ],
+  extends: ['expo', 'prettier', 'airbnb', 'airbnb-typescript'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: './tsconfig.json',
@@ -14,16 +9,15 @@ module.exports = {
   rules: {
     'react/react-in-jsx-scope': 'off',
     'linebreak-style': 'off',
-    "prettier/prettier": [
-      "error",
+    'prettier/prettier': [
+      'error',
       {
-        "endOfLine": "auto"
+        endOfLine: 'auto',
       },
     ],
     '@typescript-eslint/no-use-before-define': 'off',
     'react/style-prop-object': 'off',
-    'object-curly-newline': 'off'
-  }, 
+    'object-curly-newline': 'off',
+  },
   plugins: ['prettier'],
-}
-
+};
