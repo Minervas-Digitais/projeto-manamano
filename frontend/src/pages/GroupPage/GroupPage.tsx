@@ -4,8 +4,8 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import { storage } from '../../pages/SignIn/SignIn';
 import { StyleSheet, View, Image, Dimensions } from 'react-native';
+import { storage } from '../SignIn/SignIn';
 import {
   GroupPageAddPostButton,
   GroupPageCategoryContainer,
@@ -217,7 +217,10 @@ export default function GroupPage({ navigation }: any) {
             setFilesSelect(false);
           }}
           style={classesSelect ? style.selectStyleTab : {}}>
-          <GroupDataText font="inter-bold" size="18px" color={classesSelect ? '#EF4036' : '#8F8F8F'}>
+          <GroupDataText
+            font="inter-bold"
+            size="18px"
+            color={classesSelect ? '#EF4036' : '#8F8F8F'}>
             Aulas
           </GroupDataText>
         </GroupPageTabsContainer>

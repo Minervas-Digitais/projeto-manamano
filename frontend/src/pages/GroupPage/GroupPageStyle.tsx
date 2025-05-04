@@ -112,10 +112,3 @@ export const ImageContainer = styled.View`
   overflow-y: auto;
   flex: 1;
 `;
-
-
-
-
-
-
-

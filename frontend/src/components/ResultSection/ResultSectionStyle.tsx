@@ -44,11 +44,10 @@ export const StyledButton = styled.TouchableOpacity`
   background-color: #ffffff;
   border-radius: 8px;
   margin-top: 15px;
-  align-items: center; 
+  align-items: center;
 `;
 
 export const ButtonText = styled.Text`
   font-size: 16px;
   color: #333;
 `;
-

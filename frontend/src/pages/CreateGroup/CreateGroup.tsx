@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, Text, View, Image, ScrollView, Alert } from 'react-native';
+import { useFonts } from 'expo-font';
 import {
   Container,
   Input,
@@ -9,8 +10,7 @@ import {
   AddCategoryButton,
   ContentContainer,
 } from './CreateGroupStyle';
-import { useFonts } from 'expo-font';
-import { storage } from '../../pages/SignIn/SignIn';
+import { storage } from '../SignIn/SignIn';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import {
   ConfigNotificationHeaderContainer,
@@ -154,7 +154,14 @@ export default function CreateGroup() {
           <Input
             value={groupName}
             onChangeText={setGroupName}
-            style={{ outline: 'none', boxShadow: 'none', backgroundColor: 'transparent',  borderColor: '#5e6366', borderRadius: 5, borderWidth: 1}}
+            style={{
+              outline: 'none',
+              boxShadow: 'none',
+              backgroundColor: 'transparent',
+              borderColor: '#5e6366',
+              borderRadius: 5,
+              borderWidth: 1,
+            }}
           />
 
           <Text style={{ padding: 4, fontSize: 12, color: '#5E6366' }}>Descrição do Grupo</Text>
@@ -162,11 +169,26 @@ export default function CreateGroup() {
             value={groupDescription}
             onChangeText={setGroupDescription}
             multiline
-            style={{ outline: 'none', boxShadow: 'none', backgroundColor: 'transparent',  borderColor: '#5e6366', borderRadius: 5, borderWidth: 1}}
+            style={{
+              outline: 'none',
+              boxShadow: 'none',
+              backgroundColor: 'transparent',
+              borderColor: '#5e6366',
+              borderRadius: 5,
+              borderWidth: 1,
+            }}
           />
 
           <Text style={{ padding: 4, fontSize: 12, color: '#5E6366' }}>Categorias</Text>
-          <CategoryContainer style={{ marginBottom: 15, backgroundColor: 'transparent',  borderColor: '#5e6366', borderRadius: 5, borderWidth: 1}}>
+          <CategoryContainer
+            style={{
+              marginBottom: 15,
+              backgroundColor: 'transparent',
+              borderColor: '#5e6366',
+              borderRadius: 5,
+              borderWidth: 1,
+            }}
+          >
             <Input
               value={newCategory}
               onChangeText={setNewCategory}
@@ -175,7 +197,13 @@ export default function CreateGroup() {
                   handleAddCategory();
                 }
               }}
-              style={{ marginBottom: 0, outline: 'none', boxShadow: 'none', backgroundColor: 'transparent', borderRadius: 5}}
+              style={{
+                marginBottom: 0,
+                outline: 'none',
+                boxShadow: 'none',
+                backgroundColor: 'transparent',
+                borderRadius: 5,
+              }}
             />
             <AddCategoryButton onPress={handleAddCategory}>
               <Text style={{ fontSize: 18, color: '#AAAAAA' }}>+</Text>

@@ -434,7 +434,6 @@ export default function NewPost({ navigation }: any) {
                 )}
               />
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-              {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
               <ButtonCustom
                 onPress={handleSubmit(onSubmit)}
                 backColor="#160E47"

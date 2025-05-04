@@ -5,9 +5,9 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
-import { storage } from '../../pages/SignIn/SignIn';
 import { useFonts } from 'expo-font';
 import { Image, TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
+import { storage } from '../SignIn/SignIn';
 import { district } from './ProfileData'; // Adjust the path based on your folder structure
 import {
   ProfileContainerButtons,
@@ -87,7 +87,7 @@ export default function Profile({ navigation }: any) {
           setFullName(data.fullName);
           setNeighborhood(data.neighborhood);
           setEnterprise(data.enterprise);
-          setBio(data.bio)
+          setBio(data.bio);
 
           // Fetch user posts
           const fetchUserPosts = async () => {
@@ -119,7 +119,7 @@ export default function Profile({ navigation }: any) {
               });
 
               const data = await response.json();
-              const postIds = data.savedPost
+              const postIds = data.savedPost;
 
               // Create an array of post requests using postIds
               const postRequests = postIds.map(async (postId : any) => {
@@ -137,7 +137,7 @@ export default function Profile({ navigation }: any) {
               const postsData = await Promise.all(postRequests);
 
               // Once all the posts are fetched, update the state
-              setSavedPosts(postsData); 
+              setSavedPosts(postsData);
             } catch (error) {
               console.error('Error fetching saved posts:', error);
             }
@@ -177,7 +177,9 @@ export default function Profile({ navigation }: any) {
           <View style={{ gap: '4px' }}>
             <ProfileContainerData gap={10} center>
               <GroupDataText color="white" size="20px" font="inter-bold">
-                {displayName} {/* Display first two names */}
+                {displayName}
+                {' '}
+                {/* Display first two names */}
               </GroupDataText>
               <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
                 <ProfileImage height="24px" width="24px" radius={false} source={pen} />

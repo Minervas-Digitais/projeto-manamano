@@ -262,7 +262,7 @@ export default function Post() {
           {errors.groupcode && <ErrorWarning errorText="Campo obrigatório" />}
           {post?.Comment.length > 0 ? (
             post?.Comment.map((item: any) => {
-              let formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
+              const formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
                 locale: ptBR,
               });
               const commentUser = commentUsers[item.userId];

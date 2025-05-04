@@ -9,7 +9,12 @@ interface PostItemProps {
   fetchNumComments: (postId: string) => Promise<number>;
 }
 
-const PostItem: React.FC<PostItemProps> = ({ post, formattedDate, fetchUserName, fetchNumComments }) => {
+const PostItem: React.FC<PostItemProps> = ({
+  post,
+  formattedDate,
+  fetchUserName,
+  fetchNumComments,
+}) => {
   const [userName, setUserName] = useState<string>('');
   const [numComments, setNumComments] = useState<number>(post.numComments);
 

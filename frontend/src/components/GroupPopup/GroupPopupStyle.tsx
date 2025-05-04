@@ -32,4 +32,3 @@ export const PopupText = styled.Text`
   font-weight: 500;
   color: #000000;
 `;
-
