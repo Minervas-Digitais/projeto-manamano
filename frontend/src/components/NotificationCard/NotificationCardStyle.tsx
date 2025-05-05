@@ -1,20 +1,23 @@
 /* eslint-disable import/prefer-default-export */
 import styled from 'styled-components/native';
 
-export const NotificationContainer = styled.TouchableOpacity`
+export const NotificationContainer = styled.TouchableOpacity<{ isread?: any }>`
   display: flex;
+  z-index: 0;
   gap: 15px;
   width: 100%;
-  height: 98px;
+  height: fit-content;
   background-color: #edf1f5;
   padding: 14px;
+  border: ${(prop) => (prop.isread ? 'none' : 'solid 1px red')};
+  border-radius: 5px;
   box-shadow: 0 4px 8px rgba(39, 39, 39, 0.2);
 `;
 
 export const NotificationTextContainer = styled.View`
   display: flex;
   width: 100%;
-  height: 51px;
+  height: min-content;
   overflow-y: auto;
   flex-direction: row;
   gap: 14px;
@@ -25,6 +28,7 @@ export const NotificationTextContainerWarning = styled.View<{ height?: any }>`
   width: 100%;
   height: ${(prop) => prop.height};
   flex-direction: row;
+  justify-content: space-between;
   gap: 8.5px;
 `;
 
