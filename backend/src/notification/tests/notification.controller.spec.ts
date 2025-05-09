@@ -4,8 +4,9 @@ import { NotificationService } from "../notification.service"
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard"
 import { ROLES_KEY } from "src/auth/roles.decorator"
 import { CreateNotificationDto } from "../dto/create-notification.dto"
-import { NotificationType } from "@prisma/client"
+import { Notification, NotificationType } from "@prisma/client"
 import { ForbiddenException } from "@nestjs/common"
+import { UpdateNotificationDto } from "../dto/update-notification.dto"
 
 describe("Notification Controller", () => {
     let controller: NotificationController
@@ -70,7 +71,7 @@ describe("Notification Controller", () => {
             
             const member: String = "MEMBER";
 
-            const expectedResult = { 
+            const expectedResult: Notification = { 
                 id: "1", 
                 senderId: "idsender123",
                 recipientId: undefined,
@@ -164,7 +165,7 @@ describe("Notification Controller", () => {
         it("Deve retornar todas as notificacoes do usuario", async () => {
             const userId: string = "1"
 
-            const expectedResult = [
+            const expectedResult: Notification[] = [
                 {
                     id: "1", 
                     senderId: "idsender1",
@@ -206,10 +207,102 @@ describe("Notification Controller", () => {
     })
 
     describe("markAsRead", () => {
+        it("Deve marcar a notificacao como lida", async () => {
+            const notificationId: string = "1";
+            const isRead: UpdateNotificationDto = {
+                isRead: true
+            };
+            
+            const expectedResult: Notification = {
+                id: "1", 
+                senderId: "idsender1",
+                recipientId: undefined,
+                body: "teste1",
+                type: NotificationType.COMMENT,
+                groupName: undefined,
+                senderName: undefined,
+                isRead: true,
+                createdAt: new Date()
+            }
 
+            jest.spyOn(service, "markAsRead").mockResolvedValue(expectedResult);
+            const result = await controller.markAsRead(notificationId, isRead);
+
+            expect(result).toEqual(expectedResult);
+            expect(service.markAsRead).toHaveBeenCalledTimes(1);
+            expect(service.markAsRead).toHaveBeenCalledWith(notificationId);
+        });
+
+        it("Deve retornar erro se falhar", async () => {
+            const notificationId: string = "1"
+            const isRead: UpdateNotificationDto = {
+                isRead: true
+            };
+
+            jest.spyOn(service, "markAsRead").mockRejectedValue(new Error("Erro no service"));
+            await expect(controller.markAsRead(notificationId, isRead)).rejects.toThrow("Erro no service");
+        });
+
+        it("Deve retornar erro se notificationId não for invalido", async () => {
+            const notificationId: string = "-1"
+            const isRead: UpdateNotificationDto = {
+                isRead: true
+            };
+
+            jest.spyOn(service, "markAsRead").mockRejectedValue(new Error("Id invalido"));
+
+            await expect(controller.markAsRead(notificationId, isRead)).rejects.toThrow("Id invalido");
+        });
+
+        it('deve retornar erro se as informações de update não forem invalidas', async () => {
+            const notificationId: string = "-1"
+            const isRead: UpdateNotificationDto = {
+                isRead: 123 as any
+            };
+
+            jest.spyOn(service, "markAsRead").mockRejectedValue(new Error("Infos invalidas"));
+
+            await expect(controller.markAsRead(notificationId, isRead)).rejects.toThrow("Infos invalidas");
+        });
     })
 
     describe("deleteNotification", () => {
+        it("Deve deletar a notificacao", async () => {
+            const notificationId: string = "1";
 
+            const expectedResult: Notification = {
+                id: "1", 
+                senderId: "idsender1",
+                recipientId: undefined,
+                body: "teste1",
+                type: NotificationType.COMMENT,
+                groupName: undefined,
+                senderName: undefined,
+                isRead: true,
+                createdAt: new Date()
+            }
+
+            jest.spyOn(service, "deleteNotification").mockResolvedValue(expectedResult);
+            const result = await controller.deleteNotification(notificationId);
+
+            expect(result).toEqual(expectedResult);
+            expect(service.deleteNotification).toHaveBeenCalledTimes(1);
+            expect(service.deleteNotification).toHaveBeenCalledWith(notificationId);
+        });
+
+        it("Deve retornar erro se falhar", async () => {
+            const notificationId: string = "1"
+
+            jest.spyOn(service, "deleteNotification").mockRejectedValue(new Error("Erro no service"));
+            await expect(controller.deleteNotification(notificationId)).rejects.toThrow("Erro no service");
+        });
+
+        it("Deve retornar erro se notificationId não for invalido", async () => {
+            const notificationId: string = "-1"
+
+            jest.spyOn(service, "deleteNotification").mockRejectedValue(new Error("Id invalido"));
+
+            await expect(controller.deleteNotification(notificationId)).rejects.toThrow("Id invalido");
+        });
     })
 })
