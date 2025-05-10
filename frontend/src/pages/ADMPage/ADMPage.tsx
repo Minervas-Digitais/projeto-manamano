@@ -1,6 +1,7 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { useNavigation } from '@react-navigation/native';
+import React from 'react';
 import { WhiteBackground } from '../EditProfile/EditProfileStyle';
 import ADMPageButton from '../../components/ADMPageButton/ADMPageButton';
 import {
@@ -10,12 +11,12 @@ import {
   ADMTextContainer,
 } from './ADMPageStyle';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
+import GroupIcon from '../../assets/white-group.svg';
+import MegaphoneIcon from '../../assets/white-megaphone.svg';
+import GearIcon from '../../assets/white-gear.svg';
+import SearchIcon from '../../assets/white-MG.svg';
 
 export default function ADMPage() {
-  const searchIcon = require('../../assets/white-MG.svg');
-  const gearIcon = require('../../assets/white-gear.svg');
-  const megaphoneIcon = require('../../assets/white-megaphone.svg');
-  const groupIcon = require('../../assets/white-group.svg');
   const navigation = useNavigation();
 
   const [fontsLoaded] = useFonts({
@@ -44,22 +45,27 @@ export default function ADMPage() {
         <ADMPageContainer>
           <ADMPageButton
             fontColor="white"
-            icon={searchIcon}
+            icon={<SearchIcon />}
             text="Pesquisar"
             onPress={() => navigation.navigate('Search')}
           />
           <ADMPageButton
             fontColor="white"
-            icon={groupIcon}
+            icon={<GroupIcon />}
             text="Criar Grupo"
             onPress={() => navigation.navigate('CreateGroup')}
           />
-          <ADMPageButton fontColor="white" icon={megaphoneIcon} text="Comunicados" />
           <ADMPageButton
             fontColor="white"
-            icon={gearIcon}
+            icon={<MegaphoneIcon />}
+            text="Comunicados"
+            onPress={() => navigation.navigate('GlobalNotification')}
+          />
+          <ADMPageButton
+            fontColor="white"
+            icon={<GearIcon />}
             text="Configurações"
-            onPress={() => navigation.navigate('Configurações')}
+            onPress={() => navigation.navigate('Config')}
           />
         </ADMPageContainer>
       </WhiteBackground>

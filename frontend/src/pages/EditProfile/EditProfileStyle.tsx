@@ -1,5 +1,7 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+const { width, height } = Dimensions.get('window');
 
 export const BlueBackground = styled.View`
   background-color: #170e49;
@@ -8,9 +10,7 @@ export const BlueBackground = styled.View`
 `;
 export const WhiteBackground = styled.ScrollView`
   background-color: #f2f6fa;
-  width: 100vw;
-  height: 100vh;
-  margin-top: 10vh;
+  margin-top: ${height * 0.1}px;
   border-top-right-radius: 40px;
   border-top-left-radius: 40px;
 `;

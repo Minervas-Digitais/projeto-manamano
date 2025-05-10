@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import React from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
@@ -12,7 +13,6 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import IconPassword from '../../assets/lock-icon.svg';
-import React from 'react';
 
 export default function ChangePassword() {
   const navigation = useNavigation();
@@ -70,6 +70,7 @@ export default function ChangePassword() {
       style={{
         flex: 1,
         backgroundColor: '#f2f6fa',
+        display: loggedIdState && accessTokenState ? 'flex' : 'none',
       }}>
       <HeaderCustom font="inter-bold" text="Mudar Senha" />
       <SignInForm>
