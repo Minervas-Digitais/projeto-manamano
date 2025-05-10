@@ -9,6 +9,7 @@ import {
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateSearchDto } from './dto/create-search.dto';
 import { SearchService } from './search.service';
+import { BadRequestException } from '@nestjs/common'; 
 
 @Controller('search')
 export class SearchController {
@@ -28,6 +29,10 @@ export class SearchController {
     @Body() createSearchDto: CreateSearchDto,
     @Param('filter') filter: string,
   ) {
+    const validFilters = ['users', 'groups', 'posts'];
+    if (!validFilters.includes(filter)) {
+      throw new BadRequestException('Invalid filter');
+    }
     return this.searchService.searchByFilter(createSearchDto, filter);
   }
 }

@@ -198,6 +198,7 @@ const config: Config = {
 
   // Whether to use watchman for file crawling
   // watchman: true,
+  testRegex: '.*\\.e2e-spec\\.ts$',
 };
 
 export default config;
