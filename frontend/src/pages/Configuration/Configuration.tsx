@@ -37,7 +37,7 @@ export default function Config() {
           icon={<IconLock width={22} height={22} />}
           text="Mudar senha"
           font="inter-bold"
-          onPress={() => navigation.navigate('MudarSenha')}
+          onPress={() => navigation.navigate('ChangePassword')}
         />
       </View>
     </View>

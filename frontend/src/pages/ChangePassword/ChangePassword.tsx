@@ -11,10 +11,11 @@ import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import IconPassword from '../../assets/lock-icon.svg';
+import React from 'react';
 
 export default function ChangePassword() {
   const navigation = useNavigation();
-  const iconPassword = require('../../assets/lock-icon.svg');
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function ChangePassword() {
         },
       );
       alert('Senha atualizada com sucesso!');
-      navigation.navigate('Configurações');
+      navigation.navigate('Config');
     } catch (error) {
       console.error('Erro ao mudar senha:', error);
       alert('Erro ao mudar senha. Tente novamente mais tarde.');
@@ -69,7 +70,6 @@ export default function ChangePassword() {
       style={{
         flex: 1,
         backgroundColor: '#f2f6fa',
-        display: loggedIdState && accessTokenState ? 'flex' : 'none',
       }}>
       <HeaderCustom font="inter-bold" text="Mudar Senha" />
       <SignInForm>
@@ -85,7 +85,7 @@ export default function ChangePassword() {
                 onChangeText={onChange}
                 value={value}
                 label="Digite a senha atual"
-                imageIcon={iconPassword}
+                imageIcon={<IconPassword />}
                 isPassword
               />
             )}
@@ -102,7 +102,7 @@ export default function ChangePassword() {
                 onChangeText={onChange}
                 value={value}
                 label="Digite a nova senha"
-                imageIcon={iconPassword}
+                imageIcon={<IconPassword />}
                 isPassword
               />
             )}
@@ -120,21 +120,19 @@ export default function ChangePassword() {
                 onChangeText={onChange}
                 value={value}
                 label="Confirme a nova senha"
-                imageIcon={iconPassword}
+                imageIcon={<IconPassword />}
                 isPassword
               />
             )}
           />
           {errors.confirmedpassword && <ErrorWarning errorText="Senhas não coincidem" />}
         </SignInInputContainer>
-        <View style={{ marginBottom: 100 }}>
-          <ButtonCustom
-            onPress={handleSubmit(onSubmit)}
-            backColor="#160E47"
-            fontColor="white"
-            text="Confirmar"
-          />
-        </View>
+        <ButtonCustom
+          onPress={handleSubmit(onSubmit)}
+          backColor="#160E47"
+          fontColor="white"
+          text="Confirmar"
+        />
       </SignInForm>
     </View>
   );

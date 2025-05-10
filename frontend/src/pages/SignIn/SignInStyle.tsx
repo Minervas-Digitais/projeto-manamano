@@ -12,9 +12,9 @@ export const SignInForm = styled.View`
   display: flex;
   justify-content: space-between;
   width: 100%;
-  height: 100%;
   padding: 30px;
   padding-top: 45px;
+  flex: 1;
 `;
 export const SignInInputContainer = styled.View`
   width: 100%;
