@@ -1,14 +1,20 @@
 /* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable global-require */
-import { Image, ImageBackground, StyleSheet } from 'react-native';
+import { StatusBar } from 'react-native';
 import React, { useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import { ButtomContainer, LogoSVG, RectContainer } from './WelcomeStyle';
+import {
+  ButtomContainer,
+  LogoSVG,
+  ManamanoPattern,
+  PatternWrapper,
+  RectContainer,
+  WelcomeContainer,
+} from './WelcomeStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { storage } from '../SignIn/SignIn';
 
 export default function WelcomeScreen({ navigation }: any) {
-  const manamanoPattern = require('../../assets/Manamano-pattern-random.svg');
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
@@ -25,10 +31,11 @@ export default function WelcomeScreen({ navigation }: any) {
     return undefined;
   }
   return (
-    <ImageBackground
-      source={manamanoPattern}
-      style={styles.backg}
-      imageStyle={styles.backgroundImage}>
+    <WelcomeContainer>
+      <StatusBar translucent backgroundColor="transparent" />
+      <PatternWrapper>
+        <ManamanoPattern />
+      </PatternWrapper>
       <RectContainer>
         <LogoSVG />
         <ButtomContainer>
@@ -48,18 +55,6 @@ export default function WelcomeScreen({ navigation }: any) {
           />
         </ButtomContainer>
       </RectContainer>
-    </ImageBackground>
+    </WelcomeContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  backgroundImage: {
-    resizeMode: 'repeat',
-  },
-  backg: {
-    backgroundColor: '#160e47',
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-  },
-});

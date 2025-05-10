@@ -5,11 +5,12 @@ import { StyleSheet } from 'react-native';
 import {
   InputText,
   InputTextContainer,
-  InputTextIcon,
   InputTextIconContainer,
   InputTextIconInputContainer,
   LabelInputText,
 } from './InputTextCustomStyle';
+import IconEyeClosed from '../../assets/eye-closed-icon.svg';
+import IconEyeOpen from '../../assets/eye-open-icon.svg';
 
 export default function InputTextCustom({
   onChangeText,
@@ -22,15 +23,12 @@ export default function InputTextCustom({
   innerRef,
 }: any) {
   const [eyeIcon, setEyeIcon] = useState(true);
-  const IconEyeOpen = require('../../assets/eye-open-icon.svg');
-  const IconEyeClosed = require('../../assets/eye-closed-icon.svg');
 
   return (
     <InputTextContainer>
       <LabelInputText>{label}</LabelInputText>
       <InputTextIconInputContainer>
-        <InputTextIcon source={imageIcon} />
-
+        {imageIcon}
         {type !== undefined ? (
           <TextInputMask
             type={type}
@@ -47,9 +45,12 @@ export default function InputTextCustom({
             secureTextEntry={eyeIcon && isPassword}
           />
         )}
-
         <InputTextIconContainer onPress={() => setEyeIcon(!eyeIcon)} isPassword={isPassword}>
-          <InputTextIcon source={eyeIcon ? IconEyeClosed : IconEyeOpen} />
+          {eyeIcon ? (
+            <IconEyeClosed height={15} width={15} />
+          ) : (
+            <IconEyeOpen height={15} width={15} />
+          )}
         </InputTextIconContainer>
       </InputTextIconInputContainer>
     </InputTextContainer>
@@ -58,6 +59,7 @@ export default function InputTextCustom({
 
 const styles = StyleSheet.create({
   input: {
+    flex: 1,
     width: '100%',
     height: 35,
     backgroundColor: 'transparent',

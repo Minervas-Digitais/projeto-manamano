@@ -1,11 +1,14 @@
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
+const { width } = Dimensions.get('window');
 
 export const NotifButtonContainer = styled.View`
   display: flex;
   background-color: #f2f6fa;
   flex-direction: row;
-  align-self: start;
-  margin-left: 5.8vw;
+  align-items: center;
+  margin-left: ${width * 0.058}px;
 `;
 export const ConfigNotifText = styled.Text<{ font?: string }>`
   font-size: 14px;
@@ -14,12 +17,12 @@ export const ConfigNotifText = styled.Text<{ font?: string }>`
   color: #4e4e4e;
   font-family: ${(prop) => prop.font};
 `;
-export const ButtonImage = styled.Image`
+export const ButtonImage = styled.View`
   position: absolute;
-  margin-left: 75vw;
+  margin-left: ${width * 0.75}px;
 `;
 export const PressableCustom = styled.Pressable<{ isMoved?: boolean }>`
   z-index: 1;
-  margin-left: 75vw;
+  margin-left: ${width * 0.75}px;
   transform: ${(props) => `translateX(${props.isMoved ? 28 : 0}px)`};
 `;

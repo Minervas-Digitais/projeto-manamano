@@ -45,13 +45,13 @@ export default function App() {
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="WelcomeScreen">
+      <Stack.Navigator initialRouteName="Config">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
+        <Stack.Screen name="Config" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="ADMPage" component={ADMPage} options={{ headerShown: false }} />
         <Stack.Screen
           name="GlobalNotification"
@@ -90,9 +90,9 @@ export default function App() {
           component={VisitorProfile}
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="FaleConosco" component={GetInTouch} options={{ headerShown: false }} />
+        <Stack.Screen name="GetInTouch" component={GetInTouch} options={{ headerShown: false }} />
         <Stack.Screen
-          name="Config Notifications"
+          name="ConfigNotification"
           component={ConfigNotification}
           options={{ headerShown: false }}
         />

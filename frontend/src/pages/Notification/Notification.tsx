@@ -1,24 +1,22 @@
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   ConfigNotificationContainer,
-  ConfigNotificationHeaderContainer,
-  ConfigNotificationTitle,
   NotificationInfoContainer,
   NotificationInfoText,
   NotificationBodyContainer,
 } from './NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import NotificationCard from '../../components/NotificationCard/NotificationCard';
-import BackButton from '../../components/BackButton/BackButton';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import NoNotification from '../../assets/no-notification-icon.svg';
 
 export default function Notification({ navigation }: any) {
-  const noNotification = require('../../assets/no-notification-icon.svg');
   const duckPhoto = require('../../assets/duck.png');
   const [notification, setNotification] = useState([]);
 
@@ -49,12 +47,7 @@ export default function Notification({ navigation }: any) {
 
   return (
     <ConfigNotificationContainer>
-      <ConfigNotificationHeaderContainer>
-        <BackButton />
-        <ConfigNotificationTitle font="inter-bold">Notificações</ConfigNotificationTitle>
-        <View />
-      </ConfigNotificationHeaderContainer>
-
+      <HeaderCustom font="inter-bold" text="Notificações" />
       <NotificationBodyContainer>
         <NotificationInfoContainer>
           {notification?.length > 0 ? (
@@ -73,7 +66,7 @@ export default function Notification({ navigation }: any) {
             ))
           ) : (
             <>
-              <Image source={noNotification} />
+              <NoNotification />
               <NotificationInfoText font="inter-bold">
                 Você não possui notificações no momento
               </NotificationInfoText>

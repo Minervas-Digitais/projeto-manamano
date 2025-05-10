@@ -18,12 +18,14 @@ export const InputTextIconInputContainer = styled.View`
   height: 52px;
   border: solid 1.5px #5e6366;
   border-radius: 10px;
-  padding: 15px;
+  padding-left: 15px;
+  padding-right: 15px;
   gap: 5px;
 `;
 
 export const InputText = styled.TextInput`
-  width: 100%;
+  flex: 1;
+  width: 95%;
   height: 35px;
   background-color: transparent;
   border: none;
@@ -34,17 +36,10 @@ export const InputText = styled.TextInput`
   color: #5e6366;
 `;
 
-export const InputTextIcon = styled.Image`
-  display: flex;
-  flex-direction: row;
-`;
-
-export const InputTextIconContainer = styled.TouchableOpacity<{ isPassword?: string }>`
+export const InputTextIconContainer = styled.TouchableOpacity`
   display: ${(prop) => (prop.isPassword ? 'flex' : 'none')};
   justify-content: center;
   align-items: center;
-  width: 40px;
-  height: 40px;
 `;
 
 export const LabelInputText = styled.Text`

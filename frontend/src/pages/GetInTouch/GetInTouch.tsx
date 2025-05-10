@@ -114,14 +114,14 @@ export default function GetInTouch() {
             text="Enviar"
             rightIcon={arrowIcon}
           />
-          <RedText>
+          <RedText font="inter-regular">
             * Sua mensagem será
-            <SemiBoldRedText> encaminhada </SemiBoldRedText>
-            para o 
-{' '}
-<SemiBoldRedText>e-mail do ManaMano.</SemiBoldRedText> Portanto, caso necessário,
-{' '}
-            <SemiBoldRedText>confira seu e-mail para obter respostas. </SemiBoldRedText>
+            <SemiBoldRedText font="inter-semibold"> encaminhada </SemiBoldRedText>
+            para o <SemiBoldRedText font="inter-semibold">e-mail do ManaMano.</SemiBoldRedText>{' '}
+            Portanto, caso necessário,{' '}
+            <SemiBoldRedText font="inter-semibold">
+              confira seu e-mail para obter respostas.{' '}
+            </SemiBoldRedText>
           </RedText>
         </SignInInputContainer>
       </SignInForm>

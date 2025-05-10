@@ -38,7 +38,6 @@ export default function About() {
       linkedin: 'https://www.linkedin.com/in/mellanie-pereira/',
       description: 'Colaborou com a fase de concepção e design do aplicativo.',
     },
-
     {
       name: 'Nicolas Bastos',
       image: nicolasBastosDev,
@@ -48,7 +47,7 @@ export default function About() {
   ];
   return (
     <AboutPage>
-      <HeaderCustom font="inter-bold" text="Sobre" onPress={() => {}} />
+      <HeaderCustom font="inter-bold" text="Sobre" />
       <AboutContainer>
         <GroupDataText font="inter-semiBold" color="#160E47" size="18px">
           ManaMano
@@ -64,6 +63,7 @@ export default function About() {
         {devMembers?.length > 0 ? (
           devMembers?.map((item: any) => (
             <DevMemberCard
+              key={item.name}
               name={item.name}
               image={item.image}
               description={item.description}

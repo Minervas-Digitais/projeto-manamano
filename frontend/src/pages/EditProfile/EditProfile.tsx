@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { format } from 'date-fns';
+import React from 'react';
 import { storage } from '../SignIn/SignIn';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
 import SideMenu from '../../components/SideMenu/SideMenu';
@@ -105,7 +106,7 @@ export default function EditProfile() {
   };
 
   const [sideMenu, setSideMenu] = useState(true);
-  const [profileData, setProfileData] = useState<any>(null); // State to store the fetched profile data
+  const [profileData, setProfileData] = useState<any>(null);
 
   const menu = require('../../assets/menuw-icon.svg');
   const editButton = require('../../assets/edit-button.svg');
