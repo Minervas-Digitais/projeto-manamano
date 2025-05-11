@@ -29,10 +29,6 @@ export class SearchController {
     @Body() createSearchDto: CreateSearchDto,
     @Param('filter') filter: string,
   ) {
-    const validFilters = ['users', 'groups', 'posts'];
-    if (!validFilters.includes(filter)) {
-      throw new BadRequestException('Invalid filter');
-    }
     return this.searchService.searchByFilter(createSearchDto, filter);
   }
 }

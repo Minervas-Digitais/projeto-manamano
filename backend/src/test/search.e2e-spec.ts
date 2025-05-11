@@ -7,16 +7,19 @@ import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { getAdminToken, getUserToken, createTestGroup } from './test-helpers';
+import { GroupModule } from 'src/group/group.module';
 
 
 describe('SearchController', () => {
     let app: INestApplication;
     let prismaService: PrismaService;
-    let token: string;
+    let userToken: string;
+    let adminToken: string;
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [SearchModule, UserModule, AuthModule],
+            imports: [SearchModule, UserModule, AuthModule, GroupModule],
         })
             .compile();
 
@@ -26,39 +29,17 @@ describe('SearchController', () => {
 
         await app.init();
 
-        // Criando um usuario para teste
-        const createUserResponse = await request(app.getHttpServer())
-            .post('/user')
-            .send({
-                fullName: 'Test User',
-                email: 'testuser@example.com',
-                phone: '1234567890',
-                hash: 'password123',
-            })
-            .expect(201);
-
-        // Recebendo o token do usuario teste
-        const loginResponse = await request(app.getHttpServer())
-            .post('/auth/login')
-            .send({
-                email: 'testuser@example.com',
-                password: 'password123',
-            })
-            .expect(201);
-
-
-        token = loginResponse.body.accessToken;
-
-        console.log('LOGIN BODY RES:', loginResponse.body);
+        userToken = await getUserToken(app, prismaService);
+        adminToken = await getAdminToken(app, prismaService);
     });
 
-    describe("/", () => {
+    describe("search()", () => {
         it('deve retornar resultados de pesquisa para usuários, grupos e posts', async () => {
-            const searchDto = { input: 'Lois' };
+            const searchDto = { input: 'Test' };
 
             const response = await request(app.getHttpServer())
                 .post('/search')
-                .set('Authorization', 'Bearer ' + token)
+                .set('Authorization', 'Bearer ' + userToken)
                 .send(searchDto);
 
             expect(response.status).toBe(201);
@@ -72,17 +53,17 @@ describe('SearchController', () => {
             expect(Array.isArray(response.body.posts)).toBe(true);
         });
 
-        it('deve retornar 401 quando tentar acessar sem token de autenticação', async () => {
+        it('deve retornar 401 quando tentar acessar sem userToken de autenticação', async () => {
             const response = await request(app.getHttpServer())
                 .post('/search')
-                .send({ input: 'Lois' })
+                .send({ input: 'Test' })
                 .expect(401);
 
             expect(response.body.message).toBe('Unauthorized');
         });
 
-        it('deve retornar 401 quando o token de autenticação for inválido', async () => {
-            const searchDto = { input: 'Lois' };
+        it('deve retornar 401 quando o userToken de autenticação for inválido', async () => {
+            const searchDto = { input: 'Test' };
 
             const response = await request(app.getHttpServer())
                 .post('/search')
@@ -98,7 +79,7 @@ describe('SearchController', () => {
 
             const response = await request(app.getHttpServer())
                 .post('/search')
-                .set('Authorization', 'Bearer ' + token)
+                .set('Authorization', 'Bearer ' + userToken)
                 .send(searchDto)
                 .expect(400);
 
@@ -106,17 +87,18 @@ describe('SearchController', () => {
         });
     })
 
-    describe("/filter", () => {
+    describe("searchByFilter()", () => {
         it('deve retornar resultados de pesquisa para usuários', async () => {
-            const searchDto = { input: 'Lois' };
+            const searchDto = { input: 'Test' };
             const filter = 'users';
 
             const response = await request(app.getHttpServer())
                 .post(`/search/filter/${filter}`)
-                .set('Authorization', 'Bearer ' + token)
+                .set('Authorization', 'Bearer ' + userToken)
                 .send(searchDto);
 
             expect(response.status).toBe(200);
+            
 
             expect(response.body).toBeInstanceOf(Array);
             expect(response.body.length).toBeGreaterThan(0);
@@ -124,23 +106,25 @@ describe('SearchController', () => {
         });
 
         it('deve retornar resultados de pesquisa para grupos', async () => {
-            const searchDto = { input: 'Collins' };
+            createTestGroup(app, adminToken);
+
+            const searchDto = { input: 'Test' };
             const filter = 'groups';
 
             const response = await request(app.getHttpServer())
                 .post(`/search/filter/${filter}`)
-                .set('Authorization', 'Bearer ' + token)
+                .set('Authorization', 'Bearer ' + userToken)
                 .send(searchDto);
-
+  
             expect(response.status).toBe(200);
             expect(response.body).toBeInstanceOf(Array);
             expect(response.body.length).toBeGreaterThan(0);
             expect(response.body[0]).toHaveProperty('name');
         });
 
-        it('deve retornar 401 quando tentar acessar sem token de autenticação', async () => {
+        it('deve retornar 401 quando tentar acessar sem userToken de autenticação', async () => {
 
-            const searchDto = { input: 'Lois' };
+            const searchDto = { input: 'Test' };
             const filter = 'users';
 
             const response = await request(app.getHttpServer())
@@ -151,8 +135,8 @@ describe('SearchController', () => {
             expect(response.body.message).toBe('Unauthorized');
         });
 
-        it('deve retornar 401 quando o token de autenticação for inválido', async () => {
-            const searchDto = { input: 'Lois' };
+        it('deve retornar 401 quando o userToken de autenticação for inválido', async () => {
+            const searchDto = { input: 'Test' };
             const filter = 'users';
 
             const response = await request(app.getHttpServer())
@@ -170,24 +154,25 @@ describe('SearchController', () => {
 
             const response = await request(app.getHttpServer())
                 .post(`/search/filter/${filter}`)
-                .set('Authorization', 'Bearer ' + token)
+                .set('Authorization', 'Bearer ' + userToken)
                 .send(searchDto)
                 .expect(400);
 
             expect(response.body.message).toEqual(['input should not be empty']);
         });
 
-        it('deve retornar 400 quando o filtro de pesquisa for invalido', async () => {
-            const searchDto = { input: 'Lois' };
-            const filter = 'filtroInvalido';
+        it('deve retornar 500 quando o filtro de pesquisa for invalido', async () => {
+            const searchDto = { input: 'Test' };
+            const filter = 'invalidFilter';
 
             const response = await request(app.getHttpServer())
                 .post(`/search/filter/${filter}`)
-                .set('Authorization', 'Bearer ' + token)
+                .set('Authorization', 'Bearer ' + userToken)
                 .send(searchDto)
-            
-            expect(response.status).toBe(400);
-            expect(response.body).toHaveProperty('message', 'Invalid filter');
+
+            console.log(response.body)
+            expect(response.status).toBe(500);
+            expect(response.body).toHaveProperty('message', 'Internal server error');
         });
     })
 

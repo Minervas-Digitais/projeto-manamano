@@ -102,7 +102,7 @@ export class SearchService {
           throw new Error('Invalid filter');
       }
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 }
