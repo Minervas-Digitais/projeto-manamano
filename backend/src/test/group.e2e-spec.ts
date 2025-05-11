@@ -8,9 +8,8 @@ import { AuthModule } from '../auth/auth.module';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { createGroupDto } from 'src/group/dto/create-group.dto.factory';
-import { RoleType } from '@prisma/client';
-import { hash } from 'bcrypt';
 import { updateGroupDto } from 'src/group/dto/update-group.dto.factory';
+import { getAdminToken, getUserToken, createTestGroup } from './test-helpers';
 
 describe('Group E2E', () => {
     let app: INestApplication;
@@ -30,58 +29,9 @@ describe('Group E2E', () => {
 
         await app.init();
 
-        // Criando um usuario para teste
-        const createUserResponse = await request(app.getHttpServer())
-            .post('/user')
-            .send({
-                fullName: 'Test User',
-                email: 'testuser@example.com',
-                phone: '1234567890',
-                hash: 'password123',
-            })
-            .expect(201);
+        userToken = await getUserToken(app, prismaService);
+        adminToken = await getAdminToken(app, prismaService);
 
-        // Recebendo o token do usuario teste
-        const loginResponse = await request(app.getHttpServer())
-            .post('/auth/login')
-            .send({
-                email: 'testuser@example.com',
-                password: 'password123',
-            })
-            .expect(201);
-
-
-        userToken = loginResponse.body.accessToken;
-
-
-        try {
-            const hashedPassword = await hash(
-                'password123',
-                10,
-            );
-
-            const adminUser = await prismaService.user.create({
-                data: {
-                    fullName: 'Admin User',
-                    email: 'admin@example.com',
-                    phone: '1111111111',
-                    hash: hashedPassword,
-                    sysRole: RoleType.ADMIN,
-                },
-            });
-        } catch (error) {
-            console.log("Não foi criado um novo usuário admin. Motivo: " + error)
-        }
-
-        const adminLoginResponse = await request(app.getHttpServer())
-            .post('/auth/login')
-            .send({
-                email: 'admin@example.com',
-                password: 'password123',
-            })
-            .expect(201);
-
-        adminToken = adminLoginResponse.body.accessToken;
     });
 
     describe("create()", () => {
@@ -176,14 +126,7 @@ describe('Group E2E', () => {
 
     describe("findOne()", () => {
         it("deve retornar o grupo do id especificado", async () => {
-            const createRes = await request(app.getHttpServer())
-                .post('/group')
-                .set('Authorization', 'Bearer ' + adminToken)
-                .send({
-                    name: 'Grupo pra o findOne',
-                    description: 'Descrição teste',
-                });
-            const groupId = createRes.body.id;
+            const groupId = await createTestGroup(app, adminToken);
 
             const response = await request(app.getHttpServer())
                 .get(`/group/${groupId}`)
@@ -213,14 +156,7 @@ describe('Group E2E', () => {
 
     describe("update()", () => {
         it('deve atualizar o grupo com sucesso para um usuário ADMIN', async () => {
-            const createRes = await request(app.getHttpServer())
-                .post('/group')
-                .set('Authorization', 'Bearer ' + adminToken)
-                .send({
-                    name: 'Grupo pra atualizar',
-                    description: 'Descrição teste',
-                });
-            const groupId = createRes.body.id;
+            const groupId = await createTestGroup(app, adminToken);
             const updateData = updateGroupDto({ name: "Teste Update", description: "Teste update descrição" })
 
             const response = await request(app.getHttpServer())
@@ -280,15 +216,7 @@ describe('Group E2E', () => {
 
     describe("remove()", () => {
         it('deve remover o grupo com sucesso para um usuário ADMIN', async () => {
-            const createRes = await request(app.getHttpServer())
-                .post('/group')
-                .set('Authorization', 'Bearer ' + adminToken)
-                .send({
-                    name: 'Grupo pra deletar',
-                    description: 'Descrição teste',
-                    inviteCode: 'DEL123',
-                });
-            const groupId = createRes.body.id;
+            const groupId = await createTestGroup(app, adminToken);
 
             const response = await request(app.getHttpServer())
                 .delete(`/group/${groupId}`)
