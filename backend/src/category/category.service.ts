@@ -12,7 +12,7 @@ export class CategoryService {
         data: createCategoryDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -24,7 +24,7 @@ export class CategoryService {
       }
       return categories;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -40,7 +40,7 @@ export class CategoryService {
       }
       return categories;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -56,7 +56,7 @@ export class CategoryService {
       }
       return category;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -73,7 +73,7 @@ export class CategoryService {
         data: updateCategoryDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -89,7 +89,7 @@ export class CategoryService {
         },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 }
