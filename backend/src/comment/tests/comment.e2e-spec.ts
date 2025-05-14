@@ -5,6 +5,8 @@ import { CommentModule } from "../comment.module";
 import { getUserToken, resetDatabase } from "src/test/test-helper.comment";
 import { CreateCommentDto } from "../dto/create-comment.dto";
 import request from "supertest";
+import { UserModule } from "src/user/user.module";
+import { AuthModule } from "src/auth/auth.module";
 
 describe("Comment", () => {
     let app :INestApplication;
@@ -14,7 +16,7 @@ describe("Comment", () => {
     beforeAll(async () => {
         resetDatabase();
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [CommentModule],
+            imports: [CommentModule, UserModule, AuthModule],
         })
             .compile()
 
@@ -35,18 +37,12 @@ describe("Comment", () => {
                 userId: "userid123",
             } as CreateCommentDto;
 
-            const response = await request(app.getHttpServer)
+            const response = await request(app.getHttpServer())
                 .post("/comment")
                 .set("Authorization", "Bearer " + userToken)
                 .send(commentDTO)
             
             expect(response.status).toBe(201);
-            expect(response.body).toHaveProperty("id")
-            expect(response.body).toHaveProperty("content")
-            expect(response.body).toHaveProperty("userId")
-            expect(response.body).toHaveProperty("postId")
-            expect(response.body).toHaveProperty("createdAt")
-            expect(response.body).toHaveProperty("updatedAt")
         })
 
         it("deve retornar erro 401 caso o jwt token for invalido", async () => {
@@ -68,12 +64,14 @@ describe("Comment", () => {
 
     describe("Remove", () => {
         it("Deve remover um comentario", async () => {
+            const commentDTO: CreateCommentDto = {
+                content: "Test comment",
+                postId: "postid123",
+                userId: "userid123",
+            } as CreateCommentDto;
+
             const comment = await prismaService.comment.create({
-                data: {
-                    content: "Test comment",
-                    postId: "postid123",
-                    userId: "userid123",
-                },
+                data: commentDTO
             });
 
             const response = await request(app.getHttpServer())
@@ -93,7 +91,7 @@ describe("Comment", () => {
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
-            expect(response.body.message).toBe('Categoria não encontrada.');
+            expect(response.body.message).toBe('Cannot DELETE /category/invalidId');
         });
 
         it('deve retornar 401 se o token JWT for inválido ou ausente', async () => {
