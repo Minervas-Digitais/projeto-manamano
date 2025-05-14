@@ -71,21 +71,27 @@ export async function getAdminToken(app: INestApplication, prisma: PrismaService
 export async function createTestGroup(prisma: PrismaService, name: string = 'Test Group') {
     const existingGroup = await prisma.group.findFirst({
         where: {
-            name: 'Test Group',
+            name: name,
         },
     });
 
     if (existingGroup != null) {
-        return existingGroup.id;
+        const stillExists = await prisma.group.findUnique({ where: { id: existingGroup.id } });
+        if (stillExists) {
+            return stillExists.id;
+        }
     }
 
     const newGroup = await prisma.group.create({
         data: {
-            name: 'Test Group',
+            name: name,
             description: 'Descrição teste',
-            inviteCode: String(generateUniqueInviteCode()),
+            inviteCode: String(await generateUniqueInviteCode(prisma)),
         } as CreateGroupDto,
     });
+
+    const persisted = await prisma.group.findUnique({ where: { id: newGroup.id } });
+    if (!persisted) throw new Error('Grupo não foi persistido corretamente');
 
     return newGroup.id;
 }
@@ -102,14 +108,37 @@ export function resetDatabase() {
     }
 }
 
-async function generateUniqueInviteCode(length: number = 8) {
+async function generateInviteCode(length: number = 8) {
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+  }
+
+async function  isInviteCodeUnique(inviteCode: string, prismaService: PrismaService) {
+    try {
+      const group = await prismaService.group.findUnique({
+        where: { inviteCode },
+      });
+      return !group;
+    } catch (error) {
+      return error;
+    }
+  }
+
+
+async function generateUniqueInviteCode(prismaService : PrismaService, length: number = 8) {
     try {
       let inviteCode: string;
       let isUnique = false;
 
       do {
-        inviteCode = this.generateInviteCode(length);
-        isUnique = await this.isInviteCodeUnique(inviteCode);
+        inviteCode = await generateInviteCode(length);
+        isUnique = await isInviteCodeUnique(inviteCode, prismaService);
       } while (!isUnique);
 
       return inviteCode;

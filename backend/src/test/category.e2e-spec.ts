@@ -18,7 +18,7 @@ describe('Category', () => {
     let userToken: string;
 
     beforeAll(async () => {
-        resetDatabase();
+        //resetDatabase();
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [CategoryModule, GroupModule, UserModule, AuthModule],
         })
@@ -54,8 +54,9 @@ describe('Category', () => {
             expect(response.body.groupId).toBe(groupId);
         })
 
-        it("deve retornar erro 500 caso o id do grupo for invalido", async () => {
+        it("deve retornar erro 404 caso o id do grupo for invalido", async () => {
             const groupId = 'invalidId';
+
             const categoryDto = createCategoryDto({ groupId: groupId });
 
             const response = await request(app.getHttpServer())
@@ -63,8 +64,9 @@ describe('Category', () => {
                 .set('Authorization', 'Bearer ' + userToken)
                 .send(categoryDto);
 
-            expect(response.status).toBe(500)
-            expect(response.body.message).toBe("Internal server error")
+            expect(response.status).toBe(404)
+            expect(response.body.error).toBe("Not Found")
+            expect(response.body.message).toBe("Grupo não encontrado.")
         })
 
         it("deve retornar erro 400 caso o nome da categoria for invalido", async () => {
@@ -100,6 +102,7 @@ describe('Category', () => {
 
         it("deve retornar erro 401 caso o jwt token for invalido", async () => {
             const groupId = await createTestGroup(prismaService);
+            await prismaService.group.findUnique({ where: { id: groupId } })
             const categoryDto = createCategoryDto({ groupId: groupId });
 
             const response = await request(app.getHttpServer())
