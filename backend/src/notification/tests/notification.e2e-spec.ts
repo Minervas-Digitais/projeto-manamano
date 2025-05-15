@@ -77,4 +77,38 @@ describe("Notification", () => {
                 "type must be one of the following values: COMMENT, WARNING", "groupName must be a string", "senderName must be a string"])
         })
     })
+
+    describe("getNotificationsForUser", () => {
+        it("Deve retornar todas as notificacoes de um usuario", async () => {
+            // Criar usuario 
+            // Criar uma notificacao no id do usuario
+            // Pegar as notificacoes dele GET: user/:userId
+        })
+
+        it("Deve retornar erro caso o id seja invalido", async () => {
+            // Cria request com um id invalido
+        })
+    })
+
+    describe("markAsRead", () => {
+        it("Deve marcar uma notificacao como lida", async () => {
+            // Cria notificacao
+            // Marca como lida Patch: /:id
+        })
+
+        it("Deve retornar erro caso o id seja invalido", async () => {
+            // Cria request com um id invalido
+        })
+    })
+
+    describe("deleteNotification", () => {
+        it("Deve deletar uma notificacao", async () => {
+            // Cria notificacao
+            // Deleta notificacao Delete: /:id
+        })
+        
+        it("Deve retornar erro caso o id seja invalido", async () => {
+            // Cria request com um id invalido
+        })
+    })
 })
