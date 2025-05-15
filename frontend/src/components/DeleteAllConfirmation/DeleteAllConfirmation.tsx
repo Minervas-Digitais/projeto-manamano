@@ -9,40 +9,44 @@ import {
   DeleteConfirmationButtonContainer,
   DeleteConfirmationCardContainer,
   DeleteConfirmationContainer,
-} from './DeleteConfirmationStyle';
+} from './DeleteAllConfirmationStyle';
 import { ModalOptionsNotificationText } from '../ModalOptionsNotification/ModalOptionsNotificationStyle';
 import { storage } from '../../pages/SignIn/SignIn';
 import api from '../../services/api';
 
-export default function DeleteConfirmation({ text }: any) {
-  const current = storage.getString('displayNotif');
+export default function DeleteConfirmation({ text, display }: any) {
+  const [shouldDisplay, setShouldDisplay] = useState(display);
 
-  const [shouldDisplay, setShouldDisplay] = useState(current);
+  useEffect(() => {
+    setShouldDisplay(display);
+  }, [display]);
 
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
   const optionsDelete = () => {
-    const id = storage.getString('idNotif');
     const accessToken = storage.getString('accessToken');
-
+    const loggedId = storage.getString('loggedId');
+    console.log('todas notificações excluídas');
     api
-      .delete(`notifications/${id}`, {
+      .delete(`/notifications/user/${loggedId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       })
       .then(() => {
         storage.delete('displayNotif');
+        storage.delete('header');
         setShouldDisplay(false);
+        console.log('Todas as notificações foram excluídas.');
       })
-      .catch((err) => console.log('Erro ao deletar a notificação:', err));
+      .catch((err) => console.log('Erro ao deletar todas as notificações:', err));
   };
 
   if (!fontsLoaded) return null;
 
   return (
-    <DeleteConfirmationContainer display={current}>
+    <DeleteConfirmationContainer display={shouldDisplay}>
       <DeleteConfirmationCardContainer>
         <View>
           <ModalOptionsNotificationText font="inter-regular" color="#515151">

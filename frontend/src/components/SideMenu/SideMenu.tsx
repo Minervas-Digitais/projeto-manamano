@@ -21,6 +21,7 @@ export default function SideMenu({ display, onPress }: any) {
   const group = require('../../assets/group-icon.svg');
   const saved = require('../../assets/saved-icon.svg');
   const notification = require('../../assets/notification-icon.svg');
+  const notification2 = require('../../assets/notification-unread-icon.svg');
   const speakWithUs = require('../../assets/speak-with-us-icon.svg');
   const config = require('../../assets/config-icon.svg');
   const out = require('../../assets/out-icon.svg');
@@ -49,12 +50,12 @@ export default function SideMenu({ display, onPress }: any) {
             font="inter-bold"
             onPress={() => navigation.navigate('Profile')}
           />
-          <SideMenuOptions 
-            icon={seach} 
-            text="Pesquisar" 
-            font="inter-bold" 
+          <SideMenuOptions
+            icon={seach}
+            text="Pesquisar"
+            font="inter-bold"
             onPress={() => navigation.navigate('Search')}
-            />
+          />
           <SideMenuOptions
             icon={group}
             text="Grupos"
@@ -64,6 +65,8 @@ export default function SideMenu({ display, onPress }: any) {
           <SideMenuOptions icon={saved} text="Publicações salvas" font="inter-bold" />
           <SideMenuOptions
             icon={notification}
+            icon2={notification2}
+            type="notification"
             text="Notificações"
             font="inter-bold"
             onPress={() => navigation.navigate('Notification')}

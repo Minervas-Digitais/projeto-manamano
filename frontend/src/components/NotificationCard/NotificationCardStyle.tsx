@@ -3,7 +3,6 @@ import styled from 'styled-components/native';
 
 export const NotificationContainer = styled.TouchableOpacity<{ isread?: any }>`
   display: flex;
-  z-index: 0;
   gap: 15px;
   width: 100%;
   height: fit-content;

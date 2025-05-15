@@ -6,7 +6,7 @@ export const DeleteConfirmationContainer = styled.View<{ display: any }>`
   width: 100vw;
   height: 100vh;
   position: absolute;
-  z-index: 2340823;
+  z-index: 234082398;
   background-color: #19191937;
   justify-content: center;
   align-items: center;

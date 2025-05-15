@@ -14,7 +14,10 @@ export class NotificationController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(@Body() createNotificationDto: CreateNotificationDto) {
-    return this.notificationService.createNotification(createNotificationDto, 'MEMBER');
+    return this.notificationService.createNotification(
+      createNotificationDto,
+      'MEMBER',
+    );
   }
 
   @Post('/global')
@@ -35,7 +38,10 @@ export class NotificationController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  async markAsRead(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
+  async markAsRead(
+    @Param('id') id: string,
+    @Body() updateNotificationDto: UpdateNotificationDto,
+  ) {
     const { isRead } = updateNotificationDto;
     if (isRead) {
       return this.notificationService.markAsRead(id);

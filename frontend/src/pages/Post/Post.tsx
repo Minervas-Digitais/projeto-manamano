@@ -207,6 +207,7 @@ export default function Post() {
             groupName: groupNameFromApi,
             type: 'COMMENT',
             body: '',
+            idContent: postId,
           },
           {
             headers: {

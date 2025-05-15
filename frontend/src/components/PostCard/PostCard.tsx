@@ -130,7 +130,7 @@ export default function PostCard({
             {numComments}
           </GroupDataText>
           {fix ? (
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => {}}>
               <PostCardImage width="15px" height="15px" source={fixIcon} />
             </TouchableOpacity>
           ) : (
