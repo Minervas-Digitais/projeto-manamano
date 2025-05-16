@@ -2,7 +2,7 @@ import { INestApplication, ValidationPipe } from "@nestjs/common"
 import { Test, TestingModule } from "@nestjs/testing";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CommentModule } from "../comment.module";
-import { getUserToken, resetDatabase } from "src/test/test-helper.comment";
+import { createTestPost, createTestUser, getUserToken, resetDatabase } from "src/test/test-helper.comment";
 import { CreateCommentDto } from "../dto/create-comment.dto";
 import request from "supertest";
 import { UserModule } from "src/user/user.module";
@@ -31,10 +31,13 @@ describe("Comment", () => {
 
     describe("Create", () => {
         it("Deve criar um novo comentario", async () => {
+            const user = await createTestUser(prismaService);
+            const post = await createTestPost(prismaService);
+            
             const commentDTO: CreateCommentDto = {
                 content: "Test comment",
-                postId: "postid123",
-                userId: "userid123",
+                postId: post,
+                userId: user,
             } as CreateCommentDto;
 
             const response = await request(app.getHttpServer())
@@ -46,10 +49,13 @@ describe("Comment", () => {
         })
 
         it("deve retornar erro 401 caso o jwt token for invalido", async () => {
+            const user = await createTestUser(prismaService);
+            const post = await createTestPost(prismaService);
+
             const commentDTO: CreateCommentDto = {
                 content: "Test comment",
-                postId: "postid123",
-                userId: "userid123",
+                postId: post,
+                userId: user,
             } as CreateCommentDto;
 
             const response = await request(app.getHttpServer())
@@ -64,18 +70,22 @@ describe("Comment", () => {
 
     describe("Remove", () => {
         it("Deve remover um comentario", async () => {
+            const user = await createTestUser(prismaService);
+            const post = await createTestPost(prismaService);
+
             const commentDTO: CreateCommentDto = {
                 content: "Test comment",
-                postId: "postid123",
-                userId: "userid123",
+                postId: post,
+                userId: user,
             } as CreateCommentDto;
 
             const comment = await prismaService.comment.create({
                 data: commentDTO
             });
 
+
             const response = await request(app.getHttpServer())
-                .delete(`/category/${comment.id}`)
+                .delete(`/comment/${comment.id}`)
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(200);
