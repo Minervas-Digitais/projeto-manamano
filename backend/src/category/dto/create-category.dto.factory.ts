@@ -5,7 +5,7 @@ export function createCategoryDto(overrides?: Partial<CreateCategoryDto>): Creat
     return {
         name: 'Grupo Padrão',
         type: PostType.NORMAL,
-        groupId: 'Descrição padrão',
+        groupId: '123',
         ...overrides,
     };
 }
