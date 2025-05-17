@@ -4,7 +4,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { RoleType } from '@prisma/client';
 import { CreateGroupDto } from 'src/group/dto/create-group.dto';
+import { CreatePostDto } from "src/post/dto/create-post.dto";
 import { execSync } from 'child_process';
+import { PostType } from "@prisma/client";
 
 export async function getUserToken(app: INestApplication, prisma: PrismaService) {
     const email = 'testuser@example.com';
@@ -96,6 +98,81 @@ export async function createTestGroup(prisma: PrismaService, name: string = 'Tes
     return newGroup.id;
 }
 
+export async function createTestCategory(prisma: PrismaService, groupId: string) {
+    const existingCategory = await prisma.category.findFirst({
+        where: {
+            groupId
+        }
+    })
+
+    if (existingCategory != null) {
+        return existingCategory.id;
+    }
+
+    const newCategory = await prisma.category.create({
+        data: {
+            name: "Teste Category",
+            type: PostType.NORMAL,
+            groupId,
+        }
+    })
+
+    return newCategory.id;
+}
+
+export async function createTestPost(prisma: PrismaService) {
+    const groupId = await createTestGroup(prisma);
+    const userId = await createTestUser(prisma);
+    const categoryId = await createTestCategory(prisma, groupId);
+
+    const post: CreatePostDto = {
+        title: "Teste post",
+        groupId,
+        userId,
+        type: PostType.NORMAL,
+        categoryId,
+        input: "Teste input"
+    } as any
+
+    const existingPost = await prisma.post.findFirst({
+        where: {
+            title: "Teste post"
+        }
+    })
+
+    if (existingPost != null) {
+        return existingPost.id;
+    }
+
+    const newPost = await prisma.post.create({
+        data: post
+    })
+
+    return newPost.id;
+}
+
+export async function createTestUser(prisma: PrismaService, phone: string = "1234567891") {
+    const existingUser = await prisma.user.findFirst({
+        where: { phone }
+    })
+
+    if (existingUser != null) {
+        return existingUser.id
+    }
+
+    const newUser = await prisma.user.create({
+        data: {
+            fullName: "Teste User",
+            email: "testeuser@example.com",
+            hash: "senha123",
+            phone,
+        }
+    })
+
+    return newUser.id;
+}
+
+
 export function resetDatabase() {
     try {
         console.log('🔄 Resetando banco...');
@@ -110,39 +187,38 @@ export function resetDatabase() {
 
 async function generateInviteCode(length: number = 8) {
     const characters =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     const charactersLength = characters.length;
     for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
-  }
+}
 
-async function  isInviteCodeUnique(inviteCode: string, prismaService: PrismaService) {
+async function isInviteCodeUnique(inviteCode: string, prismaService: PrismaService) {
     try {
-      const group = await prismaService.group.findUnique({
-        where: { inviteCode },
-      });
-      return !group;
+        const group = await prismaService.group.findUnique({
+            where: { inviteCode },
+        });
+        return !group;
     } catch (error) {
-      return error;
+        return error;
     }
-  }
+}
 
-
-async function generateUniqueInviteCode(prismaService : PrismaService, length: number = 8) {
+async function generateUniqueInviteCode(prismaService: PrismaService, length: number = 8) {
     try {
-      let inviteCode: string;
-      let isUnique = false;
+        let inviteCode: string;
+        let isUnique = false;
 
-      do {
-        inviteCode = await generateInviteCode(length);
-        isUnique = await isInviteCodeUnique(inviteCode, prismaService);
-      } while (!isUnique);
+        do {
+            inviteCode = await generateInviteCode(length);
+            isUnique = await isInviteCodeUnique(inviteCode, prismaService);
+        } while (!isUnique);
 
-      return inviteCode;
+        return inviteCode;
     } catch (error) {
-      return error;
+        return error;
     }
-  }
+}

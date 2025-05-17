@@ -11,7 +11,7 @@ export class CommentService {
         data: createCommentDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -27,7 +27,7 @@ export class CommentService {
         where: { id },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 }

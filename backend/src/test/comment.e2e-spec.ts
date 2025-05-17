@@ -1,9 +1,9 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common"
 import { Test, TestingModule } from "@nestjs/testing";
 import { PrismaService } from "src/prisma/prisma.service";
-import { CommentModule } from "../comment.module";
-import { createTestPost, createTestUser, getUserToken, resetDatabase } from "src/test/test-helper.comment";
-import { CreateCommentDto } from "../dto/create-comment.dto";
+import { CommentModule } from "src/comment/comment.module";
+import { createTestPost, createTestUser, getUserToken, resetDatabase } from "src/test/test-helpers";
+import { CreateCommentDto } from "src/comment/dto/create-comment.dto";
 import request from "supertest";
 import { UserModule } from "src/user/user.module";
 import { AuthModule } from "src/auth/auth.module";
@@ -14,7 +14,6 @@ describe("Comment", () => {
     let userToken: string
 
     beforeAll(async () => {
-        resetDatabase();
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [CommentModule, UserModule, AuthModule],
         })
