@@ -106,7 +106,7 @@ describe('SearchController', () => {
         });
 
         it('deve retornar resultados de pesquisa para grupos', async () => {
-            createTestGroup(app, adminToken);
+            createTestGroup(prismaService);
 
             const searchDto = { input: 'Test' };
             const filter = 'groups';
@@ -170,7 +170,6 @@ describe('SearchController', () => {
                 .set('Authorization', 'Bearer ' + userToken)
                 .send(searchDto)
 
-            console.log(response.body)
             expect(response.status).toBe(500);
             expect(response.body).toHaveProperty('message', 'Internal server error');
         });

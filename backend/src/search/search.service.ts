@@ -54,7 +54,7 @@ export class SearchService {
       result['posts'] = posts;
       return result;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
