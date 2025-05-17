@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
@@ -27,7 +27,7 @@ export class ParticipantService {
         },
       });
       if (participant) {
-        throw new Error('Você já está neste grupo.');
+        throw new ConflictException('Você já está neste grupo.');
       }
 
       const participantBody = {
@@ -41,7 +41,7 @@ export class ParticipantService {
         data: participantBody,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -53,7 +53,7 @@ export class ParticipantService {
       }
       return participants;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -122,7 +122,7 @@ export class ParticipantService {
 
       return groupsWithCounts;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -147,7 +147,7 @@ export class ParticipantService {
       }
       return users;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -166,7 +166,7 @@ export class ParticipantService {
       }
       return participant;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -186,7 +186,7 @@ export class ParticipantService {
         data: updateParticipantDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -205,7 +205,7 @@ export class ParticipantService {
         },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 }
