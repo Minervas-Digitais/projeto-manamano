@@ -27,6 +27,7 @@ export default function PostCard({
   tag,
   fix,
   postId,
+  onPressPost,
 }: any) {
   const createDeepLink = () => `manamano://post/${postId}`;
   const onShare = async () => {
@@ -55,7 +56,7 @@ export default function PostCard({
     return undefined;
   }
   return (
-    <PostCardContainer shadowColor={fix}>
+    <PostCardContainer shadowColor={fix} onPress={onPressPost}>
       {modalOptions ? <ModalOptions onShare={onShare} /> : ''}
       <PostCardSpaceBetween style={{ position: 'relative' }}>
         {tag ? (

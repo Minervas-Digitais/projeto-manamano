@@ -52,7 +52,7 @@ export class UserController {
 
   @HttpCode(204)
   @Delete(':id')
-  @UseGuards(JwtAuthGuard,RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   remove(@Param('id') id: string) {
     return this.userService.remove(id);

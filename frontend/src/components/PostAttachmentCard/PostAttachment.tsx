@@ -2,6 +2,7 @@
 import React from 'react';
 import { useFonts } from 'expo-font';
 import { Pressable, View } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 import {
   AttachmentArchiveIcon,
   AttachmentContainer,
@@ -11,7 +12,7 @@ import {
   VerticalSeparator,
 } from './PostAttachmentStyle';
 
-export default function PostAttachment({ archive, text }: any) {
+export default function PostAttachment({ archive, text, file }: any) {
   const linkIcon = require('../../assets/link-icon.svg');
   const archiveIcon = require('../../assets/archive-icon.svg');
   const [fontsLoaded] = useFonts({
@@ -21,11 +22,29 @@ export default function PostAttachment({ archive, text }: any) {
   if (!fontsLoaded) {
     return undefined;
   }
+  const downloadFile = async () => {
+    if (!file || !file.contentBase64 || !file.name) {
+      console.error('Arquivo inválido para download');
+      return;
+    }
+
+    // Definir o caminho do arquivo no armazenamento local
+    const fileUri = `${FileSystem.documentDirectory}${file.name}`;
+
+    try {
+      // Converte base64 para arquivo
+      await FileSystem.writeAsStringAsync(fileUri, file.contentBase64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      console.log('Arquivo salvo localmente em:', fileUri);
+    } catch (error) {
+      console.error('Erro ao baixar o arquivo:', error);
+    }
+  };
+
   return (
-    <Pressable
-      onPress={() => {
-        alert('link');
-      }}>
+    <Pressable onPress={downloadFile}>
       <AttachmentContainer>
         {archive ? (
           <AttachmentArchiveIcon source={archiveIcon} />

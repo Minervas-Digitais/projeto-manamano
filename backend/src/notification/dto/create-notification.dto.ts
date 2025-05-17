@@ -22,4 +22,8 @@ export class CreateNotificationDto {
   @IsOptional()
   @IsString()
   senderName?: string;
+
+  @IsOptional()
+  @IsString()
+  idContent?: string;
 }

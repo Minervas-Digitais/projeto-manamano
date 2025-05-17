@@ -6,6 +6,7 @@ export const ConfigNotificationContainer = styled.View`
   background-color: #f2f6fa;
   width: 100vw;
   height: 100vh;
+  position: relative;
 `;
 
 export const NotificationInfoContainer = styled.View`
@@ -31,7 +32,7 @@ export const NotificationBodyContainer = styled.View`
   padding: 25px;
   align-items: center;
   justify-content: space-between;
-  height: 89vh;
+  height: 87vh;
   overflow-y: auto;
   gap: 20px;
 `;

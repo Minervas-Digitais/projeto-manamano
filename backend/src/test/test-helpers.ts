@@ -6,10 +6,6 @@ import { RoleType } from '@prisma/client';
 import { CreateGroupDto } from 'src/group/dto/create-group.dto';
 import { execSync } from 'child_process';
 
-/* 
-    Funções uteis para auxiliar, padronizar e modularizar de forma mais eficiente os testes
-*/
-
 export async function getUserToken(app: INestApplication, prisma: PrismaService) {
     const email = 'testuser@example.com';
 
@@ -114,39 +110,39 @@ export function resetDatabase() {
 
 async function generateInviteCode(length: number = 8) {
     const characters =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     const charactersLength = characters.length;
     for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return result;
-}
+  }
 
-async function isInviteCodeUnique(inviteCode: string, prismaService: PrismaService) {
+async function  isInviteCodeUnique(inviteCode: string, prismaService: PrismaService) {
     try {
-        const group = await prismaService.group.findUnique({
-            where: { inviteCode },
-        });
-        return !group;
+      const group = await prismaService.group.findUnique({
+        where: { inviteCode },
+      });
+      return !group;
     } catch (error) {
-        return error;
+      return error;
     }
-}
+  }
 
 
-async function generateUniqueInviteCode(prismaService: PrismaService, length: number = 8) {
+async function generateUniqueInviteCode(prismaService : PrismaService, length: number = 8) {
     try {
-        let inviteCode: string;
-        let isUnique = false;
+      let inviteCode: string;
+      let isUnique = false;
 
-        do {
-            inviteCode = await generateInviteCode(length);
-            isUnique = await isInviteCodeUnique(inviteCode, prismaService);
-        } while (!isUnique);
+      do {
+        inviteCode = await generateInviteCode(length);
+        isUnique = await isInviteCodeUnique(inviteCode, prismaService);
+      } while (!isUnique);
 
-        return inviteCode;
+      return inviteCode;
     } catch (error) {
-        return error;
+      return error;
     }
-}
+  }

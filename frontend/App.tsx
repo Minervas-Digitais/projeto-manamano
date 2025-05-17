@@ -26,6 +26,9 @@ import Search from './src/pages/Search/Search';
 import CreateGroup from './src/pages/CreateGroup/CreateGroup';
 import EditGroup from './src/pages/EditGroup/EditGroup';
 import NotificationPage from './src/pages/NotificationPage/NotificationPage';
+import ADMPage from './src/pages/ADMPage/ADMPage';
+import GlobalNotificationPage from './src/pages/GlobalNotificationPage/GlobalNotificationPage';
+import Groups from './src/pages/Groups/Groups';
 
 const Stack = createNativeStackNavigator();
 
@@ -37,18 +40,27 @@ export default function App() {
         Post: 'post/:postId',
         Profile: 'profile/:id',
         NewPost: 'newpost/:groupId',
+        NewLesson: 'newlesson/:groupId',
       },
     },
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="Post">
+      <Stack.Navigator initialRouteName="WelcomeScreen">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
+        <Stack.Screen name="ADMPage" component={ADMPage} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="GlobalNotification"
+          component={GlobalNotificationPage}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
+
         <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
         <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
         <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />

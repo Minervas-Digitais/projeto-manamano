@@ -1,11 +1,12 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { Linking, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import PostAttachment from '../../components/PostAttachmentCard/PostAttachment';
 import {
@@ -25,6 +26,7 @@ import { PostCardImage } from '../../components/PostCard/PostCardStyle';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 
 export default function Post() {
   const route = useRoute();
@@ -37,18 +39,26 @@ export default function Post() {
   const [post, setPost] = useState(null);
   const [postUser, setPostUser] = useState(null);
   const [commentUsers, setCommentUsers] = useState({});
+  const [postArchives, setPostArchives] = useState([]);
   const profileImage = require('../../assets/test-profile-icon.png');
+  const [recipientId, setRecipientId] = useState('');
+  const [idGroup, setIdGroup] = useState('');
+  const [groupName, setGroupName] = useState('');
+  const [userName, setUserName] = useState('');
+
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
     if (loggedId && accessToken) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
-      api.get(`/user/${loggedId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      api
+        .get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => setUserName(res.data.fullName));
     }
   }, []);
   useEffect(() => {
@@ -61,9 +71,14 @@ export default function Post() {
           },
         });
         setPost(response.data);
+        setRecipientId(response.data.userId);
+        setIdGroup(response.data.groupId);
       } catch (error) {
         console.error('Erro ao buscar publicação', error);
-        alert('Erro ao buscar publicação');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar publicação. Tente novamente mais tarde.',
+        });
       }
     };
     fetchPost();
@@ -71,7 +86,6 @@ export default function Post() {
 
   useEffect(() => {
     if (!accessTokenState || !post?.userId) return;
-
     const fetchPostUser = async () => {
       try {
         const response = await api.get(`user/${post.userId}`, {
@@ -79,24 +93,44 @@ export default function Post() {
             Authorization: `Bearer ${accessTokenState}`,
           },
         });
-
         setPostUser(response.data);
       } catch (error) {
         console.error('Erro ao buscar usuário do post', error);
-        alert('Erro ao buscar usuário do post');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar usuário da publicação. Tente novamente mais tarde.',
+        });
+      }
+    };
+    fetchPostUser();
+  }, [accessTokenState, post?.userId]);
+  useEffect(() => {
+    if (!accessTokenState) return;
+    const fetchArchives = async () => {
+      try {
+        const response = await api.get(`archives/post/${postId}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+        setPostArchives(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar arquivos do post', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar arquivos da publicação. Tente novamente mais tarde.',
+        });
       }
     };
 
-    fetchPostUser();
-  }, [accessTokenState, post?.userId]);
+    fetchArchives();
+  }, [accessTokenState, postId]);
 
   useEffect(() => {
     if (!accessTokenState || !post?.Comment?.length) return;
-
     const fetchCommentUsers = async () => {
       try {
         const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
-
         const usersData = await Promise.all(
           uniqueUserIds.map(async (userId) => {
             const response = await api.get(`user/${userId}`, {
@@ -107,16 +141,17 @@ export default function Post() {
             return { userId, data: response.data };
           }),
         );
-
         const usersMap = usersData.reduce((acc, user) => {
           acc[user.userId] = user.data;
           return acc;
         }, {});
-
         setCommentUsers(usersMap);
       } catch (error) {
         console.error('Erro ao buscar usuários dos comentários', error);
-        alert('Erro ao buscar usuários dos comentários');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar usuários dos comentários. Tente novamente mais tarde.',
+        });
       }
     };
 
@@ -147,11 +182,52 @@ export default function Post() {
           },
         },
       );
-      alert('Comentário enviada com sucesso!');
-      navigation.replace('Post', { postId });
+
+      const groupResponse = await api.get(`/group/${idGroup}`, {
+        headers: {
+          Authorization: `Bearer ${accessTokenState}`,
+        },
+      });
+      if (post.userId !== loggedIdState) {
+        const groupNameFromApi = groupResponse.data.name;
+        console.log({
+          senderId: loggedIdState,
+          senderName: userName,
+          recipientId,
+          groupName: groupNameFromApi,
+          type: 'COMMENT',
+          body: '',
+        });
+        await api.post(
+          '/notifications',
+          {
+            senderId: loggedIdState,
+            senderName: userName,
+            recipientId,
+            groupName: groupNameFromApi,
+            type: 'COMMENT',
+            body: '',
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${accessTokenState}`,
+            },
+          },
+        );
+      }
+      Toast.show({
+        type: 'success',
+        text1: 'Comentário enviado com sucesso!',
+      });
+      setTimeout(() => {
+        navigation.replace('Post', { postId });
+      }, 500);
     } catch (error) {
       console.error('Erro ao enviar comentário:', error);
-      alert('Erro ao enviar comentário. Tente novamente mais tarde.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao enviar comentário. Tente novamente mais tarde.',
+      });
     }
   };
   const handleBlur = () => {
@@ -168,6 +244,7 @@ export default function Post() {
   if (!fontsLoaded) {
     return undefined;
   }
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -198,12 +275,9 @@ export default function Post() {
           horizontal
           contentContainerStyle={{ gap: 15 }}
           style={{ maxHeight: 85 }}>
-          <PostAttachment text="Aula 1 - Whatsapp" />
-          <PostAttachment archive text="Aula 1 - Drive" />
-          <PostAttachment text="asfwhjeineif" />
-          <PostAttachment text="asfwhjeineif" />
-          <PostAttachment archive text="sdaghjsae8ig" />
-          <PostAttachment text="asfwhjeineif" />
+          {postArchives.map((archive) => (
+            <PostAttachment archive text={archive.name} file={archive} />
+          ))}
         </ScrollView>
         <View style={{ width: '100%', left: '-6vw' }}>
           <HorizontalSeparator />
@@ -231,7 +305,7 @@ export default function Post() {
           {errors.groupcode && <ErrorWarning errorText="Campo obrigatório" />}
           {post?.Comment.length > 0 ? (
             post?.Comment.map((item: any) => {
-              let formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
+              const formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
                 locale: ptBR,
               });
               const commentUser = commentUsers[item.userId];
@@ -247,6 +321,7 @@ export default function Post() {
             <View />
           )}
         </CommentsContainer>
+        <Toast config={toastConfig} />
       </PostContainer>
     </ScrollView>
   );

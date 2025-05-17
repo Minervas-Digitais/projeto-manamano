@@ -37,7 +37,7 @@ export default function NotificationPage() {
 
       <NotificationPageContainer>
         <View>
-          <NotificationTextContainerWarning height="min-content">
+          <NotificationTextContainerWarning height="min-content" style={{ justifyContent: 'none' }}>
             <Image source={megaPhone} />
             <NotificationTextRed font="inter-bold">Comunicado: </NotificationTextRed>
           </NotificationTextContainerWarning>

@@ -20,6 +20,7 @@ export class NotificationService {
         type: dto.type,
         groupName: dto.groupName || null,
         senderName: dto.senderName || null,
+        idContent: dto.idContent || null,
       },
     });
   }
@@ -59,5 +60,22 @@ export class NotificationService {
     }));
 
     return this.prisma.notification.createMany({ data });
+  }
+  
+  async deleteAllNotifications(userId: string): Promise<{ count: number }> {
+    const deletedNotifications = await this.prisma.notification.deleteMany({
+      where: { recipientId: userId },
+    });
+
+    return { count: deletedNotifications.count };
+  }
+
+  async markAllAsRead(userId: string): Promise<{ count: number }> {
+    const updatedNotifications = await this.prisma.notification.updateMany({
+      where: { recipientId: userId, isRead: false },
+      data: { isRead: true },
+    });
+
+    return { count: updatedNotifications.count };
   }
 }
