@@ -2,16 +2,19 @@ import { INestApplication, ValidationPipe } from "@nestjs/common"
 import { Test, TestingModule } from "@nestjs/testing";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CommentModule } from "src/comment/comment.module";
-import { createTestPost, createTestUser, getUserToken, resetDatabase } from "src/test/test-helpers";
+import { createTestPost, createTestUser, getUserToken } from "src/test/test-helpers";
 import { CreateCommentDto } from "src/comment/dto/create-comment.dto";
 import request from "supertest";
 import { UserModule } from "src/user/user.module";
 import { AuthModule } from "src/auth/auth.module";
+import { AuthService } from "src/auth/auth.service";
 
 describe("Comment", () => {
     let app :INestApplication;
     let prismaService: PrismaService;
     let userToken: string
+    let authService: AuthService;
+    
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -22,10 +25,11 @@ describe("Comment", () => {
         app = moduleFixture.createNestApplication();
         app.useGlobalPipes(new ValidationPipe());
         prismaService = moduleFixture.get<PrismaService>(PrismaService);
+        authService = moduleFixture.get<AuthService>(AuthService);
 
         await app.init();
 
-        userToken = await getUserToken(app, prismaService);
+        userToken = await getUserToken(authService, prismaService);
     })
 
     describe("Create", () => {

@@ -7,38 +7,39 @@ import { CreateGroupDto } from 'src/group/dto/create-group.dto';
 import { CreatePostDto } from "src/post/dto/create-post.dto";
 import { execSync } from 'child_process';
 import { PostType } from "@prisma/client";
+import { AuthService } from 'src/auth/auth.service';
 
-export async function getUserToken(app: INestApplication, prisma: PrismaService) {
+const DEFAULT_PASSWORD = 'password123'
+
+export async function getUserToken(authService: AuthService, prisma: PrismaService) {
     const email = 'testuser@example.com';
 
     const existingUser = await prisma.user.findUnique({
         where: { email },
     });
+    
+    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10,);
 
     if (!existingUser) {
-        await request(app.getHttpServer())
-            .post('/user')
-            .send({
+        await prisma.user.create({
+            data: {
                 fullName: 'Test User',
                 email,
                 phone: '1234567890',
-                hash: 'password123',
-            })
-            .expect(201);
+                hash: hashedPassword,
+            },
+        });
     }
 
-    const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-            email,
-            password: 'password123',
-        })
-        .expect(201);
+    const loginResponse = await authService.login({
+        email,
+        password: 'password123',
+    });
 
-    return loginResponse.body.accessToken;
+    return loginResponse.accessToken;
 }
 
-export async function getAdminToken(app: INestApplication, prisma: PrismaService) {
+export async function getAdminToken(authService: AuthService, prisma: PrismaService) {
     const email = 'admin@example.com';
 
     const existingAdmin = await prisma.user.findUnique({
@@ -46,7 +47,7 @@ export async function getAdminToken(app: INestApplication, prisma: PrismaService
     });
 
     if (!existingAdmin) {
-        const hashedPassword = await bcrypt.hash('password123', 10);
+        const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
         await prisma.user.create({
             data: {
@@ -58,16 +59,13 @@ export async function getAdminToken(app: INestApplication, prisma: PrismaService
             },
         });
     }
+    
+    const loginResponse = await authService.login({
+        email,
+        password: 'password123',
+    });
 
-    const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-            email,
-            password: 'password123',
-        })
-        .expect(201);
-
-    return loginResponse.body.accessToken;
+    return loginResponse.accessToken;
 }
 
 export async function createTestGroup(prisma: PrismaService, name: string = 'Test Group') {
@@ -164,25 +162,12 @@ export async function createTestUser(prisma: PrismaService, phone: string = "123
         data: {
             fullName: "Teste User",
             email: "testeuser@example.com",
-            hash: "senha123",
+            hash: DEFAULT_PASSWORD,
             phone,
         }
     })
 
     return newUser.id;
-}
-
-
-export function resetDatabase() {
-    try {
-        console.log('🔄 Resetando banco...');
-        execSync('npx prisma migrate reset --force --skip-generate --skip-seed', { stdio: 'inherit' });
-        execSync('npm run seed', { stdio: 'inherit' });
-        console.log('✅ Banco resetado com seed');
-    } catch (err) {
-        console.error('❌ Erro ao resetar banco:', err);
-        process.exit(1);
-    }
 }
 
 async function generateInviteCode(length: number = 8) {
