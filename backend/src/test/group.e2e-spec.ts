@@ -126,7 +126,7 @@ describe('Group E2E', () => {
 
     describe("findOne()", () => {
         it("deve retornar o grupo do id especificado", async () => {
-            const groupId = await createTestGroup(app, adminToken);
+            const groupId = await createTestGroup(prismaService);
 
             const response = await request(app.getHttpServer())
                 .get(`/group/${groupId}`)
@@ -156,7 +156,7 @@ describe('Group E2E', () => {
 
     describe("update()", () => {
         it('deve atualizar o grupo com sucesso para um usuário ADMIN', async () => {
-            const groupId = await createTestGroup(app, adminToken);
+            const groupId = await createTestGroup(prismaService);
             const updateData = updateGroupDto({ name: "Teste Update", description: "Teste update descrição" })
 
             const response = await request(app.getHttpServer())
@@ -216,7 +216,7 @@ describe('Group E2E', () => {
 
     describe("remove()", () => {
         it('deve remover o grupo com sucesso para um usuário ADMIN', async () => {
-            const groupId = await createTestGroup(app, adminToken);
+            const groupId = await createTestGroup(prismaService);
 
             const response = await request(app.getHttpServer())
                 .delete(`/group/${groupId}`)
