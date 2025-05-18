@@ -2,6 +2,7 @@
 import { useFonts } from 'expo-font';
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { WhiteBackground } from '../EditProfile/EditProfileStyle';
 import ADMPageButton from '../../components/ADMPageButton/ADMPageButton';
 import {

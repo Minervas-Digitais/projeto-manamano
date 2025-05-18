@@ -18,8 +18,8 @@ export const InputTextIconInputContainer = styled.View`
   height: 52px;
   border: solid 1.5px #5e6366;
   border-radius: 10px;
-  padding-left: 15px;
   padding-right: 15px;
+  padding-left: 15px;
   gap: 5px;
 `;
 
@@ -36,7 +36,7 @@ export const InputText = styled.TextInput`
   color: #5e6366;
 `;
 
-export const InputTextIconContainer = styled.TouchableOpacity`
+export const InputTextIconContainer = styled.TouchableOpacity<{ isPassword?: string }>`
   display: ${(prop) => (prop.isPassword ? 'flex' : 'none')};
   justify-content: center;
   align-items: center;

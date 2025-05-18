@@ -45,7 +45,6 @@ export const AddCategoryButton = styled.TouchableOpacity`
   height: 30px;
   justify-content: center;
   align-items: center;
-  margin-right: 5px;
 `;
 
 export const Category = styled.Text`

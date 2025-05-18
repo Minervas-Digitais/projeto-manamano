@@ -4,6 +4,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 import Toast from 'react-native-toast-message';
 import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
@@ -20,8 +21,6 @@ export default function GlobalNotificationPage({ navigation }: any) {
   } = useForm({});
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
-  const [userInfo, setUserInfo] = useState(null);
-
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
@@ -77,6 +76,7 @@ export default function GlobalNotificationPage({ navigation }: any) {
   }
   return (
     <View style={{ flex: 1, backgroundColor: '#f2f6fa' }}>
+      <StatusBar translucent backgroundColor="transparent" />
       <HeaderCustom font="inter-bold" text="Comunicado" />
       <GlobalNotificationContainer>
         <Controller

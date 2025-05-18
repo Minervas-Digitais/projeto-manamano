@@ -1,3 +1,4 @@
+/* eslint-disable import/no-duplicates */
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
