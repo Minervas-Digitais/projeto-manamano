@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React, { useState } from 'react';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { HeaderContainer, HeaderText, NoIcon } from './HeaderCustomStyle';
 import BackButton from '../BackButton/BackButton';
 import Menu from '../../assets/menu-icon.svg';
@@ -34,14 +34,7 @@ export default function HeaderCustom({
       <TouchableOpacity activeOpacity={onPressTitle || 1}>
         <HeaderText font={font}>{text}</HeaderText>
       </TouchableOpacity>
-      {icon ? (
-        <TouchableOpacity onPress={onPress}>
-          <Image source={icon} />
-          {headerButton}
-        </TouchableOpacity>
-      ) : (
-        <NoIcon />
-      )}
+      {icon ? <TouchableOpacity onPress={onPress}>{headerButton}</TouchableOpacity> : <NoIcon />}
     </HeaderContainer>
   );
 }

@@ -48,12 +48,12 @@ export const UpperPart = styled.View`
   gap: 8.8vw;
 `;
 export const NamePart = styled.View`
-  width: 88vw;
-  margin-left: 5.81vw;
+  width: ${width * 0.88}px;
+  margin-left: ${width * 0.0581}px;
 `;
 export const MiddlePart = styled.View`
-  width: 88vw;
-  margin-left: 5.81vw;
+  width: ${width * 0.88}px;
+  margin-left: ${width * 0.0581}px;
   flex-direction: row;
 `;
 export const BottomPart = styled.View`
