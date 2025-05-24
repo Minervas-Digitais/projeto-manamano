@@ -9,16 +9,17 @@ import { AuthModule } from '../auth/auth.module';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { createCategoryDto } from 'src/category/dto/create-category.dto.factory';
-import { getUserToken, createTestGroup, resetDatabase } from './test-helpers';
+import { getUserToken, createTestGroup } from './test-helpers';
 import { CreateCategoryDto } from 'src/category/dto/create-category.dto';
+import { AuthService } from 'src/auth/auth.service';
 
 describe('Category', () => {
     let app: INestApplication;
     let prismaService: PrismaService;
     let userToken: string;
+    let authService: AuthService;
 
-    beforeAll(async () => {
-        //resetDatabase();
+    beforeAll(async () => {;
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [CategoryModule, GroupModule, UserModule, AuthModule],
         })
@@ -27,10 +28,11 @@ describe('Category', () => {
         app = moduleFixture.createNestApplication();
         app.useGlobalPipes(new ValidationPipe());
         prismaService = moduleFixture.get<PrismaService>(PrismaService);
+        authService = moduleFixture.get<AuthService>(AuthService);
 
         await app.init();
 
-        userToken = await getUserToken(app, prismaService);
+        userToken = await getUserToken(authService, prismaService);
     });
 
     describe("create()", () => {
