@@ -7,8 +7,9 @@ import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';
 
 import { PrismaService } from '../prisma/prisma.service';
-import { getAdminToken, getUserToken, createTestGroup } from './test-helpers';
+import { getAdminToken, getUserToken, createTestGroup, createTestPost, createTestUser } from './test-helpers';
 import { GroupModule } from 'src/group/group.module';
+import { AuthService } from 'src/auth/auth.service';
 
 
 describe('SearchController', () => {
@@ -16,6 +17,8 @@ describe('SearchController', () => {
     let prismaService: PrismaService;
     let userToken: string;
     let adminToken: string;
+    let authService: AuthService;
+
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -26,16 +29,21 @@ describe('SearchController', () => {
         app = moduleFixture.createNestApplication();
         app.useGlobalPipes(new ValidationPipe());
         prismaService = moduleFixture.get<PrismaService>(PrismaService);
+        authService = moduleFixture.get<AuthService>(AuthService);
+
 
         await app.init();
 
-        userToken = await getUserToken(app, prismaService);
-        adminToken = await getAdminToken(app, prismaService);
+        userToken = await getUserToken(authService, prismaService);
+        adminToken = await getAdminToken(authService, prismaService);
     });
 
     describe("search()", () => {
         it('deve retornar resultados de pesquisa para usuários, grupos e posts', async () => {
             const searchDto = { input: 'Test' };
+            await createTestGroup(prismaService);
+            await createTestPost(prismaService);
+            await createTestUser(prismaService);
 
             const response = await request(app.getHttpServer())
                 .post('/search')
@@ -48,9 +56,28 @@ describe('SearchController', () => {
             expect(response.body).toHaveProperty('groups');
             expect(response.body).toHaveProperty('posts');
 
-            expect(Array.isArray(response.body.users)).toBe(true);
-            expect(Array.isArray(response.body.groups)).toBe(true);
-            expect(Array.isArray(response.body.posts)).toBe(true);
+            expect(response.body.users.length).toBeGreaterThan(0);
+            expect(response.body.groups.length).toBeGreaterThan(0);
+            expect(response.body.posts.length).toBeGreaterThan(0);
+
+            const searchTerm = searchDto.input.toLowerCase();
+
+            response.body.users.forEach(user=> {
+                const name = user.fullName?.toLowerCase() || '';
+                expect(name).toContain(searchTerm);
+            });
+
+            response.body.groups.forEach(group => {
+                const name = group.name?.toLowerCase() || '';
+                expect(name).toContain(searchTerm);
+            });
+
+            response.body.posts.forEach(post => {
+                const title = post.title?.toLowerCase() || '';
+                const input = post.input?.toLowerCase() || '';
+                expect(title.includes(searchTerm) || input.includes(searchTerm)).toBe(true);
+            });
+
         });
 
         it('deve retornar 401 quando tentar acessar sem userToken de autenticação', async () => {
@@ -91,6 +118,7 @@ describe('SearchController', () => {
         it('deve retornar resultados de pesquisa para usuários', async () => {
             const searchDto = { input: 'Test' };
             const filter = 'users';
+            await createTestUser(prismaService);
 
             const response = await request(app.getHttpServer())
                 .post(`/search/filter/${filter}`)
@@ -98,7 +126,6 @@ describe('SearchController', () => {
                 .send(searchDto);
 
             expect(response.status).toBe(200);
-            
 
             expect(response.body).toBeInstanceOf(Array);
             expect(response.body.length).toBeGreaterThan(0);
@@ -106,7 +133,7 @@ describe('SearchController', () => {
         });
 
         it('deve retornar resultados de pesquisa para grupos', async () => {
-            createTestGroup(prismaService);
+            await createTestGroup(prismaService);
 
             const searchDto = { input: 'Test' };
             const filter = 'groups';
@@ -115,24 +142,28 @@ describe('SearchController', () => {
                 .post(`/search/filter/${filter}`)
                 .set('Authorization', 'Bearer ' + userToken)
                 .send(searchDto);
-  
+
             expect(response.status).toBe(200);
             expect(response.body).toBeInstanceOf(Array);
             expect(response.body.length).toBeGreaterThan(0);
             expect(response.body[0]).toHaveProperty('name');
         });
 
-        it('deve retornar 401 quando tentar acessar sem userToken de autenticação', async () => {
+        it('deve retornar resultados de pesquisa para posts', async () => {
+            await createTestPost(prismaService);
 
             const searchDto = { input: 'Test' };
-            const filter = 'users';
+            const filter = 'posts';
 
             const response = await request(app.getHttpServer())
                 .post(`/search/filter/${filter}`)
-                .send(searchDto)
-                .expect(401);
-
-            expect(response.body.message).toBe('Unauthorized');
+                .set('Authorization', 'Bearer ' + userToken)
+                .send(searchDto);
+                
+            expect(response.status).toBe(200);
+            expect(response.body).toBeInstanceOf(Array);
+            expect(response.body.length).toBeGreaterThan(0);
+            expect(response.body[0]).toHaveProperty('title');
         });
 
         it('deve retornar 401 quando o userToken de autenticação for inválido', async () => {
@@ -161,7 +192,7 @@ describe('SearchController', () => {
             expect(response.body.message).toEqual(['input should not be empty']);
         });
 
-        it('deve retornar 500 quando o filtro de pesquisa for invalido', async () => {
+        it('deve retornar 400 quando o filtro de pesquisa for invalido', async () => {
             const searchDto = { input: 'Test' };
             const filter = 'invalidFilter';
 
@@ -170,8 +201,8 @@ describe('SearchController', () => {
                 .set('Authorization', 'Bearer ' + userToken)
                 .send(searchDto)
 
-            expect(response.status).toBe(500);
-            expect(response.body).toHaveProperty('message', 'Internal server error');
+            expect(response.status).toBe(400);
+            expect(response.body.message).toBe('Invalid filter');
         });
     })
 
