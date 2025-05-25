@@ -50,7 +50,7 @@ export class UserController {
     return this.userService.update(id, updateUserDto);
   }
 
-  @HttpCode(204)
+  @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')

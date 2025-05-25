@@ -47,4 +47,16 @@ export class NotificationController {
   async deleteNotification(@Param('id') id: string) {
     return this.notificationService.deleteNotification(id);
   }
+
+  @Delete('user/:userId')
+  @UseGuards(JwtAuthGuard)
+  async deleteAllNotifications(@Param('userId') userId: string) {
+    return this.notificationService.deleteAllNotifications(userId);
+  }
+
+  @Patch('user/:userId')
+  @UseGuards(JwtAuthGuard)
+  async markAllAsRead(@Param('userId') userId: string) {
+    return this.notificationService.markAllAsRead(userId);
+  }
 }

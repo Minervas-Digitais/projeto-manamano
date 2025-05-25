@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  ConflictException,
 } from '@nestjs/common';
 import { RoleType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -13,20 +14,35 @@ export const roundsOfHashing = 10;
 
 @Injectable()
 export class UserService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(private prismaService: PrismaService) { }
 
   async create(createUserDto: CreateUserDto) {
     try {
+      const existingUser = await this.prismaService.user.findFirst({
+        where: {
+          OR: [
+            { email: createUserDto.email },
+            { phone: createUserDto.phone },
+          ],
+        },
+      });
+      if (existingUser) {
+        throw new ConflictException('Email ou telefone já está em uso.');
+      }
+
       const hashedPassword = await bcrypt.hash(
-        createUserDto.hash,
+        createUserDto.password,
         roundsOfHashing,
       );
 
-      createUserDto.hash = hashedPassword;
+      createUserDto.password = hashedPassword;
       createUserDto.savedPost = [];
 
       return await this.prismaService.user.create({
-        data: createUserDto,
+        data: {
+          ...createUserDto,
+          hash: createUserDto.password,
+        },
       });
     } catch (error) {
       return error;
@@ -48,9 +64,7 @@ export class UserService {
   async findOne(id: string) {
     try {
       const user = await this.prismaService.user.findUnique({
-        where: {
-          id,
-        },
+        where: { id },
       });
       if (!user) {
         throw new NotFoundException('Usuário não encontrado.');
@@ -63,14 +77,9 @@ export class UserService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     try {
-      const user = await this.findOne(id);
-      if (typeof user === 'object' && user instanceof Error) {
-        return user;
-      }
+      await this.findOne(id); 
       return await this.prismaService.user.update({
-        where: {
-          id,
-        },
+        where: { id },
         data: updateUserDto,
       });
     } catch (error) {
@@ -80,14 +89,9 @@ export class UserService {
 
   async remove(id: string) {
     try {
-      const user = await this.findOne(id);
-      if (typeof user === 'object' && user instanceof Error) {
-        return user;
-      }
+      await this.findOne(id); 
       await this.prismaService.user.delete({
-        where: {
-          id,
-        },
+        where: { id },
       });
       return 'Usuário deletado com sucesso.';
     } catch (error) {
@@ -98,9 +102,7 @@ export class UserService {
   async changePassword(id: string, oldPassword: string, newPassword: string) {
     try {
       const user = await this.prismaService.user.findUnique({
-        where: {
-          id,
-        },
+        where: { id },
       });
       if (!user) {
         throw new NotFoundException('Usuário não encontrado.');
@@ -114,12 +116,8 @@ export class UserService {
       const hashedPassword = await bcrypt.hash(newPassword, roundsOfHashing);
 
       return await this.prismaService.user.update({
-        where: {
-          id,
-        },
-        data: {
-          hash: hashedPassword,
-        },
+        where: { id },
+        data: { hash: hashedPassword },
       });
     } catch (error) {
       return error;

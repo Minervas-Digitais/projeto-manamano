@@ -19,7 +19,7 @@ export class GroupService {
 
       return newGroup;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -31,7 +31,7 @@ export class GroupService {
       }
       return groups;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -47,7 +47,7 @@ export class GroupService {
       }
       return group;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -64,7 +64,7 @@ export class GroupService {
         data: updateGroupDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -81,7 +81,7 @@ export class GroupService {
       });
       return 'Grupo deletado com sucesso.';
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -104,7 +104,7 @@ export class GroupService {
       });
       return !group;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -120,7 +120,7 @@ export class GroupService {
 
       return inviteCode;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 }
