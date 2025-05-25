@@ -1,24 +1,23 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UserModule } from '../user/user.module';
+import { UserModule } from '../user.module';
 import { AuthModule } from 'src/auth/auth.module';
 import request from 'supertest';
 import {
     createTestUser,
     getUserToken,
-} from 'src/test/test-helpers';
+    resetDatabase,
+} from 'src/test/test-helper.comment';
 import { RoleType } from '@prisma/client';
-import { AuthService } from 'src/auth/auth.service';
 
 describe('User', () => {
     let app: INestApplication;
     let prismaService: PrismaService;
     let userToken: string;
-    let authService: AuthService;
-    
 
     beforeAll(async () => {
+        resetDatabase();
 
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [UserModule, AuthModule],
@@ -29,9 +28,7 @@ describe('User', () => {
         await app.init();
 
         prismaService = moduleFixture.get<PrismaService>(PrismaService);
-        authService = moduleFixture.get<AuthService>(AuthService);
-        
-        userToken = await getUserToken(authService, prismaService);
+        userToken = await getUserToken(app, prismaService);
     });
 
     describe('Create User', () => {
