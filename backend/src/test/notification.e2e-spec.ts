@@ -1,14 +1,14 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { PrismaService } from "src/prisma/prisma.service";
-import { NotificationModule } from "../notification.module";
+import { NotificationModule } from "../notification/notification.module";
 import { UserModule } from "src/user/user.module";
 import { AuthModule } from "src/auth/auth.module";
-import { getAdminToken, getNotificationId, getRecipientToken, getSenderToken, getUserToken, resetDatabase } from "../../../test/test-helper.notification";
-import { CreateNotificationDto } from "../dto/create-notification.dto";
+import { getAdminToken, getNotificationId, getRecipientToken, getSenderToken, getUserToken, resetDatabase } from "../../test/test-helper.notification";
+import { CreateNotificationDto } from "../notification/dto/create-notification.dto";
 import { NotificationType } from "@prisma/client";
 import request from "supertest";
-import { UpdateNotificationDto } from "../dto/update-notification.dto";
+import { UpdateNotificationDto } from "../notification/dto/update-notification.dto";
 
 describe("Notification", () => {
     let app: INestApplication;
@@ -16,7 +16,6 @@ describe("Notification", () => {
     let userToken: string;
 
     beforeAll(async () => {
-        resetDatabase();
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [NotificationModule, UserModule, AuthModule],
         })
