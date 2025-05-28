@@ -4,7 +4,7 @@ import { ArchiveModule } from "src/archive/archive.module";
 import { CreateArchiveDto } from "src/archive/dto/archive.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 import request from "supertest";
-import { createTestGroup, createTestUser } from "./test-helpers";
+import { createTestGroup, createTestUser, createTestArchive, createTestPost } from "./test-helpers";
 import { resetDatabase } from "../../test/test-helper.notification";
 
 describe("Archive", () => {
@@ -69,14 +69,48 @@ describe("Archive", () => {
     });
 
     describe("getArchive", () => {
-        
+        it("deve retornar um arquivo", async () => {
+            // criar arquivo
+            const archive_id = await createTestArchive(prismaService);
+            // procurar arquivo pela request
+            const response = await request(app.getHttpServer())
+                .get(`/archives/${archive_id}`)    
+            // checar se veio o esperado
+            expect(response.status).toBe(200)
+            expect(response.body.id).toEqual(archive_id)
+        })
+
+        it("deve retornar erro se o id for invalido", async () => {
+            const invalid_id = -1
+
+            const response = await request(app.getHttpServer())
+                .get(`/archives/${invalid_id}`)
+            expect(response.status).toBe(404);
+            expect(response.body.message).toEqual("Archive not found");
+        })
     });
 
     describe("getArchivesByPostId", () => {
+        it("deve retornar um arquivo referente ao post_id", async () => {
+            // pegar um post_id valido 
+            // fazer o upload de um arquivo usando esse post_id
+            // fazer a request
+            // checar se veio o esperado
+        });
+        it("deve retornar um erro se o id for invalido", async () => {
 
+        });
     });
 
     describe("getArchivesByGroupId", () => {
-
+        it("deve retornar um arquivo referente ao group_id", async () => {
+            // pegar um group_id valido
+            // fazer o upload de um arquivo usando esse group_id
+            // fazer a request
+            // checar se veio o esperado
+        });
+        it("deve retornar um erro se o id for invalido", async () => {
+            
+        });
     });
 })

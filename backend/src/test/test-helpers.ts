@@ -169,6 +169,34 @@ export async function createTestUser(prisma: PrismaService, phone: string = "123
 
     return newUser.id;
 }
+export async function createTestArchive(prisma: PrismaService, user_id?: string, group_id?: string) {
+    const name = "testearchivename123"
+
+    const existingArchive = await prisma.archive.findFirst({
+        where: { name }
+    })
+
+    if (existingArchive != null) {
+        return existingArchive.id
+    }
+    
+    if (!user_id)
+        user_id = await createTestUser(prisma)
+    if (!group_id)
+        group_id = await createTestGroup(prisma)
+
+    const newArchive = await prisma.archive.create({
+        data: {
+            name: name,
+            mimeType: "text",
+            contentBase64: "stringembase64aaa",
+            userId: user_id,
+            groupId: group_id
+        }
+    })
+
+    return newArchive.id;
+}
 
 async function generateInviteCode(length: number = 8) {
     const characters =
