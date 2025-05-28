@@ -30,7 +30,7 @@ describe("Archive", () => {
             const group_id = await createTestGroup(prismaService);
 
             const archiveDTO: CreateArchiveDto = {
-                name: "teste",
+                name: "testearchivename123",
                 mimeType: "text",
                 contentBase64: "stringembase64aaa",
                 type: "text/plain",
@@ -105,12 +105,22 @@ describe("Archive", () => {
     describe("getArchivesByGroupId", () => {
         it("deve retornar um arquivo referente ao group_id", async () => {
             // pegar um group_id valido
+            const group_id = await createTestGroup(prismaService)
             // fazer o upload de um arquivo usando esse group_id
+            const archive_id = await createTestArchive(prismaService, group_id)
             // fazer a request
+            const response = await request(app.getHttpServer())
+                .get(`/archives/group/${group_id}`)
             // checar se veio o esperado
+            expect(response.status).toBe(200);
+            expect(response.body[0].id).toEqual(archive_id)
         });
         it("deve retornar um erro se o id for invalido", async () => {
-            
+            const invalid_id = -1
+            const response = await request(app.getHttpServer())
+                .get(`/archives/group/${invalid_id}`)
+            expect(response.status).toBe(404);
+            expect(response.body.message).toEqual("No archives found for this group");
         });
     });
 })

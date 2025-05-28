@@ -169,7 +169,7 @@ export async function createTestUser(prisma: PrismaService, phone: string = "123
 
     return newUser.id;
 }
-export async function createTestArchive(prisma: PrismaService, user_id?: string, group_id?: string) {
+export async function createTestArchive(prisma: PrismaService, group_id: string = null) {
     const name = "testearchivename123"
 
     const existingArchive = await prisma.archive.findFirst({
@@ -180,9 +180,9 @@ export async function createTestArchive(prisma: PrismaService, user_id?: string,
         return existingArchive.id
     }
     
-    if (!user_id)
-        user_id = await createTestUser(prisma)
-    if (!group_id)
+    
+    const user_id = await createTestUser(prisma)
+    if (group_id == null)
         group_id = await createTestGroup(prisma)
 
     const newArchive = await prisma.archive.create({
