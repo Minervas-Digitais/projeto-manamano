@@ -15,12 +15,11 @@ export class CreateArchiveDto {
 
   @IsOptional()
   @IsString()
-  userId?: number;
+  userId?: string;
 
   @IsOptional()
   @IsString()
-  groupId?: number;
-
+  groupId?: string;
 }
 
 export class ResponseArchiveDto {
