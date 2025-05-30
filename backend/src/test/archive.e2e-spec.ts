@@ -4,7 +4,7 @@ import { ArchiveModule } from "src/archive/archive.module";
 import { CreateArchiveDto } from "src/archive/dto/archive.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 import request from "supertest";
-import { createTestGroup, createTestUser, createTestArchive, createTestPost } from "./test-helpers";
+import { createTestGroup, createTestUser, createTestArchive, createTestPost, deleteAllTestArchives } from "./test-helpers";
 import { resetDatabase } from "../../test/test-helper.notification";
 
 describe("Archive", () => {
@@ -92,13 +92,25 @@ describe("Archive", () => {
 
     describe("getArchivesByPostId", () => {
         it("deve retornar um arquivo referente ao post_id", async () => {
+            const _ = await deleteAllTestArchives(prismaService);
             // pegar um post_id valido 
+            const post_id = await createTestPost(prismaService);
+            const group_id = await createTestGroup(prismaService);
             // fazer o upload de um arquivo usando esse post_id
+            const archive_id = await createTestArchive(prismaService, group_id, post_id);
             // fazer a request
+            const response = await request(app.getHttpServer())
+                .get(`/archives/post/${post_id}`)
             // checar se veio o esperado
+            expect(response.status).toBe(200);
+            expect(response.body[0].id).toEqual(archive_id);
         });
         it("deve retornar um erro se o id for invalido", async () => {
-
+            const invalid_id = -1
+            const response = await request(app.getHttpServer())
+                .get(`/archives/post/${invalid_id}`)
+            expect(response.status).toBe(404);
+            expect(response.body.message).toEqual("No archives found for this post");
         });
     });
 

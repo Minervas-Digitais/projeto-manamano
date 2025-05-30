@@ -169,7 +169,8 @@ export async function createTestUser(prisma: PrismaService, phone: string = "123
 
     return newUser.id;
 }
-export async function createTestArchive(prisma: PrismaService, group_id: string = null) {
+
+export async function createTestArchive(prisma: PrismaService, group_id: string = null, post_id: string = null) {
     const name = "testearchivename123"
 
     const existingArchive = await prisma.archive.findFirst({
@@ -180,10 +181,15 @@ export async function createTestArchive(prisma: PrismaService, group_id: string 
         return existingArchive.id
     }
     
-    
-    const user_id = await createTestUser(prisma)
-    if (group_id == null)
-        group_id = await createTestGroup(prisma)
+    const user_id = await createTestUser(prisma);
+
+    if (post_id == null) {
+        post_id = await createTestPost(prisma);
+    }
+
+    if (group_id == null) {
+        group_id = await createTestGroup(prisma);
+    }
 
     const newArchive = await prisma.archive.create({
         data: {
@@ -191,11 +197,18 @@ export async function createTestArchive(prisma: PrismaService, group_id: string 
             mimeType: "text",
             contentBase64: "stringembase64aaa",
             userId: user_id,
-            groupId: group_id
+            groupId: group_id,
+            postId: post_id
         }
     })
-
+    
     return newArchive.id;
+}
+
+export async function deleteAllTestArchives(prisma: PrismaService) {
+    const deleted = await prisma.archive.deleteMany({
+        where: { name: "testearchivename123"}
+    })
 }
 
 async function generateInviteCode(length: number = 8) {

@@ -20,6 +20,10 @@ export class CreateArchiveDto {
   @IsOptional()
   @IsString()
   groupId?: string;
+
+  @IsOptional()
+  @IsString()
+  postId?: string;
 }
 
 export class ResponseArchiveDto {
@@ -27,7 +31,9 @@ export class ResponseArchiveDto {
   name: string;
   mimeType: string;
   type: string;
+  contentBase64: string;
   userId?: number;
   groupId?: number;
+  postId?: string;
 }
 
