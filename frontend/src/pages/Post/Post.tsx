@@ -235,7 +235,7 @@ export default function Post() {
             contentContainerStyle={{ gap: 15 }}
             style={{ maxHeight: 85 }}>
             {postArchives.map((archive) => (
-              <PostAttachment archive text={archive.name} file={archive} />
+              <PostAttachment archive key={archive.id} text={archive.name} file={archive} />
             ))}
           </ScrollView>
           <View style={{ width: '100%', left: -0.06 * width }}>
@@ -270,6 +270,7 @@ export default function Post() {
                 const commentUser = commentUsers[item.userId];
                 return (
                   <CommentCard
+                    key={item.id}
                     fullName={commentUser?.fullName || 'Usuário desconhecido'}
                     input={item.content}
                     createdAt={formattedDate}

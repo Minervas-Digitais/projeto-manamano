@@ -15,11 +15,15 @@ export class CreateArchiveDto {
 
   @IsOptional()
   @IsString()
-  userId?: number;
+  userId?: string;
 
   @IsOptional()
   @IsString()
-  groupId?: number;
+  groupId?: string;
+
+  @IsOptional()
+  @IsString()
+  postId?: string;
 
 }
 
@@ -28,7 +32,9 @@ export class ResponseArchiveDto {
   name: string;
   mimeType: string;
   type: string;
-  userId?: number;
-  groupId?: number;
+  userId?: string;
+  groupId?: string;
+  contentBase64: string;
+  postId: string;
 }
 

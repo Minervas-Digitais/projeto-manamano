@@ -240,13 +240,16 @@ export default function NewPost({ navigation }: any) {
       });
 
       if (result.assets && result.assets.length > 0) {
-        const newFiles = result.assets.map((file) => ({
-          id: Date.now() + Math.random(),
-          name: file.name,
-          uri: file.uri,
-          mimeType: file.mimeType,
-        }));
-
+        const newFiles = result.assets.map((file) => {
+          const { uri } = file;
+          const contentBase64 = uri.includes(',') ? uri.split(',')[1] : uri;
+          return {
+            id: Date.now() + Math.random(),
+            name: file.name,
+            uri: contentBase64,
+            mimeType: file.mimeType,
+          };
+        });
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
         setVisibility((prevState) => {
           const updatedVisibility = { ...prevState };

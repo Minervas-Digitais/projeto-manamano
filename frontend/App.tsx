@@ -45,7 +45,7 @@ export default function App() {
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="Config">
+      <Stack.Navigator initialRouteName="Post">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}
@@ -64,7 +64,7 @@ export default function App() {
         <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
         <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
         <Stack.Screen
-          name="MudarSenha"
+          name="ChangePassword"
           component={ChangePassword}
           options={{ headerShown: false }}
         />

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateArchiveDto, ResponseArchiveDto } from './dto/archive.dto';
+import { arch } from 'os';
 
 @Injectable()
 export class ArchiveService {
@@ -12,9 +13,9 @@ export class ArchiveService {
         name: data.name,
         mimeType: data.mimeType,
         contentBase64: data.contentBase64,
-        userId: data.userId ? String(data.userId) : null,  // Convertendo número para string
-        groupId: data.groupId ? String(data.groupId) : null, // Convertendo número para string
-
+        userId: data.userId,
+        groupId: data.groupId,
+        postId: data.postId,
       },
     });
 
@@ -39,35 +40,34 @@ export class ArchiveService {
       name: archive.name,
       mimeType: archive.mimeType,
       type: archive.type,
-      userId: archive.userId ? Number(archive.userId) : undefined, // Convertendo string para número
-      groupId: archive.groupId ? Number(archive.groupId) : undefined, // Convertendo string para número
-
+      userId: archive.userId,
+      groupId: archive.groupId,
+      contentBase64: archive.contentBase64,
+      postId: archive.postId,
     };
   }
-  
+
   async getArchivesByPostId(postId: string): Promise<ResponseArchiveDto[]> {
     const archives = await this.prisma.archive.findMany({
       where: { postId },
     });
-  
+
     if (!archives || archives.length === 0) {
       throw new NotFoundException('No archives found for this post');
     }
-  
+
     return archives.map(this.mapToResponseDto);
   }
-  
+
   async getArchivesByGroupId(groupId: string): Promise<ResponseArchiveDto[]> {
     const archives = await this.prisma.archive.findMany({
       where: { groupId },
     });
-  
+
     if (!archives || archives.length === 0) {
       throw new NotFoundException('No archives found for this group');
     }
-  
+
     return archives.map(this.mapToResponseDto);
   }
-  
 }
-

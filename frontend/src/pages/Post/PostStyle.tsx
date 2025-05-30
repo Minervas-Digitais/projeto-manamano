@@ -1,10 +1,13 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
+const { width, height } = Dimensions.get('window');
 
 export const PostContainer = styled.View`
   align-self: center;
-  width: 88vw;
-  margin-top: 3vh;
+  width: ${width * 0.88}px;
+  margin-top: ${height * 0.03}px;
   gap: 15px;
 `;
 export const ProfileImage = styled.Image`
@@ -38,7 +41,7 @@ export const PostDate = styled.Text<{ font?: string }>`
 `;
 export const HorizontalSeparator = styled.View`
   flex-direction: row;
-  width: 100vw;
+  width: ${width}px;
   height: 1px;
   background-color: rgba(141, 140, 140, 0.2);
 `;

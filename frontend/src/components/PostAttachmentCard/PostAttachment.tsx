@@ -1,56 +1,75 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, Alert, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
 import {
-  AttachmentArchiveIcon,
   AttachmentContainer,
-  AttachmentLinkIcon,
   AttachmentText,
   AttachmentType,
   VerticalSeparator,
 } from './PostAttachmentStyle';
+import LinkIcon from '../../assets/link-icon.svg';
+import ArchiveIcon from '../../assets/archive-icon.svg';
 
 export default function PostAttachment({ archive, text, file }: any) {
-  const linkIcon = require('../../assets/link-icon.svg');
-  const archiveIcon = require('../../assets/archive-icon.svg');
   const [fontsLoaded] = useFonts({
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
   if (!fontsLoaded) {
-    return undefined;
+    return null;
   }
-  const downloadFile = async () => {
-    if (!file || !file.contentBase64 || !file.name) {
+
+  const saveFile = async () => {
+    if (!file || !file.contentBase64 || !file.name || !file.mimeType) {
       console.error('Arquivo inválido para download');
+      Alert.alert('Erro', 'Arquivo inválido para download');
       return;
     }
-
-    // Definir o caminho do arquivo no armazenamento local
-    const fileUri = `${FileSystem.documentDirectory}${file.name}`;
-
+    let base64 = file.contentBase64;
+    if (base64.startsWith('data:')) {
+      base64 = base64.split(',')[1];
+    }
+    const tempUri = FileSystem.cacheDirectory + file.name;
     try {
-      // Converte base64 para arquivo
-      await FileSystem.writeAsStringAsync(fileUri, file.contentBase64, {
+      await FileSystem.writeAsStringAsync(tempUri, base64, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      console.log('Arquivo salvo localmente em:', fileUri);
+      const mediaType = file.mimeType.split('/')[0];
+      if (mediaType === 'image' || mediaType === 'video') {
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permissão negada', 'Não foi possível acessar a galeria.');
+          return;
+        }
+        const asset = await MediaLibrary.createAssetAsync(tempUri);
+        await MediaLibrary.createAlbumAsync('manamano', asset, false);
+        Alert.alert('Sucesso', 'Imagem/Vídeo salvo na galeria!');
+      } else {
+        let targetDir: string;
+        if (Platform.OS === 'android') {
+          targetDir = FileSystem.documentDirectory!.replace('Documents/', '') + 'Download/';
+        } else {
+          targetDir = FileSystem.documentDirectory!;
+        }
+        await FileSystem.makeDirectoryAsync(targetDir, { intermediates: true });
+        const destUri = targetDir + file.name;
+        await FileSystem.copyAsync({ from: tempUri, to: destUri });
+        Alert.alert('Sucesso', `Arquivo salvo em:\n${destUri}`);
+      }
     } catch (error) {
-      console.error('Erro ao baixar o arquivo:', error);
+      console.error('Erro ao salvar o arquivo:', error);
+      Alert.alert('Erro', 'Não foi possível salvar o arquivo.');
     }
   };
-
   return (
-    <Pressable onPress={downloadFile}>
+    <Pressable onPress={saveFile}>
       <AttachmentContainer>
-        {archive ? (
-          <AttachmentArchiveIcon source={archiveIcon} />
-        ) : (
-          <AttachmentLinkIcon source={linkIcon} />
-        )}
+        {archive ? <ArchiveIcon /> : <LinkIcon />}
         <VerticalSeparator />
         <View style={{ flexDirection: 'column' }}>
           <AttachmentText font="inter-semibold" size="12px">

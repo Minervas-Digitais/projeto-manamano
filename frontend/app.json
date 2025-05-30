@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "icon": "../src/assets/Logo.png",
+    "icon": "../frontend/src/assets/Logo.png",
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"

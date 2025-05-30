@@ -24,16 +24,6 @@ export const VerticalSeparator = styled.View`
   margin-right: ${width * 0.027}px;
 `;
 
-export const AttachmentLinkIcon = styled.Image`
-  width: ${width * 0.0775}px; // 7.75vw
-  resize-mode: contain;
-`;
-
-export const AttachmentArchiveIcon = styled.Image`
-  width: ${width * 0.0622}px;
-  resize-mode: contain;
-`;
-
 export const AttachmentText = styled.Text<{ font?: string; size?: string }>`
   font-family: ${(prop) => prop.font};
   font-size: ${(prop) => prop.size};
