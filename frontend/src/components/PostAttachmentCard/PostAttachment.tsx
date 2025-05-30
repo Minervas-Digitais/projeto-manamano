@@ -1,10 +1,12 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
-import { Pressable, View, Alert, Platform } from 'react-native';
+import { Pressable, View, Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
+import * as IntentLauncher from 'expo-intent-launcher';
+
 import {
   AttachmentContainer,
   AttachmentText,
@@ -29,10 +31,14 @@ export default function PostAttachment({ archive, text, file }: any) {
       Alert.alert('Erro', 'Arquivo inválido para download');
       return;
     }
+
+    // Limpa prefixo data URI
     let base64 = file.contentBase64;
     if (base64.startsWith('data:')) {
       base64 = base64.split(',')[1];
     }
+
+    // Salva temporariamente no cache
     const tempUri = FileSystem.cacheDirectory + file.name;
     try {
       await FileSystem.writeAsStringAsync(tempUri, base64, {
@@ -41,6 +47,7 @@ export default function PostAttachment({ archive, text, file }: any) {
 
       const mediaType = file.mimeType.split('/')[0];
       if (mediaType === 'image' || mediaType === 'video') {
+        // Imagem ou vídeo: salva na galeria
         const { status } = await MediaLibrary.requestPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permissão negada', 'Não foi possível acessar a galeria.');
@@ -50,16 +57,16 @@ export default function PostAttachment({ archive, text, file }: any) {
         await MediaLibrary.createAlbumAsync('manamano', asset, false);
         Alert.alert('Sucesso', 'Imagem/Vídeo salvo na galeria!');
       } else {
-        let targetDir: string;
-        if (Platform.OS === 'android') {
-          targetDir = FileSystem.documentDirectory!.replace('Documents/', '') + 'Download/';
-        } else {
-          targetDir = FileSystem.documentDirectory!;
-        }
-        await FileSystem.makeDirectoryAsync(targetDir, { intermediates: true });
-        const destUri = targetDir + file.name;
-        await FileSystem.copyAsync({ from: tempUri, to: destUri });
-        Alert.alert('Sucesso', `Arquivo salvo em:\n${destUri}`);
+        // PDF ou outros: usa Storage Access Framework para salvar em pasta externa
+        const contentUri = await FileSystem.getContentUriAsync(tempUri);
+        await IntentLauncher.startActivityAsync('android.intent.action.CREATE_DOCUMENT', {
+          data: contentUri,
+          type: file.mimeType,
+          flags: 1, // FLAG_ACTIVITY_NEW_DOCUMENT
+          extra: {
+            'android.intent.extra.TITLE': file.name,
+          },
+        });
       }
     } catch (error) {
       console.error('Erro ao salvar o arquivo:', error);

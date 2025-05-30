@@ -6901,6 +6901,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-intent-launcher@npm:~12.0.2":
+  version: 12.0.2
+  resolution: "expo-intent-launcher@npm:12.0.2"
+  peerDependencies:
+    expo: "*"
+  checksum: 10c0/081df6caaee75bd65ca65a3a1dba8c88dc0d28e2e87cf05f6c356db79bdf87b6e5ac5ee6230e44905148289a124e4685a58f7c4f5625b013649f51ba938d959a
+  languageName: node
+  linkType: hard
+
 "expo-keep-awake@npm:~14.0.3":
   version: 14.0.3
   resolution: "expo-keep-awake@npm:14.0.3"
@@ -7497,6 +7506,7 @@ __metadata:
     expo-document-picker: "npm:~13.0.3"
     expo-file-system: "npm:~18.0.12"
     expo-font: "npm:~13.0.4"
+    expo-intent-launcher: "npm:~12.0.2"
     expo-linear-gradient: "npm:~14.0.2"
     expo-linking: "npm:~7.0.5"
     expo-media-library: "npm:~17.0.6"
