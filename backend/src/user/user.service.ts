@@ -31,17 +31,17 @@ export class UserService {
       }
 
       const hashedPassword = await bcrypt.hash(
-        createUserDto.password,
+        createUserDto.hash,
         roundsOfHashing,
       );
 
-      createUserDto.password = hashedPassword;
+      createUserDto.hash = hashedPassword;
       createUserDto.savedPost = [];
 
       return await this.prismaService.user.create({
         data: {
           ...createUserDto,
-          hash: createUserDto.password,
+          hash: createUserDto.hash,
         },
       });
     } catch (error) {
