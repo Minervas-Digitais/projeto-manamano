@@ -119,33 +119,42 @@ export async function createTestCategory(prisma: PrismaService, groupId: string)
     return newCategory.id;
 }
 
-export async function createTestPost(prisma: PrismaService) {
+export async function createPostDto(prisma: PrismaService, overrides: Partial<CreatePostDto> = {}): Promise<CreatePostDto> {
     const groupId = await createTestGroup(prisma);
-    const userId = await createTestUser(prisma);
-    const categoryId = await createTestCategory(prisma, groupId);
+    const userId = overrides.userId || await createTestUser(prisma);
+    const categoryId = overrides.categoryId || await createTestCategory(prisma, groupId);
 
-    const post: CreatePostDto = {
-        title: "Teste post",
-        groupId,
-        userId,
+
+    const defaultDto: CreatePostDto = {
+        title: 'Post Teste',
+        input: 'Teste',
         type: PostType.NORMAL,
+        userId,
+        groupId,
         categoryId,
-        input: "Teste input"
-    } as any
+        isPinned: false,
+        urlLive: undefined,
+        urlRecorded: undefined,
+        schedule: undefined,
+        ...overrides,
+    };
+
+    return defaultDto;
+}
+
+export async function createTestPost(prisma: PrismaService, overrides: Partial<CreatePostDto> = {},) {
+    const post: CreatePostDto = await createPostDto(prisma, overrides);
 
     const existingPost = await prisma.post.findFirst({
-        where: {
-            title: "Teste post"
-        }
-    })
+        where: { title: post.title },
+    });
 
-    if (existingPost != null) {
+    if (existingPost) {
         return existingPost.id;
     }
-
     const newPost = await prisma.post.create({
-        data: post
-    })
+        data: post,
+    });
 
     return newPost.id;
 }

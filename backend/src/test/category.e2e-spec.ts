@@ -136,7 +136,7 @@ describe('Category', () => {
         })
 
         it("deve retornar [] caso nao exista categorias", async () => {
-            await prismaService.category.deleteMany();
+            await prismaService.category.deleteMany({});
             const response = await request(app.getHttpServer())
                 .get('/category')
                 .set('Authorization', 'Bearer ' + userToken)
