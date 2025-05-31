@@ -9,11 +9,11 @@ import { execSync } from 'child_process';
 import { PostType } from "@prisma/client";
 import { AuthService } from 'src/auth/auth.service';
 import { CreateParticipantDto } from 'src/participant/dto/create-participant.dto';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
 
 const DEFAULT_PASSWORD = 'password123'
 
-export async function getUserToken(authService: AuthService, prisma: PrismaService) {
-    const email = 'testuser@example.com';
+export async function getUserToken(authService: AuthService, prisma: PrismaService, email:string = 'testuser@example.com', phone:string = '1234567890', name:string = 'Test User') {
 
     const existingUser = await prisma.user.findUnique({
         where: { email },
@@ -24,9 +24,9 @@ export async function getUserToken(authService: AuthService, prisma: PrismaServi
     if (!existingUser) {
         await prisma.user.create({
             data: {
-                fullName: 'Test User',
+                fullName: name,
                 email,
-                phone: '1234567890',
+                phone: phone,
                 hash: hashedPassword,
             },
         });
@@ -157,6 +157,18 @@ export async function createTestPost(prisma: PrismaService, overrides: Partial<C
     });
 
     return newPost.id;
+}
+
+export async function createUserDto(overrides: Partial<CreateUserDto> = {}): Promise<CreateUserDto> {
+    const defaultDto = {
+        fullName: "Teste User",
+        email: 'testEmail@gmail.com',
+        hash: DEFAULT_PASSWORD,
+        phone: '123456789',
+        ...overrides,
+    } as CreateUserDto;
+
+    return defaultDto;
 }
 
 export async function createTestUser(prisma: PrismaService, phone: string = "1234567891", email: string = "testeuser@example.com") {
