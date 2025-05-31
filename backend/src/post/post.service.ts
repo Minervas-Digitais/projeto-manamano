@@ -1,3 +1,4 @@
+
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -13,7 +14,7 @@ export class PostService {
         data: createPostDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -24,12 +25,12 @@ export class PostService {
           Comment: true,
         },
       });
-      if (!posts) {
+      if (posts.length === 0) {
         throw new NotFoundException('Nenhuma publicação encontrada.');
       }
       return posts;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -48,7 +49,7 @@ export class PostService {
       }
       return post;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -65,7 +66,7 @@ export class PostService {
         data: updatePostDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -81,7 +82,7 @@ export class PostService {
         },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -117,7 +118,7 @@ export class PostService {
         },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -141,7 +142,7 @@ export class PostService {
         },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -156,7 +157,7 @@ export class PostService {
         data: { isPinned: true },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -171,7 +172,7 @@ export class PostService {
         data: { isPinned: false },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -184,7 +185,7 @@ export class PostService {
         },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -198,12 +199,12 @@ export class PostService {
           createdAt: 'desc',
         },
       });
-      if (!posts) {
+      if (posts.length === 0) {
         throw new NotFoundException('Nenhuma publicação encontrada.');
       }
       return posts;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -217,12 +218,12 @@ export class PostService {
           createdAt: 'desc',
         },
       });
-      if (!posts) {
+      if (posts.length === 0) {
         throw new NotFoundException('Nenhuma publicação encontrada.');
       }
       return posts;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -236,12 +237,14 @@ export class PostService {
           createdAt: 'desc',
         },
       });
-      if (!posts) {
+      if (posts.length === 0) {
         throw new NotFoundException('Nenhuma publicação encontrada.');
       }
       return posts;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 }
+
+

@@ -8,6 +8,7 @@ import { CreatePostDto } from "src/post/dto/create-post.dto";
 import { execSync } from 'child_process';
 import { PostType } from "@prisma/client";
 import { AuthService } from 'src/auth/auth.service';
+import { CreateParticipantDto } from 'src/participant/dto/create-participant.dto';
 
 const DEFAULT_PASSWORD = 'password123'
 
@@ -17,7 +18,7 @@ export async function getUserToken(authService: AuthService, prisma: PrismaServi
     const existingUser = await prisma.user.findUnique({
         where: { email },
     });
-    
+
     const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10,);
 
     if (!existingUser) {
@@ -59,7 +60,7 @@ export async function getAdminToken(authService: AuthService, prisma: PrismaServ
             },
         });
     }
-    
+
     const loginResponse = await authService.login({
         email,
         password: 'password123',
@@ -118,38 +119,47 @@ export async function createTestCategory(prisma: PrismaService, groupId: string)
     return newCategory.id;
 }
 
-export async function createTestPost(prisma: PrismaService) {
+export async function createPostDto(prisma: PrismaService, overrides: Partial<CreatePostDto> = {}): Promise<CreatePostDto> {
     const groupId = await createTestGroup(prisma);
-    const userId = await createTestUser(prisma);
-    const categoryId = await createTestCategory(prisma, groupId);
+    const userId = overrides.userId || await createTestUser(prisma);
+    const categoryId = overrides.categoryId || await createTestCategory(prisma, groupId);
 
-    const post: CreatePostDto = {
-        title: "Teste post",
-        groupId,
-        userId,
+
+    const defaultDto: CreatePostDto = {
+        title: 'Post Teste',
+        input: 'Teste',
         type: PostType.NORMAL,
+        userId,
+        groupId,
         categoryId,
-        input: "Teste input"
-    } as any
+        isPinned: false,
+        urlLive: undefined,
+        urlRecorded: undefined,
+        schedule: undefined,
+        ...overrides,
+    };
+
+    return defaultDto;
+}
+
+export async function createTestPost(prisma: PrismaService, overrides: Partial<CreatePostDto> = {},) {
+    const post: CreatePostDto = await createPostDto(prisma, overrides);
 
     const existingPost = await prisma.post.findFirst({
-        where: {
-            title: "Teste post"
-        }
-    })
+        where: { title: post.title },
+    });
 
-    if (existingPost != null) {
+    if (existingPost) {
         return existingPost.id;
     }
-
     const newPost = await prisma.post.create({
-        data: post
-    })
+        data: post,
+    });
 
     return newPost.id;
 }
 
-export async function createTestUser(prisma: PrismaService, phone: string = "1234567891") {
+export async function createTestUser(prisma: PrismaService, phone: string = "1234567891", email: string = "testeuser@example.com") {
     const existingUser = await prisma.user.findFirst({
         where: { phone }
     })
@@ -161,7 +171,7 @@ export async function createTestUser(prisma: PrismaService, phone: string = "123
     const newUser = await prisma.user.create({
         data: {
             fullName: "Teste User",
-            email: "testeuser@example.com",
+            email: email,
             hash: DEFAULT_PASSWORD,
             phone,
         }
@@ -169,7 +179,6 @@ export async function createTestUser(prisma: PrismaService, phone: string = "123
 
     return newUser.id;
 }
-
 export async function createTestArchive(prisma: PrismaService, group_id: string = null, post_id: string = null) {
     const name = "testearchivename123"
 
@@ -209,6 +218,37 @@ export async function deleteAllTestArchives(prisma: PrismaService) {
     const deleted = await prisma.archive.deleteMany({
         where: { name: "testearchivename123"}
     })
+export async function createParticipantDto(prisma: PrismaService) {
+    const groupId = await createTestGroup(prisma);
+    const number = Array.from({ length: 10 }, () => Math.floor(Math.random() * 10)).join('');
+    const userId = await createTestUser(prisma, number, String(number) + "@gmail.com");
+
+    const fullGroup = await prisma.group.findUnique({
+        where: { id: groupId },
+    });
+
+
+    const dto: CreateParticipantDto = {
+        role: RoleType.MEMBER,
+        groupId: groupId,
+        userId: userId,
+        inviteCode: fullGroup.inviteCode,
+    };
+
+    return dto;
+}
+
+export async function createTestParticipant(prisma: PrismaService) {
+  const dto = await createParticipantDto(prisma);
+
+  const participant = await prisma.participant.create({
+    data: {
+      role: dto.role,
+      groupId: dto.groupId,
+      userId: dto.userId,
+    },
+  });
+  return participant;
 }
 
 async function generateInviteCode(length: number = 8) {
@@ -248,3 +288,4 @@ async function generateUniqueInviteCode(prismaService: PrismaService, length: nu
         return error;
     }
 }
+

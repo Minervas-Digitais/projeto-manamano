@@ -37,11 +37,10 @@ export class AuthService {
         throw new UnauthorizedException('Senha incorreta.');
       }
 
-      const payload = { userId: user.id, email: user.email };
+      const payload = { userId: user.id, email: user.email, sysRole: user.sysRole};
       return {
         accessToken: this.jwtService.sign(payload),
         loggedId: user.id,
-	sysRole: user.sysRole,
       };
     } catch (error) {
       return error;
