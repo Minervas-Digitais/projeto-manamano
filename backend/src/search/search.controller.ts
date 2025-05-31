@@ -9,6 +9,7 @@ import {
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateSearchDto } from './dto/create-search.dto';
 import { SearchService } from './search.service';
+import { BadRequestException } from '@nestjs/common'; 
 
 @Controller('search')
 export class SearchController {
