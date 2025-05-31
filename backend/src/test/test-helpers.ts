@@ -8,6 +8,7 @@ import { CreatePostDto } from "src/post/dto/create-post.dto";
 import { execSync } from 'child_process';
 import { PostType } from "@prisma/client";
 import { AuthService } from 'src/auth/auth.service';
+import { CreateParticipantDto } from 'src/participant/dto/create-participant.dto';
 
 const DEFAULT_PASSWORD = 'password123'
 
@@ -17,7 +18,7 @@ export async function getUserToken(authService: AuthService, prisma: PrismaServi
     const existingUser = await prisma.user.findUnique({
         where: { email },
     });
-    
+
     const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10,);
 
     if (!existingUser) {
@@ -59,7 +60,7 @@ export async function getAdminToken(authService: AuthService, prisma: PrismaServ
             },
         });
     }
-    
+
     const loginResponse = await authService.login({
         email,
         password: 'password123',
@@ -149,7 +150,7 @@ export async function createTestPost(prisma: PrismaService) {
     return newPost.id;
 }
 
-export async function createTestUser(prisma: PrismaService, phone: string = "1234567891") {
+export async function createTestUser(prisma: PrismaService, phone: string = "1234567891", email: string = "testeuser@example.com") {
     const existingUser = await prisma.user.findFirst({
         where: { phone }
     })
@@ -161,13 +162,48 @@ export async function createTestUser(prisma: PrismaService, phone: string = "123
     const newUser = await prisma.user.create({
         data: {
             fullName: "Teste User",
-            email: "testeuser@example.com",
+            email: email,
             hash: DEFAULT_PASSWORD,
             phone,
         }
     })
 
     return newUser.id;
+}
+
+export async function createParticipantDto(prisma: PrismaService) {
+    const groupId = await createTestGroup(prisma);
+    const number = Array.from({ length: 10 }, () => Math.floor(Math.random() * 10)).join('');
+    const userId = await createTestUser(prisma, number, String(number) + "@gmail.com");
+
+    const fullGroup = await prisma.group.findUnique({
+        where: { id: groupId },
+    });
+
+
+    const dto: CreateParticipantDto = {
+        role: RoleType.MEMBER,
+        groupId: groupId,
+        userId: userId,
+        inviteCode: fullGroup.inviteCode,
+    };
+
+    return dto;
+}
+
+export async function createTestParticipant(prisma: PrismaService) {
+  const dto = await createParticipantDto(prisma);
+
+  const participant = await prisma.participant.create({
+    data: {
+      role: dto.role,
+      groupId: dto.groupId,
+      userId: dto.userId,
+    },
+  });
+
+
+  return participant;
 }
 
 async function generateInviteCode(length: number = 8) {
@@ -207,3 +243,4 @@ async function generateUniqueInviteCode(prismaService: PrismaService, length: nu
         return error;
     }
 }
+

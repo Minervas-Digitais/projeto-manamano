@@ -91,11 +91,12 @@ yarn start
 
 ## Autores
 
-| Nome  | Período de Atuação |
-| ------------- | ------------- |
-| Pedro Ormesino  | 07/08/23 ~ agora |
-| Rayane Domingos  | 07/08/23 ~ agora |
-| Mellanie Pereira  | 25/09/23 ~ 03/06/24 |
-| Nicolas Bastos  | 11/04/24 ~ agora |
-| Guilherme de Luna  | 29/08/24 ~ agora |
-| Tales Moreira  | 16/09/24 ~ agora |
+| Nome              | Período de Atuação |
+| ----------------- | --------------------- |
+| Pedro Ormesino    | 07/08/23 ~ agora      |
+| Rayane Domingos   | 07/08/23 ~ agora      |
+| Mellanie Pereira  | 25/09/23 ~ 03/06/24   |
+| Nicolas Bastos    | 11/04/24 ~ agora      |
+| Guilherme de Luna | 29/08/24 ~ agora      |
+| Tales Moreira     | 16/09/24 ~ agora      |
+| Jhonata Monteiro  | 18/04/25 ~ agora      |
