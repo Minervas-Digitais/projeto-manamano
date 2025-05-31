@@ -21,7 +21,7 @@ export class NotificationService {
         groupName: dto.groupName || null,
         senderName: dto.senderName || null,
         idContent: dto.idContent || null,
-      },
+      } as CreateNotificationDto,
     });
   }
 

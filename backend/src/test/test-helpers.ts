@@ -179,6 +179,7 @@ export async function createTestUser(prisma: PrismaService, phone: string = "123
 
     return newUser.id;
 }
+
 export async function createTestArchive(prisma: PrismaService, group_id: string = null, post_id: string = null) {
     const name = "testearchivename123"
 
@@ -218,6 +219,8 @@ export async function deleteAllTestArchives(prisma: PrismaService) {
     const deleted = await prisma.archive.deleteMany({
         where: { name: "testearchivename123"}
     })
+}
+
 export async function createParticipantDto(prisma: PrismaService) {
     const groupId = await createTestGroup(prisma);
     const number = Array.from({ length: 10 }, () => Math.floor(Math.random() * 10)).join('');
