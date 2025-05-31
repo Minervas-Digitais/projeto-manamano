@@ -12,9 +12,9 @@ export class ArchiveService {
         name: data.name,
         mimeType: data.mimeType,
         contentBase64: data.contentBase64,
-        userId: data.userId ? String(data.userId) : null,  // Convertendo número para string
-        groupId: data.groupId ? String(data.groupId) : null, // Convertendo número para string
-
+        userId: data.userId,
+        groupId: data.groupId,
+        postId: data.postId,
       },
     });
 
@@ -39,9 +39,10 @@ export class ArchiveService {
       name: archive.name,
       mimeType: archive.mimeType,
       type: archive.type,
-      userId: archive.userId ? Number(archive.userId) : undefined, // Convertendo string para número
-      groupId: archive.groupId ? Number(archive.groupId) : undefined, // Convertendo string para número
-
+      userId: archive.userId,
+      groupId: archive.groupId,
+      contentBase64: archive.contentBase64,
+      postId: archive.postId,
     };
   }
   

@@ -179,7 +179,45 @@ export async function createTestUser(prisma: PrismaService, phone: string = "123
 
     return newUser.id;
 }
+export async function createTestArchive(prisma: PrismaService, group_id: string = null, post_id: string = null) {
+    const name = "testearchivename123"
 
+    const existingArchive = await prisma.archive.findFirst({
+        where: { name }
+    })
+
+    if (existingArchive != null) {
+        return existingArchive.id
+    }
+    
+    const user_id = await createTestUser(prisma);
+
+    if (post_id == null) {
+        post_id = await createTestPost(prisma);
+    }
+
+    if (group_id == null) {
+        group_id = await createTestGroup(prisma);
+    }
+
+    const newArchive = await prisma.archive.create({
+        data: {
+            name: name,
+            mimeType: "text",
+            contentBase64: "stringembase64aaa",
+            userId: user_id,
+            groupId: group_id,
+            postId: post_id
+        }
+    })
+    
+    return newArchive.id;
+}
+
+export async function deleteAllTestArchives(prisma: PrismaService) {
+    const deleted = await prisma.archive.deleteMany({
+        where: { name: "testearchivename123"}
+    })
 export async function createParticipantDto(prisma: PrismaService) {
     const groupId = await createTestGroup(prisma);
     const number = Array.from({ length: 10 }, () => Math.floor(Math.random() * 10)).join('');
@@ -210,8 +248,6 @@ export async function createTestParticipant(prisma: PrismaService) {
       userId: dto.userId,
     },
   });
-
-
   return participant;
 }
 
