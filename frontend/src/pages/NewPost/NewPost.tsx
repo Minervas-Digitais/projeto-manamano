@@ -3,6 +3,7 @@ import { useFonts } from 'expo-font';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRoute } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import { View, ScrollView, Dimensions } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
@@ -240,16 +241,19 @@ export default function NewPost({ navigation }: any) {
       });
 
       if (result.assets && result.assets.length > 0) {
-        const newFiles = result.assets.map((file) => {
-          const { uri } = file;
-          const contentBase64 = uri.includes(',') ? uri.split(',')[1] : uri;
-          return {
-            id: Date.now() + Math.random(),
-            name: file.name,
-            uri: contentBase64,
-            mimeType: file.mimeType,
-          };
-        });
+        const newFiles = await Promise.all(
+          result.assets.map(async (file) => {
+            const base64 = await FileSystem.readAsStringAsync(file.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            return {
+              id: Date.now() + Math.random(),
+              name: file.name,
+              uri: base64,
+              mimeType: file.mimeType,
+            };
+          }),
+        );
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
         setVisibility((prevState) => {
           const updatedVisibility = { ...prevState };
