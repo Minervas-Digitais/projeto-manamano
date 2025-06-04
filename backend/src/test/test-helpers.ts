@@ -2,13 +2,13 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { RoleType } from '@prisma/client';
+import { NotificationType, RoleType } from '@prisma/client';
 import { CreateGroupDto } from 'src/group/dto/create-group.dto';
 import { CreatePostDto } from "src/post/dto/create-post.dto";
-import { execSync } from 'child_process';
 import { PostType } from "@prisma/client";
 import { AuthService } from 'src/auth/auth.service';
 import { CreateParticipantDto } from 'src/participant/dto/create-participant.dto';
+import { CreateNotificationDto } from 'src/notification/dto/create-notification.dto';
 
 const DEFAULT_PASSWORD = 'password123'
 
@@ -292,3 +292,92 @@ async function generateUniqueInviteCode(prismaService: PrismaService, length: nu
     }
 }
 
+export async function getRecipientToken(app: INestApplication, prisma: PrismaService) {
+    const email = 'testrecipient@example.com';
+
+    const existingUser = await prisma.user.findUnique({
+        where: { email },
+    });
+
+    if (!existingUser) {
+        await request(app.getHttpServer())
+            .post('/user')
+            .send({
+                fullName: 'TestRecipientUser',
+                email,
+                phone: '1234567891',
+                hash: 'password123',
+            })
+            .expect(201);
+    }
+
+    const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+            email,
+            password: 'password123',
+        })
+        .expect(201);
+
+    return loginResponse.body.accessToken;
+}
+
+export async function getSenderToken(app: INestApplication, prisma: PrismaService) {
+    const email = 'testsender@example.com';
+
+    const existingUser = await prisma.user.findUnique({
+        where: { email },
+    });
+
+    if (!existingUser) {
+        await request(app.getHttpServer())
+            .post('/user')
+            .send({
+                fullName: 'TestSenderUser',
+                email,
+                phone: '1234567892',
+                hash: 'password123',
+            })
+            .expect(201);
+    }
+
+    const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+            email,
+            password: 'password123',
+        })
+        .expect(201);
+
+    return loginResponse.body.accessToken;
+}
+
+
+export async function getNotificationId(app: INestApplication, prisma: PrismaService) {
+    const recipientToken = await getRecipientToken(app, prisma)
+    const recipientUser = await prisma.user.findUnique({
+            where: {email: "testrecipient@example.com"}
+        })
+
+    const senderToken = await getSenderToken(app, prisma);
+    const senderUser = await prisma.user.findUnique({
+            where: {email: "testuser@example.com"},
+        })
+    
+    const notificationDTO: CreateNotificationDto = {
+            senderId: senderUser.id,
+            body: "bodyTeste",
+            recipientId: recipientUser.id,
+            type: NotificationType.COMMENT,
+            groupName: "groupTeste",
+            senderName: "senderTeste"
+        }
+        
+    const response = await request(app.getHttpServer())
+            .post("/notifications")
+            .set("Authorization", "Bearer " + senderToken)
+            .send(notificationDTO)
+            .expect(201)
+    
+    return response.body.id
+}
