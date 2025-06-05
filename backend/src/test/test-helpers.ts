@@ -69,6 +69,62 @@ export async function getAdminToken(authService: AuthService, prisma: PrismaServ
     return loginResponse.accessToken;
 }
 
+export async function getSenderToken(authService: AuthService, prisma: PrismaService) {
+    const email = 'testsender@example.com';
+
+    const existingUser = await prisma.user.findUnique({
+        where: { email },
+    });
+
+    if (!existingUser) {
+        const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+        await prisma.user.create({
+            data: {
+                fullName: 'TestSenderUser',
+                email,
+                phone: '1234567892',
+                hash: hashedPassword,
+            }
+        })
+    }
+
+    const loginResponse = await authService.login({
+        email,
+        password: 'password123',
+    });
+
+    return loginResponse.accessToken;
+}
+
+export async function getRecipientToken(authService: AuthService, prisma: PrismaService) {
+    const email = 'testrecipient@example.com';
+
+    const existingUser = await prisma.user.findUnique({
+        where: { email },
+    });
+
+    if (!existingUser) {
+        const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+        await prisma.user.create({
+            data: {
+                fullName: 'TestRecipientUser',
+                email,
+                phone: '1234567891',
+                hash: hashedPassword,
+            }
+        })
+    }
+
+    const loginResponse = await authService.login({
+        email,
+        password: 'password123',
+    });
+
+    return loginResponse.accessToken;
+}
+
 export async function createTestGroup(prisma: PrismaService, name: string = 'Test Group') {
     const existingGroup = await prisma.group.findFirst({
         where: {
@@ -292,74 +348,12 @@ async function generateUniqueInviteCode(prismaService: PrismaService, length: nu
     }
 }
 
-export async function getRecipientToken(app: INestApplication, prisma: PrismaService) {
-    const email = 'testrecipient@example.com';
-
-    const existingUser = await prisma.user.findUnique({
-        where: { email },
-    });
-
-    if (!existingUser) {
-        await request(app.getHttpServer())
-            .post('/user')
-            .send({
-                fullName: 'TestRecipientUser',
-                email,
-                phone: '1234567891',
-                hash: 'password123',
-            })
-            .expect(201);
-    }
-
-    const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-            email,
-            password: 'password123',
-        })
-        .expect(201);
-
-    return loginResponse.body.accessToken;
-}
-
-export async function getSenderToken(app: INestApplication, prisma: PrismaService) {
-    const email = 'testsender@example.com';
-
-    const existingUser = await prisma.user.findUnique({
-        where: { email },
-    });
-
-    if (!existingUser) {
-        await request(app.getHttpServer())
-            .post('/user')
-            .send({
-                fullName: 'TestSenderUser',
-                email,
-                phone: '1234567892',
-                hash: 'password123',
-            })
-            .expect(201);
-    }
-
-    const loginResponse = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({
-            email,
-            password: 'password123',
-        })
-        .expect(201);
-
-    return loginResponse.body.accessToken;
-}
-
-
-export async function getNotificationId(app: INestApplication, prisma: PrismaService) {
-    const recipientToken = await getRecipientToken(app, prisma)
+export async function getNotificationId(app: INestApplication, authService: AuthService, prisma: PrismaService) {
     const recipientUser = await prisma.user.findUnique({
             where: {email: "testrecipient@example.com"}
         })
 
-    const senderToken = await getSenderToken(app, prisma);
+    const senderToken = await getSenderToken(authService, prisma);
     const senderUser = await prisma.user.findUnique({
             where: {email: "testuser@example.com"},
         })

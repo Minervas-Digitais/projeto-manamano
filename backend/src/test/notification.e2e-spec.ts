@@ -16,8 +16,9 @@ describe("Notification", () => {
     let prismaService: PrismaService;
     let userToken: string;
     let adminToken: string;
+    let recipientToken: string;
+    let senderToken: string;
     let authService: AuthService;
-    
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -34,12 +35,13 @@ describe("Notification", () => {
 
         userToken = await getUserToken(authService, prismaService);
         adminToken = await getAdminToken(authService, prismaService);
+        recipientToken = await getRecipientToken(authService, prismaService);
+        senderToken = await getSenderToken(authService, prismaService);
     });
 
     describe("Create", () => {
         it("Deve criar uma notificacao", async () => {
             // deve criar um sender e um recipient para criar notification
-            const recipientToken = await getRecipientToken(app, prismaService)
             const recipientUser = await prismaService.user.findUnique({
                 where: {email: "testrecipient@example.com"}
             })
@@ -94,7 +96,6 @@ describe("Notification", () => {
 
     describe("CreateGlobal", () => {
         it("Deve criar uma notificacao global apenas se for admin", async () => {
-            const recipientToken = await getRecipientToken(app, prismaService)
             const recipientUser = await prismaService.user.findUnique({
                 where: {email: "testrecipient@example.com"}
             })
@@ -117,22 +118,14 @@ describe("Notification", () => {
                 .set("Authorization", "Bearer " + adminToken)
                 .send(notificationDTO)
             
-            expect(response.status).toBe(201)
-            // expect(response.body[0]).toHaveProperty('id');
-            // expect(response.body[0]).toHaveProperty('senderId');
-            // expect(response.body[0]).toHaveProperty('body');
-            // expect(response.body[0]).toHaveProperty('recipientId');
-            // expect(response.body[0]).toHaveProperty('type');
-            // expect(response.body[0]).toHaveProperty('createdAt');
+            expect(response.status).toBe(201);
         })
 
         it("Deve negar acesso a token de usuario", async () => {
-            const recipientToken = await getRecipientToken(app, prismaService)
             const recipientUser = await prismaService.user.findUnique({
                 where: {email: "testrecipient@example.com"}
             })
 
-            const userToken = await getUserToken(authService, prismaService);
             const user = await prismaService.user.findUnique({
                 where: {email: "testuser@example.com"},
             });
@@ -159,12 +152,10 @@ describe("Notification", () => {
     describe("getNotificationsForUser", () => {
         it("Deve retornar todas as notificacoes de um usuario", async () => {
             // Criar usuario 
-            const sendingToken = await getSenderToken(app, prismaService)
             const sendingUser = await prismaService.user.findUnique({
                 where: {email: "testsender@example.com"}
             })
 
-            const recipientToken = await getRecipientToken(app, prismaService);
             const recipientUser = await prismaService.user.findUnique({
                 where: {email: "testrecipient@example.com"},
             });
@@ -213,7 +204,6 @@ describe("Notification", () => {
 
         it("Deve retornar [] caso o id seja invalido", async () => {
             // Cria request com um id invalido
-            const recipientToken = await getUserToken(authService, prismaService);
             const id = 123 
 
             const response = await request(app.getHttpServer())
@@ -228,9 +218,8 @@ describe("Notification", () => {
     describe("markAsRead", () => {
         it("Deve marcar uma notificacao como lida", async () => {
             // Cria notificacao
-            const senderToken = await getSenderToken(app, prismaService);
-            const notificationId = await getNotificationId(app, prismaService);
-
+            const notificationId = await getNotificationId(app, authService, prismaService);
+            console.log(`NOTIFICATION ID: ${notificationId}`);
             const update: UpdateNotificationDto = {
                 isRead: true,
             }
@@ -239,7 +228,6 @@ describe("Notification", () => {
                 .patch(`/notifications/${notificationId}`)
                 .set("Authorization", "Bearer " + senderToken)
                 .send(update)
-            
             expect(response.status).toBe(200)
             expect(response.body).toHaveProperty("isRead")
             expect(response.body.isRead).toBe(true)
@@ -247,7 +235,6 @@ describe("Notification", () => {
 
         it("Deve retornar erro caso o id seja invalido", async () => {
             // Cria request com um id invalido
-            const senderToken = await getSenderToken(app, prismaService);
             const notificationId = 123
             const update: UpdateNotificationDto = {
                 isRead: true,
@@ -266,8 +253,7 @@ describe("Notification", () => {
     describe("deleteNotification", () => {
         it("Deve deletar uma notificacao", async () => {
             // Cria notificacao
-            const senderToken = await getSenderToken(app, prismaService);
-            const notificationId = await getNotificationId(app, prismaService);
+            const notificationId = await getNotificationId(app, authService, prismaService);
             // Deleta notificacao Delete: /:id
             const response = await request(app.getHttpServer())
                 .delete(`/notifications/${notificationId}`)
@@ -279,7 +265,6 @@ describe("Notification", () => {
         
         it("Deve retornar erro caso o id seja invalido", async () => {
             // Cria request com um id invalido
-            const senderToken = await getSenderToken(app, prismaService);
             const notificationId = 123
 
             const response = await request(app.getHttpServer())
