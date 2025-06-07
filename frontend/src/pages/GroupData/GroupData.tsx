@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { TouchableOpacity, Image, View } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import {
   GroupDataPage,
   GroupDataText,
@@ -20,6 +21,9 @@ import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 
 export default function GroupData({ navigation }: any) {
+  const route = useRoute();
+
+  const { groupId } = route.params as { groupId: string };
   const notificationIcon = require('../../assets/notification-icon.svg');
   const duckPhoto = require('../../assets/duck.png');
   const [groupInfo, setGroupInfo] = useState<any>();
@@ -30,7 +34,7 @@ export default function GroupData({ navigation }: any) {
 
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
-    const groupId = storage.getString('groupId');
+    // const groupId = storage.getString('groupId');
     const loggedId = storage.getString('loggedId');
 
     if (groupId && accessToken && loggedId) {
@@ -69,7 +73,7 @@ export default function GroupData({ navigation }: any) {
   }
 
   function handleRemoveParticipant() {
-    const groupId = storage.getString('groupId');
+    // const groupId = storage.getString('groupId');
     api
       .delete(`/participant/${loggedIdState},${groupId}`, {
         headers: {

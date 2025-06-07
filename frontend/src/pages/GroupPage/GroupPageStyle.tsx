@@ -86,6 +86,7 @@ export const GroupPageAddPostButton = styled.TouchableOpacity`
 export const GroupPageLessonsContainer = styled.View`
   display: flex;
   width: 100%;
+  //flex: 1;
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: none;
@@ -112,10 +113,3 @@ export const ImageContainer = styled.View`
   overflow-y: auto;
   flex: 1;
 `;
-
-
-
-
-
-
-

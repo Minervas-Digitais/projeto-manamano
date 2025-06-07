@@ -30,7 +30,6 @@ export class GroupController {
   @HttpCode(200)
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
   findAll() {
     return this.groupService.findAll();
   }
@@ -45,7 +44,6 @@ export class GroupController {
   @HttpCode(201)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
   update(@Param('id') id: string, @Body() updateGroupDto: UpdateGroupDto) {
     return this.groupService.update(id, updateGroupDto);
   }
@@ -53,7 +51,6 @@ export class GroupController {
   @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
   remove(@Param('id') id: string) {
     return this.groupService.remove(id);
   }

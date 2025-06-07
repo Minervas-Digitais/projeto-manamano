@@ -111,7 +111,8 @@ export default function Home({ navigation }: any) {
 
   const toggleGroupFilter = (groupId: string) => {
     setHiddenGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]);
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],
+    );
   };
 
   const filteredGroups = Array.isArray(groups)
@@ -166,8 +167,12 @@ export default function Home({ navigation }: any) {
                   groupName={item.group.name}
                   onlineMembers={item.participantCount}
                   onPress={() => {
-                    navigation.navigate('GroupPage');
+                    navigation.navigate('GroupPage', {
+                      groupId: item.groupId,
+                      groupName: item.group.name,
+                    });
                     storage.set('groupId', item.groupId);
+                    console.log(`groupId home: ${item.groupId}`);
                   }}
                   onPressFilter={() => toggleGroupFilter(item.groupId)}
                   filterIcon={!hiddenGroupIds.includes(item.groupId)}
@@ -203,7 +208,7 @@ export default function Home({ navigation }: any) {
                     onPressPost={() => onPressPostAction(post.id)}
                     postId={post.id}
                   />
-                )),)
+                )))
             ) : (
               <GroupDataText font="inter-bold" color="#959393" size="20px">
                 Não há Posts...

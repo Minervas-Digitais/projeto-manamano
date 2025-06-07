@@ -29,8 +29,6 @@ export class PostController {
 
   @HttpCode(200)
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
   findAll() {
     return this.postService.findAll();
   }
@@ -45,7 +43,6 @@ export class PostController {
   @HttpCode(201)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
   update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
     return this.postService.update(id, updatePostDto);
   }

@@ -7,11 +7,62 @@ import { CreateNotificationDto } from './dto/create-notification.dto';
 export class NotificationService {
   constructor(private prisma: PrismaService) {}
 
-  async createNotification(dto: CreateNotificationDto, userRole: string): Promise<Notification> {
+  async createNotification(
+    dto: CreateNotificationDto,
+    userRole: string,
+  ): Promise<Notification | { count: number }> {
     if (dto.type === NotificationType.WARNING && userRole !== 'ADMIN') {
-      throw new ForbiddenException('Apenas ADMIN podem criar notificações do tipo WARNING');
+      throw new ForbiddenException(
+        'Apenas ADMIN podem criar notificações do tipo WARNING',
+      );
     }
 
+    if (dto.type === NotificationType.FIXED && dto.recipientId) {
+      return this.prisma.notification.create({
+        data: {
+          senderId: dto.senderId,
+          recipientId: dto.recipientId,
+          body: dto.body,
+          type: dto.type,
+          groupName: dto.groupName || null,
+          senderName: dto.senderName || null,
+          idContent: dto.idContent || null,
+        },
+      });
+    }
+
+    if (
+      dto.type === NotificationType.FIXED &&
+      !dto.recipientId &&
+      dto.groupId
+    ) {
+      const participants = await this.prisma.participant.findMany({
+        where: { groupId: dto.groupId },
+        select: { userId: true },
+      });
+
+      if (participants.length === 0) {
+        throw new Error('Não há participantes neste grupo para notificar.');
+      }
+
+      const notificationsData = participants.map((p) => ({
+        senderId: dto.senderId,
+        recipientId: p.userId,
+        body: dto.body,
+        type: dto.type,
+        groupName: dto.groupName || null,
+        senderName: dto.senderName || null,
+        idContent: dto.idContent || null,
+      }));
+
+      const result = await this.prisma.notification.createMany({
+        data: notificationsData,
+      });
+
+      return { count: result.count };
+    }
+
+    // Caso padrão
     return this.prisma.notification.create({
       data: {
         senderId: dto.senderId,
@@ -45,12 +96,14 @@ export class NotificationService {
     });
   }
 
-  async createGlobalNotification(dto: CreateNotificationDto): Promise<{ count: number }> {
+  async createGlobalNotification(
+    dto: CreateNotificationDto,
+  ): Promise<{ count: number }> {
     const users = await this.prisma.user.findMany({
       where: { id: { not: dto.senderId } },
     });
 
-    const data = users.map(user => ({
+    const data = users.map((user) => ({
       senderId: dto.senderId,
       recipientId: user.id,
       body: dto.body,
@@ -61,7 +114,7 @@ export class NotificationService {
 
     return this.prisma.notification.createMany({ data });
   }
-  
+
   async deleteAllNotifications(userId: string): Promise<{ count: number }> {
     const deletedNotifications = await this.prisma.notification.deleteMany({
       where: { recipientId: userId },

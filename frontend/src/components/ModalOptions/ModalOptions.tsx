@@ -10,7 +10,7 @@ import {
   ModalOptionsOptionsText,
 } from './ModalOptionsStyle';
 
-export default function ModalOptions({ onShare }: any) {
+export default function ModalOptions({ onShare, onPressFix, fixed }: any) {
   const share = require('../../assets/share-icon.svg');
   const fix = require('../../assets/fix-blue-icon.svg');
   const save = require('../../assets/save-icon.svg');
@@ -36,13 +36,29 @@ export default function ModalOptions({ onShare }: any) {
           Salvar
         </ModalOptionsOptionsText>
       </ModalOptionsOptionsContainer>
-
-      <ModalOptionsOptionsContainer>
-        <Image source={fix} />
-        <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px">
-          Fixar
-        </ModalOptionsOptionsText>
-      </ModalOptionsOptionsContainer>
+      {fixed ? (
+        <ModalOptionsOptionsContainer>
+          <Image source={fix} />
+          <ModalOptionsOptionsText
+            font="inter-regular"
+            color="#515151"
+            size="13px"
+            onPress={onPressFix}>
+            Desfixar
+          </ModalOptionsOptionsText>
+        </ModalOptionsOptionsContainer>
+      ) : (
+        <ModalOptionsOptionsContainer>
+          <Image source={fix} />
+          <ModalOptionsOptionsText
+            font="inter-regular"
+            color="#515151"
+            size="13px"
+            onPress={onPressFix}>
+            Fixar
+          </ModalOptionsOptionsText>
+        </ModalOptionsOptionsContainer>
+      )}
     </ModalOptionsContainer>
   );
 }

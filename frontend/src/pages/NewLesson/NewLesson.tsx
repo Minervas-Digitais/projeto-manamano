@@ -26,7 +26,7 @@ export default function NewLesson({ navigation }: any) {
   const [categories, setCategories] = useState([]);
   const [files, setFiles] = useState<{ name: string; uri: string; mimeType?: string }[]>([]);
   const [visibility, setVisibility] = useState({});
-  const handleClick = (id) => {
+  const handleClick = (id: any) => {
     setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
     setVisibility((prevState) => {
       const updatedState = { ...prevState };
@@ -43,6 +43,7 @@ export default function NewLesson({ navigation }: any) {
             Authorization: `Bearer ${accessTokenState}`,
           },
         });
+        console.log('Categorias recebidas:', response.data);
         setCategories(response.data);
       } catch (error) {
         Toast.show({
@@ -53,6 +54,7 @@ export default function NewLesson({ navigation }: any) {
     };
     fetchCategories();
   }, [accessTokenState, groupId]);
+
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');

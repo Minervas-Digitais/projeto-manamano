@@ -31,6 +31,8 @@ import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageSty
 export default function NewPost({ navigation }: any) {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
+  console.log('groupId no paramns', groupId);
+
   const [files, setFiles] = useState<
     { id: number; name: string; uri: string; mimeType?: string }[]
   >([]);
@@ -70,17 +72,22 @@ export default function NewPost({ navigation }: any) {
           Authorization: `Bearer ${accessToken}`,
         },
       });
+      // .then((res) => console.log(JSON.stringify(res.data)));
     }
   }, []);
   useEffect(() => {
     if (!accessTokenState) return;
     const fetchCategories = async () => {
       try {
+        console.log('groupId:', groupId);
+
         const response = await api.get(`category/group/${groupId}`, {
           headers: {
             Authorization: `Bearer ${accessTokenState}`,
           },
         });
+        console.log('Categorias carregadas:', response.data);
+
         setCategories(response.data);
       } catch (error) {
         console.error('Erro ao buscar categorias', error);
