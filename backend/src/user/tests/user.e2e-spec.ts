@@ -1,24 +1,27 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from 'src/prisma/prisma.service';
+import request from 'supertest';
+import { RoleType } from '@prisma/client';
 import { UserModule } from '../user.module';
 import { AuthModule } from 'src/auth/auth.module';
-import request from 'supertest';
-import {
-    createTestUser,
-    getUserToken,
-    resetDatabase,
-} from 'src/test/test-helper.comment';
-import { RoleType } from '@prisma/client';
+import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { getUserToken, resetDatabase } from 'src/test/test-helper.comment';
 
-describe('User', () => {
+
+describe('User (e2e)', () => {
     let app: INestApplication;
     let prismaService: PrismaService;
     let userToken: string;
 
+    const testUserDto = {
+        fullName: 'Test User',
+        email: 'testuser@example.com',
+        phone: '1234567890',
+        hash: 'password123',
+    };
+
     beforeAll(async () => {
         resetDatabase();
-
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [UserModule, AuthModule],
         }).compile();
@@ -33,17 +36,21 @@ describe('User', () => {
 
     describe('Create User', () => {
         it('should create a new user', async () => {
-            const userId = await createTestUser(prismaService, '9999999999');
-            const user = await prismaService.user.findUnique({ where: { id: userId } });
+            const response = await request(app.getHttpServer())
+                .post('/user')
+                .send({ ...testUserDto, email: 'create@example.com' });
 
-            expect(user).toBeDefined();
-            expect(user?.phone).toBe('9999999999');
+            expect(response.status).toBe(201);
+            expect(response.body.email).toBe('create@example.com');
         });
     });
 
     describe('Find All Users', () => {
         it('should return users with admin token', async () => {
-            await createTestUser(prismaService, '1111111111');
+            await request(app.getHttpServer()).post('/user').send({
+                ...testUserDto,
+                email: 'all@example.com',
+            });
 
             const response = await request(app.getHttpServer())
                 .get('/user')
@@ -60,24 +67,23 @@ describe('User', () => {
     });
 
     describe('Find One User', () => {
-        let userId: string;
-
-        beforeAll(async () => {
-            userId = await createTestUser(prismaService, '2222222222');
-        });
-
         it('should find the created user', async () => {
+            const user = await request(app.getHttpServer()).post('/user').send({
+                ...testUserDto,
+                email: 'find@example.com',
+            });
+
             const response = await request(app.getHttpServer())
-                .get(`/user/${userId}`)
+                .get(`/user/${user.body.id}`)
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(200);
-            expect(response.body.id).toBe(userId);
+            expect(response.body.id).toBe(user.body.id);
         });
 
-        it('should return 404 for invalid user ID', async () => {
+        it('should return 404 for invalid id', async () => {
             const response = await request(app.getHttpServer())
-                .get('/user/nonexistent-id')
+                .get('/user/invalid-id')
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
@@ -85,15 +91,14 @@ describe('User', () => {
     });
 
     describe('Update User', () => {
-        let userId: string;
-
-        beforeAll(async () => {
-            userId = await createTestUser(prismaService, '3333333333');
-        });
-
         it('should update the user', async () => {
+            const user = await request(app.getHttpServer()).post('/user').send({
+                ...testUserDto,
+                email: 'update@example.com',
+            });
+
             const response = await request(app.getHttpServer())
-                .patch(`/user/${userId}`)
+                .patch(`/user/${user.body.id}`)
                 .set('Authorization', `Bearer ${userToken}`)
                 .send({ fullName: 'Updated Name' });
 
@@ -103,45 +108,46 @@ describe('User', () => {
     });
 
     describe('Change Password', () => {
-        let userId: string;
-
-        beforeAll(async () => {
-            userId = await createTestUser(prismaService, '4444444444');
-            await prismaService.user.update({
-                where: { id: userId },
-                data: { hash: 'initialpass' },
-            });
-        });
-
         it('should change password with correct old password', async () => {
+            const user = await request(app.getHttpServer()).post('/user').send({
+                ...testUserDto,
+                email: 'changepass@example.com',
+                hash: 'oldpass',
+            });
+
             const response = await request(app.getHttpServer())
-                .patch(`/user/${userId}/change-password`)
+                .patch(`/user/${user.body.id}/change-password`)
                 .set('Authorization', `Bearer ${userToken}`)
-                .send({ oldPassword: 'initialpass', newPassword: 'newsecurepass' });
+                .send({ oldPassword: 'oldpass', newPassword: 'newpass' });
 
             expect(response.status).toBe(201);
         });
 
         it('should fail with incorrect old password', async () => {
+            const user = await request(app.getHttpServer()).post('/user').send({
+                ...testUserDto,
+                email: 'wrongpass@example.com',
+                hash: 'correctpass',
+            });
+
             const response = await request(app.getHttpServer())
-                .patch(`/user/${userId}/change-password`)
+                .patch(`/user/${user.body.id}/change-password`)
                 .set('Authorization', `Bearer ${userToken}`)
-                .send({ oldPassword: 'wrongpass', newPassword: 'anotherpass' });
+                .send({ oldPassword: 'wrongpass', newPassword: 'newone' });
 
             expect(response.status).toBe(401);
         });
     });
 
     describe('Update Role', () => {
-        let userId: string;
-
-        beforeAll(async () => {
-            userId = await createTestUser(prismaService, '5555555555');
-        });
-
         it('should update the user role', async () => {
+            const user = await request(app.getHttpServer()).post('/user').send({
+                ...testUserDto,
+                email: 'roleupdate@example.com',
+            });
+
             const response = await request(app.getHttpServer())
-                .patch(`/user/${userId}/role`)
+                .patch(`/user/${user.body.id}/role`)
                 .set('Authorization', `Bearer ${userToken}`)
                 .send({ role: RoleType.MODERATOR });
 
@@ -150,8 +156,13 @@ describe('User', () => {
         });
 
         it('should fail without role in body', async () => {
+            const user = await request(app.getHttpServer()).post('/user').send({
+                ...testUserDto,
+                email: 'failrole@example.com',
+            });
+
             const response = await request(app.getHttpServer())
-                .patch(`/user/${userId}/role`)
+                .patch(`/user/${user.body.id}/role`)
                 .set('Authorization', `Bearer ${userToken}`)
                 .send({});
 
@@ -160,34 +171,35 @@ describe('User', () => {
     });
 
     describe('Remove User', () => {
-        let userId: string;
-
-        beforeEach(async () => {
-            const phone = `delete-${Date.now()}`;
-            userId = await createTestUser(prismaService, phone);
-        });
-
         it('should delete the user', async () => {
+            const user = await request(app.getHttpServer()).post('/user').send({
+                ...testUserDto,
+                email: 'delete@example.com',
+            });
+
             const response = await request(app.getHttpServer())
-                .delete(`/user/${userId}`)
+                .delete(`/user/${user.body.id}`)
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(200);
+            expect(response.text).toBe('Usuário deletado com sucesso.');
         });
 
         it('should return 404 when trying to delete non-existing user', async () => {
             const response = await request(app.getHttpServer())
-                .delete('/user/nonexistent-id')
+                .delete(`/user/non-existent-id`)
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
         });
 
         it('should return 401 when deleting without token', async () => {
-            const response = await request(app.getHttpServer()).delete(
-                `/user/${userId}`,
-            );
+            const user = await request(app.getHttpServer()).post('/user').send({
+                ...testUserDto,
+                email: 'unauthdelete@example.com',
+            });
 
+            const response = await request(app.getHttpServer()).delete(`/user/${user.body.id}`,);
             expect(response.status).toBe(401);
         });
     });
