@@ -5,14 +5,14 @@ export const HomePageBlue = styled.View`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background-color: #170e49;
 `;
 
 export const HomePageWhite = styled.View`
   display: flex;
-  width: 100vw;
+  width: 100%;
   flex: 1;
   background-color: #ffffff;
   border-radius: 40px 40px 0px 0px;

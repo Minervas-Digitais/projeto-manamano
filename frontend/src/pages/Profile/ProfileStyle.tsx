@@ -3,7 +3,7 @@ import styled from 'styled-components/native';
 
 export const ProfileContainerInfo = styled.View`
   display: flex;
-  width: 100vw;
+  width: 100%;
   height: auto;
   padding: 50px 25px 25px 25px;
   gap: 30px;
@@ -19,7 +19,7 @@ export const ProfileContainerButtons = styled.View`
 export const ProfileImage = styled.Image<{ radius?: boolean; width?: any; height?: any }>`
   width: ${(prop) => prop.width};
   height: ${(prop) => prop.height};
-  border-radius: ${(prop) => (prop.radius ? '50%' : 0)};
+  border-radius: ${(prop) => (prop.radius ? '39px' : 0)};
   border: ${(prop) => (prop.radius ? 'solid 1.6px white' : 'none')};
 `;
 
@@ -51,4 +51,18 @@ export const ProfilePostsContainer = styled.View`
   flex: 1;
   gap: 30px;
   padding: 25px 25px 25px 30px;
+`;
+export const ProfileWhite = styled.ScrollView.attrs(() => ({
+  contentContainerStyle: {
+    paddingTop: 25,
+    paddingBottom: 30,
+    gap: 25,
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    flexGrow: 1,
+  },
+}))`
+  flex: 1;
+  width: 100%;
 `;
