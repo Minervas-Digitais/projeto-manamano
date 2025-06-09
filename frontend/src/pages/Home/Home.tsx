@@ -79,7 +79,7 @@ export default function Home({ navigation }: any) {
 
   function onPressPostAction(id: string) {
     storageHome.set('idPost', id);
-    navigation.navigate('Post');
+    navigation.navigate('Post', { postId: id });
   }
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function Home({ navigation }: any) {
 
   const toggleGroupFilter = (groupId: string) => {
     setHiddenGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],);
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]);
   };
 
   const filteredGroups = Array.isArray(groups)
@@ -201,6 +201,7 @@ export default function Home({ navigation }: any) {
                     save
                     share
                     onPressPost={() => onPressPostAction(post.id)}
+                    postId={post.id}
                   />
                 )),
               )

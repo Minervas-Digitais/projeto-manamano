@@ -44,17 +44,24 @@ export default function Post() {
   const [commentUsers, setCommentUsers] = useState({});
   const [postArchives, setPostArchives] = useState([]);
   const profileImage = require('../../assets/test-profile-icon.png');
+  const [recipientId, setRecipientId] = useState('');
+  const [idGroup, setIdGroup] = useState('');
+  const [groupName, setGroupName] = useState('');
+  const [userName, setUserName] = useState('');
+
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
     if (loggedId && accessToken) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
-      api.get(`/user/${loggedId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      api
+        .get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => setUserName(res.data.fullName));
     }
   }, []);
   useEffect(() => {
@@ -67,6 +74,8 @@ export default function Post() {
           },
         });
         setPost(response.data);
+        setRecipientId(response.data.userId);
+        setIdGroup(response.data.groupId);
       } catch (error) {
         console.error('Erro ao buscar publicação', error);
         Toast.show({
@@ -175,6 +184,39 @@ export default function Post() {
           },
         },
       );
+
+      const groupResponse = await api.get(`/group/${idGroup}`, {
+        headers: {
+          Authorization: `Bearer ${accessTokenState}`,
+        },
+      });
+      if (post.userId !== loggedIdState) {
+        const groupNameFromApi = groupResponse.data.name;
+        console.log({
+          senderId: loggedIdState,
+          senderName: userName,
+          recipientId,
+          groupName: groupNameFromApi,
+          type: 'COMMENT',
+          body: '',
+        });
+        await api.post(
+          '/notifications',
+          {
+            senderId: loggedIdState,
+            senderName: userName,
+            recipientId,
+            groupName: groupNameFromApi,
+            type: 'COMMENT',
+            body: '',
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${accessTokenState}`,
+            },
+          },
+        );
+      }
       Toast.show({
         type: 'success',
         text1: 'Comentário enviado com sucesso!',
@@ -204,6 +246,7 @@ export default function Post() {
   if (!fontsLoaded) {
     return undefined;
   }
+
   return (
     <View
       style={{

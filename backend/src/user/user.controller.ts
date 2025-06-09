@@ -50,9 +50,9 @@ export class UserController {
     return this.userService.update(id, updateUserDto);
   }
 
-  @HttpCode(204)
+  @HttpCode(200)
   @Delete(':id')
-  @UseGuards(JwtAuthGuard,RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   remove(@Param('id') id: string) {
     return this.userService.remove(id);

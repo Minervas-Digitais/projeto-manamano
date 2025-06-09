@@ -24,7 +24,6 @@ export class CreateArchiveDto {
   @IsOptional()
   @IsString()
   postId?: string;
-
 }
 
 export class ResponseArchiveDto {

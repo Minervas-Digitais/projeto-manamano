@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSearchDto } from './dto/create-search.dto';
 
@@ -54,7 +54,7 @@ export class SearchService {
       result['posts'] = posts;
       return result;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -99,10 +99,10 @@ export class SearchService {
             },
           });
         default:
-          throw new Error('Invalid filter');
+          throw new BadRequestException('Invalid filter');
       }
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 }

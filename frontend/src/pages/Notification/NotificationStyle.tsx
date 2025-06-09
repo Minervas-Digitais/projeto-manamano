@@ -6,6 +6,7 @@ export const ConfigNotificationContainer = styled.View`
   background-color: #f2f6fa;
   width: 100%;
   height: 100%;
+  position: relative;
 `;
 
 export const NotificationInfoContainer = styled.View`
