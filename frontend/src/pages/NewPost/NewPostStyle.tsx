@@ -1,8 +1,11 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions, Platform } from 'react-native';
 import styled from 'styled-components/native';
 
+const { width, height } = Dimensions.get('window');
+
 export const NewPostContainer = styled.View`
-  margin-top: 3vh;
+  margin-top: ${height * 0.03}px;
   flex: 1;
 `;
 
@@ -16,11 +19,24 @@ export const NewPostInputContainer = styled.View`
 export const NewPostInputTextContainer = styled.View`
   padding-right: 15px;
   padding-left: 15px;
-  height: 27vh;
+  height: ${height * 0.27}px;
   min-height: 250px;
   background-color: #fff;
   padding-top: 15px;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.2);
+  ${Platform.select({
+    ios: `
+      shadow-color: rgba(0, 0, 0, 0.2);
+      shadow-offset: 0px 4px;
+      shadow-opacity: 0.2;
+      shadow-radius: 4px;
+    `,
+    android: `
+      elevation: 5;
+    `,
+    web: `  
+    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.2);
+ `,
+  })} z-index: 10;
 `;
 
 export const LinkIcon = styled.TouchableOpacity`
@@ -37,9 +53,9 @@ export const NewEventInputContainer = styled.View`
 `;
 
 export const BottomPartContainer = styled.View`
-  width: 88vw;
-  margin-left: 5.81vw;
+  width: ${width * 0.88}px;
+  margin-left: ${width * 0.0581}px;
   justify-content: space-between;
   flex: 1;
-  padding-bottom: 30;
+  padding-bottom: 30px;
 `;

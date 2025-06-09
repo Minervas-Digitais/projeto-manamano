@@ -203,7 +203,8 @@ export default function Home({ navigation }: any) {
                     onPressPost={() => onPressPostAction(post.id)}
                     postId={post.id}
                   />
-                )),)
+                )),
+              )
             ) : (
               <GroupDataText font="inter-bold" color="#959393" size="20px">
                 Não há Posts...

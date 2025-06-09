@@ -15,7 +15,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.enableShutdownHooks();
 
-  await app.listen(process.env.BACKEND_PORT, () => {
+  await app.listen(process.env.BACKEND_PORT, '0.0.0.0', () => {
     console.log(
       `⚡ Server is running on http://localhost:${process.env.BACKEND_PORT || 3000}`,
     );

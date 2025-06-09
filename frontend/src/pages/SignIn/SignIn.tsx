@@ -4,7 +4,7 @@
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useFonts } from 'expo-font';
-import { Image, View } from 'react-native';
+import { Image, StatusBar, View } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { SignInContainer, SignInForm, SignInInputContainer } from './SignInStyle';
@@ -12,6 +12,9 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import BackButton from '../../components/BackButton/BackButton';
 import api from '../../services/api';
+import IconEmail from '../../assets/e-mail-icon.svg';
+import IconPassword from '../../assets/lock-icon.svg';
+import ManaManoLogo from '../../assets/logo-boas-vindas.svg';
 
 export const storage = new MMKV();
 
@@ -22,7 +25,6 @@ export default function SignIn({ navigation }: any) {
     handleSubmit,
     formState: { errors },
   } = useForm({});
-
   const onSubmit = (data: any) => {
     api.post('/auth/login', data).then((res) => {
       if (res.data.accessToken) {
@@ -37,10 +39,6 @@ export default function SignIn({ navigation }: any) {
     });
   };
 
-  const iconPassword = require('../../assets/lock-icon.svg');
-  const iconEmail = require('../../assets/e-mail-icon.svg');
-  const manaManoLogo = require('../../assets/logo-boas-vindas.svg');
-
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
@@ -50,11 +48,11 @@ export default function SignIn({ navigation }: any) {
 
   return (
     <SignInContainer>
+      <StatusBar backgroundColor="black" />
       <SignInForm>
-        <View style={{ gap: '45px' }}>
+        <View style={{ gap: 45 }}>
           <BackButton />
-
-          <Image source={manaManoLogo} />
+          <ManaManoLogo />
           <SignInInputContainer>
             <Controller
               control={control}
@@ -67,7 +65,7 @@ export default function SignIn({ navigation }: any) {
                   onChangeText={onChange}
                   value={value}
                   label="E-mail"
-                  imageIcon={iconEmail}
+                  imageIcon={<IconEmail />}
                 />
               )}
             />
@@ -83,7 +81,7 @@ export default function SignIn({ navigation }: any) {
                   onChangeText={onChange}
                   value={value}
                   label="Senha"
-                  imageIcon={iconPassword}
+                  imageIcon={<IconPassword />}
                   isPassword
                 />
               )}

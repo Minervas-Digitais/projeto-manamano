@@ -5,6 +5,7 @@ export const SideMenuOptionsButtonsContainer = styled.TouchableOpacity`
   display: flex;
   flex-direction: row;
   gap: 15px;
+  align-items: center;
 `;
 export const SideMenuOptionsButtonsText = styled.Text<{ font?: string; color?: any }>`
   font-size: 20px;

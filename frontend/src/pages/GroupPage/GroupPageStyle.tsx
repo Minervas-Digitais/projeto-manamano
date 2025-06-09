@@ -78,7 +78,7 @@ export const GroupPageAddPostButton = styled.TouchableOpacity`
   align-items: center;
   width: 70px;
   height: 70px;
-  border-radius: 50%;
+  border-radius: 35px;
   background-image: linear-gradient(to bottom, #1c1049, #363061);
   margin: 0px 25px 50px 0px;
 `;
@@ -112,10 +112,3 @@ export const ImageContainer = styled.View`
   overflow-y: auto;
   flex: 1;
 `;
-
-
-
-
-
-
-

@@ -1,4 +1,5 @@
 /* eslint-disable import/prefer-default-export */
+import { Platform } from 'react-native';
 import styled from 'styled-components/native';
 
 export const ModalOptionsContainer = styled.View`
@@ -9,12 +10,25 @@ export const ModalOptionsContainer = styled.View`
   width: 130px;
   height: 100px;
   background-color: #f2f6fa;
-  box-shadow: 0px 6px 9px rgba(33, 33, 33, 0.193);
+  ${Platform.select({
+    ios: `
+    shadow-color: rgba(33, 33, 33, 1);
+    shadow-offset: 0px 6px;
+    shadow-opacity: 0.193;
+    shadow-radius: 9px;
+  `,
+    android: `
+    elevation: 6;
+  `,
+    web: `
+    box-shadow: 0px 6px 9px rgba(33, 33, 33, 0.193);
+  `,
+  })}
   border-radius: 15px;
   padding: 8px;
   right: 32px;
   top: 10px;
-  z-index: 5;
+  z-index: 100;
 `;
 
 export const ModalOptionsOptionsContainer = styled.TouchableOpacity`

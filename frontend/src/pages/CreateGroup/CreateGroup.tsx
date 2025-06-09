@@ -1,5 +1,7 @@
+/* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, Text, View, Image, ScrollView, Alert } from 'react-native';
+import { TouchableOpacity, Text, View, ScrollView, Alert } from 'react-native';
+import { useFonts } from 'expo-font';
 import {
   Container,
   Input,
@@ -9,14 +11,9 @@ import {
   AddCategoryButton,
   ContentContainer,
 } from './CreateGroupStyle';
-import { useFonts } from 'expo-font';
-import { storage } from '../../pages/SignIn/SignIn';
-import SideMenu from '../../components/SideMenu/SideMenu';
-import {
-  ConfigNotificationHeaderContainer,
-  ConfigNotificationTitle,
-} from '../Notification/NotificationStyle';
+import { storage } from '../SignIn/SignIn';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
+import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 
 export default function CreateGroup() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -27,10 +24,8 @@ export default function CreateGroup() {
 
   const [categories, setCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
-  const [sideMenu, setSideMenu] = useState(true);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
-  const menu = require('../../assets/menu-icon.svg');
 
   useEffect(() => {
     const token = storage.getString('accessToken');
@@ -112,7 +107,6 @@ export default function CreateGroup() {
       console.log('Group ID:', groupId);
       Alert.alert('Success', `Group created successfully! ID: ${groupId}`);
 
-      // Add default categories
       const defaultCategories = [
         { name: 'Geral', type: 'NORMAL' },
         { name: 'Aulas', type: 'CLASS' },
@@ -123,7 +117,6 @@ export default function CreateGroup() {
         await createCategory(name, type, groupId);
       }
 
-      // Add user-defined categories
       for (const category of categories) {
         await createCategory(category, 'NORMAL', groupId);
       }
@@ -139,22 +132,21 @@ export default function CreateGroup() {
 
   return (
     <Container>
-      <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
-      <ConfigNotificationHeaderContainer>
-        <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
-          <Image source={menu} />
-        </TouchableOpacity>
-        <ConfigNotificationTitle font="inter-bold">Criar Grupo</ConfigNotificationTitle>
-        <View />
-      </ConfigNotificationHeaderContainer>
-
+      <HeaderCustom menu font="inter-bold" text="Criar Grupo" />
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1 }}>
         <ContentContainer>
           <Text style={{ padding: 4, fontSize: 12, color: '#5E6366' }}>Nome do Grupo</Text>
           <Input
             value={groupName}
             onChangeText={setGroupName}
-            style={{ outline: 'none', boxShadow: 'none', backgroundColor: 'transparent',  borderColor: '#5e6366', borderRadius: 5, borderWidth: 1}}
+            style={{
+              outline: 'none',
+              boxShadow: 'none',
+              backgroundColor: 'transparent',
+              borderColor: '#5e6366',
+              borderRadius: 5,
+              borderWidth: 1,
+            }}
           />
 
           <Text style={{ padding: 4, fontSize: 12, color: '#5E6366' }}>Descrição do Grupo</Text>
@@ -162,11 +154,26 @@ export default function CreateGroup() {
             value={groupDescription}
             onChangeText={setGroupDescription}
             multiline
-            style={{ outline: 'none', boxShadow: 'none', backgroundColor: 'transparent',  borderColor: '#5e6366', borderRadius: 5, borderWidth: 1}}
+            style={{
+              outline: 'none',
+              boxShadow: 'none',
+              backgroundColor: 'transparent',
+              borderColor: '#5e6366',
+              borderRadius: 5,
+              borderWidth: 1,
+            }}
           />
 
           <Text style={{ padding: 4, fontSize: 12, color: '#5E6366' }}>Categorias</Text>
-          <CategoryContainer style={{ marginBottom: 15, backgroundColor: 'transparent',  borderColor: '#5e6366', borderRadius: 5, borderWidth: 1}}>
+          <CategoryContainer
+            style={{
+              marginBottom: 15,
+              backgroundColor: 'transparent',
+              borderColor: '#5e6366',
+              borderRadius: 5,
+              borderWidth: 1,
+              paddingRight: 5,
+            }}>
             <Input
               value={newCategory}
               onChangeText={setNewCategory}
@@ -175,13 +182,19 @@ export default function CreateGroup() {
                   handleAddCategory();
                 }
               }}
-              style={{ marginBottom: 0, outline: 'none', boxShadow: 'none', backgroundColor: 'transparent', borderRadius: 5}}
+              style={{
+                marginBottom: 0,
+                outline: 'none',
+                boxShadow: 'none',
+                backgroundColor: 'transparent',
+                borderRadius: 5,
+                flex: 1,
+              }}
             />
             <AddCategoryButton onPress={handleAddCategory}>
               <Text style={{ fontSize: 18, color: '#AAAAAA' }}>+</Text>
             </AddCategoryButton>
           </CategoryContainer>
-
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
             <Category>Geral</Category>
             <Category>Aulas</Category>
@@ -191,8 +204,7 @@ export default function CreateGroup() {
                 {category}
                 <TouchableOpacity
                   onPress={() => handleRemoveCategory(category)}
-                  style={{ marginLeft: 8 }}
-                >
+                  style={{ marginLeft: 8 }}>
                   <Text>-</Text>
                 </TouchableOpacity>
               </Category>

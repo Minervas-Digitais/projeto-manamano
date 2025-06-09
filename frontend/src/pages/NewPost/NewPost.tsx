@@ -3,7 +3,8 @@ import { useFonts } from 'expo-font';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRoute } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
-import { Image, View, ScrollView } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import { View, ScrollView, Dimensions } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -27,8 +28,13 @@ import api from '../../services/api';
 import { storage } from '../SignIn/SignIn';
 import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
+import ArrowIcon from '../../assets/arrow-icon.svg';
+import linkIcon from '../../assets/comment-link-icon.svg';
+import AttachmentIcon from '../../assets/add-attachment-icon.svg';
+import CalendarIcon from '../../assets/calendar-icon.svg';
 
 export default function NewPost({ navigation }: any) {
+  const { width, height } = Dimensions.get('window');
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
   const [files, setFiles] = useState<
@@ -36,10 +42,6 @@ export default function NewPost({ navigation }: any) {
   >([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
-  const arrowIcon = require('../../assets/arrow-icon.svg');
-  const linkIcon = require('../../assets/comment-link-icon.svg');
-  const attachmentIcon = require('../../assets/add-attachment-icon.svg');
-  const calendarIcon = require('../../assets/calendar-icon.svg');
   const [filterPosts, setFilterPosts] = useState('Geral');
   const dateRef = useRef(null);
   const hourRef = useRef(null);
@@ -239,13 +241,19 @@ export default function NewPost({ navigation }: any) {
       });
 
       if (result.assets && result.assets.length > 0) {
-        const newFiles = result.assets.map((file) => ({
-          id: Date.now() + Math.random(),
-          name: file.name,
-          uri: file.uri,
-          mimeType: file.mimeType,
-        }));
-
+        const newFiles = await Promise.all(
+          result.assets.map(async (file) => {
+            const base64 = await FileSystem.readAsStringAsync(file.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            return {
+              id: Date.now() + Math.random(),
+              name: file.name,
+              uri: base64,
+              mimeType: file.mimeType,
+            };
+          }),
+        );
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
         setVisibility((prevState) => {
           const updatedVisibility = { ...prevState };
@@ -335,7 +343,7 @@ export default function NewPost({ navigation }: any) {
                   ))}
                 </ScrollView>
                 <LinkIcon onPress={pickFile}>
-                  <Image source={attachmentIcon} />
+                  <AttachmentIcon />
                 </LinkIcon>
               </View>
               <Toast config={toastConfig} />
@@ -346,7 +354,7 @@ export default function NewPost({ navigation }: any) {
                 backColor="#160E47"
                 fontColor="white"
                 text="Publicar"
-                rightIcon={arrowIcon}
+                rightIcon={<ArrowIcon />}
               />
             </View>
           </NewPostInputContainer>
@@ -371,7 +379,7 @@ export default function NewPost({ navigation }: any) {
               {errors.title && <ErrorWarning errorText={errors.title.message} />}
             </NamePart>
             <MiddlePart>
-              <View style={{ flex: 1, marginRight: `${6.27 / 2}vw` }}>
+              <View style={{ flex: 1, marginRight: `${width * 0.03135}` }}>
                 <Controller
                   control={control}
                   name="date"
@@ -384,7 +392,7 @@ export default function NewPost({ navigation }: any) {
                       onChangeText={onChange}
                       value={value}
                       label="Data"
-                      imageIcon={calendarIcon}
+                      imageIcon={<CalendarIcon />}
                       type="datetime"
                       options={{ format: 'DD/MM/YYYY' }}
                       innerRef={(value) => (dateRef.current = value)}
@@ -393,7 +401,7 @@ export default function NewPost({ navigation }: any) {
                 />
                 {errors.date && <ErrorWarning errorText={errors.date.message} />}
               </View>
-              <View style={{ flex: 1, marginLeft: `${6.27 / 2}vw` }}>
+              <View style={{ flex: 1, marginLeft: `${width * 0.03135}` }}>
                 <Controller
                   control={control}
                   name="hour"
@@ -434,13 +442,12 @@ export default function NewPost({ navigation }: any) {
                 )}
               />
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-              {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
               <ButtonCustom
                 onPress={handleSubmit(onSubmit)}
                 backColor="#160E47"
                 fontColor="white"
                 text="Publicar"
-                rightIcon={arrowIcon}
+                rightIcon={<ArrowIcon />}
               />
             </BottomPartContainer>
           </NewEventInputContainer>

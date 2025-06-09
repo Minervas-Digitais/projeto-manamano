@@ -1,35 +1,36 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
+const { width, height } = Dimensions.get('window');
 
 export const CommentInputTextFocused = styled.TextInput`
   width: 100%;
-  height: 120px;
+  height: ${height * 0.1}px;
   background-color: transparent;
   border: none;
   outline-width: 0px;
   color: #5e6366;
   text-align: justify;
+  text-align-vertical: top;
 `;
 export const CommentInputText = styled.TextInput`
-  width: 100%;
-  height: 40px;
-  background-color: transparent;
-  border: none;
-  border-radius: 5px;
-  outline-color: transparent;
-  outline-width: 1px;
+  width: ${width * 0.72}px;
+  height: ${height * 0.0536}px;
   color: #5e6366;
   text-align: justify;
+  text-align-vertical: center;
+  padding-left: 15px;
 `;
 export const CommentInputTextContainer = styled.View`
   flex-direction: row;
   gap: 15px;
-  width: 88vw;
+  width: ${width * 0.88}px;
+  flex: 1;
 `;
 export const CommentInputContainerFocused = styled.View`
-  display: flex;
-  width: 72vw;
-  height: 143px;
+  width: ${width * 0.72}px;
+  height: ${height * 0.18}px;
   border: solid 1.5px #d8d7d7;
   border-radius: 20px;
   padding: 10px;
@@ -38,12 +39,11 @@ export const CommentInputContainerFocused = styled.View`
 export const CommentInputContainer = styled.View`
   display: flex;
   flex-direction: row;
-  width: 72vw;
-  height: 50px;
+  width: ${width * 0.72}px;
+  height: ${height * 0.0536}px;
   border: solid 1.5px #d8d7d7;
-  border-radius: 20px;
-  padding: 15px;
-  gap: 5px;
+  border-radius: 8px;
+  flex: 1;
 `;
 export const ButtonContainer = styled.View`
   flex-direction: row;
