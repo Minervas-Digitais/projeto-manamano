@@ -4,8 +4,10 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import { storage } from '../../pages/SignIn/SignIn';
-import { StyleSheet, View, Image, Dimensions } from 'react-native';
+import { StyleSheet, View, Image, Dimensions, Button } from 'react-native';
+import { useRoute } from '@react-navigation/native';
+
+import { storage } from '../SignIn/SignIn';
 import {
   GroupPageAddPostButton,
   GroupPageCategoryContainer,
@@ -28,8 +30,19 @@ import CategoryButton from '../../components/CategoryButton/CategoryButton';
 import LessonsCard from '../../components/LessonsCard/LessonsCard';
 import FileCard from '../../components/FileCard/FileCard';
 import SideMenu from '../../components/SideMenu/SideMenu';
+import api from '../../services/api';
+import { storageHome } from '../Home/Home';
+import EventCard from '../../components/EventCard/EventCard';
 
 export default function GroupPage({ navigation }: any) {
+  const route = useRoute();
+  const { groupId } = route.params as { groupId: string };
+  const { groupName } = route.params as { groupName: string };
+
+  useEffect(() => {
+    getGroupPosts();
+    getGroupCategory();
+  }, []);
   const notificationIcon = require('../../assets/notification-icon.svg');
   const duckImage = require('../../assets/duck.png');
   const addPost = require('../../assets/add-post-icon.svg');
@@ -40,8 +53,8 @@ export default function GroupPage({ navigation }: any) {
   const [filterPosts, setFilterPosts] = useState('Geral');
   const [filterFiles, setFilterFiles] = useState('Fotos');
   const [sideMenu, setSideMenu] = useState(true);
-  const [categories, setCategories] = useState<any[]>([]); // State for storing categories
-  const [posts, setPosts] = useState<any[]>([]); // State for storing posts
+  const [categories, setCategories] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -52,8 +65,6 @@ export default function GroupPage({ navigation }: any) {
   if (!fontsLoaded) {
     return undefined;
   }
-
-  const groupName = 'Turma 24.1';
 
   const fileCategory = [
     { categoryName: 'Fotos' },
@@ -122,16 +133,45 @@ export default function GroupPage({ navigation }: any) {
       type: 'Documentos',
     },
   ];
+  function formatRelativeDate(postDate: string): string {
+    const currentDate = new Date();
+    const postDateObj = new Date(postDate);
+    const differenceInMilliseconds = currentDate.getTime() - postDateObj.getTime();
+    const differenceInMinutes = Math.floor(differenceInMilliseconds / (1000 * 60));
+    const differenceInHours = Math.floor(differenceInMinutes / 60);
+    const differenceInDays = Math.floor(differenceInHours / 24);
 
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  useEffect(() => {
+    const hours = postDateObj.getHours();
+    const minutes = postDateObj.getMinutes();
+    const formattedTime = `${hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
+
+    if (differenceInMinutes < 60) {
+      return `hoje, ${formattedTime}`;
+    }
+    if (differenceInHours < 24) {
+      return `ontem, ${formattedTime}`;
+    }
+    if (differenceInDays < 3) {
+      return `há ${differenceInDays} dia${differenceInDays !== 1 ? 's' : ''}`;
+    }
+    return postDateObj.toLocaleDateString('pt-BR');
+  }
+
+  function formatDateTime(createdAt: string | Date): string {
+    const date = new Date(createdAt);
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // mês começa em 0
+    const year = String(date.getFullYear()).slice(-2); // últimos 2 dígitos do ano
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${day}/${month}/${year} - ${hours}:${minutes}`;
+  }
+  const getGroupPosts = async () => {
     const token = storage.getString('accessToken');
-    if (token) setAccessToken(token);
-  }, []);
 
-  // Fetch the posts from the API
-  const getGroupPosts = async (groupId: string) => {
-    if (!accessToken) {
+    if (!token) {
       console.error('Access token is missing.');
       return;
     }
@@ -140,48 +180,88 @@ export default function GroupPage({ navigation }: any) {
       const response = await fetch(`http://localhost:3000/post/group/${groupId}`, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
       const data = await response.json();
-      setPosts(data); // Assuming the response is a list of posts
+      setPosts(data);
     } catch (error) {
       console.error('Error fetching posts:', error);
     }
   };
 
-  useEffect(() => {
-    const groupId = 'your-group-id'; // Replace with actual group ID
-    getGroupPosts(groupId);
-  }, [accessToken]);
-
-  // Fetch the categories from the API
-  const getGroupCategory = async (groupId: string) => {
-    if (!accessToken) {
+  const getGroupCategory = async () => {
+    const token = storage.getString('accessToken');
+    if (!token) {
       console.error('Access token is missing.');
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/group/${groupId}`, {
+      const response = await fetch(`http://localhost:3000/category/group/${groupId}`, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
+
       const data = await response.json();
-      setCategories(data.categories);
+
+      const filteredData = data.filter((category: any) => category.name !== 'Aulas');
+
+      setCategories(filteredData);
+      console.log('Categorias do grupo (filtradas):', filteredData);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error('Error fetching group categories:', error);
     }
   };
 
-  useEffect(() => {
-    const groupId = 'your-group-id'; // Replace with actual group ID
-    getGroupCategory(groupId);
-  }, [accessToken]);
+  const fixActions = async (id: string, isPinned: boolean) => {
+    const token = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+
+    try {
+      await api.patch(
+        `/post/${id}`,
+        { isPinned: !isPinned },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!isPinned) {
+        await api.post(
+          '/notifications',
+          {
+            senderId: loggedId,
+            groupId,
+            groupName,
+            type: 'FIXED',
+            body: '',
+            idContent: id,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+      }
+
+      await getGroupPosts();
+    } catch (error) {
+      console.error('Erro ao fixar/desfixar post:', error);
+    }
+  };
+
+  function onPressPostAction(id: string) {
+    storageHome.set('idPost', id);
+    navigation.navigate('Post', { postId: id });
+  }
 
   return (
     <GroupPageContainer>
@@ -195,7 +275,7 @@ export default function GroupPage({ navigation }: any) {
           setSideMenu(!sideMenu);
         }}
         onPress={() => navigation.navigate('Notification')}
-        onPressTitle={() => navigation.navigate('GroupData')}
+        onPressTitle={() => navigation.navigate('GroupData', { groupId })}
         menu
       />
       <GroupPageTabs style={style.line}>
@@ -217,7 +297,10 @@ export default function GroupPage({ navigation }: any) {
             setFilesSelect(false);
           }}
           style={classesSelect ? style.selectStyleTab : {}}>
-          <GroupDataText font="inter-bold" size="18px" color={classesSelect ? '#EF4036' : '#8F8F8F'}>
+          <GroupDataText
+            font="inter-bold"
+            size="18px"
+            color={classesSelect ? '#EF4036' : '#8F8F8F'}>
             Aulas
           </GroupDataText>
         </GroupPageTabsContainer>
@@ -239,20 +322,26 @@ export default function GroupPage({ navigation }: any) {
             <GroupPageListFixPost>
               {posts.length > 0 ? (
                 posts
-                  .filter((item: any) => item.isPinned) // Filter pinned posts
-                  .map((item: any) => (
-                    <PostCard
-                      nameUser={item.nameUser}
-                      imageUser={item.imageUser}
-                      postContent={item.postContent}
-                      numComments={item.numComments}
-                      date={item.date}
-                      originGroup={item.originGroup}
-                      dotsMenu
-                      fix
-                      postId="123"
-                    />
-                  ))
+                  .filter((item: any) => item.isPinned)
+                  .toReversed()
+                  .map((item: any) => {
+                    if (item.type === 'NORMAL') {
+                      return (
+                        <PostCard
+                          nameUser={item.nameUser}
+                          imageUser={duckImage}
+                          postContent={item.input}
+                          numComments={item.numComments}
+                          date={formatRelativeDate(item.createdAt)}
+                          onPressFix={() => fixActions(item.id, item.isPinned)}
+                          onPressPost={() => onPressPostAction(item.id)}
+                          dotsMenu
+                          fix
+                          postId={item.id}
+                        />
+                      );
+                    }
+                  })
               ) : (
                 <View />
               )}
@@ -265,9 +354,9 @@ export default function GroupPage({ navigation }: any) {
                 {categories?.length > 0 ? (
                   categories.map((item: any) => (
                     <CategoryButton
-                      categoryName={item.categoryName}
+                      categoryName={item.name}
                       onPress={() => {
-                        setFilterPosts(item.categoryName);
+                        setFilterPosts(item.name);
                       }}
                       filter={filterPosts}
                     />
@@ -280,17 +369,27 @@ export default function GroupPage({ navigation }: any) {
             <GroupPagePostList>
               {posts?.length > 0 ? (
                 posts?.map((item: any) => {
-                  if (filterPosts === item.categoryName) {
+                  if (filterPosts === item.categoryName && item.type === 'NORMAL') {
                     return (
                       <PostCard
                         nameUser={item.nameUser}
-                        imageUser={item.imageUser}
-                        postContent={item.postContent}
+                        imageUser={duckImage}
+                        postContent={item.input}
                         numComments={item.numComments}
-                        date={item.date}
-                        originGroup={item.originGroup}
+                        date={formatRelativeDate(item.createdAt)}
+                        onPressFix={() => fixActions(item.id, item.isPinned)}
+                        onPressPost={() => onPressPostAction(item.id)}
                         dotsMenu
-                        postId="123"
+                        postId={item.id}
+                      />
+                    );
+                  }
+                  if (filterPosts === item.categoryName && item.type === 'EVENT') {
+                    return (
+                      <EventCard
+                        date={formatRelativeDate(item.createdAt)}
+                        title={item.title}
+                        description={item.input}
                       />
                     );
                   }
@@ -299,19 +398,38 @@ export default function GroupPage({ navigation }: any) {
                 <View />
               )}
             </GroupPagePostList>
-            <GroupPageAddPostButton onPress={() => {}}>
+            <GroupPageAddPostButton
+              onPress={() => {
+                console.log('groupId no GroupPage', groupId);
+                navigation.navigate('NewPost', { groupId });
+              }}>
               <Image source={addPost} />
             </GroupPageAddPostButton>
           </>
         ) : classesSelect ? (
-          <GroupPageLessonsContainer>
-            {fakeLessonsCard?.length > 0 ? (
-              fakeLessonsCard?.map((item: any) => (
-                <LessonsCard date={item.date} time={item.time} title={item.title} />
-              ))
+          <GroupPageLessonsContainer style={{ flex: 1 }}>
+            {posts?.length > 0 ? (
+              posts?.map((item: any) => {
+                if (item.type === 'CLASS') {
+                  return (
+                    <LessonsCard
+                      date={formatDateTime(item.schedule)}
+                      title={item.title}
+                      urlLive={item.urlLive}
+                    />
+                  );
+                }
+              })
             ) : (
               <View />
             )}
+            <GroupPageAddPostButton
+              onPress={() => {
+                console.log('groupId no GroupPage', groupId);
+                navigation.navigate('NewLesson', { groupId });
+              }}>
+              <Image source={addPost} />
+            </GroupPageAddPostButton>
           </GroupPageLessonsContainer>
         ) : (
           <>

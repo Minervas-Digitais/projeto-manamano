@@ -9,6 +9,10 @@ export class CreateNotificationDto {
   @IsString()
   recipientId: string;
 
+  @IsOptional()
+  @IsString()
+  groupId: string;
+
   @IsString()
   body: string;
 

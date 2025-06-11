@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, Text, View, Image, ScrollView, Alert } from 'react-native';
+import { useFonts } from 'expo-font';
 import {
   Container,
   Input,
@@ -9,16 +10,16 @@ import {
   AddCategoryButton,
   ContentContainer,
 } from './CreateGroupStyle';
-import { useFonts } from 'expo-font';
-import { storage } from '../../pages/SignIn/SignIn';
+import { storage } from '../SignIn/SignIn';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import {
   ConfigNotificationHeaderContainer,
   ConfigNotificationTitle,
 } from '../Notification/NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
+import api from '../../services/api';
 
-export default function CreateGroup() {
+export default function CreateGroup({ navigation }: any) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -36,17 +37,6 @@ export default function CreateGroup() {
     const token = storage.getString('accessToken');
     if (token) setAccessToken(token);
   }, []);
-
-  const handleAddCategory = () => {
-    if (newCategory.trim()) {
-      setCategories([...categories, newCategory]);
-      setNewCategory('');
-    }
-  };
-
-  const handleRemoveCategory = (category: string) => {
-    setCategories(categories.filter((cat) => cat !== category));
-  };
 
   const createCategory = async (name: string, type: string, groupId: string) => {
     if (!accessToken) {
@@ -80,6 +70,7 @@ export default function CreateGroup() {
   };
 
   const handleCreateGroup = async () => {
+    const loggedId = storage.getString('loggedId');
     if (!groupName.trim() || !groupDescription.trim()) {
       Alert.alert('Error', 'Please fill in both the group name and description.');
       return;
@@ -109,24 +100,42 @@ export default function CreateGroup() {
 
       const groupData = await groupResponse.json();
       const groupId = groupData.id;
+      const { inviteCode } = groupData;
+      console.log('inviteCode: ', inviteCode);
       console.log('Group ID:', groupId);
       Alert.alert('Success', `Group created successfully! ID: ${groupId}`);
 
-      // Add default categories
       const defaultCategories = [
         { name: 'Geral', type: 'NORMAL' },
-        { name: 'Aulas', type: 'CLASS' },
+        { name: 'Avisos', type: 'NORMAL' },
         { name: 'Eventos', type: 'EVENT' },
+        { name: 'Aulas', type: 'CLASS' },
       ];
 
       for (const { name, type } of defaultCategories) {
         await createCategory(name, type, groupId);
       }
-
-      // Add user-defined categories
-      for (const category of categories) {
-        await createCategory(category, 'NORMAL', groupId);
-      }
+      api
+        .post(
+          '/participant',
+          { groupId, userId: loggedId, role: 'MODERATOR', inviteCode },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        )
+        .then((res) => {
+          console.log('SUCESSO', res.data);
+          navigation.navigate('Home');
+        })
+        .catch((error) => {
+          if (error.response) {
+            console.log('ERRO', error.response.status, error.response.data);
+          } else {
+            console.log('ERRO DESCONHECIDO', error.message);
+          }
+        });
     } catch (error) {
       console.error('Error creating group or categories:', error);
       Alert.alert('Error', 'Failed to create group or categories. Please try again.');
@@ -154,7 +163,14 @@ export default function CreateGroup() {
           <Input
             value={groupName}
             onChangeText={setGroupName}
-            style={{ outline: 'none', boxShadow: 'none', backgroundColor: 'transparent',  borderColor: '#5e6366', borderRadius: 5, borderWidth: 1}}
+            style={{
+              outline: 'none',
+              boxShadow: 'none',
+              backgroundColor: 'transparent',
+              borderColor: '#5e6366',
+              borderRadius: 5,
+              borderWidth: 1,
+            }}
           />
 
           <Text style={{ padding: 4, fontSize: 12, color: '#5E6366' }}>Descrição do Grupo</Text>
@@ -162,42 +178,15 @@ export default function CreateGroup() {
             value={groupDescription}
             onChangeText={setGroupDescription}
             multiline
-            style={{ outline: 'none', boxShadow: 'none', backgroundColor: 'transparent',  borderColor: '#5e6366', borderRadius: 5, borderWidth: 1}}
+            style={{
+              outline: 'none',
+              boxShadow: 'none',
+              backgroundColor: 'transparent',
+              borderColor: '#5e6366',
+              borderRadius: 5,
+              borderWidth: 1,
+            }}
           />
-
-          <Text style={{ padding: 4, fontSize: 12, color: '#5E6366' }}>Categorias</Text>
-          <CategoryContainer style={{ marginBottom: 15, backgroundColor: 'transparent',  borderColor: '#5e6366', borderRadius: 5, borderWidth: 1}}>
-            <Input
-              value={newCategory}
-              onChangeText={setNewCategory}
-              onKeyPress={({ nativeEvent }) => {
-                if (nativeEvent.key === 'Enter') {
-                  handleAddCategory();
-                }
-              }}
-              style={{ marginBottom: 0, outline: 'none', boxShadow: 'none', backgroundColor: 'transparent', borderRadius: 5}}
-            />
-            <AddCategoryButton onPress={handleAddCategory}>
-              <Text style={{ fontSize: 18, color: '#AAAAAA' }}>+</Text>
-            </AddCategoryButton>
-          </CategoryContainer>
-
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            <Category>Geral</Category>
-            <Category>Aulas</Category>
-            <Category>Eventos</Category>
-            {categories.map((category, index) => (
-              <Category key={index}>
-                {category}
-                <TouchableOpacity
-                  onPress={() => handleRemoveCategory(category)}
-                  style={{ marginLeft: 8 }}
-                >
-                  <Text>-</Text>
-                </TouchableOpacity>
-              </Category>
-            ))}
-          </View>
 
           <View style={{ alignItems: 'center', marginTop: 50 }}>
             <ButtonCustom
