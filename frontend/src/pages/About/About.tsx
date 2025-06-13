@@ -11,6 +11,9 @@ export default function About() {
   const pedroMateusDev = require('../../assets/pedroMateus.png');
   const mellaniePereiraDev = require('../../assets/mellaniePereira.png');
   const nicolasBastosDev = require('../../assets/nicolasBastos.png');
+  const talesMoreiraDev = require('../../assets/talesMoreira.png');
+  const jhonataMonteiroDev = require('../../assets/jhonataMonteiro.png');
+  const guilhermeSobreiraDev = require('../../assets/guilhermeSobreira.png');
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -42,6 +45,25 @@ export default function About() {
       name: 'Nicolas Bastos',
       image: nicolasBastosDev,
       linkedin: 'https://www.linkedin.com/in/nicolassb/',
+      description: 'Colaborou com a fase de desenvolvimento do aplicativo.',
+    },
+    {
+      name: 'Tales Moreira',
+      image: talesMoreiraDev,
+      linkedin: 'https://www.linkedin.com/in/tales-moreira-85b5491a6/',
+      description: 'Colaborou com a fase de desenvolvimento do aplicativo.',
+    },
+    {
+      name: 'Jhonata Monteiro',
+      image: jhonataMonteiroDev,
+      linkedin: 'https://www.linkedin.com/in/jhonata-monteiro-17b312300/',
+      description: 'Colaborou com a fase de desenvolvimento do aplicativo.',
+    },
+    {
+      name: 'Guilherme de Carvalho',
+      image: guilhermeSobreiraDev,
+      linkedin:
+        'https://www.linkedin.com/in/guilherme-vasconcellos-sobreira-de-carvalho-b115ab260/',
       description: 'Colaborou com a fase de desenvolvimento do aplicativo.',
     },
   ];
