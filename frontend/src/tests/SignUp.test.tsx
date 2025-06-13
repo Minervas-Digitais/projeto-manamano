@@ -66,4 +66,24 @@ describe("SignUp", () => {
 
         expect(mockedNavigate).toHaveBeenLastCalledWith("SignIn");
     });
+
+    it("Deve exibir um alerta de erro se o email ou celular ja estiver em uso", async () => {
+        apiPostMock.mockResolvedValue({ data: { code: 'P2002' } });
+        const { getByText, getByLabelText } = render(<SignUp navigation={{ navigate: mockedNavigate }} />);
+
+        fireEvent.changeText(getByLabelText('Nome Completo'), 'Usuário Repetido');
+        fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 91234-5678');
+        fireEvent.changeText(getByLabelText('Senha'), 'outraSenha');
+        fireEvent.changeText(getByLabelText('E-mail'), 'repetido@teste.com');
+
+        fireEvent.press(getByText('Cadastrar'));
+
+        await waitFor(() => {
+            expect(apiPostMock).toHaveBeenCalledTimes(1);
+        });
+
+        expect(global.alert).toHaveBeenCalledWith("Não foi possível criar uma conta. O e-mail ou o celular já está associado a outra conta!");
+
+        expect(mockedNavigate).not.toHaveBeenCalled();
+    });
 })
