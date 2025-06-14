@@ -12,7 +12,6 @@ import { createParticipantDto, createTestParticipant, getUserToken } from './tes
 import { AuthService } from 'src/auth/auth.service';
 import { CreateParticipantDto } from 'src/participant/dto/create-participant.dto';
 import { RoleType } from '@prisma/client';
-import { repeat } from 'rxjs';
 
 describe('Participant', () => {
     let app: INestApplication;
