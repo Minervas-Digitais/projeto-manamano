@@ -12,6 +12,7 @@ import { createParticipantDto, createTestParticipant, getUserToken } from './tes
 import { AuthService } from 'src/auth/auth.service';
 import { CreateParticipantDto } from 'src/participant/dto/create-participant.dto';
 import { RoleType } from '@prisma/client';
+import { repeat } from 'rxjs';
 
 describe('Participant', () => {
     let app: INestApplication;
@@ -125,6 +126,24 @@ describe('Participant', () => {
             expect(response.statusCode).toBe(404)
             expect(response.body.message).toBe('Código de convite inválido.')
             expect(response.body.error).toBe('Not Found')
+        })
+
+        it("deve entrar erro 409 caso já esteja no grupo", async () => {
+            const dto: CreateParticipantDto = await createParticipantDto(prismaService)
+
+            await request(app.getHttpServer())
+                .post('/participant')
+                .set('Authorization', 'Bearer ' + userToken)
+                .send(dto);
+
+
+            const response = await request(app.getHttpServer())
+                .post('/participant')
+                .set('Authorization', 'Bearer ' + userToken)
+                .send(dto);
+
+            expect(response.status).toBe(409)
+            expect(response.body.message).toBe("Você já está neste grupo.")
         })
 
         it("deve retornar erro 401 caso o jwt token for invalido", async () => {

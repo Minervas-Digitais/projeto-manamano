@@ -19,7 +19,7 @@ describe('Category', () => {
     let userToken: string;
     let authService: AuthService;
 
-    beforeAll(async () => {;
+    beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [CategoryModule, GroupModule, UserModule, AuthModule],
         })
@@ -143,8 +143,8 @@ describe('Category', () => {
 
 
 
-            expect(response.status).toBe(200)
-            expect(response.body).toEqual([])
+            expect(response.status).toBe(404)
+            expect(response.body.message).toBe('Não há categorias cadastradas.')
         })
 
         it('deve retornar 401 se o token JWT for inválido ou ausente', async () => {
@@ -187,7 +187,7 @@ describe('Category', () => {
             expect(response.body[0].groupId).toBe(groupId);
         })
 
-        it("deve retornar [] caso o id do grupo for invalido", async () => {
+        it("deve retornar 404 caso o id do grupo for invalido", async () => {
             const groupId = 'invalidId';
 
             const response = await request(app.getHttpServer())
@@ -195,19 +195,19 @@ describe('Category', () => {
                 .set('Authorization', 'Bearer ' + userToken)
 
 
-            expect(response.status).toBe(200)
-            expect(response.body).toEqual([])
+            expect(response.status).toBe(404)
+            expect(response.body.message).toEqual('Não há categorias cadastradas.')
         })
 
-        it("deve retornar [] caso o grupo nao tenha categorias", async () => {
+        it("deve retornar 404 caso o grupo nao tenha categorias", async () => {
             const groupId = createTestGroup(prismaService, 'grupo teste categoria');
 
             const response = await request(app.getHttpServer())
                 .get(`/category/group/${groupId}`)
                 .set('Authorization', 'Bearer ' + userToken)
 
-            expect(response.status).toBe(200)
-            expect(response.body).toEqual([])
+            expect(response.status).toBe(404)
+            expect(response.body.message).toEqual('Não há categorias cadastradas.')
         })
 
         it('deve retornar 401 se o token JWT for inválido ou ausente', async () => {

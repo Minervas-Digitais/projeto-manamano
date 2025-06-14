@@ -36,6 +36,7 @@ describe('User', () => {
         prismaService = moduleFixture.get<PrismaService>(PrismaService);
         authService = moduleFixture.get<AuthService>(AuthService);
 
+        await prismaService.notification.deleteMany({});
         await prismaService.file.deleteMany({});
         await prismaService.post.deleteMany({});
         await prismaService.user.deleteMany({});

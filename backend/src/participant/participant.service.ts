@@ -14,6 +14,7 @@ export class ParticipantService {
           inviteCode: createParticipantDto.inviteCode,
         },
       });
+
       if (!group) {
         throw new NotFoundException('Código de convite inválido.');
       }
@@ -26,6 +27,7 @@ export class ParticipantService {
           },
         },
       });
+
       if (participant) {
         throw new ConflictException('Você já está neste grupo.');
       }
@@ -48,7 +50,7 @@ export class ParticipantService {
   async findAll() {
     try {
       const participants = await this.prismaService.participant.findMany();
-      if (participants.length < 1) {
+      if (participants.length === 0) {
         throw new NotFoundException('Não há usuários em grupos.');
       }
       return participants;
@@ -85,7 +87,7 @@ export class ParticipantService {
         },
       });
 
-      if (groups.length < 1) {
+      if (groups.length === 0) {
         throw new NotFoundException('Você não está em nenhum grupo.');
       }
 
@@ -142,7 +144,7 @@ export class ParticipantService {
           },
         },
       });
-      if (users.length < 1) {
+      if (users.length === 0) {
         throw new NotFoundException('Não há usuários neste grupo.');
       }
       return users;
@@ -172,10 +174,7 @@ export class ParticipantService {
 
   async update(id: string, updateParticipantDto: UpdateParticipantDto) {
     try {
-      const participant = await this.findOne(id);
-      if (typeof participant === 'object' && participant instanceof Error) {
-        return participant;
-      }
+      await this.findOne(id);
       return await this.prismaService.participant.update({
         where: {
           userId_groupId: {
@@ -192,10 +191,7 @@ export class ParticipantService {
 
   async remove(id: string) {
     try {
-      const participant = await this.findOne(id);
-      if (typeof participant === 'object' && participant instanceof Error) {
-        return participant;
-      }
+      await this.findOne(id);
       return await this.prismaService.participant.delete({
         where: {
           userId_groupId: {
