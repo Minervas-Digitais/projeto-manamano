@@ -14,7 +14,8 @@ import NotificationCard from '../../components/NotificationCard/NotificationCard
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import ModalOptionsNotification from '../../components/ModalOptionsNotification/ModalOptionsNotification';
-import DeleteConfirmation from '../../components/DeleteConfirmation/DeleteConfirmation';
+import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAllConfirmation';
+import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');
@@ -22,12 +23,15 @@ export default function Notification({ navigation }: any) {
 
   const [notification, setNotification] = useState([]);
   const [display, setDisplay] = useState(false);
+  const [accessTokenState, setAccessTokenState] = useState('');
 
   const fetchNotifications = useCallback(() => {
     const loggedId = storage.getString('loggedId');
     const accessToken = storage.getString('accessToken');
 
     if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+
       api
         .get(`notifications/user/${loggedId}`, {
           headers: {
@@ -58,24 +62,36 @@ export default function Notification({ navigation }: any) {
   });
   if (!fontsLoaded) return null;
 
-  const onPressActions = (body: string, id: string, type: string) => {
+  const onPressActions = (body: string, id: string, type: string, idContent?: string) => {
     storage.set('body', body);
     setNotification((prev) =>
       prev.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
     );
-    api.patch(`notifications/${id}`, { isRead: true });
+    api
+      .patch(
+        `notifications/${id}`,
+        { isRead: true },
+        {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        },
+      )
+      .then((res) => console.log(JSON.stringify(res.data)))
+      .catch((err) => console.log('Erro ao atualizar a notificação:', err));
 
-    if (type !== 'COMMENT') {
+    if (type === 'WARNING') {
       navigation.navigate('NotificationPage');
+    }
+    if (type !== 'WARNING') {
+      navigation.navigate('Post', { postId: idContent });
     }
   };
 
-  const onPressDeleteConfirm = (id: any) => {};
-
   return (
     <>
-      <DeleteConfirmation
-        text="Tem certeza que deseja excluir as notificações?"
+      <DeleteOneConfirmation
+        text="Tem certeza que deseja excluir a notificação?"
         onPress={() => {}}
       />
 
@@ -97,7 +113,7 @@ export default function Notification({ navigation }: any) {
                   user={item.senderName}
                   group={item.groupName}
                   image={duckPhoto}
-                  onPress={() => onPressActions(item.body, item.id, item.type)}
+                  onPress={() => onPressActions(item.body, item.id, item.type, item.idContent)}
                   type={item.type}
                   body={item.body}
                   date={item.createdAt}

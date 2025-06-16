@@ -12,6 +12,8 @@ import {
 } from './PostCardStyle';
 import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
 import ModalOptions from '../ModalOptions/ModalOptions';
+import api from '../../services/api';
+import { storage } from '../../pages/SignIn/SignIn';
 
 export default function PostCard({
   nameUser,
@@ -28,6 +30,7 @@ export default function PostCard({
   fix,
   postId,
   onPressPost,
+  onPressFix,
 }: any) {
   const createDeepLink = () => `manamano://post/${postId}`;
   const onShare = async () => {
@@ -57,7 +60,7 @@ export default function PostCard({
   }
   return (
     <PostCardContainer shadowColor={fix} onPress={onPressPost}>
-      {modalOptions ? <ModalOptions onShare={onShare} /> : ''}
+      {modalOptions ? <ModalOptions onShare={onShare} onPressFix={onPressFix} fixed={fix} /> : ''}
       <PostCardSpaceBetween style={{ position: 'relative' }}>
         {tag ? (
           <PostCardTag>

@@ -162,7 +162,7 @@ export default function NotificationCard({
             </NotificationTextContainerWarning>
             <NotificationTextContainerWarning height={39}>
               <NotificationTextGrey font="inter-semiBold">
-                Uma pubçicação foi fixada no grupo{' '}
+                Uma publicação foi fixada no grupo{' '}
                 <NotificationTextRed font="inter-semiBold" numberOfLines={1}>
                   {group}
                 </NotificationTextRed>

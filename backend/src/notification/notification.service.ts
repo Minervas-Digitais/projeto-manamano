@@ -7,11 +7,60 @@ import { CreateNotificationDto } from './dto/create-notification.dto';
 export class NotificationService {
   constructor(private prisma: PrismaService) {}
 
-  async createNotification(dto: CreateNotificationDto, userRole: string): Promise<Notification> {
+  async createNotification(
+    dto: CreateNotificationDto,
+    userRole: string,
+  ): Promise<Notification | { count: number }> {
     if (dto.type === NotificationType.WARNING && userRole !== 'ADMIN') {
-      throw new ForbiddenException('Apenas ADMIN podem criar notificações do tipo WARNING');
+      throw new ForbiddenException(
+        'Apenas ADMIN podem criar notificações do tipo WARNING',
+      );
+    }
+    if (dto.type === NotificationType.FIXED && dto.recipientId) {
+      return this.prisma.notification.create({
+        data: {
+          senderId: dto.senderId,
+          recipientId: dto.recipientId,
+          body: dto.body,
+          type: dto.type,
+          groupName: dto.groupName || null,
+          senderName: dto.senderName || null,
+          idContent: dto.idContent || null,
+        },
+      });
     }
 
+    if (
+      dto.type === NotificationType.FIXED &&
+      !dto.recipientId &&
+      dto.groupId
+    ) {
+      const participants = await this.prisma.participant.findMany({
+        where: { groupId: dto.groupId },
+        select: { userId: true },
+      });
+
+      if (participants.length === 0) {
+        throw new Error('Não há participantes neste grupo para notificar.');
+      }
+
+      const notificationsData = participants.map((p) => ({
+        senderId: dto.senderId,
+        recipientId: p.userId,
+        body: dto.body,
+        type: dto.type,
+        groupName: dto.groupName || null,
+        senderName: dto.senderName || null,
+        idContent: dto.idContent || null,
+      }));
+
+      const result = await this.prisma.notification.createMany({
+        data: notificationsData,
+      });
+
+      return { count: result.count };
+    }
+    // Caso padrão
     const senderExists = await this.prisma.user.findUnique({ where: { id: dto.senderId } });
     if (!senderExists) {
         throw new NotFoundException('Remetente não encontrado');
@@ -21,7 +70,6 @@ export class NotificationService {
     if (!recipientExists){
         throw new NotFoundException('Destinatário não encontrado');
     } 
-
     return this.prisma.notification.create({
       data: {
         senderId: dto.senderId,
@@ -31,7 +79,7 @@ export class NotificationService {
         groupName: dto.groupName || null,
         senderName: dto.senderName || null,
         idContent: dto.idContent || null,
-      } as CreateNotificationDto,
+      },
     });
   }
 
@@ -74,11 +122,12 @@ export class NotificationService {
     });
   }
 
-  async createGlobalNotification(dto: CreateNotificationDto): Promise<{ count: number }> {
+  async createGlobalNotification(
+    dto: CreateNotificationDto,
+  ): Promise<{ count: number }> {
     const users = await this.prisma.user.findMany({
       where: { id: { not: dto.senderId } },
     });
-
     if (users.length === 0) {
         throw new NotFoundException('Não há usuários destinatários para notificação global');
     }
@@ -94,7 +143,7 @@ export class NotificationService {
 
     return this.prisma.notification.createMany({ data });
   }
-  
+
   async deleteAllNotifications(userId: string): Promise<{ count: number }> {
     const userExists = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!userExists) {
