@@ -10,11 +10,11 @@ import { AuthModule } from "src/auth/auth.module";
 import { AuthService } from "src/auth/auth.service";
 
 describe("Comment", () => {
-    let app :INestApplication;
+    let app: INestApplication;
     let prismaService: PrismaService;
     let userToken: string
     let authService: AuthService;
-    
+
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -36,7 +36,7 @@ describe("Comment", () => {
         it("Deve criar um novo comentario", async () => {
             const user = await createTestUser(prismaService);
             const post = await createTestPost(prismaService);
-            
+
             const commentDTO: CreateCommentDto = {
                 content: "Test comment",
                 postId: post,
@@ -47,7 +47,7 @@ describe("Comment", () => {
                 .post("/comment")
                 .set("Authorization", "Bearer " + userToken)
                 .send(commentDTO)
-            
+
             expect(response.status).toBe(201);
         })
 
@@ -95,24 +95,24 @@ describe("Comment", () => {
             const inDb = await prismaService.category.findUnique({ where: { id: comment.id } });
             expect(inDb).toBeNull();
         })
-
-        it('deve retornar 404 ao tentar remover uma categoria inexistente', async () => {
-            const commentId = 'invalidId';
-
-            const response = await request(app.getHttpServer())
-                .delete(`/category/${commentId}`)
-                .set('Authorization', `Bearer ${userToken}`);
-
-            expect(response.status).toBe(404);
-            expect(response.body.message).toBe('Cannot DELETE /category/invalidId');
-        });
-
+        
         it('deve retornar 401 se o token JWT for inválido ou ausente', async () => {
             const response = await request(app.getHttpServer())
                 .delete('/comment/qualquer-id');
 
             expect(response.status).toBe(401);
             expect(response.body.message).toBe('Unauthorized');
+        });
+
+        it('deve retornar 404 ao tentar remover um comentário inexistente', async () => {
+            const nonExistentCommentId = 'invalido';
+
+            const response = await request(app.getHttpServer())
+                .delete(`/comment/${nonExistentCommentId}`)
+                .set('Authorization', `Bearer ${userToken}`);
+
+            expect(response.status).toBe(404);
+            expect(response.body.message).toBe('Comentário não encontrado.');
         });
     })
 

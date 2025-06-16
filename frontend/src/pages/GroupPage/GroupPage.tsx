@@ -6,7 +6,6 @@ import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { StyleSheet, View, Image, Dimensions, Button } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-
 import { storage } from '../SignIn/SignIn';
 import {
   GroupPageAddPostButton,

@@ -5,15 +5,12 @@ import { useFonts } from 'expo-font';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   ConfigNotificationContainer,
-  ConfigNotificationHeaderContainer,
-  ConfigNotificationTitle,
   NotificationInfoContainer,
   NotificationInfoText,
   NotificationBodyContainer,
 } from './NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import NotificationCard from '../../components/NotificationCard/NotificationCard';
-import BackButton from '../../components/BackButton/BackButton';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import ModalOptionsNotification from '../../components/ModalOptionsNotification/ModalOptionsNotification';
@@ -21,7 +18,6 @@ import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAll
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 
 export default function Notification({ navigation }: any) {
-  const noNotification = require('../../assets/no-notification-icon.svg');
   const duckPhoto = require('../../assets/duck.png');
   const dotsMenuIcon = require('../../assets/dotsMenuBig.svg');
 
@@ -108,7 +104,6 @@ export default function Notification({ navigation }: any) {
             <Image source={dotsMenuIcon} />
           </TouchableOpacity>
         </ConfigNotificationHeaderContainer>
-
         <NotificationBodyContainer>
           <NotificationInfoContainer>
             {notification?.length > 0 ? (

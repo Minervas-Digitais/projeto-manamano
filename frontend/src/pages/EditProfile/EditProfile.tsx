@@ -1,9 +1,11 @@
 /* eslint-disable global-require */
-import { storage } from '../../pages/SignIn/SignIn';
 import { useFonts } from 'expo-font';
 import { useRef, useState, useEffect } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
+import { format } from 'date-fns';
+import React from 'react';
+import { storage } from '../SignIn/SignIn';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import {
@@ -23,7 +25,6 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { district, ethnicity, expertise } from './EditProfileData';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
-import { format } from 'date-fns';
 
 export default function EditProfile() {
   const {
@@ -48,15 +49,15 @@ export default function EditProfile() {
 
   const onSubmit = async (data: any) => {
     try {
-      console.log("Form submitted with data:", data);
-  
+      console.log('Form submitted with data:', data);
+
       // Convert birthday to ISO string (if it's not already)
       if (data.birthday) {
         const [day, month, year] = data.birthday.split('/'); // Split the date string into day, month, year
         const formattedBirthday = new Date(`${year}-${month}-${day}`).toISOString(); // Create a new Date object and convert to ISO string
         data.birthday = formattedBirthday;
       }
-  
+
       const token = storage.getString('accessToken');
       const userId = storage.getString('loggedId');
       if (!token || !userId) {
@@ -64,7 +65,7 @@ export default function EditProfile() {
         alert('No access token or user ID found. Please sign in again.');
         return;
       }
-  
+
       console.log('Sending request to API...');
       const response = await fetch(`http://localhost:3000/user/${userId}`, {
         method: 'PATCH',
@@ -74,23 +75,22 @@ export default function EditProfile() {
         },
         body: JSON.stringify(data),
       });
-  
+
       console.log('API response:', response);
-  
+
       if (!response.ok) {
         const errorResponse = await response.json();
         console.error('Failed to save data:', errorResponse);
         alert('Failed to save data');
         return;
       }
-  
+
       alert('Changes saved successfully!');
     } catch (error) {
       console.error('Error saving user data:', error);
       alert('There was an error saving your changes. Please try again.');
     }
   };
-  
 
   const cpfInputRef = useRef(null);
   const phoneInputRef = useRef(null);
@@ -106,7 +106,7 @@ export default function EditProfile() {
   };
 
   const [sideMenu, setSideMenu] = useState(true);
-  const [profileData, setProfileData] = useState<any>(null); // State to store the fetched profile data
+  const [profileData, setProfileData] = useState<any>(null);
 
   const menu = require('../../assets/menuw-icon.svg');
   const editButton = require('../../assets/edit-button.svg');
@@ -355,26 +355,30 @@ export default function EditProfile() {
             />
             {errors.enterprise && <ErrorWarning errorText="Campo obrigatório" />}
             <ButtonCustom
-              onPress={handleSubmit((data) => {
-                console.log('Form is being submitted...');
-                console.log('handleSubmit called with data:', data);
-                onSubmit(data); // Directly call onSubmit after handleSubmit
-              }, (errors) => {
-                const errorMessages = Object.values(errors).map(error => error.message).join('\n');
+              onPress={handleSubmit(
+                (data) => {
+                  console.log('Form is being submitted...');
+                  console.log('handleSubmit called with data:', data);
+                  onSubmit(data); // Directly call onSubmit after handleSubmit
+                },
+                (errors) => {
+                  const errorMessages = Object.values(errors)
+                    .map((error) => error.message)
+                    .join('\n');
 
-                if (errorMessages) {
-                  alert('Erros:\n' + errorMessages);
-                } else {
-                  alert('A submissão falhou por erros desconhecidos.');
-                }
+                  if (errorMessages) {
+                    alert(`Erros:\n${errorMessages}`);
+                  } else {
+                    alert('A submissão falhou por erros desconhecidos.');
+                  }
 
-                console.log('Form submission failed due to validation errors:', errors);
-              })}
+                  console.log('Form submission failed due to validation errors:', errors);
+                },
+              )}
               backColor="#32936F"
               fontColor="white"
               text="Salvar"
             />
-
           </BottomPart>
         </View>
       </WhiteBackground>

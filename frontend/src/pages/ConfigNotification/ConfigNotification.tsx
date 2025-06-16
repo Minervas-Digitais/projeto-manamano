@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
-
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
+import React from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import NotificationButton from '../../components/NotificationButton/NotificationButton';
 

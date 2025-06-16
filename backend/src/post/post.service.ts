@@ -108,10 +108,7 @@ export class PostService {
 
   async update(id: string, updatePostDto: UpdatePostDto) {
     try {
-      const post = await this.findOne(id);
-      if (typeof post === 'object' && post instanceof Error) {
-        return post;
-      }
+      await this.findOne(id);
       return await this.prismaService.post.update({
         where: { id },
         data: updatePostDto,
@@ -123,10 +120,7 @@ export class PostService {
 
   async remove(id: string) {
     try {
-      const post = await this.findOne(id);
-      if (typeof post === 'object' && post instanceof Error) {
-        return post;
-      }
+      await this.findOne(id);
       return await this.prismaService.post.delete({
         where: { id },
       });
@@ -187,10 +181,7 @@ export class PostService {
 
   async pinPost(postId: string) {
     try {
-      const post = await this.findOne(postId);
-      if (typeof post === 'object' && post instanceof Error) {
-        return post;
-      }
+      await this.findOne(postId);
       return await this.prismaService.post.update({
         where: { id: postId },
         data: { isPinned: true },
@@ -202,10 +193,7 @@ export class PostService {
 
   async unpinPost(postId: string) {
     try {
-      const post = await this.findOne(postId);
-      if (typeof post === 'object' && post instanceof Error) {
-        return post;
-      }
+      await this.findOne(postId);
       return await this.prismaService.post.update({
         where: { id: postId },
         data: { isPinned: false },

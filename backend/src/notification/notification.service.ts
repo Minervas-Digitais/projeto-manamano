@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Notification, NotificationType } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -16,7 +16,6 @@ export class NotificationService {
         'Apenas ADMIN podem criar notificações do tipo WARNING',
       );
     }
-
     if (dto.type === NotificationType.FIXED && dto.recipientId) {
       return this.prisma.notification.create({
         data: {
@@ -61,8 +60,16 @@ export class NotificationService {
 
       return { count: result.count };
     }
-
     // Caso padrão
+    const senderExists = await this.prisma.user.findUnique({ where: { id: dto.senderId } });
+    if (!senderExists) {
+        throw new NotFoundException('Remetente não encontrado');
+    }
+
+    const recipientExists = await this.prisma.user.findUnique({ where: { id: dto.recipientId } });
+    if (!recipientExists){
+        throw new NotFoundException('Destinatário não encontrado');
+    } 
     return this.prisma.notification.create({
       data: {
         senderId: dto.senderId,
@@ -77,6 +84,11 @@ export class NotificationService {
   }
 
   async getNotificationsForUser(userId: string): Promise<Notification[]> {
+    const userExists = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!userExists) {
+        throw new NotFoundException('Usuário não encontrado');
+    }
+    
     return this.prisma.notification.findMany({
       where: { recipientId: userId },
       orderBy: { createdAt: 'desc' },
@@ -84,6 +96,13 @@ export class NotificationService {
   }
 
   async markAsRead(notificationId: string): Promise<Notification> {
+    const notification = await this.prisma.notification.findUnique({
+        where: { id: notificationId },
+    });
+    if (!notification) {
+        throw new NotFoundException('Notificação não encontrada');
+    }
+
     return this.prisma.notification.update({
       where: { id: notificationId },
       data: { isRead: true },
@@ -91,6 +110,13 @@ export class NotificationService {
   }
 
   async deleteNotification(notificationId: string): Promise<Notification> {
+    const notification = await this.prisma.notification.findUnique({
+        where: { id: notificationId },
+    });
+    if (!notification) {
+        throw new NotFoundException('Notificação não encontrada');
+    }
+
     return this.prisma.notification.delete({
       where: { id: notificationId },
     });
@@ -102,8 +128,11 @@ export class NotificationService {
     const users = await this.prisma.user.findMany({
       where: { id: { not: dto.senderId } },
     });
-
-    const data = users.map((user) => ({
+    if (users.length === 0) {
+        throw new NotFoundException('Não há usuários destinatários para notificação global');
+    }
+    
+    const data = users.map(user => ({
       senderId: dto.senderId,
       recipientId: user.id,
       body: dto.body,
@@ -116,6 +145,11 @@ export class NotificationService {
   }
 
   async deleteAllNotifications(userId: string): Promise<{ count: number }> {
+    const userExists = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!userExists) {
+        throw new NotFoundException('Usuário não encontrado');
+    }
+
     const deletedNotifications = await this.prisma.notification.deleteMany({
       where: { recipientId: userId },
     });
@@ -124,6 +158,11 @@ export class NotificationService {
   }
 
   async markAllAsRead(userId: string): Promise<{ count: number }> {
+    const userExists = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!userExists) {
+        throw new NotFoundException('Usuário não encontrado');
+    }
+
     const updatedNotifications = await this.prisma.notification.updateMany({
       where: { recipientId: userId, isRead: false },
       data: { isRead: true },

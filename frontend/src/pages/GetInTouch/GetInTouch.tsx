@@ -2,7 +2,7 @@
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
@@ -114,11 +114,14 @@ export default function GetInTouch() {
             text="Enviar"
             rightIcon={arrowIcon}
           />
-          <RedText>
+          <RedText font="inter-regular">
             * Sua mensagem será
-            <SemiBoldRedText> encaminhada </SemiBoldRedText>
-            para o <SemiBoldRedText>e-mail do ManaMano.</SemiBoldRedText> Portanto, caso necessário,{' '}
-            <SemiBoldRedText>confira seu e-mail para obter respostas. </SemiBoldRedText>
+            <SemiBoldRedText font="inter-semibold"> encaminhada </SemiBoldRedText>
+            para o <SemiBoldRedText font="inter-semibold">e-mail do ManaMano.</SemiBoldRedText>{' '}
+            Portanto, caso necessário,{' '}
+            <SemiBoldRedText font="inter-semibold">
+              confira seu e-mail para obter respostas.{' '}
+            </SemiBoldRedText>
           </RedText>
         </SignInInputContainer>
       </SignInForm>

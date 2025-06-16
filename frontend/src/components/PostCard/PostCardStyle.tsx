@@ -1,4 +1,5 @@
 /* eslint-disable import/prefer-default-export */
+import { Platform } from 'react-native';
 import styled from 'styled-components/native';
 
 export const PostCardContainer = styled.TouchableOpacity<{ shadowColor?: string }>`
@@ -9,7 +10,17 @@ export const PostCardContainer = styled.TouchableOpacity<{ shadowColor?: string 
   padding: 0px 15px 10px 20px;
   gap: 5px;
   border-radius: 15px;
-  box-shadow: 0px 3px 6px ${(prop) => (prop.shadowColor ? '#ef3f3688' : 'rgba(0, 0, 0, 0.1)')};
+  ${Platform.select({
+    ios: `
+      shadow-color: ${(props) => (props.shadowColor ? '#ef3f36' : 'rgba(0, 0, 0, 0.1)')};
+      shadow-offset: 0px 3px;
+      shadow-opacity: 0.5;
+      shadow-radius: 6px;
+    `,
+    android: `
+      elevation: 3;
+    `,
+  })}
   border: solid 1px #d8d7d7;
 `;
 
@@ -42,12 +53,8 @@ export const PostCardIcons = styled.View`
   gap: 3px;
 `;
 
-export const PostCardImage = styled.Image<{ width?: any; height?: any }>`
-  width: ${(prop) => (prop.width ? prop.width : 'auto')};
-  height: ${(prop) => (prop.height ? prop.height : 'auto')};
-`;
 export const PostCardImageUser = styled.Image`
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 20px;
 `;

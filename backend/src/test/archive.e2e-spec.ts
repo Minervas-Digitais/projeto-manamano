@@ -5,13 +5,11 @@ import { CreateArchiveDto } from "src/archive/dto/archive.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 import request from "supertest";
 import { createTestGroup, createTestUser, createTestArchive, createTestPost, deleteAllTestArchives } from "./test-helpers";
-import { resetDatabase } from "../../test/test-helper.notification";
 
 describe("Archive", () => {
     let app: INestApplication
     let prismaService: PrismaService
     beforeAll(async () => {
-        resetDatabase();
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [ArchiveModule]
         })

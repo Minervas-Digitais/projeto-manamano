@@ -27,7 +27,7 @@ export class CategoryService {
   async findAll() {
     try {
       const categories = await this.prismaService.category.findMany();
-      if (!categories) {
+      if (categories.length === 0) {
         throw new NotFoundException('Não há categorias cadastradas.');
       }
       return categories;
@@ -43,7 +43,7 @@ export class CategoryService {
           groupId,
         },
       });
-      if (!categories) {
+      if (categories.length === 0) {
         throw new NotFoundException('Não há categorias cadastradas.');
       }
       return categories;
@@ -70,10 +70,8 @@ export class CategoryService {
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto) {
     try {
-      const category = await this.findOne(id);
-      if (typeof category === 'object' && category instanceof Error) {
-        return category;
-      }
+      await this.findOne(id);
+
       return await this.prismaService.category.update({
         where: {
           id,
@@ -87,10 +85,7 @@ export class CategoryService {
 
   async remove(id: string) {
     try {
-      const category = await this.findOne(id);
-      if (typeof category === 'object' && category instanceof Error) {
-        return category;
-      }
+      await this.findOne(id);
       return await this.prismaService.category.delete({
         where: {
           id,

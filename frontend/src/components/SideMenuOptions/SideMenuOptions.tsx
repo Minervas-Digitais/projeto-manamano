@@ -64,7 +64,7 @@ export default function SideMenuOptions({
 
   return (
     <SideMenuOptionsButtonsContainer onPress={onPress}>
-      <Image source={chosenIcon} />
+      {chosenIcon}
       <SideMenuOptionsButtonsText font={font} color={color}>
         {text}
       </SideMenuOptionsButtonsText>

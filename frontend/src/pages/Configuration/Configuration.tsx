@@ -5,11 +5,11 @@ import { useFonts } from 'expo-font';
 import { useNavigation } from '@react-navigation/native';
 import SideMenuOptions from '../../components/SideMenuOptions/SideMenuOptions';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import IconLock from '../../assets/lock-licon.svg';
+import IconNotification from '../../assets/notification-licon.svg';
+import IconAbout from '../../assets/about-icon.svg';
 
 export default function Config() {
-  const notification = require('../../assets/notification-licon.svg');
-  const lock = require('../../assets/lock-licon.svg');
-  const about = require('../../assets/about-icon.svg');
   const navigation = useNavigation();
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -20,24 +20,24 @@ export default function Config() {
   return (
     <View style={{ backgroundColor: '#F2F6FA', flex: 1 }}>
       <HeaderCustom font="inter-bold" text="Configurações" />
-      <View style={{ gap: 25, backgroundColor: '#F2F6FA', marginLeft: 25, paddingTop: '25px' }}>
+      <View style={{ gap: 25, backgroundColor: '#F2F6FA', paddingLeft: 25, paddingTop: 25 }}>
         <SideMenuOptions
-          icon={notification}
+          icon={<IconNotification width={20} height={20} />}
           text="Notificações"
           font="inter-bold"
-          onPress={() => navigation.navigate('Notificações')}
+          onPress={() => navigation.navigate('ConfigNotification')}
         />
         <SideMenuOptions
-          icon={about}
+          icon={<IconAbout width={20} height={20} />}
           text="Sobre"
           font="inter-bold"
           onPress={() => navigation.navigate('About')}
         />
         <SideMenuOptions
-          icon={lock}
+          icon={<IconLock width={22} height={22} />}
           text="Mudar senha"
           font="inter-bold"
-          onPress={() => navigation.navigate('MudarSenha')}
+          onPress={() => navigation.navigate('ChangePassword')}
         />
       </View>
     </View>

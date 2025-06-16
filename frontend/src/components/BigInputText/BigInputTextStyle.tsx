@@ -12,6 +12,7 @@ export const BigInputText = styled.TextInput`
   padding: 5px;
   color: #5e6366;
   text-align: justify;
+  text-align-vertical: top;
 `;
 export const BigInputTextContainer = styled.View`
   align-items: flex-start;

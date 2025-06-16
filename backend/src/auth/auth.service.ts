@@ -43,7 +43,7 @@ export class AuthService {
         loggedId: user.id,
       };
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 }

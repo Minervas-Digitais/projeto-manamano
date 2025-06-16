@@ -31,9 +31,9 @@ export class ResponseArchiveDto {
   name: string;
   mimeType: string;
   type: string;
+  userId?: string;
+  groupId?: string;
   contentBase64: string;
-  userId?: number;
-  groupId?: number;
-  postId?: string;
+  postId: string;
 }
 

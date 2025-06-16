@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React from 'react';
-import { Image, TouchableOpacity } from 'react-native';
+import { Dimensions, Image, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useNavigation } from '@react-navigation/native';
 import {
@@ -13,20 +13,19 @@ import {
   SideMenuContainerShadow,
 } from './SideMenuStyle';
 import SideMenuOptions from '../SideMenuOptions/SideMenuOptions';
-
+import LogoManaMano from '../../assets/manamano-icon-small.svg';
+import ProfileIcon from '../../assets/profile-blue-icon.svg';
+import SearchIcon from '../../assets/lupa-icon.svg';
+import GroupIcon from '../../assets/group-icon.svg';
+import SavedIcon from '../../assets/saved-icon.svg';
+import NotificationIcon from '../../assets/notification-icon.svg';
+import SpeakWithUsIcon from '../../assets/speak-with-us-icon.svg';
+import ConfigIcon from '../../assets/config-icon.svg';
+import OutIcon from '../../assets/out-icon.svg';
+import NotificationIcon2 from '../../assets/notification-unread-icon.svg';
 export default function SideMenu({ display, onPress }: any) {
-  const logoManaMano = require('../../assets/manamano-icon-small.svg');
-  const profile = require('../../assets/profile-blue-icon.svg');
-  const seach = require('../../assets/lupa-icon.svg');
-  const group = require('../../assets/group-icon.svg');
-  const saved = require('../../assets/saved-icon.svg');
-  const notification = require('../../assets/notification-icon.svg');
-  const notification2 = require('../../assets/notification-unread-icon.svg');
-  const speakWithUs = require('../../assets/speak-with-us-icon.svg');
-  const config = require('../../assets/config-icon.svg');
-  const out = require('../../assets/out-icon.svg');
-
   const navigation = useNavigation();
+  const { width, height } = Dimensions.get('window');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -38,58 +37,62 @@ export default function SideMenu({ display, onPress }: any) {
     <SideMenuPage display={display}>
       <SideMenuContainer>
         <SideMenuLogoContainer onPress={() => navigation.navigate('Home')}>
-          <Image source={logoManaMano} />
+          <LogoManaMano width={40} height={40} />
         </SideMenuLogoContainer>
         <SideMenuLineContainer>
           <SideMenuLine />
         </SideMenuLineContainer>
         <SideMenuOptionsContainer>
           <SideMenuOptions
-            icon={profile}
+            icon={<ProfileIcon width={24} height={24} />}
             text="Perfil"
             font="inter-bold"
             onPress={() => navigation.navigate('Profile')}
           />
           <SideMenuOptions
-            icon={seach}
+            icon={<SearchIcon width={24} height={24} />}
             text="Pesquisar"
             font="inter-bold"
             onPress={() => navigation.navigate('Search')}
           />
           <SideMenuOptions
-            icon={group}
+            icon={<GroupIcon width={24} height={24} />}
             text="Grupos"
             font="inter-bold"
             onPress={() => navigation.navigate('Groups')}
           />
-          <SideMenuOptions icon={saved} text="Publicações salvas" font="inter-bold" />
           <SideMenuOptions
-            icon={notification}
-            icon2={notification2}
+            icon={<SavedIcon width={24} height={24} />}
+            text="Publicações salvas"
+            font="inter-bold"
+          />
+          <SideMenuOptions
+            icon={<NotificationIcon width={24} height={24} />}
+            icon2={<NotificationIcon2 width={24} height={24} />}}
             type="notification"
             text="Notificações"
             font="inter-bold"
             onPress={() => navigation.navigate('Notification')}
           />
           <SideMenuOptions
-            icon={speakWithUs}
+            icon={<SpeakWithUsIcon width={24} height={24} />}
             text="Fale conosco"
             font="inter-bold"
-            onPress={() => navigation.navigate('FaleConosco')}
+            onPress={() => navigation.navigate('GetInTouch')}
           />
         </SideMenuOptionsContainer>
         <SideMenuLineContainer>
           <SideMenuLine />
         </SideMenuLineContainer>
-        <SideMenuOptionsContainer style={{ height: '20vh' }}>
+        <SideMenuOptionsContainer style={{ height: height * 0.2 }}>
           <SideMenuOptions
-            icon={config}
+            icon={<ConfigIcon width={24} height={24} />}
             text="Configurações"
             font="inter-bold"
-            onPress={() => navigation.navigate('Configurações')}
+            onPress={() => navigation.navigate('Config')}
           />
           <SideMenuOptions
-            icon={out}
+            icon={<OutIcon width={24} height={24} />}
             text="Sair"
             font="inter-bold"
             onPress={() => navigation.navigate('WelcomeScreen')}
