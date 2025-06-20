@@ -35,4 +35,4 @@ yarn-error.*
 *.tsbuildinfo
 
 # Arquivos criados pelos teste
-/frontend/coverage
+coverage/
