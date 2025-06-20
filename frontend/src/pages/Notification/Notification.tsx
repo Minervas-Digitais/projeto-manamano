@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { Image, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -15,10 +15,10 @@ import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import ModalOptionsNotification from '../../components/ModalOptionsNotification/ModalOptionsNotification';
 import DeleteConfirmation from '../../components/DeleteConfirmation/DeleteConfirmation';
+import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
 
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');
-  const dotsMenuIcon = require('../../assets/dotsMenuBig.svg');
 
   const [notification, setNotification] = useState([]);
   const [display, setDisplay] = useState(false);
@@ -85,7 +85,7 @@ export default function Notification({ navigation }: any) {
           <BackButton />
           <ConfigNotificationTitle font="inter-bold">Notificações</ConfigNotificationTitle>
           <TouchableOpacity onPress={() => setDisplay(!display)}>
-            <Image source={dotsMenuIcon} />
+            <DotsMenuIcon />
           </TouchableOpacity>
         </ConfigNotificationHeaderContainer>
         <NotificationBodyContainer>
