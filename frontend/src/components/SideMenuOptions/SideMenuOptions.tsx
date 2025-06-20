@@ -18,10 +18,12 @@ interface SideMenuOptionsProps {
   icon: any;
   icon2?: any;
   type?: string;
+  icon2?: any;
+  type?: string;
   font: string;
   text: string;
   color?: string;
-  onPress: () => void;
+  onPress?: () => void;
 }
 
 export default function SideMenuOptions({
