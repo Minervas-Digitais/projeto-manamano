@@ -109,7 +109,9 @@ export default function SignUp({ navigation }: any) {
                 />
               )}
             />
-            {errors.whatsApp && <ErrorWarning errorText="Campo obrigatório" />}
+            
+            // o nome do erro precisa dar match com o nome especificado no Controller 
+            {errors.phone && <ErrorWarning errorText="Campo obrigatório" />}
 
             <Controller
               control={control}
@@ -127,7 +129,9 @@ export default function SignUp({ navigation }: any) {
                 />
               )}
             />
-            {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
+
+            // o nome do erro precisa dar match com o nome especificado no Controller 
+            {errors.hash && <ErrorWarning errorText="Campo obrigatório" />}
           </SignUpInputContainer>
         </View>
         <ButtonCustom
