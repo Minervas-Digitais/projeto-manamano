@@ -36,3 +36,6 @@ yarn-error.*
 
 #yarn
 .yarn/*
+
+# Arquivos criados pelos teste
+/frontend/coverage
