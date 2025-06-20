@@ -69,6 +69,8 @@ export default function SideMenu({ display, onPress }: any) {
           />
           <SideMenuOptions
             icon={<NotificationIcon width={24} height={24} />}
+            icon2={<NotificationIcon2 width={24} height={24} />}
+            type="notification"
             text="Notificações"
             font="inter-bold"
             onPress={() => navigation.navigate('Notification')}
