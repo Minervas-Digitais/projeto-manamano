@@ -1,4 +1,4 @@
-import { Body, INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserModule } from '../user/user.module';
@@ -36,6 +36,7 @@ describe('User', () => {
         prismaService = moduleFixture.get<PrismaService>(PrismaService);
         authService = moduleFixture.get<AuthService>(AuthService);
 
+        await prismaService.notification.deleteMany({});
         await prismaService.file.deleteMany({});
         await prismaService.post.deleteMany({});
         await prismaService.user.deleteMany({});

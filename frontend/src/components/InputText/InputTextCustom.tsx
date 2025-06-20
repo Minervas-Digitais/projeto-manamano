@@ -37,12 +37,18 @@ export default function InputTextCustom({
             style={styles.input}
             options={options}
             ref={innerRef}
+            
+            // ADICIONADO PARA O TESTE
+            accessibilityLabel={label}
           />
         ) : (
           <InputText
             onChangeText={onChangeText}
             value={value}
             secureTextEntry={eyeIcon && isPassword}
+
+            // ADICIONADO PARA O TESTE
+            accessibilityLabel={label}
           />
         )}
         <InputTextIconContainer onPress={() => setEyeIcon(!eyeIcon)} isPassword={isPassword}>
@@ -66,6 +72,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 5,
     color: '#5e6366',
-    outlineStyle: 'none',
+    //outlineStyle: 'none',
   },
 });

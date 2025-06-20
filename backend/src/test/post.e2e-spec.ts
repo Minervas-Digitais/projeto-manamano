@@ -9,6 +9,7 @@ import { AuthModule } from "src/auth/auth.module";
 import { AuthService } from "src/auth/auth.service";
 import { PostModule } from "src/post/post.module";
 import { CreatePostDto } from "src/post/dto/create-post.dto";
+import { RoleType } from "@prisma/client";
 
 describe("Posts", () => {
     let app: INestApplication;
@@ -521,13 +522,24 @@ describe("Posts", () => {
         it('deve retornar error 404 se o grupo não tiver posts', async () => {
             const groupId = await createTestGroup(prismaService);
 
+            const userId = await createTestUser(prismaService, '1234567890', '1234567890@example.com');
+
+            await prismaService.participant.create({
+                data: {
+                userId,
+                groupId,
+                role: RoleType.MEMBER,
+                },
+            });
+
             const response = await request(app.getHttpServer())
                 .get(`/post/group/${groupId}`)
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
             expect(response.body.message).toBe('Nenhuma publicação encontrada.');
-        });
+            });
+
 
         it('deve retornar 401 se o token for inválido', async () => {
             const groupId = await createTestGroup(prismaService, 'postTeste');

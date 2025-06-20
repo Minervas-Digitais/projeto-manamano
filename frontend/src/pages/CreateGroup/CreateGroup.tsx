@@ -12,10 +12,16 @@ import {
   ContentContainer,
 } from './CreateGroupStyle';
 import { storage } from '../SignIn/SignIn';
+import SideMenu from '../../components/SideMenu/SideMenu';
+import {
+  ConfigNotificationHeaderContainer,
+  ConfigNotificationTitle,
+} from '../Notification/NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
+import api from '../../services/api';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 
-export default function CreateGroup() {
+export default function CreateGroup({ navigation }: any) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -31,17 +37,6 @@ export default function CreateGroup() {
     const token = storage.getString('accessToken');
     if (token) setAccessToken(token);
   }, []);
-
-  const handleAddCategory = () => {
-    if (newCategory.trim()) {
-      setCategories([...categories, newCategory]);
-      setNewCategory('');
-    }
-  };
-
-  const handleRemoveCategory = (category: string) => {
-    setCategories(categories.filter((cat) => cat !== category));
-  };
 
   const createCategory = async (name: string, type: string, groupId: string) => {
     if (!accessToken) {
@@ -75,6 +70,7 @@ export default function CreateGroup() {
   };
 
   const handleCreateGroup = async () => {
+    const loggedId = storage.getString('loggedId');
     if (!groupName.trim() || !groupDescription.trim()) {
       Alert.alert('Error', 'Please fill in both the group name and description.');
       return;
@@ -104,19 +100,42 @@ export default function CreateGroup() {
 
       const groupData = await groupResponse.json();
       const groupId = groupData.id;
+      const { inviteCode } = groupData;
+      console.log('inviteCode: ', inviteCode);
       console.log('Group ID:', groupId);
       Alert.alert('Success', `Group created successfully! ID: ${groupId}`);
 
       const defaultCategories = [
         { name: 'Geral', type: 'NORMAL' },
-        { name: 'Aulas', type: 'CLASS' },
+        { name: 'Avisos', type: 'NORMAL' },
         { name: 'Eventos', type: 'EVENT' },
+        { name: 'Aulas', type: 'CLASS' },
       ];
 
       for (const { name, type } of defaultCategories) {
         await createCategory(name, type, groupId);
       }
-
+      api
+        .post(
+          '/participant',
+          { groupId, userId: loggedId, role: 'MODERATOR', inviteCode },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        )
+        .then((res) => {
+          console.log('SUCESSO', res.data);
+          navigation.navigate('Home');
+        })
+        .catch((error) => {
+          if (error.response) {
+            console.log('ERRO', error.response.status, error.response.data);
+          } else {
+            console.log('ERRO DESCONHECIDO', error.message);
+          }
+        });
       for (const category of categories) {
         await createCategory(category, 'NORMAL', groupId);
       }
@@ -163,7 +182,6 @@ export default function CreateGroup() {
               borderWidth: 1,
             }}
           />
-
           <Text style={{ padding: 4, fontSize: 12, color: '#5E6366' }}>Categorias</Text>
           <CategoryContainer
             style={{
@@ -210,7 +228,6 @@ export default function CreateGroup() {
               </Category>
             ))}
           </View>
-
           <View style={{ alignItems: 'center', marginTop: 50 }}>
             <ButtonCustom
               onPress={handleCreateGroup}

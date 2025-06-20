@@ -7,9 +7,11 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node ./node_modules/jest/bin/jest.js --watch"
   },
   "dependencies": {
+    "@react-native-clipboard/clipboard": "^1.16.2",
     "@expo/metro-runtime": "~4.0.1",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.10.1",
@@ -45,14 +47,20 @@
     "react-native-text-input-mask": "^3.2.0",
     "react-native-toast-message": "^2.3.0",
     "react-native-web": "~0.19.13",
-    "styled-components": "^6.1.11"
+    "styled-components": "^6.1.11",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",
+    "@babel/preset-typescript": "^7.27.1",
+    "@jest/globals": "^30.0.0",
     "@react-native-community/cli": "^18.0.0",
+    "@testing-library/react-native": "^13.2.0",
+    "@types/jest": "^29.5.14",
     "@types/react": "~18.3.12",
     "@types/react-dom": "~18.3.1",
     "@types/react-native-web": "^0",
+    "@types/react-test-renderer": "^18",
     "eslint": "^8.57.0",
     "eslint-config-expo": "~8.0.1",
     "eslint-config-prettier": "^9.1.0",
@@ -61,7 +69,10 @@
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.3.0",
+    "jest": "^30.0.0",
     "prettier": "^3.2.5",
+    "react-test-renderer": "18.3.1",
+    "ts-jest": "^29.4.0",
     "typescript": "~5.8.3"
   },
   "private": true,

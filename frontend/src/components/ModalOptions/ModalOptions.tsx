@@ -13,7 +13,7 @@ import {
   ModalOptionsOptionsText,
 } from './ModalOptionsStyle';
 
-export default function ModalOptions({ postId }: any) {
+export default function ModalOptions({ onShare, onPressFix, fixed, postId }: any) {
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
@@ -46,13 +46,29 @@ export default function ModalOptions({ postId }: any) {
           Salvar
         </ModalOptionsOptionsText>
       </ModalOptionsOptionsContainer>
-
-      <ModalOptionsOptionsContainer>
-        <Fix />
-        <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px">
-          Fixar
-        </ModalOptionsOptionsText>
-      </ModalOptionsOptionsContainer>
+      {fixed ? (
+        <ModalOptionsOptionsContainer>
+          <Fix />
+          <ModalOptionsOptionsText
+            font="inter-regular"
+            color="#515151"
+            size="13px"
+            onPress={onPressFix}>
+            Desfixar
+          </ModalOptionsOptionsText>
+        </ModalOptionsOptionsContainer>
+      ) : (
+        <ModalOptionsOptionsContainer>
+          <Fix />
+          <ModalOptionsOptionsText
+            font="inter-regular"
+            color="#515151"
+            size="13px"
+            onPress={onPressFix}>
+            Fixar
+          </ModalOptionsOptionsText>
+        </ModalOptionsOptionsContainer>
+      )}
     </ModalOptionsContainer>
   );
 }

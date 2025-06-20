@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateArchiveDto, ResponseArchiveDto } from './dto/archive.dto';
-import { arch } from 'os';
 
 @Injectable()
 export class ArchiveService {
@@ -52,7 +51,7 @@ export class ArchiveService {
       where: { postId },
     });
 
-    if (!archives || archives.length === 0) {
+    if (archives.length === 0) {
       throw new NotFoundException('No archives found for this post');
     }
 
@@ -64,7 +63,7 @@ export class ArchiveService {
       where: { groupId },
     });
 
-    if (!archives || archives.length === 0) {
+    if (archives.length === 0) {
       throw new NotFoundException('No archives found for this group');
     }
 
