@@ -33,3 +33,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Arquivos criados pelos teste
+/frontend/coverage
