@@ -3,6 +3,7 @@ import React from 'react';
 import { Dimensions, Image, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import {
   SideMenuContainer,
   SideMenuLogoContainer,
