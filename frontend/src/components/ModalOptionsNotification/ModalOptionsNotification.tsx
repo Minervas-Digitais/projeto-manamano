@@ -124,7 +124,6 @@ export default function ModalOptionsNotification({ type, display, id, height, st
             </ModalOptionsNotificationText>
           </ModalOptionsNotificationInfo>
         )}
-
         <ModalOptionsNotificationInfo onPress={optionsMarkAsRead}>
           <CheckRead />
           <ModalOptionsNotificationText color="#515151" font="inter-regular">
