@@ -12,7 +12,6 @@ import {
   ContentContainer,
 } from './CreateGroupStyle';
 import { storage } from '../SignIn/SignIn';
-import SideMenu from '../../components/SideMenu/SideMenu';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
