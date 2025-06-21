@@ -22,6 +22,7 @@ import NotificationIcon from '../../assets/notification-icon.svg';
 import SpeakWithUsIcon from '../../assets/speak-with-us-icon.svg';
 import ConfigIcon from '../../assets/config-icon.svg';
 import OutIcon from '../../assets/out-icon.svg';
+import NotificationIcon2 from '../../assets/notification-unread-icon.svg';
 
 export default function SideMenu({ display, onPress }: any) {
   const navigation = useNavigation();
@@ -68,6 +69,8 @@ export default function SideMenu({ display, onPress }: any) {
           />
           <SideMenuOptions
             icon={<NotificationIcon width={24} height={24} />}
+            icon2={<NotificationIcon2 width={24} height={24} />}
+            type="notification"
             text="Notificações"
             font="inter-bold"
             onPress={() => navigation.navigate('Notification')}

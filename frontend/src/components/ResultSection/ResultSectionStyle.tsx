@@ -26,6 +26,8 @@ export const Card = styled.View`
   flex-direction: row; /* Use flex-direction para alinhar horizontalmente */
   align-items: center;
   margin-bottom: 10px;
+  justify-content: space-between;
+  padding-right: 20px;
 `;
 
 export const Avatar = styled.Image`

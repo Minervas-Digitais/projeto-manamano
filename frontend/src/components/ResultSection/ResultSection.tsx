@@ -12,6 +12,18 @@ import {
 } from './ResultSectionStyle';
 import { storage } from '../../pages/SignIn/SignIn';
 import PostItem from '../PostItem/PostItem';
+<<<<<<< Updated upstream
+=======
+import api from '../../services/api';
+import TrashCan from '../../assets/trash-can.svg';
+
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
 
 interface User {
   id: string;
@@ -284,6 +296,15 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
                       });
                     }}>
                     <Name>{`${fullName[0]} ${fullName[1] || ''}`}</Name>
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <TrashCan />
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <TrashCan />
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <TrashCan />
                   </TouchableOpacity>
                 </Card>
               );

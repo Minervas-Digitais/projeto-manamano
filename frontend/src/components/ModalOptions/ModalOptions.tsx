@@ -20,17 +20,6 @@ export default function ModalOptions({ postId }: any) {
   if (!fontsLoaded) {
     return undefined;
   }
-  const createDeepLink = () => `manamano://post/${postId}`;
-  const onShare = async () => {
-    const deepLink = createDeepLink();
-    try {
-      await Share.share({
-        message: `Confira este post: ${deepLink}`,
-      });
-    } catch (error) {
-      console.error('Erro ao compartilhar:', error);
-    }
-  };
   return (
     <ModalOptionsContainer>
       <ModalOptionsOptionsContainer onPress={onShare}>
