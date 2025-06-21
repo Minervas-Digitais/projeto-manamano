@@ -1,4 +1,4 @@
-* eslint-disable no-nested-ternary */
+/* eslint-disable no-nested-ternary */
 /* eslint-disable no-console */
 /* eslint-disable no-alert */
 /* eslint-disable global-require */

@@ -15,7 +15,6 @@ import PostItem from '../PostItem/PostItem';
 import api from '../../services/api';
 import TrashCan from '../../assets/trash-can.svg';
 
-
 interface User {
   id: string;
   fullName: string;
@@ -254,7 +253,12 @@ export default function ResultSection({
                         avatar: require('../../assets/duck.png'),
                       });
                     }}>
-                    <Name>{`${fullName[0]} ${fullName[1] || ''}`}</Name>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
+                      <Avatar source={avatar} />
+                      <Name fontFamily="inter-regular" fontColor="#3F3D3D">
+                        {`${fullName[0]} ${fullName[1] || ''}`}
+                      </Name>
+                    </View>
                   </TouchableOpacity>
                   <TouchableOpacity>
                     <TrashCan />
