@@ -35,4 +35,4 @@ yarn-error.*
 *.tsbuildinfo
 
 #yarn
-.yarn/install-state.gz
+.yarn/*

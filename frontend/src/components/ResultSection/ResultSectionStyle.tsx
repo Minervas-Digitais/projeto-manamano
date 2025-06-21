@@ -36,6 +36,8 @@ export const Card = styled.View`
   flex-direction: row;
   align-items: center;
   margin-bottom: 10px;
+  justify-content: space-between;
+  padding-right: 20px;
 `;
 
 export const Avatar = styled.Image`

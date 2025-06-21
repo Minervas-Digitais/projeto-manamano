@@ -1,10 +1,9 @@
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Toast from 'react-native-toast-message';
-import React from 'react';
-import { StatusBar } from 'expo-status-bar';
+import { useRoute } from '@react-navigation/native';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
@@ -14,6 +13,8 @@ import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import { GlobalNotificationContainer, toastConfig } from './GlobalNotificationPageStyle';
 
 export default function GlobalNotificationPage({ navigation }: any) {
+  const route = useRoute();
+  const { id } = route.params as { id: string };
   const {
     control,
     handleSubmit,
@@ -76,7 +77,6 @@ export default function GlobalNotificationPage({ navigation }: any) {
   }
   return (
     <View style={{ flex: 1, backgroundColor: '#f2f6fa' }}>
-      <StatusBar translucent backgroundColor="transparent" />
       <HeaderCustom font="inter-bold" text="Comunicado" />
       <GlobalNotificationContainer>
         <Controller
