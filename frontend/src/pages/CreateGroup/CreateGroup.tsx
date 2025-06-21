@@ -12,16 +12,6 @@ import {
   ContentContainer,
 } from './CreateGroupStyle';
 import { storage } from '../SignIn/SignIn';
-<<<<<<< Updated upstream
-=======
-import SideMenu from '../../components/SideMenu/SideMenu';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
