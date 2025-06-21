@@ -37,7 +37,7 @@ export default function PostCard({
     const deepLink = createDeepLink();
     try {
       await Share.share({
-        message: `Confira este perfil: ${deepLink}`,
+        message: `Confira este post: ${deepLink}`,
       });
     } catch (error) {
       console.error('Erro ao compartilhar:', error);

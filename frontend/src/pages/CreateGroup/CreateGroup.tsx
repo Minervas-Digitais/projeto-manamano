@@ -13,10 +13,6 @@ import {
 } from './CreateGroupStyle';
 import { storage } from '../SignIn/SignIn';
 import SideMenu from '../../components/SideMenu/SideMenu';
-import {
-  ConfigNotificationHeaderContainer,
-  ConfigNotificationTitle,
-} from '../Notification/NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';

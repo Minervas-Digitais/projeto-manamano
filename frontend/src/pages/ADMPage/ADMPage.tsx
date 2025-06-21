@@ -29,6 +29,7 @@ export default function ADMPage() {
   }
   return (
     <ADMBlueBackground>
+      <StatusBar backgroundColor="white" />
       <ADMTextContainer>
         <GroupDataText font="inter-bold" color="#EF4036" size="20px">
           Olá,
@@ -60,7 +61,7 @@ export default function ADMPage() {
             fontColor="white"
             icon={<MegaphoneIcon />}
             text="Comunicados"
-            onPress={() => navigation.navigate('GlobalNotification')}
+            onPress={() => navigation.navigate('Notification')}
           />
           <ADMPageButton
             fontColor="white"
