@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { useNavigation } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import {
   ModalOptionsNotificationContainer,
   ModalOptionsNotificationInfo,
@@ -12,33 +13,14 @@ import {
 } from './ModalOptionsNotificationStyle';
 import api from '../../services/api';
 import { storage } from '../../pages/SignIn/SignIn';
-<<<<<<< Updated upstream
-=======
 import DeleteConfirmation from '../DeleteAllConfirmation/DeleteAllConfirmation';
 import CheckRead from '../../assets/check-read-icon.svg';
 import Trash from '../../assets/trash-red-icon.svg';
-import Toast from 'react-native-toast-message';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
 export default function ModalOptionsNotification({ type, display, id, height, style, admin }: any) {
   const [displayConfirm, setDisplayConfirm] = useState(display ?? false);
-<<<<<<< Updated upstream
-=======
   const [displayDelete, setDisplayDelete] = useState(false);
   const navigation = useNavigation();
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
   useEffect(() => {
     setDisplayConfirm(display);
@@ -52,45 +34,6 @@ export default function ModalOptionsNotification({ type, display, id, height, st
 
   const optionsMarkAsRead = () => {
     const accessToken = storage.getString('accessToken');
-<<<<<<< Updated upstream
-
-    api
-      .patch(
-        `notifications/${id}`,
-        { isRead: true },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      )
-      .then((res) => console.log(JSON.stringify(res.data)))
-      .catch((err) => console.log('Erro ao atualizar a notificação:', err));
-    setDisplayConfirm(false);
-  };
-
-  const optionsStorage = () => {
-    storage.set('idNotif', id);
-    storage.set('displayNotif', true);
-    setDisplayConfirm(false);
-  };
-
-  return (
-    <ModalOptionsNotificationContainer display={displayConfirm} height={height} style={style}>
-      <ModalOptionsNotificationInfo onPress={optionsStorage}>
-        <Image source={trash} />
-        <ModalOptionsNotificationText color="red" font="inter-regular">
-          {type === 'header' ? 'Excluir todas' : 'Excluir'}
-        </ModalOptionsNotificationText>
-      </ModalOptionsNotificationInfo>
-      <ModalOptionsNotificationInfo onPress={optionsMarkAsRead}>
-        <Image source={checkRead} />
-        <ModalOptionsNotificationText color="#515151" font="inter-regular">
-          {type === 'header' ? 'Marcar todas como lidas' : 'Marcar como lida'}
-        </ModalOptionsNotificationText>
-      </ModalOptionsNotificationInfo>
-    </ModalOptionsNotificationContainer>
-=======
     const loggedId = storage.getString('loggedId');
 
     if (!accessToken) return;
@@ -196,6 +139,5 @@ export default function ModalOptionsNotification({ type, display, id, height, st
         </ModalOptionsNotificationInfo>
       </ModalOptionsNotificationContainer>
     </>
->>>>>>> Stashed changes
   );
 }

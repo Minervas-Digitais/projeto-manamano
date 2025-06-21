@@ -1,18 +1,6 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-import { Image, TouchableOpacity, View } from 'react-native';
-=======
 import { Image } from 'react-native';
->>>>>>> Stashed changes
-=======
-import { Image } from 'react-native';
->>>>>>> Stashed changes
-=======
-import { Image } from 'react-native';
->>>>>>> Stashed changes
 import { useFonts } from 'expo-font';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -33,13 +21,6 @@ import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import NoNotification from '../../assets/no-notification-icon.svg';
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');
@@ -49,24 +30,14 @@ export default function Notification({ navigation }: any) {
   const [display, setDisplay] = useState(false);
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
-<<<<<<< Updated upstream
 
 =======
-=======
->>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
   const [accessTokenState, setAccessTokenState] = useState('');
   const [userInfo, setUserInfo] = useState([]);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [admin, setAdmin] = useState(false);
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
   const fetchNotifications = useCallback(() => {
     const loggedId = storage.getString('loggedId');
     const accessToken = storage.getString('accessToken');
@@ -75,13 +46,6 @@ export default function Notification({ navigation }: any) {
 =======
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
       api
         .get(`notifications/user/${loggedId}`, {
           headers: {
@@ -154,22 +118,6 @@ export default function Notification({ navigation }: any) {
       />
 
       <ConfigNotificationContainer>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-        <ModalOptionsNotification display={display} type="header" style={{ top: 60 }} height={80} />
-        <ConfigNotificationHeaderContainer>
-          <BackButton />
-          <ConfigNotificationTitle font="inter-bold">Notificações</ConfigNotificationTitle>
-          <TouchableOpacity onPress={() => setDisplay(!display)}>
-            <Image source={dotsMenuIcon} />
-          </TouchableOpacity>
-        </ConfigNotificationHeaderContainer>
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         <HeaderCustom
           icon
           headerButton={<DotsMenuIcon />}
@@ -184,13 +132,6 @@ export default function Notification({ navigation }: any) {
           height="80px"
           admin={admin}
         />
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         <NotificationBodyContainer>
           <NotificationInfoContainer>
             {notification?.length > 0 ? (
