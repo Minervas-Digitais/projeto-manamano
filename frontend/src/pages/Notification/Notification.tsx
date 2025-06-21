@@ -17,6 +17,8 @@ import ModalOptionsNotification from '../../components/ModalOptionsNotification/
 import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
 import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAllConfirmation';
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
+import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import NoNotification from '../../assets/no-notification-icon.svg';
 
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');

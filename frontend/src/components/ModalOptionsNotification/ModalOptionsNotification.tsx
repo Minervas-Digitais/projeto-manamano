@@ -1,10 +1,11 @@
-/* eslint-disable no-nested-ternary */
+* eslint-disable no-nested-ternary */
 /* eslint-disable no-console */
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { useNavigation } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import {
   ModalOptionsNotificationContainer,
   ModalOptionsNotificationInfo,
@@ -15,7 +16,6 @@ import { storage } from '../../pages/SignIn/SignIn';
 import DeleteConfirmation from '../DeleteAllConfirmation/DeleteAllConfirmation';
 import CheckRead from '../../assets/check-read-icon.svg';
 import Trash from '../../assets/trash-red-icon.svg';
-import Toast from 'react-native-toast-message';
 
 export default function ModalOptionsNotification({ type, display, id, height, style, admin }: any) {
   const [displayConfirm, setDisplayConfirm] = useState(display ?? false);
@@ -34,34 +34,10 @@ export default function ModalOptionsNotification({ type, display, id, height, st
 
   const optionsMarkAsRead = () => {
     const accessToken = storage.getString('accessToken');
-
-    api
-      .patch(
-        `notifications/${id}`,
-        { isRead: true },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      )
-      .then((res) => console.log(JSON.stringify(res.data)))
-      .catch((err) => console.log('Erro ao atualizar a notificação:', err));
-    setDisplayConfirm(false);
-  };
-
-  const optionsActions = () => {
-    if (type !== 'header') {
-      storage.set('idNotif', id);
-      storage.set('displayNotif', true);
-      setDisplayConfirm(false);
-    }
-    if (type === 'header') {
-      setDisplayDelete(!displayDelete);
-    }
-  };
     const loggedId = storage.getString('loggedId');
+
     if (!accessToken) return;
+
     if (type === 'header' && loggedId && !admin) {
       api
         .patch(
@@ -121,6 +97,7 @@ export default function ModalOptionsNotification({ type, display, id, height, st
           });
         });
     }
+
     if (type === 'header') {
       setDisplayDelete(!displayDelete);
     }
