@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import { TouchableOpacity, View, Text, ScrollView, Dimensions } from 'react-native';
+import { TouchableOpacity, View, Text, ScrollView, Dimensions, Alert } from 'react-native';
 import {
   Avatar,
   Card,
@@ -40,6 +40,7 @@ interface ResultSectionProps {
   searchText: string;
   saveRecentUser: (user: { id: number; name: string; avatar: any }) => void;
   accessToken: string;
+  admin: boolean;
 }
 
 interface DataState {
@@ -52,6 +53,7 @@ export default function ResultSection({
   searchText,
   saveRecentUser,
   accessToken,
+  admin,
 }: ResultSectionProps) {
   const [selectedSection, setSelectedSection] = useState('');
   const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });
@@ -94,7 +96,44 @@ export default function ResultSection({
       console.error('Error fetching data:', error);
     }
   };
+  const onPressUser = async (userId: string) => {
+    try {
+      const response = await api.delete(`/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
+      Alert.alert('Sucesso', 'Usuário deletado com sucesso!');
+
+      setData((prevData) => ({
+        ...prevData,
+        users: prevData.users.filter((user) => user.id !== userId),
+      }));
+    } catch (error: any) {
+      console.error('Erro ao deletar usuário:', error);
+      Alert.alert('Erro', error?.response?.data?.message || 'Não foi possível deletar o usuário.');
+    }
+  };
+  const onPressGroup = async (groupId: string) => {
+    try {
+      const response = await api.delete(`/group/${groupId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      Alert.alert('Sucesso', 'Grupo deletado com sucesso!');
+
+      setData((prevData) => ({
+        ...prevData,
+        groups: prevData.groups.filter((group) => group.id !== groupId),
+      }));
+    } catch (error: any) {
+      console.error('Erro ao deletar grupo:', error);
+      Alert.alert('Erro', error?.response?.data?.message || 'Não foi possível deletar o grupo.');
+    }
+  };
   useEffect(() => {
     if (searchText && !selectedSection) {
       fetchData('/search');
@@ -258,9 +297,11 @@ export default function ResultSection({
                   <TouchableOpacity>
                     <TrashCan />
                   </TouchableOpacity>
-                  <TouchableOpacity>
-                    <TrashCan />
-                  </TouchableOpacity>
+                  {admin && (
+                    <TouchableOpacity onPress={() => onPressUser(person.id)}>
+                      <TrashCan />
+                    </TouchableOpacity>
+                  )}
                 </Card>
               );
             })}
@@ -315,6 +356,11 @@ export default function ResultSection({
                     </Name>
                   </View>
                 </TouchableOpacity>
+                {admin && (
+                  <TouchableOpacity onPress={() => onPressGroup(group.id)}>
+                    <TrashCan />
+                  </TouchableOpacity>
+                )}
               </Card>
             ))}
             {selectedSection === '' && (
