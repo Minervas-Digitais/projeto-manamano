@@ -86,4 +86,16 @@ describe("SignUp", () => {
 
         expect(mockedNavigate).not.toHaveBeenCalled();
     });
+
+    it("Deve exibir mensagens de erro para campos obrigatórios vazios", async () => {
+        const { getByText, findAllByText   } = render(<SignUp navigation={{ navigate: mockedNavigate }} />);
+
+        fireEvent.press(getByText("Cadastrar"));
+
+        const errorMessages = await findAllByText("Campo obrigatório");
+        expect(errorMessages).toHaveLength(4);
+
+        expect(api.post).not.toHaveBeenCalled();
+        expect(mockedNavigate).not.toHaveBeenCalled();
+    })
 })

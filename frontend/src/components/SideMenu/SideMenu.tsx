@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dimensions, Image, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import {
   SideMenuContainer,
   SideMenuLogoContainer,
@@ -23,9 +23,10 @@ import SpeakWithUsIcon from '../../assets/speak-with-us-icon.svg';
 import ConfigIcon from '../../assets/config-icon.svg';
 import OutIcon from '../../assets/out-icon.svg';
 import NotificationIcon2 from '../../assets/notification-unread-icon.svg';
+import { RootStackParamList } from '../../navigation/types';
 
 export default function SideMenu({ display, onPress }: any) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { width, height } = Dimensions.get('window');
 
   const [fontsLoaded] = useFonts({
