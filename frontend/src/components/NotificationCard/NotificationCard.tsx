@@ -17,6 +17,9 @@ import {
 } from './NotificationCardStyle';
 import { PostCardImage } from '../PostCard/PostCardStyle';
 import ModalOptionsNotification from '../ModalOptionsNotification/ModalOptionsNotification';
+import MegaPhone from '../../assets/megaphone-icon.svg';
+import Fixed from '../../assets/fixed-icon.svg';
+import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
 
 export default function NotificationCard({
   user,
@@ -29,10 +32,8 @@ export default function NotificationCard({
   isread,
   confirm,
   idNotif,
+  admin,
 }: any) {
-  const megaPhone = require('../../assets/megaphone-icon.svg');
-  const fixed = require('../../assets/fixed-icon.svg');
-  const dotsMenuIcon = require('../../assets/dotsMenuBig.svg');
   const [display, setDisplay] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -84,7 +85,9 @@ export default function NotificationCard({
             <NotificationTextGrey font="inter-semiBold">
               <NotificationTextRed font="inter-semiBold">
                 @
-                {userfirstName.length > 12 ? `${userfirstName.substring(0, 12)}...` : userfirstName}{' '}
+                {userfirstName.length > 12
+                  ? `${userfirstName.substring(0, 12)}...`
+                  : userfirstName}{' '}
               </NotificationTextRed>
               no grupo{' '}
               <NotificationTextRed font="inter-semiBold">
@@ -93,7 +96,7 @@ export default function NotificationCard({
               comentou no seu post! Clique para visualizar!
             </NotificationTextGrey>
             <TouchableOpacity onPress={() => setDisplay(!display)}>
-              <Image source={dotsMenuIcon} />
+              <DotsMenuIcon />
             </TouchableOpacity>
           </NotificationTextContainer>
           <NotificationTextDateContainer>
@@ -109,20 +112,20 @@ export default function NotificationCard({
           onPress={onPress}
           style={{ gap: 3, justifyContent: 'space-between' }}
           isread={isread}>
-          <ModalOptionsNotification display={display} id={idNotif} />
+          <ModalOptionsNotification admin={admin} type={type} display={display} id={idNotif} />
 
           <View>
             <NotificationTextContainerWarning height="min-content">
-              <View style={{ flexDirection: 'row', gap: 3 }}>
-                <Image source={megaPhone} />
+              <View style={{ flexDirection: 'row', gap: 5 }}>
+                <MegaPhone />
                 <NotificationTextRed font="inter-bold">Comunicado: </NotificationTextRed>
               </View>
 
               <TouchableOpacity onPress={() => setDisplay(!display)}>
-                <Image source={dotsMenuIcon} />
+                <DotsMenuIcon />
               </TouchableOpacity>
             </NotificationTextContainerWarning>
-            <NotificationTextContainerWarning height={39}>
+            <NotificationTextContainerWarning height="39px">
               <NotificationTextGreyWarning font="inter-semiBold" numberOfLines={2}>
                 {body}
               </NotificationTextGreyWarning>
@@ -151,16 +154,15 @@ export default function NotificationCard({
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                }}
-              >
-                <Image source={fixed} />
+                }}>
+                <Fixed />
                 <NotificationTextRed font="inter-bold">Publicação fixada: </NotificationTextRed>
               </View>
               <TouchableOpacity onPress={() => setDisplay(!display)}>
-                <Image source={dotsMenuIcon} />
+                <DotsMenuIcon />
               </TouchableOpacity>
             </NotificationTextContainerWarning>
-            <NotificationTextContainerWarning height={39}>
+            <NotificationTextContainerWarning height="39px">
               <NotificationTextGrey font="inter-semiBold">
                 Uma publicação foi fixada no grupo{' '}
                 <NotificationTextRed font="inter-semiBold" numberOfLines={1}>

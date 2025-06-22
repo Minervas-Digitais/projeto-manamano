@@ -15,8 +15,8 @@ export const ModalOptionsNotificationContainer = styled.View<{ display: any; hei
   padding: 15px;
   border-radius: 15px;
   position: absolute;
-  top: 25;
-  right: 30;
+  top: 25px;
+  right: 30px;
 `;
 
 export const ModalOptionsNotificationInfo = styled.TouchableOpacity`

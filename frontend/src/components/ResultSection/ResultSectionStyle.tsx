@@ -36,6 +36,8 @@ export const Card = styled.View`
   flex-direction: row;
   align-items: center;
   margin-bottom: 10px;
+  justify-content: space-between;
+  padding-right: 20px;
 `;
 
 export const Avatar = styled.Image`
@@ -43,6 +45,7 @@ export const Avatar = styled.Image`
   height: 50px;
   border-radius: 25px; /* Para criar um círculo, o valor deve ser metade da largura/altura */
   margin-right: 15px;
+  border: 2px;
 `;
 
 export const Name = styled.Text<{ fontColor?: string; fontFamily?: string }>`

@@ -13,6 +13,7 @@ import {
 } from './ResultSectionStyle';
 import PostItem from '../PostItem/PostItem';
 import api from '../../services/api';
+import TrashCan from '../../assets/trash-can.svg';
 
 interface User {
   id: string;
@@ -258,6 +259,9 @@ export default function ResultSection({
                         {`${fullName[0]} ${fullName[1] || ''}`}
                       </Name>
                     </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <TrashCan />
                   </TouchableOpacity>
                 </Card>
               );

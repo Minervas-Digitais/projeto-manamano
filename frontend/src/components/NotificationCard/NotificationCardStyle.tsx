@@ -66,5 +66,5 @@ export const NotificationTextDate = styled.Text<{ font?: any }>`
 export const NotificationImage = styled.Image`
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 20px;
 `;

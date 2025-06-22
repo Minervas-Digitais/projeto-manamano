@@ -11,7 +11,7 @@ export class CreateNotificationDto {
 
   @IsOptional()
   @IsString()
-  groupId: string;
+  groupId?: string;
 
   @IsString()
   body: string;

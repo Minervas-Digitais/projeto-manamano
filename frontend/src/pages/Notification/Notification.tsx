@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Image, TouchableOpacity } from 'react-native';
+import { Image } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -17,6 +17,8 @@ import ModalOptionsNotification from '../../components/ModalOptionsNotification/
 import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
 import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAllConfirmation';
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
+import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import NoNotification from '../../assets/no-notification-icon.svg';
 
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');
@@ -24,14 +26,16 @@ export default function Notification({ navigation }: any) {
   const [notification, setNotification] = useState([]);
   const [display, setDisplay] = useState(false);
   const [accessTokenState, setAccessTokenState] = useState('');
+  const [userInfo, setUserInfo] = useState([]);
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [admin, setAdmin] = useState(false);
 
   const fetchNotifications = useCallback(() => {
     const loggedId = storage.getString('loggedId');
     const accessToken = storage.getString('accessToken');
-
     if (loggedId && accessToken) {
       setAccessTokenState(accessToken);
-
+      setLoggedIdState(loggedId);
       api
         .get(`notifications/user/${loggedId}`, {
           headers: {
@@ -42,7 +46,27 @@ export default function Notification({ navigation }: any) {
         .catch((err) => console.log(err));
     }
   }, []);
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await api.get(`/user/${loggedIdState}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+        setUserInfo(response.data);
+        if (userInfo.sysRole === 'ADMIN') {
+          setAdmin(true);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar informações do usuário:', error);
+      }
+    };
 
+    if (loggedIdState && accessTokenState) {
+      fetchUserInfo();
+    }
+  }, [loggedIdState, accessTokenState, userInfo.sysRole]);
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 1000);
@@ -96,14 +120,20 @@ export default function Notification({ navigation }: any) {
       />
 
       <ConfigNotificationContainer>
-        <ModalOptionsNotification display={display} type="header" style={{ top: 60 }} height={80} />
-        <ConfigNotificationHeaderContainer>
-          <BackButton />
-          <ConfigNotificationTitle font="inter-bold">Notificações</ConfigNotificationTitle>
-          <TouchableOpacity onPress={() => setDisplay(!display)}>
-            <DotsMenuIcon />
-          </TouchableOpacity>
-        </ConfigNotificationHeaderContainer>
+        <HeaderCustom
+          icon
+          headerButton={<DotsMenuIcon />}
+          text={admin ? 'Comunicados' : 'Notificação'}
+          font="inter-bold"
+          onPress={() => setDisplay(!display)}
+        />
+        <ModalOptionsNotification
+          display={display}
+          type="header"
+          style={{ top: 60, zIndex: 11 }}
+          height="80px"
+          admin={admin}
+        />
         <NotificationBodyContainer>
           <NotificationInfoContainer>
             {notification?.length > 0 ? (
@@ -120,11 +150,12 @@ export default function Notification({ navigation }: any) {
                   isread={item.isRead}
                   idNotif={item.id}
                   confirm={false}
+                  admin={admin}
                 />
               ))
             ) : (
               <>
-                <Image source={noNotification} />
+                <NoNotification />
                 <NotificationInfoText font="inter-bold">
                   Você não possui notificações no momento
                 </NotificationInfoText>
