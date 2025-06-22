@@ -258,6 +258,9 @@ export default function ResultSection({
                   <TouchableOpacity>
                     <TrashCan />
                   </TouchableOpacity>
+                  <TouchableOpacity>
+                    <TrashCan />
+                  </TouchableOpacity>
                 </Card>
               );
             })}

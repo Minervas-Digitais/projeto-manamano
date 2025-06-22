@@ -107,5 +107,6 @@ describe('SignUp', () => {
 
     expect(api.post).not.toHaveBeenCalled();
     expect(mockedNavigate).not.toHaveBeenCalled();
-  });
-});
+    })
+})
+

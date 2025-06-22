@@ -34,7 +34,7 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-#yarn
-.yarn/*
 # Arquivos criados pelos teste
 coverage/
+#yarn
+.yarn/*

@@ -9,7 +9,6 @@ import Config from '../pages/Configuration/Configuration';
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));
-
 jest.mock('../services/api');
 const mockPatch = api.patch as jest.Mock;
 
