@@ -42,6 +42,8 @@ export default function Search() {
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const avatar = require('../../assets/duck.png');
   // Fetch recent users from MMKV on mount
   useEffect(() => {
@@ -51,12 +53,31 @@ export default function Search() {
     }
   }, []);
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-    }
+    const fetchUserRole = async () => {
+      const accessToken = storage.getString('accessToken');
+      const loggedId = storage.getString('loggedId');
+
+      if (accessToken && loggedId) {
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+
+        try {
+          const res = await api.get(`/user/${loggedId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          if (res.data?.sysRole === 'ADMIN') {
+            setIsAdmin(true);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar o usuário:', error);
+        }
+      }
+    };
+
+    fetchUserRole();
   }, []);
   const saveRecentUser = (user: User) => {
     // Check if user already exists in recent users
