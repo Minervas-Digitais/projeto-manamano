@@ -37,7 +37,6 @@ export default function InputTextCustom({
             style={styles.input}
             options={options}
             ref={innerRef}
-            
             // ADICIONADO PARA O TESTE
             accessibilityLabel={label}
           />
@@ -46,7 +45,6 @@ export default function InputTextCustom({
             onChangeText={onChangeText}
             value={value}
             secureTextEntry={eyeIcon && isPassword}
-
             // ADICIONADO PARA O TESTE
             accessibilityLabel={label}
           />
