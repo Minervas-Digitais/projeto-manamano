@@ -18,8 +18,6 @@ interface SideMenuOptionsProps {
   icon: any;
   icon2?: any;
   type?: string;
-  icon2?: any;
-  type?: string;
   font: string;
   text: string;
   color?: string;
