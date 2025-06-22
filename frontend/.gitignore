@@ -33,3 +33,8 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Arquivos criados pelos teste
+coverage/
+#yarn
+.yarn/install-state.gz

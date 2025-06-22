@@ -1,3 +1,4 @@
+/* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, Text, ScrollView, Dimensions } from 'react-native';
@@ -10,8 +11,8 @@ import {
   SectionTitle,
   StyledButton,
 } from './ResultSectionStyle';
-import { storage } from '../../pages/SignIn/SignIn';
 import PostItem from '../PostItem/PostItem';
+import api from '../../services/api';
 
 interface User {
   id: string;
@@ -37,6 +38,7 @@ interface Post {
 interface ResultSectionProps {
   searchText: string;
   saveRecentUser: (user: { id: number; name: string; avatar: any }) => void;
+  accessToken: string;
 }
 
 interface DataState {
@@ -45,48 +47,39 @@ interface DataState {
   posts: Post[];
 }
 
-export default function ResultSection({ searchText, saveRecentUser }: ResultSectionProps) {
+export default function ResultSection({
+  searchText,
+  saveRecentUser,
+  accessToken,
+}: ResultSectionProps) {
   const [selectedSection, setSelectedSection] = useState('');
   const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const avatar = require('../../assets/duck.png');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
-
-  useEffect(() => {
-    // Retrieve the access token from storage
-    const token = storage.getString('accessToken');
-    if (token) setAccessToken(token);
-    console.log(token);
-  }, []);
-
   const fetchData = async (url: string, sectionKey?: keyof DataState): Promise<void> => {
-    console.log(`Dentro do fechData: ${accessToken}`);
-
     if (!accessToken) {
       console.error('No access token available.');
       return;
     }
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      const response = await api.post(
+        url,
+        { input: searchText },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         },
-        body: JSON.stringify({ input: searchText }),
-      });
+      );
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const json = await response.json();
+      const json = response.data;
       const parsedData = { users: [], groups: [], posts: [] };
 
       if (sectionKey) {
@@ -103,13 +96,13 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
 
   useEffect(() => {
     if (searchText && !selectedSection) {
-      fetchData('http://localhost:3000/search');
+      fetchData('/search');
     }
   }, [searchText, accessToken]);
 
   useEffect(() => {
     if (selectedSection) {
-      const url = `http://localhost:3000/search/filter/${selectedSection.toLowerCase()}`;
+      const url = `/search/filter/${selectedSection.toLowerCase()}`;
       fetchData(url, selectedSection as keyof DataState);
     }
   }, [selectedSection, accessToken]);
@@ -121,18 +114,13 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/user/${userId}`, {
-        method: 'GET',
+      const response = await api.get(`/user/${userId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const user = await response.json();
+      const user = response.data;
       const fullName = user.fullName.split(' ');
       return `${fullName[0]} ${fullName[1] || ''}`;
     } catch (error) {
@@ -148,18 +136,13 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/post/${postId}`, {
-        method: 'GET',
+      const response = await api.get(`/post/${postId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const postDetails = await response.json();
+      const postDetails = response.data;
       return postDetails.Comment ? postDetails.Comment.length : 0;
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -168,20 +151,14 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
   };
 
   const handleFilterPress = (section: string): void => {
-    // Toggle section selection
     const newSection = selectedSection === section ? '' : section;
-
-    // Reset data state to ensure fresh fetch
     setData({ users: [], groups: [], posts: [] });
-
-    // Set selected section to trigger useEffect and fetch data
     setSelectedSection(newSection);
 
-    // Fetch all sections when no specific filter is selected
     if (!newSection) {
-      fetchData('http://localhost:3000/search');
+      fetchData('/search');
     } else {
-      const url = `http://localhost:3000/search/filter/${newSection.toLowerCase()}`;
+      const url = `/search/filter/${newSection.toLowerCase()}`;
       fetchData(url, newSection as keyof DataState);
     }
   };
@@ -192,75 +169,67 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
 
   return (
     <Container>
-      <Text
-        style={{
-          fontSize: 12,
-          fontWeight: 'bold',
-          marginBottom: 10,
-          fontFamily: 'inter-bold',
-          color: '#515151',
-          marginTop: 20,
-        }}
-      >
-        Filtros
-      </Text>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-around',
-          marginTop: 10,
-          marginBottom: 10,
-        }}
-      >
-        <TouchableOpacity
+      <View style={{ paddingLeft: 10, paddingRight: 10 }}>
+        <Text
           style={{
-            padding: 10,
-            backgroundColor: selectedSection === 'users' ? '#FFA8A6' : '#E0E0E0',
-            borderRadius: 30,
-            width: screenWidth / 3.6,
-            height: screenHeight / 28.3,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          onPress={() => handleFilterPress('users')}
-        >
-          <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Pessoas</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
+            fontSize: 12,
+            fontWeight: 'bold',
+            marginBottom: 10,
+            fontFamily: 'inter-bold',
+            color: '#515151',
+            marginTop: 20,
+          }}>
+          Filtros
+        </Text>
+        <View
           style={{
-            padding: 10,
-            backgroundColor: selectedSection === 'groups' ? '#FFA8A6' : '#E0E0E0',
-            borderRadius: 30,
-            width: screenWidth / 3.6,
-            height: screenHeight / 28.3,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          onPress={() => handleFilterPress('groups')}
-        >
-          <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Grupos</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={{
-            padding: 10,
-            backgroundColor: selectedSection === 'posts' ? '#FFA8A6' : '#E0E0E0',
-            borderRadius: 30,
-            width: screenWidth / 3.6,
-            height: screenHeight / 28.3,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-          onPress={() => handleFilterPress('posts')}
-        >
-          <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Publicações</Text>
-        </TouchableOpacity>
+            flexDirection: 'row',
+            gap: 10,
+          }}>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: selectedSection === 'users' ? '#FFA8A6' : '#E0E0E0',
+              borderRadius: 30,
+              width: screenWidth * 0.277,
+              height: screenHeight * 0.05,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+            onPress={() => handleFilterPress('users')}>
+            <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Pessoas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              backgroundColor: selectedSection === 'groups' ? '#FFA8A6' : '#E0E0E0',
+              borderRadius: 30,
+              flex: 1,
+              width: screenWidth * 0.277,
+              height: screenHeight * 0.05,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+            onPress={() => handleFilterPress('groups')}>
+            <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Grupos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              backgroundColor: selectedSection === 'posts' ? '#FFA8A6' : '#E0E0E0',
+              borderRadius: 30,
+              flex: 1,
+              width: screenWidth * 0.277,
+              height: screenHeight * 0.05,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+            onPress={() => handleFilterPress('posts')}>
+            <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Publicações</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <ScrollView style={{ height: '100%' }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ height: '100%' }}>
         {(selectedSection === 'users' || selectedSection === '') && (
-          <Section>
+          <Section style={{ zIndex: 2 }}>
             <SectionTitle
               style={{
                 fontSize: 12,
@@ -283,13 +252,18 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
                         avatar: require('../../assets/duck.png'),
                       });
                     }}>
-                    <Name>{`${fullName[0]} ${fullName[1] || ''}`}</Name>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
+                      <Avatar source={avatar} />
+                      <Name fontFamily="inter-regular" fontColor="#3F3D3D">
+                        {`${fullName[0]} ${fullName[1] || ''}`}
+                      </Name>
+                    </View>
                   </TouchableOpacity>
                 </Card>
               );
             })}
             {selectedSection === '' && (
-              <View style={{ width: '100%', marginTop: 20 }}>
+              <View style={{ marginTop: 20 }}>
                 <View
                   style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
                 />
@@ -301,8 +275,7 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
                       marginBottom: 10,
                       fontFamily: 'inter-bold',
                       color: '#3F3D3D',
-                    }}
-                  >
+                    }}>
                     Ver todos os resultados de Pessoas
                   </Text>
                 </StyledButton>
@@ -320,8 +293,7 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
                 marginBottom: 25,
                 fontFamily: 'inter-bold',
                 color: '#3F3D3D',
-              }}
-            >
+              }}>
               Grupos
             </SectionTitle>
             {data.groups.map((group) => (
@@ -333,14 +305,18 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
                       name: group.name,
                       avatar: require('../../assets/duck.png'),
                     });
-                  }}
-                >
-                  <Name>{group.name}</Name>
+                  }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Avatar source={avatar} />
+                    <Name fontFamily="inter-regular" fontColor="#3F3D3D">
+                      {group.name}
+                    </Name>
+                  </View>
                 </TouchableOpacity>
               </Card>
             ))}
             {selectedSection === '' && (
-              <View style={{ width: '100%', marginTop: 20 }}>
+              <View style={{ marginTop: 20 }}>
                 <View
                   style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
                 />
@@ -352,8 +328,7 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
                       marginBottom: 10,
                       fontFamily: 'inter-bold',
                       color: '#3F3D3D',
-                    }}
-                  >
+                    }}>
                     Ver todos os resultados de Grupos
                   </Text>
                 </StyledButton>
@@ -371,8 +346,7 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
                 marginBottom: 25,
                 fontFamily: 'inter-bold',
                 color: '#3F3D3D',
-              }}
-            >
+              }}>
               Publicações
             </SectionTitle>
 
@@ -392,7 +366,7 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
             })}
 
             {selectedSection === '' && (
-              <View style={{ width: '100%', marginTop: 20 }}>
+              <View style={{ marginTop: 20 }}>
                 <View
                   style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
                 />
@@ -404,8 +378,7 @@ export default function ResultSection({ searchText, saveRecentUser }: ResultSect
                       marginBottom: 10,
                       fontFamily: 'inter-bold',
                       color: '#3F3D3D',
-                    }}
-                  >
+                    }}>
                     Ver todos os resultados de Posts
                   </Text>
                 </StyledButton>
