@@ -23,7 +23,9 @@ export default function BigInputTextCustom({ onChangeText, label, value, type, o
             options={options}
           />
         ) : (
-          <BigInputText multiline onChangeText={onChangeText} value={value} />
+          <BigInputText multiline onChangeText={onChangeText} value={value} 
+            // ADICIONADO PARA O TESTE
+            accessibilityLabel={label}/>
         )}
       </BigInputTextIconInputContainer>
     </BigInputTextContainer>
@@ -38,6 +40,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 5,
     color: '#5e6366',
-    outlineStyle: 'none',
+    // outlineStyle: 'none',
   },
 });
