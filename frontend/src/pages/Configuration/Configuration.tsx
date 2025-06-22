@@ -2,15 +2,13 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
-import { useNavigation } from '@react-navigation/native';
 import SideMenuOptions from '../../components/SideMenuOptions/SideMenuOptions';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import IconLock from '../../assets/lock-licon.svg';
 import IconNotification from '../../assets/notification-licon.svg';
 import IconAbout from '../../assets/about-icon.svg';
 
-export default function Config() {
-  const navigation = useNavigation();
+export default function Config({ navigation }: any) {
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
