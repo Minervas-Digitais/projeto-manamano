@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import React from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
@@ -14,9 +14,10 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import IconPassword from '../../assets/lock-icon.svg';
+import { RootStackParamList } from '../../navigation/types';
 
 export default function ChangePassword() {
-  const navigation = useNavigation();
+   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   useEffect(() => {
