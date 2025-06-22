@@ -13,3 +13,4 @@ export type RootStackParamList = {
     ConfigNotification: undefined;
     About: undefined;
 };
+

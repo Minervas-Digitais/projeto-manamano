@@ -24,6 +24,7 @@ import ConfigIcon from '../../assets/config-icon.svg';
 import OutIcon from '../../assets/out-icon.svg';
 import NotificationIcon2 from '../../assets/notification-unread-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
+
 export default function SideMenu({ display, onPress }: any) {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { width, height } = Dimensions.get('window');

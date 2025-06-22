@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { WhiteBackground } from '../EditProfile/EditProfileStyle';
@@ -16,9 +16,10 @@ import GroupIcon from '../../assets/white-group.svg';
 import MegaphoneIcon from '../../assets/white-megaphone.svg';
 import GearIcon from '../../assets/white-gear.svg';
 import SearchIcon from '../../assets/white-MG.svg';
+import { RootStackParamList } from '../../navigation/types';
 
 export default function ADMPage() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
