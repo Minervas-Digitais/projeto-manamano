@@ -2,7 +2,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import SideMenuOptions from '../../components/SideMenuOptions/SideMenuOptions';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import IconLock from '../../assets/lock-licon.svg';
