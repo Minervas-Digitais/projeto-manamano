@@ -36,3 +36,5 @@ yarn-error.*
 
 # Arquivos criados pelos teste
 coverage/
+#yarn
+.yarn/install-state.gz

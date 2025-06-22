@@ -46,7 +46,7 @@ export default function App() {
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="WelcomeScreen">
+      <Stack.Navigator initialRouteName="ADMPage">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}
