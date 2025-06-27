@@ -12,5 +12,6 @@ export type RootStackParamList = {
     ChangePassword: undefined;
     ConfigNotification: undefined;
     About: undefined;
+    CreateGroup: undefined;
 };
 

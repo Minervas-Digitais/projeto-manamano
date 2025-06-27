@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import styled from 'styled-components/native';
 
 // eslint-disable-next-line import/prefer-default-export
@@ -20,13 +19,11 @@ export const ADMButtonContainer = styled.TouchableOpacity<{
   border: ${(prop) => (prop.border ? 'solid 2px #160E47' : 'none')};
 `;
 
-export const ADMButtonGradient = styled(LinearGradient).attrs({
-  colors: ['#1A0E47FF', '#170E47E3', '#160E47D1', '#170E47C7'],
-  locations: [0, 0.85, 1, 1],
-})`
+export const ADMButtonGradient = styled.View`
   flex: 1;
   justify-content: center;
   align-items: center;
   border-radius: 10px;
   gap: 10px;
+  background-image: linear-gradient(to bottom, #1c1049, #363061);
 `;
