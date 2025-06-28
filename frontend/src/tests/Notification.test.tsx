@@ -62,17 +62,13 @@ describe("Notification", () => {
 
     it("Deve renderizar a mensagem de sem notificacoes quando nao ha notificacoes", async () => {
         mockedApi.get.mockImplementation((url: string) => {
-            // Se a URL é para buscar notificações...
             if (url.includes('notifications/user/')) {
-                // ...retorne sempre os dados das notificações.
-                return Promise.resolve({ data: [] });
+                return Promise.resolve({ data: mockNotifications });
             }
-            // Se a URL é para buscar o usuário...
+
             if (url.includes('/user/')) {
-                // ...retorne sempre os dados do usuário.
-                return Promise.resolve({ data: mockUser });
+                return Promise.resolve({ data: mockAdmin });
             }
-            // Se for uma URL inesperada, falhe o teste.
             return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
         });
         
@@ -87,17 +83,13 @@ describe("Notification", () => {
 
     it("Deve renderizar a lista de notificacoes para um usuario comum", async () => {
         mockedApi.get.mockImplementation((url: string) => {
-            // Se a URL é para buscar notificações...
             if (url.includes('notifications/user/')) {
-                // ...retorne sempre os dados das notificações.
                 return Promise.resolve({ data: mockNotifications });
             }
-            // Se a URL é para buscar o usuário...
+
             if (url.includes('/user/')) {
-                // ...retorne sempre os dados do usuário.
-                return Promise.resolve({ data: mockUser });
+                return Promise.resolve({ data: mockAdmin });
             }
-            // Se for uma URL inesperada, falhe o teste.
             return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
         });
 
@@ -110,17 +102,13 @@ describe("Notification", () => {
 
     it("Deve navegar para a tela de Post ao clicar numa notificacao padrao", async () => {
         mockedApi.get.mockImplementation((url: string) => {
-            // Se a URL é para buscar notificações...
             if (url.includes('notifications/user/')) {
-                // ...retorne sempre os dados das notificações.
                 return Promise.resolve({ data: mockNotifications });
             }
-            // Se a URL é para buscar o usuário...
+
             if (url.includes('/user/')) {
-                // ...retorne sempre os dados do usuário.
-                return Promise.resolve({ data: mockUser });
+                return Promise.resolve({ data: mockAdmin });
             }
-            // Se for uma URL inesperada, falhe o teste.
             return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
         });
 
@@ -144,17 +132,13 @@ describe("Notification", () => {
 
     it("Deve navegar para a NotificationPage ao clicar numa notificacao WARNING", async () => {
         mockedApi.get.mockImplementation((url: string) => {
-            // Se a URL é para buscar notificações...
             if (url.includes('notifications/user/')) {
-                // ...retorne sempre os dados das notificações.
                 return Promise.resolve({ data: mockNotifications });
             }
-            // Se a URL é para buscar o usuário...
+
             if (url.includes('/user/')) {
-                // ...retorne sempre os dados do usuário.
-                return Promise.resolve({ data: mockUser });
+                return Promise.resolve({ data: mockAdmin });
             }
-            // Se for uma URL inesperada, falhe o teste.
             return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
         });
 
@@ -184,17 +168,13 @@ describe("Notification", () => {
         });
 
         mockedApi.get.mockImplementation((url: string) => {
-            // Se a URL é para buscar notificações...
             if (url.includes('notifications/user/')) {
-                // ...retorne sempre os dados das notificações.
                 return Promise.resolve({ data: mockNotifications });
             }
-            // Se a URL é para buscar o usuário...
+
             if (url.includes('/user/')) {
-                // ...retorne sempre os dados do usuário.
                 return Promise.resolve({ data: mockAdmin });
             }
-            // Se for uma URL inesperada, falhe o teste.
             return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
         });
 
