@@ -4,7 +4,7 @@ import Notification from "../pages/Notification/Notification";
 import api from '../services/api';
 import { storage } from '../pages/SignIn/SignIn';
 
-jest.mock("expo-font", () => ({
+jest.mock('expo-font', () => ({
     useFonts: () => [true],
 }));
 
@@ -34,7 +34,7 @@ interface NotificationType {
   type: "POST" | "WARNING";
   idContent: string | null;
   isRead: boolean;
-  createdAt: Date;
+  createdAt: string;
 }
 
 interface UserType {
@@ -46,8 +46,8 @@ describe("Notification", () => {
     const mockUser: UserType = { id: "user-123", sysRole: "USER" };
     const mockAdmin: UserType = { id: "admin-123", sysRole: "ADMIN" };
     const mockNotifications: NotificationType[] = [
-        { id: "notif-1", senderName: "Alice", groupName: "grupo1", body: "teste123", type: "POST", idContent: "post-abc", isRead: false, createdAt: new Date() },
-        { id: "notif-2", senderName: "Admin", groupName: "geral", body: "warning123", type: "WARNING", idContent: null, isRead: true, createdAt: new Date() },
+        { id: "notif-1", senderName: "Alice", groupName: "grupo1", body: "teste123", type: "POST", idContent: "post-abc", isRead: false, createdAt: new Date().toISOString() },
+        { id: "notif-2", senderName: "Admin", groupName: "geral", body: "warning123", type: "WARNING", idContent: null, isRead: true, createdAt: new Date().toISOString() },
     ];
 
     beforeEach(() => {
@@ -61,11 +61,22 @@ describe("Notification", () => {
     });
 
     it("Deve renderizar a mensagem de sem notificacoes quando nao ha notificacoes", async () => {
-        mockedApi.get
-            .mockResolvedValueOnce({ data: [] })
-            .mockResolvedValueOnce({ data: mockUser });
+        mockedApi.get.mockImplementation((url: string) => {
+            // Se a URL é para buscar notificações...
+            if (url.includes('notifications/user/')) {
+                // ...retorne sempre os dados das notificações.
+                return Promise.resolve({ data: [] });
+            }
+            // Se a URL é para buscar o usuário...
+            if (url.includes('/user/')) {
+                // ...retorne sempre os dados do usuário.
+                return Promise.resolve({ data: mockUser });
+            }
+            // Se for uma URL inesperada, falhe o teste.
+            return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
+        });
         
-        const { getByText } = render(<Notification navigation={mockedNavigate} />);
+        const { getByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
         await waitFor(() => {
             expect(getByText("Você não possui notificações no momento")).toBeTruthy();
@@ -75,29 +86,49 @@ describe("Notification", () => {
     });
 
     it("Deve renderizar a lista de notificacoes para um usuario comum", async () => {
-        mockedApi.get
-            .mockResolvedValueOnce({ data: mockNotifications })
-            .mockResolvedValueOnce({ data: mockUser });
-
-        const { getByText } = render(<Notification navigation={mockedNavigate} />);
-
-        await waitFor(() => {
-            expect(getByText("Notificação")).toBeTruthy();
-            expect(getByText("teste123")).toBeTruthy();
-            expect(getByText("warning123")).toBeTruthy();
+        mockedApi.get.mockImplementation((url: string) => {
+            // Se a URL é para buscar notificações...
+            if (url.includes('notifications/user/')) {
+                // ...retorne sempre os dados das notificações.
+                return Promise.resolve({ data: mockNotifications });
+            }
+            // Se a URL é para buscar o usuário...
+            if (url.includes('/user/')) {
+                // ...retorne sempre os dados do usuário.
+                return Promise.resolve({ data: mockUser });
+            }
+            // Se for uma URL inesperada, falhe o teste.
+            return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
         });
+
+        const { findByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
+
+        expect(await findByText("Notificação")).toBeTruthy();
+        expect(await findByText("teste123")).toBeTruthy();
+        expect(await findByText("warning123")).toBeTruthy();
     });
 
     it("Deve navegar para a tela de Post ao clicar numa notificacao padrao", async () => {
-        mockedApi.get
-            .mockResolvedValueOnce({ data: mockNotifications })
-            .mockResolvedValueOnce({ data: mockUser });
+        mockedApi.get.mockImplementation((url: string) => {
+            // Se a URL é para buscar notificações...
+            if (url.includes('notifications/user/')) {
+                // ...retorne sempre os dados das notificações.
+                return Promise.resolve({ data: mockNotifications });
+            }
+            // Se a URL é para buscar o usuário...
+            if (url.includes('/user/')) {
+                // ...retorne sempre os dados do usuário.
+                return Promise.resolve({ data: mockUser });
+            }
+            // Se for uma URL inesperada, falhe o teste.
+            return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
+        });
 
         mockedApi.patch.mockResolvedValue({ data: {} });
 
-        const { findByText } = render(<Notification navigation={mockedNavigate} />);
+        const { findByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
-        const notificationItem = await findByText('Este é um post de teste.');
+        const notificationItem = await findByText('teste123');
         fireEvent.press(notificationItem);
 
         await waitFor(() => {
@@ -112,13 +143,24 @@ describe("Notification", () => {
     });
 
     it("Deve navegar para a NotificationPage ao clicar numa notificacao WARNING", async () => {
-        mockedApi.get
-            .mockResolvedValueOnce({ data: mockNotifications })
-            .mockResolvedValueOnce({ data: mockUser });
+        mockedApi.get.mockImplementation((url: string) => {
+            // Se a URL é para buscar notificações...
+            if (url.includes('notifications/user/')) {
+                // ...retorne sempre os dados das notificações.
+                return Promise.resolve({ data: mockNotifications });
+            }
+            // Se a URL é para buscar o usuário...
+            if (url.includes('/user/')) {
+                // ...retorne sempre os dados do usuário.
+                return Promise.resolve({ data: mockUser });
+            }
+            // Se for uma URL inesperada, falhe o teste.
+            return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
+        });
 
         mockedApi.patch.mockResolvedValue({ data: {} });
 
-        const { findByText } = render(<Notification navigation={mockedNavigate} />);
+        const { findByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
         const warningItem = await findByText("warning123");
         fireEvent.press(warningItem);
@@ -141,11 +183,22 @@ describe("Notification", () => {
             return undefined;
         });
 
-        mockedApi.get
-            .mockResolvedValueOnce({ data: mockNotifications })
-            .mockResolvedValueOnce({ data: mockAdmin });
+        mockedApi.get.mockImplementation((url: string) => {
+            // Se a URL é para buscar notificações...
+            if (url.includes('notifications/user/')) {
+                // ...retorne sempre os dados das notificações.
+                return Promise.resolve({ data: mockNotifications });
+            }
+            // Se a URL é para buscar o usuário...
+            if (url.includes('/user/')) {
+                // ...retorne sempre os dados do usuário.
+                return Promise.resolve({ data: mockAdmin });
+            }
+            // Se for uma URL inesperada, falhe o teste.
+            return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
+        });
 
-        const { getByText } = render(<Notification navigation={mockedNavigate} />);
+        const { getByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
         await waitFor(() => {
             expect(getByText("Comunicados")).toBeTruthy();
