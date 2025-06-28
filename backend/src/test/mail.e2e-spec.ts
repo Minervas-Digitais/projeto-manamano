@@ -10,14 +10,12 @@ import { MailService } from 'src/mail/mail.service';
 
 import { createTestUser } from './test-helpers';
 
-// 🔒 Mock do AuthGuard
 class MockAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     return true;
   }
 }
 
-// ✉️ Mock do MailService
 const mockMailService = {
   sendMail: jest.fn().mockResolvedValue({
     message: 'Mail sent successfully (mock)',
@@ -32,9 +30,9 @@ describe('Mail', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [MailModule, AuthModule],
     })
-      .overrideGuard(JwtAuthGuard) // Ignora autenticação
+      .overrideGuard(JwtAuthGuard) 
       .useClass(MockAuthGuard)
-      .overrideProvider(MailService) // Mock do serviço de email
+      .overrideProvider(MailService) 
       .useValue(mockMailService)
       .compile();
 
@@ -59,7 +57,7 @@ describe('Mail', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.message).toContain('Mail sent successfully');
-      expect(mockMailService.sendMail).toHaveBeenCalled(); // ✅ Confirma se foi chamado
+      expect(mockMailService.sendMail).toHaveBeenCalled(); 
     });
 
     it('deve retornar erro 400 se campos forem inválidos', async () => {
