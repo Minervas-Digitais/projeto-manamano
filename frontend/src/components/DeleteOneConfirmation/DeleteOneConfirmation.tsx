@@ -16,7 +16,7 @@ import api from '../../services/api';
 
 export default function DeleteOneConfirmation({ text }: any) {
   const current = storage.getString('displayNotif');
-  const [shouldDisplay, setShouldDisplay] = useState(current);
+  const [shouldDisplay, setShouldDisplay] = useState(current? true : false);
 
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
