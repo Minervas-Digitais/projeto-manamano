@@ -32,7 +32,7 @@ describe("Notification", () => {
         authService = moduleFixture.get<AuthService>(AuthService);
 
         await app.init();
-        
+
         userToken = await getUserToken(authService, prismaService);
         adminToken = await getAdminToken(authService, prismaService);
         recipientToken = await getRecipientToken(authService, prismaService);
@@ -42,10 +42,10 @@ describe("Notification", () => {
     describe("Create", () => {
         it("Deve criar uma notificacao", async () => {
             const recipientUser = await prismaService.user.findUnique({
-                where: {email: "testrecipient@example.com"}
+                where: { email: "testrecipient@example.com" }
             })
             const senderUser = await prismaService.user.findUnique({
-                where: {email: "testsender@example.com"},
+                where: { email: "testsender@example.com" },
             });
 
             const notificationDTO: CreateNotificationDto = {
@@ -90,7 +90,7 @@ describe("Notification", () => {
 
             const response = await request(app.getHttpServer())
                 .post("/notifications")
-                .set("Authorization", "Bearer " + userToken) 
+                .set("Authorization", "Bearer " + userToken)
                 .send(notificationDTO);
 
             expect(response.status).toBe(403);
@@ -103,7 +103,7 @@ describe("Notification", () => {
             });
 
             const notificationDTO: CreateNotificationDto = {
-                senderId: "id-invalido-remetente", 
+                senderId: "id-invalido-remetente",
                 body: "corpo de teste",
                 recipientId: recipientUser.id,
                 type: NotificationType.COMMENT,
@@ -128,7 +128,7 @@ describe("Notification", () => {
             const notificationDTO: CreateNotificationDto = {
                 senderId: senderUser.id,
                 body: "corpo de teste",
-                recipientId: "id-invalido-destinatario", 
+                recipientId: "id-invalido-destinatario",
                 type: NotificationType.COMMENT,
                 groupName: "grupoTeste",
                 senderName: "remetenteTeste",
@@ -169,13 +169,13 @@ describe("Notification", () => {
         it("Deve retornar todas as notificacoes de um usuario", async () => {
             // Criar usuario 
             const sendingUser = await prismaService.user.findUnique({
-                where: {email: "testsender@example.com"}
+                where: { email: "testsender@example.com" }
             })
 
             const recipientUser = await prismaService.user.findUnique({
-                where: {email: "testrecipient@example.com"},
+                where: { email: "testrecipient@example.com" },
             });
-            
+
             // Criar uma notificacao no id do usuario
             const notificationDTO: CreateNotificationDto = {
                 senderId: sendingUser.id,
@@ -194,7 +194,7 @@ describe("Notification", () => {
                     type: notificationDTO.type,
                     groupName: notificationDTO.groupName || null,
                     senderName: notificationDTO.senderName || null,
-                }, 
+                },
                 {
                     senderId: notificationDTO.senderId,
                     recipientId: notificationDTO.recipientId,
@@ -205,7 +205,7 @@ describe("Notification", () => {
                 }]
             })
             // Pegar as notificacoes dele GET: user/:userId
-            
+
 
             const response = await request(app.getHttpServer())
                 .get(`/notifications/user/${recipientUser.id}`)
@@ -220,7 +220,7 @@ describe("Notification", () => {
 
         it("Deve retornar [] caso o id seja invalido", async () => {
             // Cria request com um id invalido
-            const id = 123 
+            const id = 123
 
             const response = await request(app.getHttpServer())
                 .get(`/notifications/user/${id}`)
@@ -259,8 +259,8 @@ describe("Notification", () => {
                 .patch(`/notifications/${notificationId}`)
                 .set("Authorization", "Bearer " + senderToken)
                 .send(update)
-            
-  
+
+
             expect(response.status).toBe(404)
             expect(response.body.message).toBe("Notificação não encontrada")
         })
@@ -274,7 +274,7 @@ describe("Notification", () => {
             const response = await request(app.getHttpServer())
                 .delete(`/notifications/${notificationId}`)
                 .set("Authorization", "Bearer " + senderToken)
-            
+
             expect(response.status).toBe(200)
             expect(response.body).toHaveProperty("id")
         })
@@ -294,11 +294,11 @@ describe("Notification", () => {
     describe("CreateGlobal", () => {
         it("Deve criar uma notificacao global apenas se for admin", async () => {
             const recipientUser = await prismaService.user.findUnique({
-                where: {email: "testrecipient@example.com"}
+                where: { email: "testrecipient@example.com" }
             })
 
             const admin = await prismaService.user.findUnique({
-                where: {email: "admin@example.com"},
+                where: { email: "admin@example.com" },
             });
 
             const notificationDTO = {
@@ -314,17 +314,17 @@ describe("Notification", () => {
                 .post("/notifications/global")
                 .set("Authorization", "Bearer " + adminToken)
                 .send(notificationDTO)
-            
+
             expect(response.status).toBe(201);
         })
 
         it("Deve negar acesso a token de usuario", async () => {
             const recipientUser = await prismaService.user.findUnique({
-                where: {email: "testrecipient@example.com"}
+                where: { email: "testrecipient@example.com" }
             })
 
             const user = await prismaService.user.findUnique({
-                where: {email: "testsender@example.com"},
+                where: { email: "testsender@example.com" },
             });
 
             const notificationDTO: CreateNotificationDto = {
@@ -347,26 +347,26 @@ describe("Notification", () => {
 
     })
 
-    describe("deleteAllNotifications", () =>{
+    describe("deleteAllNotifications", () => {
         it("Deve deletar todas as notificações de um usuário existente", async () => {
             const recipientUser = await prismaService.user.findUnique({
                 where: { email: "testrecipient@example.com" },
             });
 
             const senderUser = await prismaService.user.findUnique({
-                where: {email: "testsender@example.com"},
+                where: { email: "testsender@example.com" },
             });
 
             await request(app.getHttpServer())
                 .post("/notifications")
                 .set("Authorization", "Bearer " + senderToken)
                 .send({
-                senderId: senderUser.id,
-                recipientId: recipientUser.id,
-                body: "bodyTeste",
-                type: NotificationType.COMMENT,
-                groupName: "grupoTeste",
-                senderName: "senderTeste",
+                    senderId: senderUser.id,
+                    recipientId: recipientUser.id,
+                    body: "bodyTeste",
+                    type: NotificationType.COMMENT,
+                    groupName: "grupoTeste",
+                    senderName: "senderTeste",
                 });
 
             const response = await request(app.getHttpServer())
@@ -393,10 +393,10 @@ describe("Notification", () => {
             await prismaService.notification.deleteMany({
                 where: {
                     recipient: {
-                    OR: [
-                        { phone: '2837192123' },
-                        { email: '230273@gmail.com' }
-                    ]
+                        OR: [
+                            { phone: '2837192123' },
+                            { email: '230273@gmail.com' }
+                        ]
                     }
                 }
             });
@@ -404,8 +404,8 @@ describe("Notification", () => {
             await prismaService.user.deleteMany({
                 where: {
                     OR: [
-                    { phone: '2837192123' },
-                    { email: '230273@gmail.com' }
+                        { phone: '2837192123' },
+                        { email: '230273@gmail.com' }
                     ]
                 }
             });
@@ -424,26 +424,26 @@ describe("Notification", () => {
 
     })
 
-    describe("markAllAsRead", () =>{
+    describe("markAllAsRead", () => {
         it("Deve marcar todas as notificações como lidas para um usuário", async () => {
             const recipientUser = await prismaService.user.findUnique({
                 where: { email: "testrecipient@example.com" },
             });
 
             const senderUser = await prismaService.user.findUnique({
-                where: {email: "testsender@example.com"},
+                where: { email: "testsender@example.com" },
             });
 
             await request(app.getHttpServer())
                 .post("/notifications")
                 .set("Authorization", "Bearer " + senderToken)
                 .send({
-                senderId: senderUser.id,
-                recipientId: recipientUser.id,
-                body: "bodyTeste",
-                type: NotificationType.COMMENT,
-                groupName: "grupoTeste",
-                senderName: "senderTeste",
+                    senderId: senderUser.id,
+                    recipientId: recipientUser.id,
+                    body: "bodyTeste",
+                    type: NotificationType.COMMENT,
+                    groupName: "grupoTeste",
+                    senderName: "senderTeste",
                 });
 
             const response = await request(app.getHttpServer())
@@ -469,10 +469,10 @@ describe("Notification", () => {
             await prismaService.notification.deleteMany({
                 where: {
                     recipient: {
-                    OR: [
-                        { phone: '283719212' },
-                        { email: '230273@gmail.com' }
-                    ]
+                        OR: [
+                            { phone: '283719212' },
+                            { email: '230273@gmail.com' }
+                        ]
                     }
                 }
             });
@@ -480,8 +480,8 @@ describe("Notification", () => {
             await prismaService.user.deleteMany({
                 where: {
                     OR: [
-                    { phone: '283719212' },
-                    { email: '230273123@gmail.com' }
+                        { phone: '283719212' },
+                        { email: '230273123@gmail.com' }
                     ]
                 }
             });
@@ -498,4 +498,110 @@ describe("Notification", () => {
         });
 
     })
+
+    describe("UpdateNotification", () => {
+        it("Deve atualizar uma notificação com sucesso", async () => {
+            const senderUser = await prismaService.user.findUnique({
+                where: { email: "testsender@example.com" },
+            });
+            const recipientUser = await prismaService.user.findUnique({
+                where: { email: "testrecipient@example.com" },
+            });
+
+            const notificationCreated = await prismaService.notification.create({
+                data: {
+                    senderId: senderUser.id,
+                    recipientId: recipientUser.id,
+                    body: "Notificação original do teste service",
+                    type: NotificationType.COMMENT,
+                },
+            });
+
+            const updateData: UpdateNotificationDto = {
+                body: "Corpo atualizado via teste direto no service",
+                isRead: true,
+                groupName: "grupoServiceTeste",
+            };
+
+            const response = await request(app.getHttpServer())
+                .patch(`/notifications/update/${notificationCreated.id}`)
+                .set("Authorization", "Bearer " + senderToken)
+                .send(updateData);
+
+            expect(response.status).toBe(200);
+            expect(response.body.id).toBe(notificationCreated.id);
+            expect(response.body.body).toBe(updateData.body);
+            expect(response.body.isRead).toBe(true);
+            expect(response.body.groupName).toBe(updateData.groupName)
+        });
+
+        it("Deve retornar 404 ao tentar atualizar notificação inexistente via rota HTTP", async () => {
+            const invalidId = "id-invalido-teste";
+
+            const updatePayload: UpdateNotificationDto = {
+                body: "Corpo qualquer",
+            };
+
+            const response = await request(app.getHttpServer())
+                .patch(`/notifications/update/${invalidId}`)
+                .set("Authorization", "Bearer " + senderToken)
+                .send(updatePayload);
+
+            expect(response.status).toBe(404);
+            expect(response.body.message).toBe("Notificação não encontrada.");
+        });
+        it("Deve permitir atualização parcial de uma notificação", async () => {
+            const senderUser = await prismaService.user.findUnique({ where: { email: "testsender@example.com" } });
+            const recipientUser = await prismaService.user.findUnique({ where: { email: "testrecipient@example.com" } });
+
+            const notification = await prismaService.notification.create({
+                data: {
+                    senderId: senderUser.id,
+                    recipientId: recipientUser.id,
+                    body: "Mensagem original",
+                    type: NotificationType.COMMENT,
+                },
+            });
+
+            const updateData: UpdateNotificationDto = {
+                isRead: true,
+            };
+
+            const response = await request(app.getHttpServer())
+                .patch(`/notifications/update/${notification.id}`)
+                .set("Authorization", "Bearer " + senderToken)
+                .send(updateData);
+
+            expect(response.status).toBe(200);
+            expect(response.body.id).toBe(notification.id);
+            expect(response.body.isRead).toBe(true);
+            expect(response.body.body).toBe("Mensagem original");
+        });
+        it("Deve ignorar atualização se nenhum campo for enviado", async () => {
+            const senderUser = await prismaService.user.findUnique({ where: { email: "testsender@example.com" } });
+            const recipientUser = await prismaService.user.findUnique({ where: { email: "testrecipient@example.com" } });
+
+            const notification = await prismaService.notification.create({
+                data: {
+                    senderId: senderUser.id,
+                    recipientId: recipientUser.id,
+                    body: "Teste sem atualização",
+                    type: NotificationType.COMMENT,
+                },
+            });
+
+            const updateData: UpdateNotificationDto = {}; 
+
+            const response = await request(app.getHttpServer())
+                .patch(`/notifications/update/${notification.id}`)
+                .set("Authorization", "Bearer " + senderToken)
+                .send(updateData);
+
+            expect(response.status).toBe(200);
+            expect(response.body.body).toBe("Teste sem atualização");
+        });
+
+
+    })
+
 })
