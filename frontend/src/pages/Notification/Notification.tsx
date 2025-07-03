@@ -42,7 +42,7 @@ export interface INotification {
   senderName: string;
   groupName: string;
   body: string;
-  type: 'POST' | 'WARNING' | string; // Use tipos literais para mais segurança
+  type: 'COMMENT' | 'WARNING' | "FIXED" | string;
   idContent: string | null;
   isRead: boolean;
   createdAt: string;
@@ -84,7 +84,7 @@ export default function Notification({ navigation }: any) {
             Authorization: `Bearer ${accessTokenState}`,
           },
         });
-      
+
         const userData: IUser = response.data;
         setUserInfo(userData);
 
@@ -98,7 +98,7 @@ export default function Notification({ navigation }: any) {
       }
     }
   };
-  
+
   fetchUserInfo();
 }, [loggedIdState, accessTokenState]);
   useEffect(() => {
@@ -196,7 +196,7 @@ export default function Notification({ navigation }: any) {
               </>
             )}
           </NotificationInfoContainer>
-          
+
             <ButtonCustom
               onPress={() => {}}
               backColor="#EF4036"
@@ -204,7 +204,7 @@ export default function Notification({ navigation }: any) {
               text="Retornar para a tela inicial"
               border={false}
             />
-          
+
         </NotificationBodyContainer>
       </ConfigNotificationContainer>
     </>

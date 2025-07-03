@@ -31,7 +31,7 @@ interface NotificationType {
   senderName: string;
   groupName: string;
   body: string;
-  type: "POST" | "WARNING";
+  type: "COMMENT" | "WARNING" | "FIXED";
   idContent: string | null;
   isRead: boolean;
   createdAt: string;
@@ -46,8 +46,10 @@ describe("Notification", () => {
     const mockUser: UserType = { id: "user-123", sysRole: "USER" };
     const mockAdmin: UserType = { id: "admin-123", sysRole: "ADMIN" };
     const mockNotifications: NotificationType[] = [
-        { id: "notif-1", senderName: "Alice", groupName: "grupo1", body: "teste123", type: "POST", idContent: "post-abc", isRead: false, createdAt: new Date().toISOString() },
+        { id: "notif-1", senderName: "Alice", groupName: "grupo1", body: "teste123", type: "COMMENT", idContent: "post-abc", isRead: false, createdAt: new Date().toISOString() },
         { id: "notif-2", senderName: "Admin", groupName: "geral", body: "warning123", type: "WARNING", idContent: null, isRead: true, createdAt: new Date().toISOString() },
+        { id: "notif-3", senderName: "Admin", groupName: "geral", body: "warning456", type: "WARNING", idContent: null, isRead: true, createdAt: new Date().toISOString() },
+        { id: "notif-4", senderName: "Suporte", groupName: "geral", body: "fixed123", type: "FIXED", idContent: "fixed-abc", isRead: true, createdAt: new Date().toISOString() },
     ];
 
     beforeEach(() => {
@@ -58,27 +60,38 @@ describe("Notification", () => {
             if (key === "accessToken") return "fake-token";
             return undefined;
         });
-    });
 
-    it("Deve renderizar a mensagem de sem notificacoes quando nao ha notificacoes", async () => {
+        // mockando apenas para user
         mockedApi.get.mockImplementation((url: string) => {
-            if (url.includes('notifications/user/')) {
+            if (url.includes("notifications/user/")) {
                 return Promise.resolve({ data: mockNotifications });
             }
-
-            if (url.includes('/user/')) {
-                return Promise.resolve({ data: mockAdmin });
+            if (url.includes("/user/")) {
+                return Promise.resolve({ data: mockUser });
             }
             return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
         });
-        
-        const { getByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
-        await waitFor(() => {
-            expect(getByText("Você não possui notificações no momento")).toBeTruthy();
+        mockedApi.patch.mockResolvedValue({ data: {} });
+    });
+
+    it("Deve renderizar a mensagem de sem notificacoes quando nao ha notificacoes", async () => {
+        mockedApi.get.mockImplementation(async (url: string) => {
+            if (url.includes('notifications/user/')) {
+                return { data: [] };
+            }
+            if (url.includes('/user/')) {
+                return { data: mockUser };
+            }
+            return Promise.reject(new Error(`URL da API não mockada no teste:${url}`));
         });
 
-        expect(getByText("Retornar para a tela inicial")).toBeTruthy();
+        const { findByText, queryByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
+
+        expect(await findByText("Você não possui notificações no momento")).toBeTruthy();
+
+        expect(queryByText("teste123")).toBeNull();
+        expect(queryByText("warning123")).toBeNull();
     });
 
     it("Deve renderizar a lista de notificacoes para um usuario comum", async () => {
@@ -88,7 +101,7 @@ describe("Notification", () => {
             }
 
             if (url.includes('/user/')) {
-                return Promise.resolve({ data: mockAdmin });
+                return Promise.resolve({ data: mockUser });
             }
             return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
         });
@@ -96,54 +109,45 @@ describe("Notification", () => {
         const { findByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
         expect(await findByText("Notificação")).toBeTruthy();
-        expect(await findByText("teste123")).toBeTruthy();
         expect(await findByText("warning123")).toBeTruthy();
+        expect(await findByText("warning456")).toBeTruthy();
     });
 
-    it("Deve navegar para a tela de Post ao clicar numa notificacao padrao", async () => {
-        mockedApi.get.mockImplementation((url: string) => {
-            if (url.includes('notifications/user/')) {
-                return Promise.resolve({ data: mockNotifications });
-            }
-
-            if (url.includes('/user/')) {
-                return Promise.resolve({ data: mockAdmin });
-            }
-            return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
-        });
-
-        mockedApi.patch.mockResolvedValue({ data: {} });
-
+    it("Deve navegar para a tela de Post ao clicar numa notificacao COMMENT", async () => {
         const { findByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
-        const notificationItem = await findByText('teste123');
+        const notificationItem = await findByText(/comentou no seu post/i);
         fireEvent.press(notificationItem);
 
         await waitFor(() => {
             expect(mockedApi.patch).toHaveBeenCalledWith(
                 'notifications/notif-1',
                 { isRead: true },
-                expect.any(Object) 
+                expect.any(Object)
             );
         });
 
         expect(mockedNavigate).toHaveBeenCalledWith('Post', { postId: 'post-abc' });
     });
 
-    it("Deve navegar para a NotificationPage ao clicar numa notificacao WARNING", async () => {
-        mockedApi.get.mockImplementation((url: string) => {
-            if (url.includes('notifications/user/')) {
-                return Promise.resolve({ data: mockNotifications });
-            }
+    it("Deve navegar para a tela de Post ao clicar numa notificacao FIXED", async () => {
+        const { findByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
-            if (url.includes('/user/')) {
-                return Promise.resolve({ data: mockAdmin });
-            }
-            return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
+        const notificationItem = await findByText(/publicação foi fixada no grupo/i);
+        fireEvent.press(notificationItem);
+
+        await waitFor(() => {
+            expect(mockedApi.patch).toHaveBeenCalledWith(
+                'notifications/notif-4',
+                { isRead: true },
+                expect.any(Object)
+            );
         });
 
-        mockedApi.patch.mockResolvedValue({ data: {} });
+        expect(mockedNavigate).toHaveBeenCalledWith('Post', { postId: 'fixed-abc' });
+    })
 
+    it("Deve navegar para a NotificationPage ao clicar numa notificacao WARNING", async () => {
         const { findByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
         const warningItem = await findByText("warning123");
@@ -188,7 +192,7 @@ describe("Notification", () => {
     it("Deve chamar a funcao de buscar notificacoes periodicamente", async () => {
         jest.useFakeTimers();
         mockedApi.get.mockResolvedValue({ data: [] });
-        
+
         render(<Notification navigation={mockedNavigate} />);
 
         await waitFor(() => {
@@ -198,9 +202,9 @@ describe("Notification", () => {
 
         act(() => {
             // Avanca o tempo do setInterval
-            jest.advanceTimersByTime(1000);  
+            jest.advanceTimersByTime(1000);
         });
-        
+
         await waitFor(() => {
             expect(mockedApi.get).toHaveBeenCalledTimes(3);
         });
