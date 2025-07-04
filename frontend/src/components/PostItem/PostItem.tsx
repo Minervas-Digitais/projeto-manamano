@@ -3,10 +3,11 @@ import { View, TouchableOpacity } from 'react-native';
 import PostCard from '../PostCard/PostCard';
 
 interface PostItemProps {
-  post: Post;
+  post: any;//Post;
   formattedDate: string;
   fetchUserName: (userId: string) => Promise<string>;
   fetchNumComments: (postId: string) => Promise<number>;
+  testID: string;
 }
 
 const PostItem: React.FC<PostItemProps> = ({
@@ -14,6 +15,7 @@ const PostItem: React.FC<PostItemProps> = ({
   formattedDate,
   fetchUserName,
   fetchNumComments,
+  testID
 }) => {
   const [userName, setUserName] = useState<string>('');
   const [numComments, setNumComments] = useState<number>(post.numComments);
@@ -35,8 +37,8 @@ const PostItem: React.FC<PostItemProps> = ({
   }, [post.id, fetchNumComments]);
 
   return (
-    <View style={{ marginBottom: 20 }}>
-      <TouchableOpacity>
+    <View style={{ marginBottom: 20 }} >
+      <TouchableOpacity testID={testID}>
         <PostCard
           nameUser={userName}
           postContent={post.input}

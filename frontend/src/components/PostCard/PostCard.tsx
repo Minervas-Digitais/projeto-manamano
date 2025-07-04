@@ -72,40 +72,40 @@ export default function PostCard({
             </GroupDataText>
           </PostCardTag>
         ) : (
-          <View style={{ paddingTop: '14px' }} />
+          <View style={{ paddingTop: 14 }} />
         )}
         <PostCardIcons
           style={{
             flex: 1,
             justifyContent: 'flex-end',
             position: 'absolute',
-            paddingTop: '10px',
+            paddingTop: 10,
             right: 0,
           }}>
           {share ? (
             <TouchableOpacity onPress={onShare}>
-              <PostCardImage width="20px" height="20px" source={shareIcon} />
+                <PostCardImage width={20} height={20} source={shareIcon} />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {save ? (
             <TouchableOpacity>
-              <PostCardImage width="20px" height="20px" source={saveIcon} />
+              <PostCardImage width={20} height={20} source={saveIcon} />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {saved ? (
             <TouchableOpacity>
-              <PostCardImage width="20px" height="20px" source={savedIcon} />
+              <PostCardImage width={20} height={20} source={savedIcon} />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {dotsMenu ? (
             <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
-              <PostCardImage width="20px" height="20px" source={dotsMenuIcon} />
+              <PostCardImage width={20} height={20} source={dotsMenuIcon} />
             </TouchableOpacity>
           ) : (
             <View />
@@ -124,17 +124,17 @@ export default function PostCard({
       <GroupDataText numberOfLines={4} font="inter-regular" color="#515151" size="12px">
         {postContent}
       </GroupDataText>
-      <PostCardSpaceBetween style={{ alignItems: 'flex-end', paddingTop: '15px' }}>
+      <PostCardSpaceBetween style={{ alignItems: 'flex-end', paddingTop: 15 }}>
         <PostCardIcons>
           <TouchableOpacity>
-            <PostCardImage width="15px" height="15px" source={commentIcon} />
+            <PostCardImage width={20} height={20} source={commentIcon} />
           </TouchableOpacity>
           <GroupDataText font="inter-bold" color="#160E47" size="10px">
             {numComments}
           </GroupDataText>
           {fix ? (
             <TouchableOpacity>
-              <PostCardImage width="15px" height="15px" source={fixIcon} />
+              <PostCardImage width={20} height={20} source={fixIcon} />
             </TouchableOpacity>
           ) : (
             ''
@@ -144,7 +144,7 @@ export default function PostCard({
           font="inter-regular"
           color="#515151"
           size="10px"
-          style={{ marginRight: '8px' }}
+          style={{ marginRight: 8 }}
         >
           {date}
         </GroupDataText>
