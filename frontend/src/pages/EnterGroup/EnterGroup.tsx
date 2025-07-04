@@ -1,3 +1,4 @@
+import React from 'react';
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
@@ -75,7 +76,7 @@ export default function EnterGroup({ navigation }: any) {
               />
             )}
           />
-          {errors.groupcode && <ErrorWarning errorText="Campo obrigatório" />}
+          {errors.inviteCode && <ErrorWarning errorText="Campo obrigatório" />}
           <ButtonCustom
             onPress={handleSubmit(onSubmit)}
             backColor="#160E47"
