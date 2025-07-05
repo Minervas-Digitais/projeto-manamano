@@ -24,7 +24,7 @@ export class PostService {
         data: createPostDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -64,7 +64,7 @@ export class PostService {
 
       return posts.map(this.serializePost);
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -102,7 +102,7 @@ export class PostService {
 
       return this.serializePost(post);
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -114,7 +114,7 @@ export class PostService {
         data: updatePostDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -125,7 +125,7 @@ export class PostService {
         where: { id },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -155,7 +155,7 @@ export class PostService {
         },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -175,7 +175,7 @@ export class PostService {
         },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -187,7 +187,7 @@ export class PostService {
         data: { isPinned: true },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -199,7 +199,7 @@ export class PostService {
         data: { isPinned: false },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -239,7 +239,7 @@ export class PostService {
 
       return posts.map(this.serializePost);
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -282,7 +282,7 @@ export class PostService {
 
       return posts.map(this.serializePost);
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -325,7 +325,7 @@ export class PostService {
 
       return posts.map(this.serializePost);
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -368,7 +368,7 @@ export class PostService {
 
       return posts.map(this.serializePost);
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 }
