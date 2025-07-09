@@ -21,7 +21,7 @@ export default function ButtonCustom({
   return (
     <ButtonContainer backgroundColor={backColor} onPress={onPress} border={border}>
       {leftIcon}
-      <ButtonText fontColor={fontColor} fontFamily="inter-bold">
+      <ButtonText accessibilityLabel={text} fontColor={fontColor} fontFamily="inter-bold">
         {text}
       </ButtonText>
       {rightIcon}
