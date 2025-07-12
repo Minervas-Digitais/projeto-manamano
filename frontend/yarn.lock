@@ -7329,6 +7329,7 @@ __metadata:
     react-dom: "npm:18.3.1"
     react-hook-form: "npm:^7.51.5"
     react-native: "npm:0.76.9"
+    react-native-clipboard: "npm:^0.0.5"
     react-native-element-dropdown: "npm:^2.12.2"
     react-native-gesture-handler: "npm:~2.20.2"
     react-native-masked-text: "npm:^1.13.0"
@@ -11586,6 +11587,15 @@ __metadata:
   version: 17.0.2
   resolution: "react-is@npm:17.0.2"
   checksum: 10c0/2bdb6b93fbb1820b024b496042cce405c57e2f85e777c9aabd55f9b26d145408f9f74f5934676ffdc46f3dcff656d78413a6e43968e7b3f92eea35b3052e9053
+  languageName: node
+  linkType: hard
+
+"react-native-clipboard@npm:^0.0.5":
+  version: 0.0.5
+  resolution: "react-native-clipboard@npm:0.0.5"
+  peerDependencies:
+    react-native: ">=0.5"
+  checksum: 10c0/55a3b318bc7e6e0a85ee2351607eb12074335160bf664d596b3c3f1cbb9c98ab53edd5716e90e698ba31a8bdd32ccd602476f8ef662274bcdbb5d797de7af607
   languageName: node
   linkType: hard
 
