@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
 import { Share, TouchableOpacity, View } from 'react-native';
+import { ptBR } from 'date-fns/locale';
+import { format } from 'date-fns/format';
 import {
   PostCardContainer,
   PostCardIcons,
-  PostCardImage,
   PostCardSpaceBetween,
   PostCardImageUser,
   PostCardTag,
@@ -14,6 +15,12 @@ import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
 import ModalOptions from '../ModalOptions/ModalOptions';
 import api from '../../services/api';
 import { storage } from '../../pages/SignIn/SignIn';
+import ShareIcon from '../../assets/share-icon.svg';
+import SaveIcon from '../../assets/save-icon.svg';
+import SavedIcon from '../../assets/saved-icon.svg';
+import CommentIcon from '../../assets/comment-icon.svg';
+import FixIcon from '../../assets/fix-icon.svg';
+import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 
 export default function PostCard({
   nameUser,
@@ -43,14 +50,9 @@ export default function PostCard({
       console.error('Erro ao compartilhar:', error);
     }
   };
-  const shareIcon = require('../../assets/share-icon.svg');
-  const saveIcon = require('../../assets/save-icon.svg');
-  const savedIcon = require('../../assets/saved-icon.svg');
-  const commentIcon = require('../../assets/comment-icon.svg');
-  const fixIcon = require('../../assets/fix-icon.svg');
-  const dotsMenuIcon = require('../../assets/dotsMenu-icon.svg');
   const [modalOptions, setModalOptions] = useState(false);
-
+  const postDate = date ? new Date(date) : null;
+  const formattedDate = postDate ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR }) : '';
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -84,28 +86,28 @@ export default function PostCard({
           }}>
           {share ? (
             <TouchableOpacity onPress={onShare}>
-              <PostCardImage width="20px" height="20px" source={shareIcon} />
+              <ShareIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {save ? (
             <TouchableOpacity>
-              <PostCardImage width="20px" height="20px" source={saveIcon} />
+              <SaveIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {saved ? (
             <TouchableOpacity>
-              <PostCardImage width="20px" height="20px" source={savedIcon} />
+              <SavedIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {dotsMenu ? (
             <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
-              <PostCardImage width="20px" height="20px" source={dotsMenuIcon} />
+              <DotsMenuIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
@@ -127,14 +129,14 @@ export default function PostCard({
       <PostCardSpaceBetween style={{ alignItems: 'flex-end', paddingTop: '15px' }}>
         <PostCardIcons>
           <TouchableOpacity>
-            <PostCardImage width="15px" height="15px" source={commentIcon} />
+            <CommentIcon width="15px" height="15px" />
           </TouchableOpacity>
           <GroupDataText font="inter-bold" color="#160E47" size="10px">
             {numComments}
           </GroupDataText>
           {fix ? (
             <TouchableOpacity>
-              <PostCardImage width="15px" height="15px" source={fixIcon} />
+              <FixIcon width="15px" height="15px" />
             </TouchableOpacity>
           ) : (
             ''
@@ -144,9 +146,8 @@ export default function PostCard({
           font="inter-regular"
           color="#515151"
           size="10px"
-          style={{ marginRight: '8px' }}
-        >
-          {date}
+          style={{ marginRight: '8px' }}>
+          {formattedDate}
         </GroupDataText>
       </PostCardSpaceBetween>
     </PostCardContainer>
