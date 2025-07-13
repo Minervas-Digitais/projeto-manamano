@@ -10,18 +10,23 @@ export const PostCardContainer = styled.TouchableOpacity<{ shadowColor?: string 
   padding: 0px 15px 10px 20px;
   gap: 5px;
   border-radius: 15px;
-  ${Platform.select({
-    ios: `
-      shadow-color: ${(props) => (props.shadowColor ? '#ef3f36' : 'rgba(0, 0, 0, 0.1)')};
-      shadow-offset: 0px 3px;
-      shadow-opacity: 0.5;
-      shadow-radius: 6px;
-    `,
-    android: `
-      elevation: 3;
-    `,
-  })}
   border: solid 1px #d8d7d7;
+  background-color: white;
+
+  ${Platform.OS === 'android'
+    ? `
+    elevation: 8;
+  `
+    : ''}
+
+  ${Platform.OS === 'ios'
+    ? (props) => `
+    shadow-color: ${props.shadowColor ? props.shadowColor : 'rgba(0, 0, 0, 0.1)'};
+    shadow-offset: 0px 3px;
+    shadow-opacity: 0.5;
+    shadow-radius: 6px;
+  `
+    : ''}
 `;
 
 export const PostCardTag = styled.View`

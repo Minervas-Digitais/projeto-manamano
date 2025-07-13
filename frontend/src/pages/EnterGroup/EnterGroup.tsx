@@ -2,6 +2,7 @@ import React from 'react';
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
+import React from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
@@ -16,37 +17,48 @@ export default function EnterGroup({ navigation }: any) {
     handleSubmit,
     formState: { errors },
   } = useForm({});
-  const onSubmit = (data: any) => {
+  const onSubmit = async (data: any) => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
-    let participantData = {
-      userId: loggedId,
-      role: 'MEMBER',
-      inviteCode: data.inviteCode,
-      groupId: '',
-    };
-    // eslint-disable-next-line no-alert
-    api
-      .get('/group', {
+
+    if (!accessToken || !loggedId) {
+      console.error('Token ou ID do usuário não encontrado.');
+      return;
+    }
+
+    try {
+      const res = await api.get('/group', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      })
-      .then((res) => {
-        const groupIdFind = res?.data.find((item: any) => item.inviteCode === data.inviteCode);
-        if (groupIdFind) {
-          participantData = { ...participantData, groupId: groupIdFind.id };
-          console.log(` groupIdFind: ${JSON.stringify(groupIdFind)}`);
-          api
-            .post('/participant', participantData, {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            })
-            .then((resp) => {});
-        }
       });
-    navigation.navigate('Groups');
+
+      const groupIdFind = res?.data.find((item: any) => item.inviteCode === data.inviteCode);
+
+      if (!groupIdFind) {
+        alert('Código de convite inválido.');
+        return;
+      }
+
+      const participantData = {
+        userId: loggedId,
+        role: 'MEMBER',
+        inviteCode: data.inviteCode,
+        groupId: groupIdFind.id,
+      };
+
+      const resp = await api.post('/participant', participantData, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      console.log('Participante adicionado com sucesso:', resp.data);
+      alert('Você entrou no grupo com sucesso!');
+    } catch (error) {
+      console.error('Erro ao entrar no grupo:', error);
+      alert('Ocorreu um erro ao tentar entrar no grupo.');
+    }
   };
 
   const [fontsLoaded] = useFonts({
