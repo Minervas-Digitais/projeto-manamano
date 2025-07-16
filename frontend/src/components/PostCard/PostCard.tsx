@@ -22,6 +22,14 @@ import CommentIcon from '../../assets/comment-icon.svg';
 import FixIcon from '../../assets/fix-icon.svg';
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 
+// Import SVGs and images
+import ShareIcon from '../../assets/share-icon.svg';
+import SaveIcon from '../../assets/save-icon.svg';
+import SavedIcon from '../../assets/saved-icon.svg';
+import CommentIcon from '../../assets/comment-icon.svg';
+import FixIcon from '../../assets/fix-icon.svg';
+import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
+
 export default function PostCard({
   nameUser,
   imageUser,
@@ -123,7 +131,12 @@ export default function PostCard({
           </GroupDataText>
         </PostCardIcons>
       </PostCardSpaceBetween>
-      <GroupDataText numberOfLines={4} font="inter-regular" color="#515151" size="12px">
+      <GroupDataText
+        numberOfLines={4}
+        font="inter-regular"
+        color="#515151"
+        size="12px"
+        style={{ textAlign: 'justify' }}>
         {postContent}
       </GroupDataText>
       <PostCardSpaceBetween style={{ alignItems: 'flex-end', paddingTop: '15px' }}>

@@ -14,54 +14,39 @@ import { ModalOptionsNotificationText } from '../ModalOptionsNotification/ModalO
 import { storage } from '../../pages/SignIn/SignIn';
 import api from '../../services/api';
 
-export default function DeleteOneConfirmation({ text }: any) {
-  const current = storage.getString('displayNotif');
-  const [shouldDisplay, setShouldDisplay] = useState(current? true : false);
-
+export default function DeleteOneConfirmation({
+  visible,
+  text,
+  onConfirm,
+  onCancel,
+}: {
+  visible: boolean;
+  text: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
-  const optionsDelete = () => {
-    const id = storage.getString('idNotif');
-    const accessToken = storage.getString('accessToken');
-    console.log('apenas 1 para excluir');
-    api
-      .delete(`notifications/${id}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-      .then(() => {
-        storage.delete('displayNotif');
-        setShouldDisplay(false);
-        console.log('Notificação excluída.');
-      })
-      .catch((err) => console.log('Erro ao deletar a notificação:', err));
-  };
-
   if (!fontsLoaded) return null;
 
+  if (!visible) return null;
+
   return (
-    <DeleteConfirmationContainer display={current}>
+    <DeleteConfirmationContainer display={visible}>
       <DeleteConfirmationCardContainer>
         <View>
           <ModalOptionsNotificationText font="inter-regular" color="#515151">
             {text}
           </ModalOptionsNotificationText>
         </View>
-
         <DeleteConfirmationButtonContainer>
-          <DeleteConfirmationButton onPress={optionsDelete}>
+          <DeleteConfirmationButton onPress={onConfirm}>
             <ModalOptionsNotificationText font="inter-regular" color="#EF4036">
               Excluir
             </ModalOptionsNotificationText>
           </DeleteConfirmationButton>
-          <DeleteConfirmationButton
-            onPress={() => {
-              storage.delete('displayNotif');
-              setShouldDisplay(false);
-            }}
-          >
+          <DeleteConfirmationButton onPress={onCancel}>
             <ModalOptionsNotificationText font="inter-regular" color="#515151">
               Cancelar
             </ModalOptionsNotificationText>
