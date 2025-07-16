@@ -292,12 +292,10 @@ export default function ResultSection({
                         avatar: require('../../assets/duck.png'),
                       });
                     }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
-                      <Avatar source={avatar} />
-                      <Name fontFamily="inter-regular" fontColor="#3F3D3D">
-                        {`${fullName[0]} ${fullName[1] || ''}`}
-                      </Name>
-                    </View>
+                    <Name>{`${fullName[0]} ${fullName[1] || ''}`}</Name>
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <TrashCan />
                   </TouchableOpacity>
                   {admin && (
                     <TouchableOpacity onPress={() => onPressUser(person.id)}>

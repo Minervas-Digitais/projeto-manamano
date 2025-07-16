@@ -4,9 +4,5 @@ import { Image } from 'react-native';
 import { GroupsAddButton } from './AddButtonStyle';
 
 export default function AddButton({ icon, onPress }: any) {
-  return (
-    <GroupsAddButton onPress={onPress}>
-      <Image source={icon} />
-    </GroupsAddButton>
-  );
+  return <GroupsAddButton onPress={onPress}>{icon}</GroupsAddButton>;
 }

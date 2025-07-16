@@ -23,6 +23,22 @@ export const PostCardContainer = styled.TouchableOpacity<{ shadowColor?: string 
     `,
   })}
   border: solid 1px #d8d7d7;
+  background-color: white;
+
+  ${Platform.OS === 'android'
+    ? `
+    elevation: 8;
+  `
+    : ''}
+
+  ${Platform.OS === 'ios'
+    ? (props) => `
+    shadow-color: ${props.shadowColor ? props.shadowColor : 'rgba(0, 0, 0, 0.1)'};
+    shadow-offset: 0px 3px;
+    shadow-opacity: 0.5;
+    shadow-radius: 6px;
+  `
+    : ''}
 `;
 
 export const PostCardTag = styled.View`

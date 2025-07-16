@@ -2,6 +2,7 @@ import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/commo
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Notification, NotificationType } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { UpdateNotificationDto } from './dto/update-notification.dto';
 
 @Injectable()
 export class NotificationService {
@@ -169,5 +170,24 @@ export class NotificationService {
     });
 
     return { count: updatedNotifications.count };
+  }
+
+  async updateNotification(id: string, data: UpdateNotificationDto){
+    const notification = await this.prisma.notification.findUnique({
+      where: { id },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Notificação não encontrada.');
+    }
+
+    const updateData = Object.fromEntries(
+        Object.entries(data).filter(([_, value]) => value !== undefined)
+    );
+
+    return this.prisma.notification.update({
+        where: { id },
+        data: updateData,
+    });
   }
 }

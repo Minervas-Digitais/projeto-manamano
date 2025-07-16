@@ -21,11 +21,11 @@ export const EditImageButton = styled.Pressable`
   z-index: 1;
   width: 140px;
   height: 140px;
-  border-radius: 100%;
+  border-radius: 70px;
   bottom: 45px;
 `;
 
-export const MenuW = styled.Image`
+export const MenuW = styled.View`
   margin-left: ${width * 0.058}px;
   margin-top: ${height * 0.054}px;
   position: absolute;
@@ -35,12 +35,12 @@ export const ProfilePic = styled.Image`
   margin-left: 25px;
   width: 116px;
   height: 116px;
-  border-radius: 100%;
+  border-radius: 58px;
   position: absolute;
   bottom: 50px;
 `;
 
-export const PencilButton = styled.Image`
+export const PencilButton = styled.View`
   margin-top: 60px;
   margin-left: 110px;
   position: absolute;

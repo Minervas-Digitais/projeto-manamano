@@ -43,12 +43,13 @@ export default function App() {
         NewLesson: 'newlesson/:groupId',
         VisitorProfile: 'visitorprofile/:id',
         GroupPage: 'group/:groupId',
+        EditProfile: 'editprofile/:id',
       },
     },
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="ADMPage">
+      <Stack.Navigator initialRouteName="">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}

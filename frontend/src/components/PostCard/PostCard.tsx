@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
 import { Share, TouchableOpacity, View } from 'react-native';
+import { ptBR } from 'date-fns/locale';
+import { format } from 'date-fns/format';
 import {
   PostCardContainer,
   PostCardIcons,
-  PostCardImage,
   PostCardSpaceBetween,
   PostCardImageUser,
   PostCardTag,
@@ -14,6 +15,12 @@ import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
 import ModalOptions from '../ModalOptions/ModalOptions';
 import api from '../../services/api';
 import { storage } from '../../pages/SignIn/SignIn';
+import ShareIcon from '../../assets/share-icon.svg';
+import SaveIcon from '../../assets/save-icon.svg';
+import SavedIcon from '../../assets/saved-icon.svg';
+import CommentIcon from '../../assets/comment-icon.svg';
+import FixIcon from '../../assets/fix-icon.svg';
+import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 
 // Import SVGs and images
 import ShareIcon from '../../assets/share-icon.svg';
@@ -52,7 +59,8 @@ export default function PostCard({
     }
   };
   const [modalOptions, setModalOptions] = useState(false);
-
+  const postDate = date ? new Date(date) : null;
+  const formattedDate = postDate ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR }) : '';
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -86,28 +94,28 @@ export default function PostCard({
           }}>
           {share ? (
             <TouchableOpacity onPress={onShare}>
-              <ShareIcon width={20} height={20} />
+              <ShareIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {save ? (
             <TouchableOpacity>
-              <SaveIcon width={20} height={20} />
+              <SaveIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {saved ? (
             <TouchableOpacity>
-              <SavedIcon width={20} height={20} />
+              <SavedIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {dotsMenu ? (
             <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
-              <DotsMenuIcon width={20} height={20} />
+              <DotsMenuIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
@@ -134,14 +142,14 @@ export default function PostCard({
       <PostCardSpaceBetween style={{ alignItems: 'flex-end', paddingTop: '15px' }}>
         <PostCardIcons>
           <TouchableOpacity>
-            <CommentIcon width={15} height={15} />
+            <CommentIcon width="15px" height="15px" />
           </TouchableOpacity>
           <GroupDataText font="inter-bold" color="#160E47" size="10px">
             {numComments}
           </GroupDataText>
           {fix ? (
             <TouchableOpacity>
-              <FixIcon width={15} height={15} />
+              <FixIcon width="15px" height="15px" />
             </TouchableOpacity>
           ) : (
             ''
@@ -152,7 +160,7 @@ export default function PostCard({
           color="#515151"
           size="10px"
           style={{ marginRight: '8px' }}>
-          {date}
+          {formattedDate}
         </GroupDataText>
       </PostCardSpaceBetween>
     </PostCardContainer>

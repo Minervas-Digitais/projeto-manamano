@@ -20,13 +20,41 @@ import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/Delete
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import NoNotification from '../../assets/no-notification-icon.svg';
 
+export interface IUser {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  birthday?: string;
+  ethnicity?: string;
+  neighborhood?: string;
+  expertise?: string;
+  enterprise?: string;
+  bio?: string;
+  savedPost?: string[];
+  createdAt: string;
+  updatedAt: string;
+  sysRole: 'ADMIN' | 'USER' | string;
+}
+
+export interface INotification {
+  id: string;
+  senderName: string;
+  groupName: string;
+  body: string;
+  type: 'COMMENT' | 'WARNING' | "FIXED" | string;
+  idContent: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');
 
-  const [notification, setNotification] = useState([]);
+  const [notification, setNotification] = useState<INotification[]>();
   const [display, setDisplay] = useState(false);
   const [accessTokenState, setAccessTokenState] = useState('');
-  const [userInfo, setUserInfo] = useState([]);
+  const [userInfo, setUserInfo] = useState<IUser | null>(null);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [admin, setAdmin] = useState(false);
   const [deleteModal, setDeleteModal] = useState({
@@ -50,29 +78,35 @@ export default function Notification({ navigation }: any) {
         .catch((err) => console.log(err));
     }
   }, []);
+
   useEffect(() => {
-    const fetchUserInfo = async () => {
+  const fetchUserInfo = async () => {
+    if (loggedIdState && accessTokenState) {
       try {
         const response = await api.get(`/user/${loggedIdState}`, {
           headers: {
             Authorization: `Bearer ${accessTokenState}`,
           },
         });
-        setUserInfo(response.data);
-        if (userInfo.sysRole === 'ADMIN') {
+
+        const userData: IUser = response.data;
+        setUserInfo(userData);
+
+        if (userData.sysRole === 'ADMIN') {
           setAdmin(true);
+        } else {
+          setAdmin(false);
         }
       } catch (error) {
         console.error('Erro ao buscar informações do usuário:', error);
       }
-    };
-
-    if (loggedIdState && accessTokenState) {
-      fetchUserInfo();
     }
-  }, [loggedIdState, accessTokenState, userInfo.sysRole]);
+  };
+
+  fetchUserInfo();
+}, [loggedIdState, accessTokenState]);
   useEffect(() => {
-    fetchNotifications();
+    // fetchNotifications();
     const interval = setInterval(fetchNotifications, 1000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
@@ -93,7 +127,7 @@ export default function Notification({ navigation }: any) {
   const onPressActions = (body: string, id: string, type: string, idContent?: string) => {
     storage.set('body', body);
     setNotification((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
+      prev?.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
     );
     api
       .patch(
@@ -169,8 +203,8 @@ export default function Notification({ navigation }: any) {
         />
         <NotificationBodyContainer>
           <NotificationInfoContainer>
-            {notification?.length > 0 ? (
-              notification.map((item: any) => (
+            {notification && notification.length > 0 ? (
+              notification?.map((item: any) => (
                 <NotificationCard
                   key={item.id}
                   user={item.senderName}
@@ -196,7 +230,7 @@ export default function Notification({ navigation }: any) {
               </>
             )}
           </NotificationInfoContainer>
-          {notification?.length === 0 && (
+
             <ButtonCustom
               onPress={() => {}}
               backColor="#EF4036"
@@ -204,7 +238,7 @@ export default function Notification({ navigation }: any) {
               text="Retornar para a tela inicial"
               border={false}
             />
-          )}
+
         </NotificationBodyContainer>
       </ConfigNotificationContainer>
     </>

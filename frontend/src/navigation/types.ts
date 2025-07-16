@@ -7,6 +7,9 @@ export type RootStackParamList = {
     Groups: undefined;
     Notification: undefined;
     GetInTouch: undefined;
+    GlobalNotification: { id: string };
+    NotificationPage: undefined;
+    Post: { postId: string };
     Config: undefined;
     WelcomeScreen: undefined;
     ChangePassword: undefined;
