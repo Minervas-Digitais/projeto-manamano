@@ -41,6 +41,8 @@ export default function App() {
         Profile: 'profile/:id',
         NewPost: 'newpost/:groupId',
         NewLesson: 'newlesson/:groupId',
+        VisitorProfile: 'visitorprofile/:id',
+        GroupPage: 'group/:groupId',
       },
     },
   };

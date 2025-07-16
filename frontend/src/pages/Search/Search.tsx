@@ -21,6 +21,8 @@ import {
 import ResultSection from '../../components/ResultSection/ResultSection';
 import Lupa from '../../assets/lupa-search.svg';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import api from '../../services/api';
+import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 
 const storage = new MMKV();
 
@@ -164,6 +166,7 @@ export default function Search() {
             searchText={debouncedSearchText}
             saveRecentUser={saveRecentUser}
             accessToken={accessTokenState}
+            admin={isAdmin}
           />
         ) : (
           <RecentSection>

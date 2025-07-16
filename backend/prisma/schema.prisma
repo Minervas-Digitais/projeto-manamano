@@ -101,7 +101,7 @@ model File {
   postId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model Comment {
@@ -123,9 +123,9 @@ enum NotificationType {
 
 model Notification {
   id           String   @id @default(uuid())
-  sender       User     @relation("SentNotifications", fields: [senderId], references: [id])
+  sender       User     @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
   senderId     String
-  recipient    User     @relation("ReceivedNotifications", fields: [recipientId], references: [id])
+  recipient    User     @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
   recipientId  String
   body         String
   type         NotificationType

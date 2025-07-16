@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Image } from 'react-native';
+import { Image, Alert } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -29,6 +29,10 @@ export default function Notification({ navigation }: any) {
   const [userInfo, setUserInfo] = useState([]);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [admin, setAdmin] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({
+    visible: false,
+    notifId: '',
+  });
 
   const fetchNotifications = useCallback(() => {
     const loggedId = storage.getString('loggedId');
@@ -112,11 +116,40 @@ export default function Notification({ navigation }: any) {
     }
   };
 
+  // Function to handle delete icon/button press
+  const handleDeletePress = (notifId: string) => {
+    setDeleteModal({ visible: true, notifId });
+  };
+
+  // Function to confirm deletion
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`notifications/${deleteModal.notifId}`, {
+        headers: {
+          Authorization: `Bearer ${accessTokenState}`,
+        },
+      });
+      setNotification((prev) => prev.filter((n: any) => n.id !== deleteModal.notifId));
+      Alert.alert('Sucesso', 'Notificação excluída com sucesso!');
+    } catch (error: any) {
+      Alert.alert('Erro', error?.response?.data?.message || 'Não foi possível excluir a notificação.');
+      console.error('Erro ao excluir notificação:', error);
+    }
+    setDeleteModal({ visible: false, notifId: '' });
+  };
+
+  // Function to cancel deletion
+  const handleCancelDelete = () => {
+    setDeleteModal({ visible: false, notifId: '' });
+  };
+
   return (
     <>
       <DeleteOneConfirmation
+        visible={deleteModal.visible}
         text="Tem certeza que deseja excluir a notificação?"
-        onPress={() => {}}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
       />
 
       <ConfigNotificationContainer>
@@ -151,6 +184,7 @@ export default function Notification({ navigation }: any) {
                   idNotif={item.id}
                   confirm={false}
                   admin={admin}
+                  onDelete={admin ? () => handleDeletePress(item.id) : undefined}
                 />
               ))
             ) : (
