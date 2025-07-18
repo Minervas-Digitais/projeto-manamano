@@ -2,7 +2,6 @@ import React from 'react';
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
-import React from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';

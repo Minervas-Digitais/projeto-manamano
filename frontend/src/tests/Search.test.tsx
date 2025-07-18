@@ -28,7 +28,6 @@ jest.mock('react-native-mmkv', () => {
     };
 });
 
-
 jest.mock('../services/api', () => ({
     __esModule: true,
     default: {
@@ -95,6 +94,12 @@ jest.mock('../services/api', () => ({
     },
 }));
 
+jest.mock('../pages/Profile/Profile', () => {
+  return () => null;
+});
+
+import Profile from '../pages/Profile/Profile';
+
 
 const Stack = createStackNavigator();
 const renderWithNavigation = () =>
@@ -102,6 +107,7 @@ const renderWithNavigation = () =>
         <NavigationContainer>
             <Stack.Navigator>
                 <Stack.Screen name="Search" component={Search} />
+                <Stack.Screen name="Profile" component={Profile} />
             </Stack.Navigator>
         </NavigationContainer>
     );
@@ -109,6 +115,21 @@ const renderWithNavigation = () =>
 (global as any).alert = jest.fn();
 
 describe("Search", () => {
+    beforeAll(() => {
+        // ignora os erros do act e causados pelo proprio teste
+        jest.spyOn(console, 'error').mockImplementation((msg) => {
+        if (typeof msg === 'string') {
+            if (
+            msg.includes('An update to') ||
+            msg.includes('inside a test was not wrapped in act')
+            ) {
+            return;
+            }
+        }
+
+        console.warn(msg);
+        });
+    })
     beforeEach(() => {
         jest.clearAllMocks();
     })
@@ -253,7 +274,6 @@ describe("Search", () => {
             consoleSpy.mockRestore();
         });
 
-
     })
 
     describe("Usuario ADMIN", () => {
@@ -277,6 +297,7 @@ describe("Search", () => {
 
             expect(await findByTestId('user-delete-button-1')).toBeTruthy();
             expect(await findByTestId('group-delete-button-2')).toBeTruthy();
+            expect(await findByTestId('post-delete-button-3')).toBeTruthy();
         });
     });
 

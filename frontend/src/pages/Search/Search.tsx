@@ -40,7 +40,7 @@ export default function Search() {
 
   const [searchText, setSearchText] = useState<string>('');
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [timeoutId, setTimeoutId] = useState<number | null>(null);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
@@ -137,7 +137,7 @@ export default function Search() {
 
   return (
     <PageContainer>
-      <HeaderCustom font="inter-bold" text="Pesquisa" />
+      <HeaderCustom font="inter-bold" text="Pesquisa" testID="titulo-pesquisa"/>
       <ContentContainer>
         <SearchInputWrapper>
           <SearchIcon>
@@ -154,10 +154,9 @@ export default function Search() {
               padding: 0,
               margin: 0,
               borderWidth: 0,
-              outline: 'none',
-              boxShadow: 'none',
               fontFamily: 'inter-regular',
             }}
+            testID="input-pesquisa"
           />
         </SearchInputWrapper>
 
@@ -182,12 +181,12 @@ export default function Search() {
                 Recentes
               </Text>
             )}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
+            <ScrollView testID="scroll-recentes" horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
               {recentUsers.map((user) => {
                 const nameParts = user.name.split(' ');
                 return (
-                  <View key={user.id} style={{ alignItems: 'center', marginRight: 20 }}>
-                    <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
+                  <View key={user.id} style={{ alignItems: 'center', marginRight: 20 }} testID={`usuario-${user.name.toLowerCase().replace(/\s/g, '-')}`}>
+                    <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-image-${user.id}`}>
                       <Image
                         source={avatar}
                         style={{
@@ -200,7 +199,7 @@ export default function Search() {
 
                     {nameParts.length >= 2 ? (
                       <View>
-                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
+                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-name1-${user.id}`}>
                           <Text
                             style={{
                               textAlign: 'center',
@@ -221,7 +220,7 @@ export default function Search() {
                       </View>
                     ) : (
                       <View>
-                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
+                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-name-${user.id}`}>
                           <Text
                             style={{
                               textAlign: 'center',
