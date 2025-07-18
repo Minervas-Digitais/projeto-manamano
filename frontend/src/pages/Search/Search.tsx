@@ -22,6 +22,7 @@ import ResultSection from '../../components/ResultSection/ResultSection';
 import Lupa from '../../assets/lupa-search.svg';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import api from '../../services/api';
+import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 
 const storage = new MMKV();
 
@@ -31,19 +32,15 @@ interface User {
   avatar: any;
 }
 
-const interBold = require('../../fonts/Inter-Bold.ttf');
-const interRegular = require('../../fonts/Inter-Regular.ttf');
-
 export default function Search() {
   const [fontsLoaded] = useFonts({
-    'inter-bold': interBold,
-    'inter-regular': interRegular,
+    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
+    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
 
   const [searchText, setSearchText] = useState<string>('');
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
-  const [timeoutId, setTimeoutId] = useState<number | null>(null);
-
+  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
@@ -140,14 +137,13 @@ export default function Search() {
 
   return (
     <PageContainer>
-      <HeaderCustom font="inter-bold" text="Pesquisa" testID="titulo-pesquisa"/>
+      <HeaderCustom font="inter-bold" text="Pesquisa" />
       <ContentContainer>
         <SearchInputWrapper>
           <SearchIcon>
             <Lupa />
           </SearchIcon>
           <TextInput
-            testID="input-pesquisa"
             placeholder="Pesquisar"
             value={searchText}
             onChangeText={handleSearchChange}
@@ -158,7 +154,7 @@ export default function Search() {
               padding: 0,
               margin: 0,
               borderWidth: 0,
-              //outline: 'none', Não tem outline no react native
+              outline: 'none',
               boxShadow: 'none',
               fontFamily: 'inter-regular',
             }}
@@ -186,12 +182,12 @@ export default function Search() {
                 Recentes
               </Text>
             )}
-            <ScrollView testID="scroll-recentes" horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
               {recentUsers.map((user) => {
                 const nameParts = user.name.split(' ');
                 return (
-                  <View key={user.id} style={{ alignItems: 'center', marginRight: 20 }} testID={`usuario-${user.name.toLowerCase().replace(/\s/g, '-')}`} >
-                    <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-image-${user.id}`}>
+                  <View key={user.id} style={{ alignItems: 'center', marginRight: 20 }}>
+                    <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
                       <Image
                         source={avatar}
                         style={{
@@ -204,7 +200,7 @@ export default function Search() {
 
                     {nameParts.length >= 2 ? (
                       <View>
-                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-name1-${user.id}`}> 
+                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
                           <Text
                             style={{
                               textAlign: 'center',
@@ -225,7 +221,7 @@ export default function Search() {
                       </View>
                     ) : (
                       <View>
-                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-name-${user.id}`}>
+                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
                           <Text
                             style={{
                               textAlign: 'center',

@@ -111,7 +111,6 @@ describe("Posts", () => {
             const response = await request(app.getHttpServer())
                 .get("/post")
                 .set("Authorization", `Bearer ${adminToken}`);
-
             expect(response.status).toBe(404);
             expect(response.body.message).toBe('Nenhuma publicação encontrada.');
         });
@@ -313,7 +312,7 @@ describe("Posts", () => {
             const response = await request(app.getHttpServer())
                 .patch(`/post/save/${idsParam}`)
                 .set('Authorization', `Bearer ${userToken}`);
-
+            
             expect(response.status).toBe(404);
             expect(response.body.message).toBe('Usuário não encontrado.');
         });
@@ -537,7 +536,7 @@ describe("Posts", () => {
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
-            expect(response.body.message).toBe('Nenhuma publicação encontrada.');
+            expect(response.body.message).toBe('Nenhuma publicação encontrada neste grupo.');
             });
 
 
@@ -581,7 +580,7 @@ describe("Posts", () => {
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
-            expect(response.body.message).toBe('Nenhuma publicação encontrada.');
+            expect(response.body.message).toBe('Nenhuma publicação encontrada nesta categoria.');
         });
 
         it('deve retornar 401 se o token for inválido', async () => {
@@ -624,7 +623,7 @@ describe("Posts", () => {
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
-            expect(response.body.message).toBe('Nenhuma publicação encontrada.');
+            expect(response.body.message).toBe('Nenhuma publicação encontrada para este usuário.');
         });
 
         it('deve retornar 401 se o token for inválido', async () => {

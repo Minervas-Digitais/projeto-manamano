@@ -2,27 +2,43 @@
 import { Platform } from 'react-native';
 import styled from 'styled-components/native';
 
-const getShadow = (color?: string) => Platform.select({
-  ios: `
-    shadow-color: ${color || 'rgba(0, 0, 0, 0.1)'};
-    shadow-offset: 0px 3px;
-    shadow-opacity: 0.5;
-    shadow-radius: 6px;
-  `,
-  android: `
-    elevation: 3;
-  `
-});
-
 export const PostCardContainer = styled.TouchableOpacity<{ shadowColor?: string }>`
   display: flex;
   flex-direction: column;
   position: relative;
   width: 98%;
   padding: 0px 15px 10px 20px;
+  gap: 5px;
   border-radius: 15px;
-  ${({ shadowColor }) => getShadow(shadowColor)}
+  background-color: #f2f6fa;
+  ${Platform.select({
+    ios: `
+      shadow-color: ${(props) => (props.shadowColor ? '#ef3f36' : 'rgba(0, 0, 0, 0.1)')};
+      shadow-offset: 0px 3px;
+      shadow-opacity: 0.5;
+      shadow-radius: 6px;
+    `,
+    android: `
+      elevation: 3;
+    `,
+  })}
   border: solid 1px #d8d7d7;
+  background-color: white;
+
+  ${Platform.OS === 'android'
+    ? `
+    elevation: 8;
+  `
+    : ''}
+
+  ${Platform.OS === 'ios'
+    ? (props) => `
+    shadow-color: ${props.shadowColor ? props.shadowColor : 'rgba(0, 0, 0, 0.1)'};
+    shadow-offset: 0px 3px;
+    shadow-opacity: 0.5;
+    shadow-radius: 6px;
+  `
+    : ''}
 `;
 
 export const PostCardTag = styled.View`
@@ -51,21 +67,11 @@ export const PostCardIcons = styled.View`
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  gap: 3px;
 `;
 
 export const PostCardImageUser = styled.Image`
   width: 40px;
   height: 40px;
   border-radius: 20px;
-`;
-
-interface ImageProps {
-  width?: number;
-  height?: number;
-}
-
-export const PostCardImage = styled.Image<ImageProps>`
-  width: ${(props) => (props.width ? `${props.width}px` : '20px')};
-  height: ${(props) => (props.height ? `${props.height}px` : '20px')};
-  /* Outras propriedades básicas que podem ser comuns, ex: */
 `;

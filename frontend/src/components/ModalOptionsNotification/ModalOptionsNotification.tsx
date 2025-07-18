@@ -4,7 +4,7 @@
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import {
   ModalOptionsNotificationContainer,
@@ -16,11 +16,12 @@ import { storage } from '../../pages/SignIn/SignIn';
 import DeleteConfirmation from '../DeleteAllConfirmation/DeleteAllConfirmation';
 import CheckRead from '../../assets/check-read-icon.svg';
 import Trash from '../../assets/trash-red-icon.svg';
+import { RootStackParamList } from '../../navigation/types';
 
 export default function ModalOptionsNotification({ type, display, id, height, style, admin }: any) {
   const [displayConfirm, setDisplayConfirm] = useState(display ?? false);
   const [displayDelete, setDisplayDelete] = useState(false);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     setDisplayConfirm(display);

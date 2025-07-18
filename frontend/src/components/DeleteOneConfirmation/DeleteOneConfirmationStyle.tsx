@@ -1,11 +1,16 @@
 /* eslint-disable import/prefer-default-export */
 import styled from 'styled-components/native';
+import { Dimensions } from 'react-native';
+
+const { width, height } = Dimensions.get('window');
 
 export const DeleteConfirmationContainer = styled.View<{ display: any }>`
   display: ${(prop) => (prop.display ? 'flex' : 'none')};
-  width: 100vw;
-  height: 100vh;
+  width: ${width}px;
+  height: ${height}px;
   position: absolute;
+  left: 0;
+  top: 0;
   z-index: 234082398;
   background-color: #19191937;
   justify-content: center;
@@ -21,18 +26,23 @@ export const DeleteConfirmationCardContainer = styled.View`
   padding: 1px 20px 1px 20px;
   justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 8px rgba(39, 39, 39, 0.2);
+  elevation: 4;
+  shadow-color: #272727;
+  shadow-offset: 0px 4px;
+  shadow-opacity: 0.2;
+  shadow-radius: 8px;
 `;
 
 export const DeleteConfirmationButtonContainer = styled.View`
   width: 100%;
-  height: max-content;
+  height: auto;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   padding-top: 10px;
 `;
+
 export const DeleteConfirmationButton = styled.TouchableOpacity`
-  width: max-content;
-  height: max-content;
+  width: auto;
+  height: auto;
 `;

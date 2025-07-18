@@ -1,24 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import PostCard from '../PostCard/PostCard';
 
 interface PostItemProps {
-  post: any;//Post;
+  post: Post;
   formattedDate: string;
   fetchUserName: (userId: string) => Promise<string>;
   fetchNumComments: (postId: string) => Promise<number>;
-  testID: string;
 }
 
-const PostItem: React.FC<PostItemProps> = ({
-  post,
-  formattedDate,
-  fetchUserName,
-  fetchNumComments,
-  testID
-}) => {
+function PostItem({ post, formattedDate, fetchUserName, fetchNumComments }: PostItemProps) {
   const [userName, setUserName] = useState<string>('');
   const [numComments, setNumComments] = useState<number>(post.numComments);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const loadUserName = async () => {
@@ -37,17 +32,18 @@ const PostItem: React.FC<PostItemProps> = ({
   }, [post.id, fetchNumComments]);
 
   return (
-    <View style={{ marginBottom: 20 }} >
-      <TouchableOpacity testID={testID}>
-        <PostCard
-          nameUser={userName}
-          postContent={post.input}
-          numComments={numComments}
-          date={formattedDate}
-        />
-      </TouchableOpacity>
+    <View style={{ marginBottom: 20 }}>
+      <PostCard
+        nameUser={userName}
+        postContent={post.input}
+        numComments={numComments}
+        date={formattedDate}
+        onPressPost={() => {
+          navigation.navigate('Post', { postId: post.id });
+        }}
+      />
     </View>
   );
-};
+}
 
 export default PostItem;

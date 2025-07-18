@@ -1,24 +1,18 @@
 /* eslint-disable global-require */
 import React, { useEffect, useRef, useState } from 'react';
-import { TouchableOpacity, View, Image, Dimensions } from 'react-native';
+import { View, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
-import {
-  ConfigNotificationHeaderContainer,
-  ConfigNotificationTitle,
-} from '../Notification/NotificationStyle';
-import SideMenu from '../../components/SideMenu/SideMenu';
 import GroupButton from '../../components/GroupButton/GroupButton';
 import AddButton from '../../components/AddButton/AddButton';
 import { storage } from '../SignIn/SignIn';
 import ShowPopup from '../../components/GroupPopup/GroupPopup';
 import api from '../../services/api';
+import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import Add from '../../assets/add-icon.svg';
 
 export default function Groups() {
-  const [sideMenu, setSideMenu] = useState(true);
-  const menu = require('../../assets/menu-icon.svg');
-  const add = require('../../assets/add-icon.svg');
   const navigation = useNavigation(); // Use navigation instance
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -35,8 +29,6 @@ export default function Groups() {
     // Retrieve the access token from storage
     const token = storage.getString('accessToken');
     if (token) setAccessToken(token);
-    console.log(token);
-
     const loggedId = storage.getString('loggedId');
     if (loggedId && token) {
       api
@@ -52,33 +44,23 @@ export default function Groups() {
 
     // Fetch user information to check the "tipo"
     const fetchUserTipo = async () => {
+      const token = storage.getString('accessToken');
+
       if (token) {
         try {
-          const userId = storage.getString('loggedId'); // Assume userId is stored in storage
-          const response = await fetch(`http://localhost:3000/user/${userId}`, {
-            method: 'GET',
+          const userId = storage.getString('loggedId');
+
+          const { data: fetchedUserData } = await api.get(`/user/${userId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
             },
           });
-          console.log(response);
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch user data.');
-          }
-
-          const fetchedUserData = await response.json();
-          console.log(fetchedUserData);
-
-          // Store user data in state
           setUserData(fetchedUserData);
 
-          // Only show the popup if the user ID matches the specific one
           if (fetchedUserData.role === 'MODERATOR') {
-            setShowPopup(true); // Show the popup only if the user is the one with the ID
+            setShowPopup(true);
           } else {
-            setShowPopup(false); // Hide the popup for users without the right ID
+            setShowPopup(false);
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -130,14 +112,7 @@ export default function Groups() {
 
   return (
     <GroupsContainer>
-      <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
-      <ConfigNotificationHeaderContainer>
-        <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
-          <Image source={menu} />
-        </TouchableOpacity>
-        <ConfigNotificationTitle font="inter-bold">Grupos</ConfigNotificationTitle>
-        <View />
-      </ConfigNotificationHeaderContainer>
+      <HeaderCustom icon menu text="Grupos" font="inter-bold" />
       <GroupsBody>
         <GroupsList>
           {groups?.length > 0 ? (
@@ -161,7 +136,7 @@ export default function Groups() {
       <View ref={addButtonRef}>
         {' '}
         {/* Wrap AddButton with a View for measuring */}
-        <AddButton icon={require('../../assets/add-icon.svg')} onPress={handleAddButtonPress} />
+        <AddButton icon={<Add />} onPress={handleAddButtonPress} />
       </View>
       <ShowPopup
         visible={showPopup}
