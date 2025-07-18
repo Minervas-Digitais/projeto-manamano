@@ -28,6 +28,7 @@ export default function CommentInputTextCustom({
       {isFocused ? (
         <CommentInputContainerFocused>
           <CommentInputTextFocused
+            testID="input-comentario"
             maxLength={255}
             multiline
             onChangeText={onChangeText}
@@ -39,7 +40,7 @@ export default function CommentInputTextCustom({
             <Pressable onPress={onPressLink}>
               <LinkIcon />
             </Pressable>
-            <Pressable onPress={onPressSubmit}>
+            <Pressable onPress={onPressSubmit} testID="enviar-comentario">
               <SendButton />
             </Pressable>
           </ButtonContainer>
