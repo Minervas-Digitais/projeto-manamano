@@ -496,7 +496,6 @@ describe("Notification", () => {
             expect(response.body).toHaveProperty("count");
             expect(response.body.count).toBe(0);
         });
-
     })
 
     describe("UpdateNotification", () => {
@@ -550,6 +549,7 @@ describe("Notification", () => {
             expect(response.status).toBe(404);
             expect(response.body.message).toBe("Notificação não encontrada.");
         });
+
         it("Deve permitir atualização parcial de uma notificação", async () => {
             const senderUser = await prismaService.user.findUnique({ where: { email: "testsender@example.com" } });
             const recipientUser = await prismaService.user.findUnique({ where: { email: "testrecipient@example.com" } });
@@ -577,6 +577,7 @@ describe("Notification", () => {
             expect(response.body.isRead).toBe(true);
             expect(response.body.body).toBe("Mensagem original");
         });
+
         it("Deve ignorar atualização se nenhum campo for enviado", async () => {
             const senderUser = await prismaService.user.findUnique({ where: { email: "testsender@example.com" } });
             const recipientUser = await prismaService.user.findUnique({ where: { email: "testrecipient@example.com" } });
@@ -600,8 +601,105 @@ describe("Notification", () => {
             expect(response.status).toBe(200);
             expect(response.body.body).toBe("Teste sem atualização");
         });
+    })
 
+    describe("DisableNotificationPopUp", () => {
+        it("Não deve criar notificação se usuário desativou pop-ups", async () => {
+            const recipientUser = await prismaService.user.findUnique({ where: { email: "testrecipient@example.com" }, });
+            const senderUser = await prismaService.user.findUnique({ where: { email: "testsender@example.com" }, });
+
+            const notificationDTO: CreateNotificationDto = {
+                senderId: senderUser.id,
+                recipientId: recipientUser.id,
+                body: "Should not appear as pop-up is disabled",
+                type: NotificationType.COMMENT,
+            };
+
+            const response = await request(app.getHttpServer())
+                .post("/notifications")
+                .set("Authorization", "Bearer " + userToken)
+                .send(notificationDTO);
+
+            expect(response.status).toBe(200);
+            expect(response.body.body).toBe("Pop-up de notificações desativados");
+        });
+
+        it("Deve retornar erro ao desativar o pop-up de notificações para um usuário inexistente", async () => {
+            const fakeUserId = "non-existing-user-id";
+
+            const response = await request(app.getHttpServer())
+                .patch(`/notifications/user/${fakeUserId}`)
+                .set("Authorization", "Bearer " + senderToken);
+
+            expect(response.status).toBe(404);
+            expect(response.body.message).toBe("Usuário não encontrado");
+        });
 
     })
 
+    describe("MuteSystemNotification", () => {
+        it("Não deve criar notificação se usuário silenciou notificações de sistema", async () => {
+            const recipientUser = await prismaService.user.findUnique({ where: { email: "testrecipient@example.com" }, });
+            const senderUser = await prismaService.user.findUnique({ where: { email: "testsender@example.com" }, });
+
+            const notificationDTO: CreateNotificationDto = {
+                senderId: senderUser.id,
+                recipientId: recipientUser.id,
+                body: "Muted system notification",
+                type: NotificationType.WARNING,
+            };
+
+            const response = await request(app.getHttpServer())
+                .post("/notifications")
+                .set("Authorization", "Bearer " + adminToken)
+                .send(notificationDTO);
+
+            expect(response.status).toBe(200);
+            expect(response.body.body).toBe("Notificações de sistema silenciadas");
+        });
+
+        it("Deve retornar erro ao silenciar as notificações de sistema para um usuário inexistente", async () => {
+            const fakeUserId = "non-existing-user-id";
+
+            const response = await request(app.getHttpServer())
+                .patch(`/notifications/user/${fakeUserId}`)
+                .set("Authorization", "Bearer " + senderToken);
+
+            expect(response.status).toBe(404);
+            expect(response.body.message).toBe("Usuário não encontrado");
+        });
+
+    })
+
+    describe("MuteGroupNotification", () => {
+        it("Não deve criar notificação de grupo se usuário desativou esse tipo", async () => {
+            const senderUser = await prismaService.user.findUnique({ where: { email: "testsender@example.com" }, });
+
+            const notificationDTO: CreateNotificationDto = {
+                senderId: senderUser.id,
+                groupId: "group123",
+                body: "Group alert",
+                type: NotificationType.FIXED,
+            };
+
+            const response = await request(app.getHttpServer())
+                .post("/notifications")
+                .set("Authorization", "Bearer " + senderToken)
+                .send(notificationDTO);
+
+            expect(response.status).toBe(200);
+            expect(response.body.body).toBe("Notificações de grupos silenciadas");
+        });
+
+        it("Deve retornar erro ao silenciar as notificações de grupo para um usuário inexistente", async () => {
+            const fakeUserId = "non-existing-user-id";
+
+            const response = await request(app.getHttpServer())
+                .patch(`/notifications/user/${fakeUserId}`)
+                .set("Authorization", "Bearer " + senderToken);
+
+            expect(response.status).toBe(404);
+            expect(response.body.message).toBe("Usuário não encontrado");
+        });
+    })
 })
