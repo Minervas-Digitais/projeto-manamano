@@ -23,6 +23,7 @@ jest.mock('../pages/SignIn/SignIn', () => ({
     },
   },
 }));
+global.alert = jest.fn();
 
 const Stack = createStackNavigator();
 const renderWithNavigation = () =>
