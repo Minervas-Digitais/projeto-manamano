@@ -334,7 +334,7 @@ export default function Post() {
                 </Pressable>
               )}
             />
-            {errors.groupcode && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
             {Array.isArray(post?.Comment) && post.Comment.length > 0 ? (
               post?.Comment.map((item: any) => {
                 const formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
