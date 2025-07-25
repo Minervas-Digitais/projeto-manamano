@@ -2,7 +2,7 @@
 // A gente usa eles nos mocks para evitar erros de tipagem e permite simular a navegação corretamente.
 export type RootStackParamList = {
     Home: undefined;
-    Profile: undefined;
+    Profile: { id?: string };
     Search: undefined;
     Groups: undefined;
     Notification: undefined;
@@ -15,5 +15,7 @@ export type RootStackParamList = {
     ChangePassword: undefined;
     ConfigNotification: undefined;
     About: undefined;
+    VisitorProfile: { id: string };
+    GroupPage: { groupId: string };
 };
 

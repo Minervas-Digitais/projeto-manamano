@@ -30,6 +30,7 @@ import Menu from '../../assets/menuw-icon.svg';
 import EditButton from '../../assets/edit-button.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
 import { StatusBar } from 'expo-status-bar';
+import { TextInputMask } from 'react-native-masked-text';
 
 export default function EditProfile() {
   const {
@@ -92,11 +93,12 @@ export default function EditProfile() {
     }
   };
   const cpfInputRef = useRef(null);
-  const phoneInputRef = useRef(null);
+  const phoneInputRef = useRef<TextInputMask | null>(null);
 
-  const validatePhoneNumber = (value) => {
+  const validatePhoneNumber = (value: string) => {
     if (phoneInputRef.current) {
-      const rawValue = phoneInputRef.current.getRawValue();
+      // Ser visto com mais cuidado!!!
+      const rawValue = (phoneInputRef.current as any).getRawValue();
       if (rawValue.length < 11) {
         return 'Telefone inválido';
       }
@@ -109,7 +111,7 @@ export default function EditProfile() {
 
   const defaultProfImage = require('../../assets/test-profile-icon.png');
 
-  const formatDateToDDMMYYYY = (dateString) => {
+  const formatDateToDDMMYYYY = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, 'dd/MM/yyyy'); // Using date-fns for formatting (optional)
   };
@@ -202,7 +204,7 @@ export default function EditProfile() {
                 label="Telefone"
                 imageIcon={null}
                 type="cel-phone"
-                innerRef={(value) => (phoneInputRef.current = value)}
+                innerRef={(value: TextInputMask) => (phoneInputRef.current = value)}
               />
             )}
             rules={{

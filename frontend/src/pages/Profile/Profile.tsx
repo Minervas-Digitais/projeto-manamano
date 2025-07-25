@@ -185,7 +185,7 @@ export default function Profile({ navigation }: any) {
         </ProfileContainerData>
       </ProfileContainerInfo>
       <HomePageWhite style={{ gap: 0 }}>
-        <ProfileTextContainer style={{ padding: '25px 0px 25px 0px' }}>
+       <ProfileTextContainer style={{ paddingVertical: 25, paddingHorizontal: 0 }}>
           <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
             {bio}
           </GroupDataText>

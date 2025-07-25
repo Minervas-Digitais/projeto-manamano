@@ -49,7 +49,7 @@ export default function SideMenu({ display, onPress }: any) {
             icon={<ProfileIcon width={24} height={24} />}
             text="Perfil"
             font="inter-bold"
-            onPress={() => navigation.navigate('Profile')}
+            onPress={() => navigation.navigate('Profile', {})}
           />
           <SideMenuOptions
             icon={<SearchIcon width={24} height={24} />}

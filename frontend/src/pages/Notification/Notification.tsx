@@ -51,7 +51,7 @@ export interface INotification {
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');
 
-  const [notification, setNotification] = useState<INotification[]>();
+  const [notification, setNotification] = useState<INotification[]>([]);
   const [display, setDisplay] = useState(false);
   const [accessTokenState, setAccessTokenState] = useState('');
   const [userInfo, setUserInfo] = useState<IUser | null>(null);

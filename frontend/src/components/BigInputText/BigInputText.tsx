@@ -9,7 +9,14 @@ import {
   BigInputTextIconInputContainer,
 } from './BigInputTextStyle';
 
-export default function BigInputTextCustom({ onChangeText, label, value, type, options }: any) {
+export default function BigInputTextCustom({
+  onChangeText,
+  label,
+  value,
+  type,
+  options,
+  accessibilityLabel,
+}: any) {
   return (
     <BigInputTextContainer>
       <LabelInputText>{label}</LabelInputText>
@@ -23,9 +30,12 @@ export default function BigInputTextCustom({ onChangeText, label, value, type, o
             options={options}
           />
         ) : (
-          <BigInputText multiline onChangeText={onChangeText} value={value} 
-            // ADICIONADO PARA O TESTE
-            accessibilityLabel={label}/>
+          <BigInputText
+            multiline
+            onChangeText={onChangeText}
+            value={value}
+            accessibilityLabel={accessibilityLabel || label}
+          />
         )}
       </BigInputTextIconInputContainer>
     </BigInputTextContainer>

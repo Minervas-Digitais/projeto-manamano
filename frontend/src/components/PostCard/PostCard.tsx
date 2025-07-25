@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
 import { Share, TouchableOpacity, View } from 'react-native';
 import { ptBR } from 'date-fns/locale';
-import { format } from 'date-fns/format';
+import { format, isValid } from 'date-fns';
 import {
   PostCardContainer,
   PostCardIcons,
@@ -15,14 +15,6 @@ import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
 import ModalOptions from '../ModalOptions/ModalOptions';
 import api from '../../services/api';
 import { storage } from '../../pages/SignIn/SignIn';
-import ShareIcon from '../../assets/share-icon.svg';
-import SaveIcon from '../../assets/save-icon.svg';
-import SavedIcon from '../../assets/saved-icon.svg';
-import CommentIcon from '../../assets/comment-icon.svg';
-import FixIcon from '../../assets/fix-icon.svg';
-import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
-
-// Import SVGs and images
 import ShareIcon from '../../assets/share-icon.svg';
 import SaveIcon from '../../assets/save-icon.svg';
 import SavedIcon from '../../assets/saved-icon.svg';
@@ -60,7 +52,9 @@ export default function PostCard({
   };
   const [modalOptions, setModalOptions] = useState(false);
   const postDate = date ? new Date(date) : null;
-  const formattedDate = postDate ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR }) : '';
+  const formattedDate = postDate && isValid(postDate)
+  ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
+  : '';
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -82,14 +76,14 @@ export default function PostCard({
             </GroupDataText>
           </PostCardTag>
         ) : (
-          <View style={{ paddingTop: '14px' }} />
+          <View style={{ paddingTop: 14 }} />
         )}
         <PostCardIcons
           style={{
             flex: 1,
             justifyContent: 'flex-end',
             position: 'absolute',
-            paddingTop: '10px',
+            paddingTop: 10,
             right: 0,
           }}>
           {share ? (
@@ -139,7 +133,7 @@ export default function PostCard({
         style={{ textAlign: 'justify' }}>
         {postContent}
       </GroupDataText>
-      <PostCardSpaceBetween style={{ alignItems: 'flex-end', paddingTop: '15px' }}>
+      <PostCardSpaceBetween style={{ alignItems: 'flex-end', paddingTop: 15 }}>
         <PostCardIcons>
           <TouchableOpacity>
             <CommentIcon width="15px" height="15px" />
@@ -159,7 +153,7 @@ export default function PostCard({
           font="inter-regular"
           color="#515151"
           size="10px"
-          style={{ marginRight: '8px' }}>
+          style={{ marginRight: 8 }}>
           {formattedDate}
         </GroupDataText>
       </PostCardSpaceBetween>
