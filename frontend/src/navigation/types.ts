@@ -17,5 +17,6 @@ export type RootStackParamList = {
     About: undefined;
     VisitorProfile: { id: string };
     GroupPage: { groupId: string };
+    NewLesson: { groupId: string }
 };
 

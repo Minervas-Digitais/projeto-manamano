@@ -16,6 +16,7 @@ export default function BigInputTextCustom({
   type,
   options,
   accessibilityLabel,
+  testID
 }: any) {
   return (
     <BigInputTextContainer>
@@ -27,6 +28,7 @@ export default function BigInputTextCustom({
             value={value}
             onChangeText={onChangeText}
             style={styles.input}
+            testID={testID}
             options={options}
           />
         ) : (
@@ -34,6 +36,7 @@ export default function BigInputTextCustom({
             multiline
             onChangeText={onChangeText}
             value={value}
+            testID={testID}
             accessibilityLabel={accessibilityLabel || label}
           />
         )}

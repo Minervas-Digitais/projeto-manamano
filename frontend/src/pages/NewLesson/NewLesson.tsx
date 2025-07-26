@@ -21,6 +21,11 @@ import ArrowIcon from '../../assets/arrow-icon.svg';
 import LinkIcon from '../../assets/input-link-icon.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
 
+interface InputRef {
+  getRawValue: () => string;
+  isValid: () => boolean;
+}
+
 export default function NewLesson({ navigation }: any) {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
@@ -48,7 +53,6 @@ export default function NewLesson({ navigation }: any) {
             Authorization: `Bearer ${accessTokenState}`,
           },
         });
-        console.log('Categorias recebidas:', response.data);
         setCategories(response.data);
       } catch (error) {
         Toast.show({
@@ -75,11 +79,18 @@ export default function NewLesson({ navigation }: any) {
   }, []);
   function formatDate(date: string): string {
     const [day, month, year] = date.split('/');
-    console.log(`${year}-${month}-${day}`);
     return `${year}-${month}-${day}`;
   }
   const onSubmit = async (data: any) => {
     const selectedCategory = categories.find((category) => category.name === 'Aulas');
+
+    if (!selectedCategory) {
+    Toast.show({
+        type: 'error',
+        text1: 'Categoria "Aulas" não encontrada.',
+    });
+    return;
+    }
     try {
       await Promise.all(
         files.map(async (file) => {
@@ -140,14 +151,17 @@ export default function NewLesson({ navigation }: any) {
     }
   };
 
-  const dateRef = useRef(null);
-  const hourRef = useRef(null);
+  
+  const dateRef = useRef<InputRef | null>(null);
+  const hourRef = useRef<InputRef | null>(null);
+
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({});
   const validateDate = () => {
+    if (!dateRef.current) return 'Data inválida';
     const inputDate = new Date(dateRef.current.getRawValue());
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0);
@@ -157,6 +171,8 @@ export default function NewLesson({ navigation }: any) {
     return true;
   };
   const validateHour = () => {
+    if (!dateRef.current) return 'Data inválida';
+    if (!hourRef.current) return 'Hora inválida';
     const inputDate = new Date(dateRef.current.getRawValue());
     const currentDate = new Date();
     const currentHours = currentDate.getHours();
@@ -237,6 +253,7 @@ export default function NewLesson({ navigation }: any) {
             }}
             render={({ field: { onChange, value } }) => (
               <InputTextCustom
+                testID="input-title"
                 onChangeText={onChange}
                 value={value}
                 label="Título da aula"
@@ -257,13 +274,14 @@ export default function NewLesson({ navigation }: any) {
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
+                  testID="input-date"
                   onChangeText={onChange}
                   value={value}
                   label="Data"
                   imageIcon={<CalendarIcon />}
                   type="datetime"
                   options={{ format: 'DD/MM/YYYY' }}
-                  innerRef={(value) => (dateRef.current = value)}
+                  innerRef={(value:any) => (dateRef.current = value)}
                 />
               )}
             />
@@ -279,6 +297,7 @@ export default function NewLesson({ navigation }: any) {
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
+                  testID="input-hour"
                   onChangeText={onChange}
                   value={value}
                   label="Horário"
@@ -301,6 +320,7 @@ export default function NewLesson({ navigation }: any) {
             }}
             render={({ field: { onChange, value } }) => (
               <InputTextCustom
+                testID="input-link"
                 onChangeText={onChange}
                 value={value}
                 label="Link"
@@ -317,6 +337,7 @@ export default function NewLesson({ navigation }: any) {
             }}
             render={({ field: { onChange, value } }) => (
               <InputTextCustom
+                testID="input-vod"
                 onChangeText={onChange}
                 value={value}
                 label="Aula gravada"
@@ -333,6 +354,7 @@ export default function NewLesson({ navigation }: any) {
             }}
             render={({ field: { onChange, value } }) => (
               <BigInputTextCustom
+                testID="input-description"
                 onChangeText={onChange}
                 value={value}
                 imageIcon={null}
@@ -350,15 +372,20 @@ export default function NewLesson({ navigation }: any) {
               <ArchiveCard
                 key={item.id}
                 name={item.name}
+                testID={`file-item-${item.id}`}
                 archive
                 removed={visibility[item.id]}
                 onPress={() => handleClick(item.id)}
               />
             ))}
-            <ArchiveCard onClick={pickFile} />
+            <ArchiveCard 
+                testID="btn-add-file"
+                onClick={pickFile} 
+            />
           </ScrollView>
           <Toast config={toastConfig} />
           <ButtonCustom
+            testID="btn-publish"
             onPress={handleSubmit(onSubmit)}
             backColor="#160E47"
             fontColor="white"
