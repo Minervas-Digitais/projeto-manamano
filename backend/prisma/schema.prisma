@@ -84,10 +84,24 @@ model Post {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   Comment     Comment[]
+  File        File[]
   category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   archives    Archive[]
+}
+
+model File {
+  id        String   @id @default(uuid())
+  title     String?
+  url       String?
+  type      String
+  size      Bytes?
+  content   String?
+  postId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model Comment {
