@@ -126,17 +126,18 @@ async function main() {
   );
   console.log("✅ Comentários criados");
 
-  const files = await Promise.all(
+  const archives = await Promise.all(
     posts.flatMap((post, postIndex) =>
       Array.from({ length: faker.number.int({ min: 2, max: 4 }) }).map(async (_, fileIndex) => {
         const imageUrl = `https://picsum.photos/200?random=${postIndex * 10 + fileIndex}`;
+
         const base64 = await fetchImageBase64(imageUrl);
 
-        return prisma.file.create({
+        return prisma.archive.create({
           data: {
-            title: faker.system.fileName(),
-            type: "image/jpeg",
-            content: base64,
+            name: faker.system.fileName(),
+            mimeType: "image/jpeg",
+            contentBase64: base64,
             postId: post.id,
           },
         });
