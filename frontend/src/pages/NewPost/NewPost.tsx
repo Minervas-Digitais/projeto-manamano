@@ -103,18 +103,22 @@ export default function NewPost({ navigation }: any) {
     setSelectedCategoryType(selectedCategory ? selectedCategory.type : null);
   }, [filterPosts, categories]);
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      api.get(`/user/${loggedId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      // .then((res) => console.log(JSON.stringify(res.data)));
-    }
+    const loadUserData = async () => {
+      const accessToken = storage.getString('accessToken');
+      const loggedId = storage.getString('loggedId');
+      if (loggedId && accessToken) {
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+        const response = await api.get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        console.log('Usuário logado:', accessToken);
+        // .then((res) => console.log(JSON.stringify(res.data)));
+      }
+    };
+    loadUserData();
   }, []);
   useEffect(() => {
     if (!accessTokenState) return;

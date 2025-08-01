@@ -1,5 +1,8 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
+const { height } = Dimensions.get('window');
 
 export const HomePageBlue = styled.View`
   display: flex;
@@ -24,7 +27,7 @@ export const HomeContainerInfo = styled.View`
   display: flex;
   justify-content: space-between;
   width: 100%;
-  height: 21vh;
+  height: ${height * 0.21}px;
   padding: 40px 25px 25px 25px;
 `;
 
