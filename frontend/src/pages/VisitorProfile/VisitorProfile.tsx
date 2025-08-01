@@ -67,7 +67,8 @@ export default function VisitorProfile({ navigation }: any) {
       postContent: 'Já postaram o link da aula?',
       numComments: 5,
       date: 'Ontem, 21:32',
-    }, {
+    },
+    {
       nameUser: 'Jhennifer Moreira',
       imageUser: duckImage,
       postContent: 'Alguém mora perto de Bonsucesso?',
@@ -88,7 +89,6 @@ export default function VisitorProfile({ navigation }: any) {
       numComments: 5,
       date: 'Ontem, 21:32',
     },
-
   ];
 
   return (
@@ -96,7 +96,7 @@ export default function VisitorProfile({ navigation }: any) {
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <ProfileContainerInfo>
         <ProfileContainerButtons>
-          <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => setSideMenu(!sideMenu)}>
             <Image source={menuIcon} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => {}}>
@@ -138,35 +138,35 @@ export default function VisitorProfile({ navigation }: any) {
         </ProfileContainerData>
       </ProfileContainerInfo>
       <HomePageWhite style={{ gap: 0 }}>
-        <ProfileTextContainer style={{ padding: '25px 0px 25px 0px' }}>
+        <ProfileTextContainer style={{ paddingVertical: 25, paddingHorizontal: 0 }}>
           <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vel quam vel libero
-            consequat interdum. Vivamus at ex nec arcu interdum fringilla. Nulla facilisi.
-            Maecenas ut sapien vel justo aliquam congue.
+            consequat interdum. Vivamus at ex nec arcu interdum fringilla. Nulla facilisi. Maecenas
+            ut sapien vel justo aliquam congue.
           </GroupDataText>
         </ProfileTextContainer>
 
         <GroupPageTabs style={style.line} />
         <ProfilePostsContainer>
-          {savedPosts?.length > 0 ? (savedPosts?.map((item: any) => (
-            <PostCard
-              nameUser={item.nameUser}
-              imageUser={item.imageUser}
-              postContent={item.postContent}
-              numComments={item.numComments}
-              date={item.date}
-              share
-              save
-            />
-          ))) : ''}
+          {savedPosts?.length > 0
+            ? savedPosts?.map((item: any) => (
+                <PostCard
+                  nameUser={item.nameUser}
+                  imageUser={item.imageUser}
+                  postContent={item.postContent}
+                  numComments={item.numComments}
+                  date={item.date}
+                  share
+                  save
+                />
+              ))
+            : ''}
         </ProfilePostsContainer>
       </HomePageWhite>
-
     </HomePageBlue>
   );
 }
 const style = StyleSheet.create({
-
   line: {
     borderBottomColor: '#D9D9D9',
     borderBottomWidth: 1,
