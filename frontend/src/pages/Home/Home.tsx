@@ -31,23 +31,50 @@ import SideMenu from '../../components/SideMenu/SideMenu';
 import PostCard from '../../components/PostCard/PostCard';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import MenuIcon from '../../assets/menuWhite-icon.svg';
+import LupaIcon from '../../assets/lupaWhite-icon.svg';
 
 export const storageHome = new MMKV();
 
 export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
   const duckImage = require('../../assets/duck.png');
-  const menuIcon = require('../../assets/menuWhite-icon.svg');
-  const lupa = require('../../assets/lupaWhite-icon.svg');
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [fullName, setFullName] = useState('');
-  const [groups, setGroups] = useState<any[]>([]); // Garantir array
+  const [groups, setGroups] = useState<any[]>([]);
   const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
+
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+
+      api
+        .get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => setFullName(res.data.fullName))
+        .catch(() => setFullName('Usuário'));
+
+      api
+        .get(`participant/groups/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => setGroups(res.data || []))
+        .catch(() => setGroups([]));
+    }
+  }, []);
 
   if (!fontsLoaded) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -82,36 +109,10 @@ export default function Home({ navigation }: any) {
     navigation.navigate('Post', { postId: id });
   }
 
-  useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-
-      api
-        .get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => setFullName(res.data.fullName))
-        .catch(() => setFullName('Usuário'));
-
-      api
-        .get(`participant/groups/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => setGroups(res.data || []))
-        .catch(() => setGroups([]));
-    }
-  }, []);
-
   const toggleGroupFilter = (groupId: string) => {
     setHiddenGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],);
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],
+    );
   };
 
   const filteredGroups = Array.isArray(groups)
@@ -131,12 +132,12 @@ export default function Home({ navigation }: any) {
         <PostCardSpaceBetween>
           <PostCardIcons>
             <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
-              <Image source={menuIcon} />
+              <MenuIcon />
             </TouchableOpacity>
           </PostCardIcons>
           <PostCardIcons style={{ gap: '25px' }}>
             <TouchableOpacity>
-              <Image source={lupa} />
+              <LupaIcon />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
               <PostCardImageUser style={{ border: 'solid 1.7px white' }} source={duckImage} />

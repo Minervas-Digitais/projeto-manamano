@@ -1,7 +1,6 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable global-require */
 import React, { useState } from 'react';
-import { Image } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   GroupButtonContainer,
@@ -13,6 +12,8 @@ import {
   GroupFilterContainer,
   GroupButtonImage,
 } from './GroupButtonStyle';
+import FilterOnIcon from '../../assets/filter-on-icon.svg';
+import FilterOffIcon from '../../assets/filter-off-icon.svg';
 
 export default function GroupButton({
   groupName,
@@ -28,8 +29,6 @@ export default function GroupButton({
   if (!fontsLoaded) {
     return undefined;
   }
-  const filterOn = require('../../assets/filter-on-icon.svg');
-  const filterOff = require('../../assets/filter-off-icon.svg');
   const [filter, setFilter] = useState(filterIcon);
 
   return (
@@ -54,7 +53,7 @@ export default function GroupButton({
           }}
           size={size}
         >
-          <Image source={filter ? filterOn : filterOff} />
+          {filter ? <FilterOnIcon /> : <FilterOffIcon />}
         </GroupButtonImage>
       </GroupFilterContainer>
     </GroupButtonContainer>
