@@ -49,103 +49,54 @@ export default function VisitorProfile({ navigation }: any) {
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
-
-  const copyToClipboard = async (text: string, message: string) => {
-    if (text) {
-      await Clipboard.setStringAsync(text);
-      Toast.show({
-        type: 'success',
-        text1: message,
-      });
-    } else {
-      Toast.show({
-        type: 'error',
-        text1: 'Informação não disponível.',
-      });
-    }
-  };
-
-  const onShareProfile = async () => {
-    const deepLink = `manamano://visitorprofile/${userId}`;
-    try {
-      await Share.share({
-        message: `Confira este perfil: ${deepLink}`,
-      });
-    } catch (error) {
-      console.error('Erro ao compartilhar perfil:', error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const accessToken = storage.getString('accessToken');
-      if (!accessToken || !userId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const userResponse = await api.get(`/user/${userId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        setUser(userResponse.data);
-        const userPostsResponse = await api.get(`/post/${userId}/posts`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        setPosts(userPostsResponse.data);
-      } catch (error) {
-        console.error('Failed to fetch visitor profile data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [userId]);
-
-  if (!fontsLoaded || loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#170e49" />
-      </View>
-    );
+  if (!fontsLoaded) {
+    return undefined;
   }
 
-  if (!user) {
-    return (
-      <HomePageBlue>
-        <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
-        <ProfileContainerInfo>
-          <ProfileContainerButtons>
-            <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
-              <MenuIcon />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => {}}>
-              <ShareWhiteIcon />
-            </TouchableOpacity>
-          </ProfileContainerButtons>
-          <ProfileContainerData>
-            <ProfileImage radius height="78px" width="78px" source={duckImage} />
-            <View style={{ gap: '4px' }}>
-              <ProfileContainerData gap={10} center>
-                <GroupDataText color="white" size="20px" font="inter-bold">
-                  Usuário não encontrado
-                </GroupDataText>
-              </ProfileContainerData>
-            </View>
-          </ProfileContainerData>
-        </ProfileContainerInfo>
-        <HomePageWhite style={{ gap: 0 }}>
-          <ProfileTextContainer style={{ padding: '25px' }}>
-            <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
-              Este usuário não existe ou teve seu perfil removido.
-            </GroupDataText>
-          </ProfileTextContainer>
-        </HomePageWhite>
-      </HomePageBlue>
-    );
-  }
+  const savedPosts: any = [
+    {
+      nameUser: 'Jhennifer Moreira',
+      imageUser: duckImage,
+      postContent: 'Alguém mora perto de Bonsucesso?',
+      numComments: 5,
+      date: 'Ontem, 21:32',
+    },
+    {
+      nameUser: 'Juliana Silva',
+      imageUser: duckImage,
+      postContent: 'Já postaram o link da aula?',
+      numComments: 5,
+      date: 'Ontem, 21:32',
+    },
+    {
+      nameUser: 'Juliana Silva',
+      imageUser: duckImage,
+      postContent: 'Já postaram o link da aula?',
+      numComments: 5,
+      date: 'Ontem, 21:32',
+    },
+    {
+      nameUser: 'Jhennifer Moreira',
+      imageUser: duckImage,
+      postContent: 'Alguém mora perto de Bonsucesso?',
+      numComments: 5,
+      date: 'Ontem, 21:32',
+    },
+    {
+      nameUser: 'Juliana Silva',
+      imageUser: duckImage,
+      postContent: 'Já postaram o link da aula?',
+      numComments: 5,
+      date: 'Ontem, 21:32',
+    },
+    {
+      nameUser: 'Juliana Silva',
+      imageUser: duckImage,
+      postContent: 'Já postaram o link da aula?',
+      numComments: 5,
+      date: 'Ontem, 21:32',
+    },
+  ];
 
   return (
     <HomePageBlue>
@@ -153,8 +104,8 @@ export default function VisitorProfile({ navigation }: any) {
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <ProfileContainerInfo>
         <ProfileContainerButtons>
-          <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
-            <MenuIcon />
+          <TouchableOpacity accessibilityRole="button" onPress={() => setSideMenu(!sideMenu)}>
+            <Image source={menuIcon} />
           </TouchableOpacity>
           <TouchableOpacity onPress={onShareProfile}>
             <ShareWhiteIcon />
@@ -194,37 +145,31 @@ export default function VisitorProfile({ navigation }: any) {
         </ProfileContainerData>
       </ProfileContainerInfo>
       <HomePageWhite style={{ gap: 0 }}>
-        <ProfileTextContainer style={{ padding: '25px' }}>
+        <ProfileTextContainer style={{ paddingVertical: 25, paddingHorizontal: 0 }}>
           <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
-            {user.bio || 'Nenhuma biografia disponível.'}
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque vel quam vel libero
+            consequat interdum. Vivamus at ex nec arcu interdum fringilla. Nulla facilisi. Maecenas
+            ut sapien vel justo aliquam congue.
           </GroupDataText>
         </ProfileTextContainer>
 
         <GroupPageTabs style={style.line} />
         <ProfilePostsContainer>
-          {posts?.length > 0 ? (
-            posts.map((item: any) => (
-              <PostCard
-                key={item.id}
-                postId={item.id}
-                nameUser={user.fullName}
-                imageUser={duckImage}
-                postContent={item.input}
-                numComments={item.numComments || 0}
-                date={item.createdAt}
-                share
-                save
-                onPressPost={() => navigation.navigate('Post', { postId: item.id })}
-              />
-            ))
-          ) : (
-            <Text style={{ textAlign: 'center', marginTop: 20, fontFamily: 'inter-regular' }}>
-              Este usuário ainda não fez publicações.
-            </Text>
-          )}
+          {savedPosts?.length > 0
+            ? savedPosts?.map((item: any) => (
+                <PostCard
+                  nameUser={item.nameUser}
+                  imageUser={item.imageUser}
+                  postContent={item.postContent}
+                  numComments={item.numComments}
+                  date={item.date}
+                  share
+                  save
+                />
+              ))
+            : ''}
         </ProfilePostsContainer>
       </HomePageWhite>
-      <Toast config={toastConfig} />
     </HomePageBlue>
   );
 }
