@@ -9,7 +9,7 @@
 /* eslint-disable implicit-arrow-linebreak */
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
-import { Image, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
 import {
   HomeContainerGroup,
@@ -33,6 +33,7 @@ import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import MenuIcon from '../../assets/menuWhite-icon.svg';
 import LupaIcon from '../../assets/lupaWhite-icon.svg';
+import { StatusBar } from 'expo-status-bar';
 
 export const storageHome = new MMKV();
 
@@ -127,6 +128,7 @@ export default function Home({ navigation }: any) {
 
   return (
     <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
+      <StatusBar />
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <HomeContainerInfo>
         <PostCardSpaceBetween>
@@ -135,8 +137,8 @@ export default function Home({ navigation }: any) {
               <MenuIcon />
             </TouchableOpacity>
           </PostCardIcons>
-          <PostCardIcons style={{ gap: '25px' }}>
-            <TouchableOpacity>
+          <PostCardIcons style={{ gap: 10 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('Search')}>
               <LupaIcon />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
@@ -190,7 +192,9 @@ export default function Home({ navigation }: any) {
           <GroupDataText font="inter-bold" color="#3F3D3D" size="20px">
             Mural
           </GroupDataText>
-          <HomeContainerListMural>
+          <HomeContainerListMural
+            contentContainerStyle={{ gap: 25 }}
+            showsVerticalScrollIndicator={false}>
             {filteredGroups?.length > 0 ? (
               filteredGroups.map((item: any) =>
                 item.group.Post.map((post: any, postIndex: number) => (

@@ -47,16 +47,10 @@ export const HomeContainerListGroup = styled.View`
 
 export const HomeContainerMural = styled.View`
   display: flex;
-  padding: 0px 25px 25px 30px;
+  padding: 0px 25px 35px 30px; /* padding-bottom aumentado */
   gap: 25px;
-  flex: 1;
+  flex: 1; /* Garante que o container ocupe o espaço disponível */
 `;
-export const HomeContainerListMural = styled.View`
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  scrollbar-width: none;
-  overflow-y: auto;
-  height: 100%;
-  padding-bottom: 10px;
-`;
+
+// Transformado em ScrollView e limpo de estilos que foram para o container
+export const HomeContainerListMural = styled.ScrollView``;
