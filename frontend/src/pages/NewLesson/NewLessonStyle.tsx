@@ -1,9 +1,12 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
 
+const { width, height } = Dimensions.get('window');
+
 export const LinkPart = styled.View`
-  width: 88vw;
-  margin-left: 5.81vw;
+  width: ${width * 0.88}px;
+  margin-left: ${width * 0.0581}px;
   gap: 20px;
   padding-bottom: 20px;
 `;
@@ -14,7 +17,7 @@ export const ArchivesCardContainer = styled.View`
 `;
 
 export const NewLessonContainer = styled.View`
-  margin-top: 3vh;
+  margin-top: ${height * 0.03}px;
   flex: 1;
   gap: 20px;
 `;

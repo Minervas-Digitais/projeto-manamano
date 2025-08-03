@@ -52,9 +52,10 @@ export default function PostCard({
   };
   const [modalOptions, setModalOptions] = useState(false);
   const postDate = date ? new Date(date) : null;
-  const formattedDate = postDate && isValid(postDate)
-  ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
-  : '';
+  const formattedDate =
+    postDate && isValid(postDate)
+      ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
+      : '';
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -149,11 +150,7 @@ export default function PostCard({
             ''
           )}
         </PostCardIcons>
-        <GroupDataText
-          font="inter-regular"
-          color="#515151"
-          size="10px"
-          style={{ marginRight: 8 }}>
+        <GroupDataText font="inter-regular" color="#515151" size="10px" style={{ marginRight: 8 }}>
           {formattedDate}
         </GroupDataText>
       </PostCardSpaceBetween>
