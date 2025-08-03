@@ -126,7 +126,6 @@ export default function Home({ navigation }: any) {
       }))
     : [];
 
-  // Lógica aprimorada para verificar se há posts
   const hasPosts = filteredGroups.some((group) => group.group.Post && group.group.Post.length > 0);
 
   return (
@@ -201,7 +200,6 @@ export default function Home({ navigation }: any) {
           <HomeContainerListMural
             contentContainerStyle={{ gap: 25 }}
             showsVerticalScrollIndicator={false}>
-            {/* Usando a nova variável hasPosts para a lógica condicional */}
             {hasPosts ? (
               filteredGroups.map((item: any) =>
                 item.group.Post.map((post: any, postIndex: number) => (

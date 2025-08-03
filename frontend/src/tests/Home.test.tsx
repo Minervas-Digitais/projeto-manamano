@@ -96,15 +96,12 @@ describe('Home Page', () => {
     expect(await findByText('Grupos')).toBeTruthy();
     expect(await findByText('Mural')).toBeTruthy();
 
-    // Verifica se os grupos e posts são renderizados
-    // Usamos findAllByText para confirmar que o texto aparece, sem erro de duplicidade
     const groupElements = await findAllByText('Grupo de Teste 1');
     expect(groupElements.length).toBeGreaterThan(0);
     expect(await findByText('Conteúdo do primeiro post.')).toBeTruthy();
   });
 
   it('should display a message if there are no groups', async () => {
-    // Sobrescreve o mock da API para não retornar grupos
     apiGetMock.mockResolvedValueOnce({ data: mockUser }).mockResolvedValueOnce({ data: [] });
 
     const { findByText } = render(<Home navigation={{ navigate: mockedNavigate }} />);
@@ -126,9 +123,7 @@ describe('Home Page', () => {
 
     const { findByText } = render(<Home navigation={{ navigate: mockedNavigate }} />);
 
-    // O grupo deve ser renderizado
     expect(await findByText('Grupo Sem Posts')).toBeTruthy();
-    // A mensagem de "Não há Posts" agora deve aparecer corretamente
     expect(await findByText('Não há Posts...')).toBeTruthy();
   });
 
@@ -179,22 +174,17 @@ describe('Home Page', () => {
       <Home navigation={{ navigate: mockedNavigate }} />,
     );
 
-    // 1. Inicialmente, o post do "Grupo de Teste 1" está visível
     await findByText('Conteúdo do primeiro post.');
 
-    // 2. Encontra o botão de filtro específico para "Grupo de Teste 1" e clica nele
     const filterButton = await findByTestId('filter-button-group-1');
     fireEvent.press(filterButton);
 
-    // 3. Após o clique, o post deve desaparecer da tela
     await waitFor(() => {
       expect(queryByText('Conteúdo do primeiro post.')).toBeNull();
     });
 
-    // 4. Clica no mesmo botão de filtro novamente para reverter
     fireEvent.press(filterButton);
 
-    // 5. O post deve reaparecer
     expect(await findByText('Conteúdo do primeiro post.')).toBeTruthy();
   });
 });
