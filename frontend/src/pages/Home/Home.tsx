@@ -9,7 +9,7 @@
 /* eslint-disable implicit-arrow-linebreak */
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
-import { Image, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
 import {
   HomeContainerGroup,
@@ -31,23 +31,51 @@ import SideMenu from '../../components/SideMenu/SideMenu';
 import PostCard from '../../components/PostCard/PostCard';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import MenuIcon from '../../assets/menuWhite-icon.svg';
+import LupaIcon from '../../assets/lupaWhite-icon.svg';
+import { StatusBar } from 'expo-status-bar';
 
 export const storageHome = new MMKV();
 
 export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
   const duckImage = require('../../assets/duck.png');
-  const menuIcon = require('../../assets/menuWhite-icon.svg');
-  const lupa = require('../../assets/lupaWhite-icon.svg');
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [fullName, setFullName] = useState('');
-  const [groups, setGroups] = useState<any[]>([]); // Garantir array
+  const [groups, setGroups] = useState<any[]>([]);
   const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
+
+  useEffect(() => {
+    const accessToken = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+
+      api
+        .get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => setFullName(res.data.fullName))
+        .catch(() => setFullName('Usuário'));
+
+      api
+        .get(`participant/groups/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => setGroups(res.data || []))
+        .catch(() => setGroups([]));
+    }
+  }, []);
 
   if (!fontsLoaded) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -82,36 +110,10 @@ export default function Home({ navigation }: any) {
     navigation.navigate('Post', { postId: id });
   }
 
-  useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-
-      api
-        .get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => setFullName(res.data.fullName))
-        .catch(() => setFullName('Usuário'));
-
-      api
-        .get(`participant/groups/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => setGroups(res.data || []))
-        .catch(() => setGroups([]));
-    }
-  }, []);
-
   const toggleGroupFilter = (groupId: string) => {
     setHiddenGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],);
+      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],
+    );
   };
 
   const filteredGroups = Array.isArray(groups)
@@ -126,17 +128,18 @@ export default function Home({ navigation }: any) {
 
   return (
     <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
+      <StatusBar />
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <HomeContainerInfo>
         <PostCardSpaceBetween>
           <PostCardIcons>
             <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
-              <Image source={menuIcon} />
+              <MenuIcon />
             </TouchableOpacity>
           </PostCardIcons>
-          <PostCardIcons style={{ gap: '25px' }}>
-            <TouchableOpacity>
-              <Image source={lupa} />
+          <PostCardIcons style={{ gap: 10 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('Search')}>
+              <LupaIcon />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
               <PostCardImageUser style={{ border: 'solid 1.7px white' }} source={duckImage} />
@@ -189,7 +192,9 @@ export default function Home({ navigation }: any) {
           <GroupDataText font="inter-bold" color="#3F3D3D" size="20px">
             Mural
           </GroupDataText>
-          <HomeContainerListMural>
+          <HomeContainerListMural
+            contentContainerStyle={{ gap: 25 }}
+            showsVerticalScrollIndicator={false}>
             {filteredGroups?.length > 0 ? (
               filteredGroups.map((item: any) =>
                 item.group.Post.map((post: any, postIndex: number) => (
