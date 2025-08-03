@@ -22,6 +22,8 @@ export default function GroupButton({
   onPress,
   onPressFilter,
   filterIcon,
+  groupId,
+  testID,
 }: any) {
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -32,7 +34,7 @@ export default function GroupButton({
   const [filter, setFilter] = useState(filterIcon);
 
   return (
-    <GroupButtonContainer size={size} onPress={onPress}>
+    <GroupButtonContainer size={size} onPress={onPress} testID={testID}>
       <GroupTextContainer>
         <GroupName numberOfLines={2} fontFamily="inter-bold">
           {groupName}
@@ -47,12 +49,12 @@ export default function GroupButton({
       </GroupTextContainer>
       <GroupFilterContainer>
         <GroupButtonImage
+          testID={`filter-button-${groupId}`}
           onPress={() => {
             onPressFilter();
             setFilter(!filter);
           }}
-          size={size}
-        >
+          size={size}>
           {filter ? <FilterOnIcon /> : <FilterOffIcon />}
         </GroupButtonImage>
       </GroupFilterContainer>

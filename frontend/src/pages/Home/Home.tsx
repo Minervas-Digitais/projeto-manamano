@@ -11,6 +11,7 @@ import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
+import { StatusBar } from 'expo-status-bar';
 import {
   HomeContainerGroup,
   HomeContainerInfo,
@@ -33,7 +34,6 @@ import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import MenuIcon from '../../assets/menuWhite-icon.svg';
 import LupaIcon from '../../assets/lupaWhite-icon.svg';
-import { StatusBar } from 'expo-status-bar';
 
 export const storageHome = new MMKV();
 
@@ -126,6 +126,8 @@ export default function Home({ navigation }: any) {
       }))
     : [];
 
+  const hasPosts = filteredGroups.some((group) => group.group.Post && group.group.Post.length > 0);
+
   return (
     <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
       <StatusBar />
@@ -138,11 +140,13 @@ export default function Home({ navigation }: any) {
             </TouchableOpacity>
           </PostCardIcons>
           <PostCardIcons style={{ gap: 10 }}>
-            <TouchableOpacity onPress={() => navigation.navigate('Search')}>
+            <TouchableOpacity testID="search-button" onPress={() => navigation.navigate('Search')}>
               <LupaIcon />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-              <PostCardImageUser style={{ border: 'solid 1.7px white' }} source={duckImage} />
+            <TouchableOpacity
+              testID="profile-button"
+              onPress={() => navigation.navigate('Profile')}>
+              <PostCardImageUser source={duckImage} />
             </TouchableOpacity>
           </PostCardIcons>
         </PostCardSpaceBetween>
@@ -155,7 +159,6 @@ export default function Home({ navigation }: any) {
           </GroupDataText>
         </View>
       </HomeContainerInfo>
-
       <HomePageWhite>
         <HomeContainerGroup>
           <GroupDataText font="inter-bold" color="#3F3D3D" size="20px">
@@ -166,8 +169,7 @@ export default function Home({ navigation }: any) {
               groups.map((item: any) => (
                 <GroupButton
                   key={item.groupId}
-                  groupName={item.group.name}
-                  onlineMembers={item.participantCount}
+                  testID={`group-button-${item.groupId}`}
                   onPress={() => {
                     navigation.navigate('GroupPage', {
                       groupId: item.groupId,
@@ -176,6 +178,9 @@ export default function Home({ navigation }: any) {
                     storage.set('groupId', item.groupId);
                     console.log(`groupId home: ${item.groupId}`);
                   }}
+                  groupId={item.groupId}
+                  groupName={item.group.name}
+                  onlineMembers={item.participantCount}
                   onPressFilter={() => toggleGroupFilter(item.groupId)}
                   filterIcon={!hiddenGroupIds.includes(item.groupId)}
                 />
@@ -195,7 +200,7 @@ export default function Home({ navigation }: any) {
           <HomeContainerListMural
             contentContainerStyle={{ gap: 25 }}
             showsVerticalScrollIndicator={false}>
-            {filteredGroups?.length > 0 ? (
+            {hasPosts ? (
               filteredGroups.map((item: any) =>
                 item.group.Post.map((post: any, postIndex: number) => (
                   <PostCard
