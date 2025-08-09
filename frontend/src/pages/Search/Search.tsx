@@ -40,7 +40,7 @@ export default function Search() {
 
   const [searchText, setSearchText] = useState<string>('');
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
-  const [timeoutId, setTimeoutId] = useState<number | null>(null);
+  const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
