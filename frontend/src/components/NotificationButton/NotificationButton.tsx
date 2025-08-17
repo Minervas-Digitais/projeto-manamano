@@ -19,10 +19,10 @@ export default function NotificationButton({ text, font }: any) {
   return (
     <NotifButtonContainer>
       <ConfigNotifText font={font}>{text}</ConfigNotifText>
-      <PressableCustom onPress={handleClick} isMoved={isMoved}>
-        {isMoved ? <EllipseW /> : <EllipseB />}
+      <PressableCustom onPress={handleClick} isMoved={isMoved} testID={`toggle-${text.replace(/\s+/g, '-')}`}>
+        {isMoved ? <EllipseW testID={`EllipseW-${text.replace(/\s+/g, '-')}`} /> : <EllipseB testID={`EllipseB-${text.replace(/\s+/g, '-')}`}/>}
       </PressableCustom>
-      <ButtonImage>{isMoved ? <RectActv /> : <Rect />}</ButtonImage>
+      <ButtonImage>{isMoved ? <RectActv testID={`RectActv-${text.replace(/\s+/g, '-')}`} /> : <Rect testID={`Rect-${text.replace(/\s+/g, '-')}`} />}</ButtonImage>
     </NotifButtonContainer>
   );
 }
