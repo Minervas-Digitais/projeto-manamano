@@ -41,12 +41,12 @@ export default function DeleteOneConfirmation({
           </ModalOptionsNotificationText>
         </View>
         <DeleteConfirmationButtonContainer>
-          <DeleteConfirmationButton onPress={onConfirm}>
+          <DeleteConfirmationButton onPress={onConfirm} testID="confirm-delete-button">
             <ModalOptionsNotificationText font="inter-regular" color="#EF4036">
               Excluir
             </ModalOptionsNotificationText>
           </DeleteConfirmationButton>
-          <DeleteConfirmationButton onPress={onCancel}>
+          <DeleteConfirmationButton onPress={onCancel} testID="cancel-delete-button">
             <ModalOptionsNotificationText font="inter-regular" color="#515151">
               Cancelar
             </ModalOptionsNotificationText>
