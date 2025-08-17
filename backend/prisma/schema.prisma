@@ -22,10 +22,16 @@ model User {
   expertise             String?
   enterprise            String?
   bio                   String?
+ 
+  profilePictureId      String?        @unique
+  profilePicture        Archive?       @relation("UserProfilePicture", fields: [profilePictureId], references: [id], onDelete: SetNull)
+
+
+
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
   sysRole               RoleType?      @default(MEMBER)
-  archives              Archive[]
+  archives              Archive[]      @relation("UserArchives")
   Comment               Comment[]
   notificationsReceived Notification[] @relation("ReceivedNotifications")
   notificationsSent     Notification[] @relation("SentNotifications")
@@ -133,7 +139,10 @@ model Archive {
   postId        String?
   uploadDate    DateTime @default(now())
   Group         Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  User          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  User          User?    @relation("UserArchives", fields: [userId], references: [id], onDelete: Cascade)
+  profileOf     User?    @relation("UserProfilePicture")
+
   Post          Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
 
 }
