@@ -50,3 +50,33 @@ export const ArchiveCardText = styled.Text<{ font?: string; size?: string }>`
   padding-left: 10px;
   word-break: break-word;
 `;
+
+export const PreviewContainer = styled.View`
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  padding-vertical: 8px;
+  padding-horizontal: 4px;
+`;
+
+export const FilePreviewImage = styled.Image`
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  resize-mode: cover;
+`;
+
+export const FileIconContainer = styled.View`
+  width: 35px;
+  height: 35px;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  margin-bottom: 4px;
+`;
+
+export const CenteredText = styled(ArchiveCardText)`
+  text-align: center;
+`;
