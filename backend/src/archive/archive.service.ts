@@ -51,10 +51,6 @@ export class ArchiveService {
       where: { postId },
     });
 
-    if (archives.length === 0) {
-      throw new NotFoundException('No archives found for this post');
-    }
-
     return archives.map(this.mapToResponseDto);
   }
 
