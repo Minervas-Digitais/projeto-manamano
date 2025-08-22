@@ -11,6 +11,7 @@ export default function ButtonCustom({
   border,
   leftIcon,
   rightIcon,
+  testID,
 }: any) {
   const [fontsLoaded] = useFonts({
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -19,7 +20,7 @@ export default function ButtonCustom({
     return undefined;
   }
   return (
-    <ButtonContainer backgroundColor={backColor} onPress={onPress} border={border}>
+    <ButtonContainer backgroundColor={backColor} onPress={onPress} border={border} testID={testID}>
       {leftIcon}
       <ButtonText accessibilityLabel={text} fontColor={fontColor} fontFamily="inter-bold">
         {text}
