@@ -48,7 +48,6 @@ export default function LessonsCard({ date, title, urlLive }: any) {
       type: 'success',
       text1: 'Link Copiado!',
       visibilityTime: 1000,
-
     });
   };
 
@@ -86,8 +85,7 @@ export default function LessonsCard({ date, title, urlLive }: any) {
               backgroundColor="none"
               border
               style={{ flexDirection: 'row' }}
-              onPress={copyLink}
-            >
+              onPress={copyLink}>
               <Image style={{ width: 20, height: 21 }} source={link} />
 
               <GroupDataText font="inter-bold" size="13px" color="#160E47">
@@ -99,15 +97,14 @@ export default function LessonsCard({ date, title, urlLive }: any) {
         </>
       ) : (
         <LessonsCardInfoContainer style={{ justifyContent: 'space-between', position: 'relative' }}>
-          <LessonsCardInfoContainer style={{ width: 'fit-content', gap: '3px' }}>
+          <LessonsCardInfoContainer style={{ alignSelf: 'flex-start', gap: '3px' }}>
             <Image source={book} />
             <GroupDataText
               font="inter-bold"
               size="16px"
               color="#4E4E4E"
               numberOfLines={1}
-              style={{ zIndex: 3 }}
-            >
+              style={{ zIndex: 3 }}>
               {title}
             </GroupDataText>
           </LessonsCardInfoContainer>
@@ -117,7 +114,6 @@ export default function LessonsCard({ date, title, urlLive }: any) {
         </LessonsCardInfoContainer>
       )}
       <Toast config={toastConfig} />
-
     </LessonsCardContainer>
   );
 }
