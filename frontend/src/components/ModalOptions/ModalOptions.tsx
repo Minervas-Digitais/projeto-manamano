@@ -36,24 +36,16 @@ export default function ModalOptions({ onShare, onPressFix, fixed, postId }: any
         </ModalOptionsOptionsText>
       </ModalOptionsOptionsContainer>
       {fixed ? (
-        <ModalOptionsOptionsContainer>
+        <ModalOptionsOptionsContainer testID="modal-fix-button" onPress={onPressFix}>
           <Fix />
-          <ModalOptionsOptionsText
-            font="inter-regular"
-            color="#515151"
-            size="13px"
-            onPress={onPressFix}>
+          <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px">
             Desfixar
           </ModalOptionsOptionsText>
         </ModalOptionsOptionsContainer>
       ) : (
-        <ModalOptionsOptionsContainer>
+        <ModalOptionsOptionsContainer testID="modal-fix-button" onPress={onPressFix}>
           <Fix />
-          <ModalOptionsOptionsText
-            font="inter-regular"
-            color="#515151"
-            size="13px"
-            onPress={onPressFix}>
+          <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px">
             Fixar
           </ModalOptionsOptionsText>
         </ModalOptionsOptionsContainer>
