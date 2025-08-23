@@ -21,16 +21,15 @@ export default function FileCard({ info, type }: any) {
     <FileCardContainer
       onPress={() => {
         Linking.openURL(info);
-      }}
-    >
+      }}>
       <FileCardInfoContainer>
         {type === 'Links' ? (
           <FileCardImageContainer>
-            <Image style={{ width: '30px', height: '30px' }} source={link} />
+            <Image style={{ width: 30, height: 30 }} source={link} />
           </FileCardImageContainer>
         ) : type === 'Documentos' ? (
           <FileCardImageContainer>
-            <Image style={{ width: '30px', height: '30px' }} source={file} />
+            <Image style={{ width: 30, height: 30 }} source={file} />
           </FileCardImageContainer>
         ) : (
           ''
