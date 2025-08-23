@@ -90,12 +90,12 @@ jest.mock('../services/api', () => ({
             }
             return Promise.resolve({ data: {} });
         }),
-        delete: jest.fn(),
+        delete: jest.fn(() => Promise.resolve({ data: {} })),
     },
 }));
 
 jest.mock('../pages/Profile/Profile', () => {
-  return () => null;
+    return () => null;
 });
 
 import Profile from '../pages/Profile/Profile';
@@ -114,20 +114,29 @@ const renderWithNavigation = () =>
 
 (global as any).alert = jest.fn();
 
+import { Alert } from 'react-native';
+
+jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
+    const confirmButton = buttons?.find(btn => btn.text === 'Sim');
+    if (confirmButton && confirmButton.onPress) {
+        confirmButton.onPress();
+    }
+});
+
 describe("Search", () => {
     beforeAll(() => {
         // ignora os erros do act e causados pelo proprio teste
         jest.spyOn(console, 'error').mockImplementation((msg) => {
-        if (typeof msg === 'string') {
-            if (
-            msg.includes('An update to') ||
-            msg.includes('inside a test was not wrapped in act')
-            ) {
-            return;
+            if (typeof msg === 'string') {
+                if (
+                    msg.includes('An update to') ||
+                    msg.includes('inside a test was not wrapped in act')
+                ) {
+                    return;
+                }
             }
-        }
 
-        console.warn(msg);
+            console.warn(msg);
         });
     })
     beforeEach(() => {
@@ -299,6 +308,133 @@ describe("Search", () => {
             expect(await findByTestId('group-delete-button-2')).toBeTruthy();
             expect(await findByTestId('post-delete-button-3')).toBeTruthy();
         });
+
+        it('exclui um usuário ao clicar no botão lixeira e confirma', async () => {
+            const api = require('../services/api').default;
+
+            const { getByPlaceholderText, findByTestId, getByText } = renderWithNavigation();
+
+            fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
+
+            await waitFor(() => expect(getByText('Filtros')).toBeTruthy(), { timeout: 3000 });
+
+            expect(await findByTestId('user-delete-button-1')).toBeTruthy();
+
+            const deleteButton = await findByTestId('user-delete-button-1');
+            fireEvent.press(deleteButton);
+
+            await waitFor(() => {
+                expect(getByText('Tem certeza que deseja excluir este usuário?')).toBeTruthy()
+            }, { timeout: 1000 });
+
+            const confirmButton = await findByTestId('confirm-delete-button');
+            fireEvent.press(confirmButton);
+
+            await waitFor(() => {
+                expect(api.delete).toHaveBeenCalledWith('/user/1', {
+                    headers: { Authorization: 'Bearer fake-token' },
+                });
+            });
+
+            await waitFor(() => {
+                expect(screen.queryByTestId('user-card-1')).toBeNull();
+            });
+        });
+
+        it('exclui um grupo ao clicar no botão lixeira e confirma', async () => {
+            const api = require('../services/api').default;
+
+            const { getByPlaceholderText, findByTestId, getByText } = renderWithNavigation();
+
+            fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
+
+            await waitFor(() => expect(getByText('Filtros')).toBeTruthy(), { timeout: 3000 });
+
+            expect(await findByTestId('group-delete-button-2')).toBeTruthy();
+
+            const deleteButton = await findByTestId('group-delete-button-2');
+            fireEvent.press(deleteButton);
+
+            await waitFor(() => {
+                expect(getByText('Tem certeza que deseja excluir este grupo?')).toBeTruthy();
+            }, { timeout: 1000 });
+
+            const confirmButton = await findByTestId('confirm-delete-button');
+            fireEvent.press(confirmButton);
+
+            await waitFor(() => {
+                expect(api.delete).toHaveBeenCalledWith('/group/2', {
+                    headers: { Authorization: 'Bearer fake-token' },
+                });
+            });
+
+            await waitFor(() => {
+                expect(screen.queryByTestId('group-card-2')).toBeNull();
+            });
+        });
+
+        it('exclui uma publicação ao clicar no botão lixeira e confirma', async () => {
+            const api = require('../services/api').default;
+
+            const { getByPlaceholderText, findByTestId, getByText } = renderWithNavigation();
+
+            fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
+
+            await waitFor(() => expect(getByText('Filtros')).toBeTruthy(), { timeout: 3000 });
+
+            expect(await findByTestId('post-delete-button-3')).toBeTruthy();
+
+            const deleteButton = await findByTestId('post-delete-button-3');
+            fireEvent.press(deleteButton);
+
+            await waitFor(() => {
+                expect(getByText('Tem certeza que deseja excluir esta publicação?')).toBeTruthy();
+            }, { timeout: 1000 });
+
+            const confirmButton = await findByTestId('confirm-delete-button');
+            fireEvent.press(confirmButton);
+
+            await waitFor(() => {
+                expect(api.delete).toHaveBeenCalledWith('/post/3', {
+                    headers: { Authorization: 'Bearer fake-token' },
+                });
+            });
+
+            await waitFor(() => {
+                expect(screen.queryByTestId('post-item-3')).toBeNull();
+            });
+        });
+
+        it('não exclui o usuário se clicar em "Não" no alerta de confirmação', async () => {
+            const api = require('../services/api').default;
+
+            const { getByPlaceholderText, findByTestId, getByText } = renderWithNavigation();
+
+            fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
+
+            await waitFor(() => expect(getByText('Filtros')).toBeTruthy(), { timeout: 3000 });
+
+            const deleteButton = await findByTestId('user-delete-button-1');
+            fireEvent.press(deleteButton);
+
+            await waitFor(() => {
+                expect(getByText('Tem certeza que deseja excluir este usuário?')).toBeTruthy();
+            });
+
+            const alertMock = jest.spyOn(Alert, 'alert');
+            alertMock.mockImplementationOnce((title, message, buttons) => {
+                const cancelButton = buttons?.find(btn => btn.text === 'Não');
+                if (cancelButton?.onPress) cancelButton.onPress();
+            });
+
+            const cancelButton = await findByTestId('cancel-delete-button');
+            fireEvent.press(cancelButton);
+
+            expect(api.delete).not.toHaveBeenCalled();
+
+            expect(await findByTestId('user-card-1')).toBeTruthy();
+        });
+
     });
 
 })

@@ -11,7 +11,7 @@ export default function ButtonCustom({
   border,
   leftIcon,
   rightIcon,
-  testID
+  testID,
 }: any) {
   const [fontsLoaded] = useFonts({
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),

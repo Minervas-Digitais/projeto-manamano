@@ -2,21 +2,79 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
-import { View, Image } from 'react-native';
+import { View } from 'react-native';
 import {
   AddRemoveArchiveIcon,
   ArchiveCardContainer,
   ArchivePressable,
   ArchiveCardText,
   Empty,
-  PaperclipIcon,
+  PreviewContainer,
+  FilePreviewImage,
+  FileIconContainer,
+  CenteredText,
 } from './ArchiveCardStyle';
+import AddArchiveIcon from '../../assets/add-archive.svg';
+import RemoveArchiveIcon from '../../assets/remove-archive.svg';
+import PaperclipSvgIcon from '../../assets/paperclip.svg';
 
-export default function ArchiveCard({ archive, removed, onPress, onClick, name, testID }: any) {
-  const addArchive = require('../../assets/add-archive.svg');
-  const removeArchive = require('../../assets/remove-archive.svg');
-  const noArchive = require('../../assets/paperclip.svg');
-  const magnifyingGlass = require('../../assets/magnifying-glass.svg');
+// Função para determinar o tipo de arquivo baseado no mimeType
+const getFileTypeIcon = (mimeType?: string) => {
+  if (!mimeType) return <PaperclipSvgIcon />;
+
+  if (mimeType.startsWith('image/')) {
+    return '📷'; // Emoji para imagens
+  }
+  if (mimeType.includes('pdf')) {
+    return '📄'; // Emoji para PDF
+  }
+  if (mimeType.includes('word') || mimeType.includes('document')) {
+    return '📝'; // Emoji para documentos
+  }
+  if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) {
+    return '📊'; // Emoji para planilhas
+  }
+  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
+    return '📋'; // Emoji para apresentações
+  }
+  if (mimeType.startsWith('video/')) {
+    return '🎥'; // Emoji para vídeos
+  }
+  if (mimeType.startsWith('audio/')) {
+    return '🎵'; // Emoji para áudios
+  }
+  return '📎'; // Emoji genérico para outros arquivos
+};
+
+// Função para renderizar prévia do arquivo
+const renderFilePreview = (mimeType?: string, uri?: string) => {
+  if (mimeType?.startsWith('image/') && uri) {
+    return <FilePreviewImage source={{ uri: `data:${mimeType};base64,${uri}` }} />;
+  }
+  const icon = getFileTypeIcon(mimeType);
+  return (
+    <FileIconContainer>
+      {typeof icon === 'string' ? (
+        <ArchiveCardText font="inter-semibold" size="16px">
+          {icon}
+        </ArchiveCardText>
+      ) : (
+        icon
+      )}
+    </FileIconContainer>
+  );
+};
+
+export default function ArchiveCard({
+  archive,
+  removed,
+  onPress,
+  onClick,
+  name,
+  mimeType,
+  uri,
+  testID
+}: any) {
   const [fontsLoaded] = useFonts({
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -24,6 +82,10 @@ export default function ArchiveCard({ archive, removed, onPress, onClick, name, 
   if (!fontsLoaded) {
     return undefined;
   }
+  const addArchive = require('../../assets/add-archive.svg');
+  const removeArchive = require('../../assets/remove-archive.svg');
+  const noArchive = require('../../assets/paperclip.svg');
+  const magnifyingGlass = require('../../assets/magnifying-glass.svg');
   return (
     <View>
       {archive ? (
@@ -32,14 +94,19 @@ export default function ArchiveCard({ archive, removed, onPress, onClick, name, 
         ) : (
           <ArchiveCardContainer>
             <ArchivePressable>
-              <ArchiveCardContainer>
-                <ArchiveCardText font="inter-semibold" size="12px">
+              <PreviewContainer>
+                {renderFilePreview(mimeType, uri)}
+                <CenteredText
+                  font="inter-semibold"
+                  size="9px"
+                  numberOfLines={2}
+                  ellipsizeMode="tail">
                   {name}
-                </ArchiveCardText>
-                <AddRemoveArchiveIcon onPress={onPress} testID={testID}>
-                  <Image source={removeArchive} />
-                </AddRemoveArchiveIcon>
-              </ArchiveCardContainer>
+                </CenteredText>
+              </PreviewContainer>
+              <AddRemoveArchiveIcon onPress={onPress} testID={testID}>
+                <RemoveArchiveIcon />
+              </AddRemoveArchiveIcon>
             </ArchivePressable>
           </ArchiveCardContainer>
         )
@@ -47,9 +114,9 @@ export default function ArchiveCard({ archive, removed, onPress, onClick, name, 
         <ArchiveCardContainer>
           <ArchivePressable>
             <ArchiveCardContainer>
-              <PaperclipIcon source={noArchive} />
+              <PaperclipSvgIcon />
               <AddRemoveArchiveIcon onPress={onClick} testID={testID}>
-                <Image source={addArchive} />
+                <AddArchiveIcon />
               </AddRemoveArchiveIcon>
             </ArchiveCardContainer>
           </ArchivePressable>

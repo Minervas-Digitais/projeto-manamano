@@ -2,7 +2,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable global-require */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFonts } from 'expo-font';
 import { StyleSheet, View, Image, Dimensions, Button } from 'react-native';
 import { useRoute } from '@react-navigation/native';
@@ -32,19 +32,14 @@ import SideMenu from '../../components/SideMenu/SideMenu';
 import api from '../../services/api';
 import { storageHome } from '../Home/Home';
 import EventCard from '../../components/EventCard/EventCard';
+import NotificationIcon from '../../assets/notification-icon.svg';
+import AddPostIcon from '../../assets/add-post-icon.svg';
 
 export default function GroupPage({ navigation }: any) {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
   const { groupName } = route.params as { groupName: string };
-
-  useEffect(() => {
-    getGroupPosts();
-    getGroupCategory();
-  }, []);
-  const notificationIcon = require('../../assets/notification-icon.svg');
   const duckImage = require('../../assets/duck.png');
-  const addPost = require('../../assets/add-post-icon.svg');
 
   const [muralSelect, setMuralSelect] = useState(true);
   const [classesSelect, setClassesSelect] = useState(false);
@@ -60,6 +55,44 @@ export default function GroupPage({ navigation }: any) {
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
   });
+
+  const getGroupPosts = useCallback(async () => {
+    const token = storage.getString('accessToken');
+    if (!token || !groupId) {
+      console.error('Access token or Group ID is missing.');
+      return;
+    }
+    try {
+      const response = await api.get(`/post/group/${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPosts(response.data);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+  }, [groupId]);
+
+  const getGroupCategory = useCallback(async () => {
+    const token = storage.getString('accessToken');
+    if (!token || !groupId) {
+      console.error('Access token or Group ID is missing.');
+      return;
+    }
+    try {
+      const response = await api.get(`/category/group/${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const filteredData = response.data.filter((category: any) => category.name !== 'Aulas');
+      setCategories(filteredData);
+    } catch (error) {
+      console.error('Error fetching group categories:', error);
+    }
+  }, [groupId]);
+
+  useEffect(() => {
+    getGroupPosts();
+    getGroupCategory();
+  }, [getGroupPosts, getGroupCategory]);
 
   if (!fontsLoaded) {
     return undefined;
@@ -167,56 +200,6 @@ export default function GroupPage({ navigation }: any) {
 
     return `${day}/${month}/${year} - ${hours}:${minutes}`;
   }
-  const getGroupPosts = async () => {
-    const token = storage.getString('accessToken');
-
-    if (!token) {
-      console.error('Access token is missing.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:3000/post/group/${groupId}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-      setPosts(data);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-    }
-  };
-
-  const getGroupCategory = async () => {
-    const token = storage.getString('accessToken');
-    if (!token) {
-      console.error('Access token is missing.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:3000/category/group/${groupId}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      const filteredData = data.filter((category: any) => category.name !== 'Aulas');
-
-      setCategories(filteredData);
-      console.log('Categorias do grupo (filtradas):', filteredData);
-    } catch (error) {
-      console.error('Error fetching group categories:', error);
-    }
-  };
-
   const fixActions = async (id: string, isPinned: boolean) => {
     const token = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
@@ -261,7 +244,6 @@ export default function GroupPage({ navigation }: any) {
     storageHome.set('idPost', id);
     navigation.navigate('Post', { postId: id });
   }
-
   return (
     <GroupPageContainer>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
@@ -269,7 +251,7 @@ export default function GroupPage({ navigation }: any) {
       <HeaderCustom
         font="inter-bold"
         text={groupName}
-        icon={notificationIcon}
+        icon={<NotificationIcon />}
         onPressMenu={() => {
           setSideMenu(!sideMenu);
         }}
@@ -402,7 +384,7 @@ export default function GroupPage({ navigation }: any) {
                 console.log('groupId no GroupPage', groupId);
                 navigation.navigate('NewPost', { groupId });
               }}>
-              <Image source={addPost} />
+              <AddPostIcon />
             </GroupPageAddPostButton>
           </>
         ) : classesSelect ? (
@@ -427,7 +409,7 @@ export default function GroupPage({ navigation }: any) {
                 console.log('groupId no GroupPage', groupId);
                 navigation.navigate('NewLesson', { groupId });
               }}>
-              <Image source={addPost} />
+              <AddPostIcon />
             </GroupPageAddPostButton>
           </GroupPageLessonsContainer>
         ) : (

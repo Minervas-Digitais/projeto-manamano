@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, Text, View, ScrollView, Alert } from 'react-native';
 import { useFonts } from 'expo-font';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import {
   Container,
   Input,
@@ -15,8 +16,10 @@ import { storage } from '../SignIn/SignIn';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import { RootStackParamList } from '../../navigation/types';
 
-export default function CreateGroup({ navigation }: any) {
+export default function CreateGroup() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -33,41 +36,47 @@ export default function CreateGroup({ navigation }: any) {
     if (token) setAccessToken(token);
   }, []);
 
+  const handleAddCategory = () => {
+    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+      setCategories([...categories, newCategory.trim()]);
+      setNewCategory('');
+    }
+  };
+
+  const handleRemoveCategory = (categoryToRemove: string) => {
+    setCategories(categories.filter((category) => category !== categoryToRemove));
+  };
+
   const createCategory = async (name: string, type: string, groupId: string) => {
     if (!accessToken) {
-      console.error('Access token is missing.');
-      return;
+      return Promise.reject(new Error('Access token is missing.'));
     }
 
     try {
-      const response = await fetch('http://localhost:3000/category', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await api.post(
+        '/category',
+        {
           name,
           type,
           groupId,
-        }),
-      });
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to create category "${name}"`);
-      }
-
-      const data = await response.json();
-      console.log(`Category "${name}" created with ID:`, data.id);
+      return response.data;
     } catch (error) {
-      console.error(`Error creating category "${name}":`, error);
+      throw new Error(`Falha ao criar categoria "${name}"`);
     }
   };
 
   const handleCreateGroup = async () => {
     const loggedId = storage.getString('loggedId');
     if (!groupName.trim() || !groupDescription.trim()) {
-      Alert.alert('Error', 'Please fill in both the group name and description.');
+      Alert.alert('Error', 'Preencha corretamente os campos.');
       return;
     }
 
@@ -77,28 +86,24 @@ export default function CreateGroup({ navigation }: any) {
     }
 
     try {
-      const groupResponse = await fetch('http://localhost:3000/group', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const groupResponse = await api.post(
+        '/group',
+        {
           name: groupName,
           description: groupDescription,
-        }),
-      });
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
 
-      if (!groupResponse.ok) {
-        throw new Error('Failed to create group');
-      }
-
-      const groupData = await groupResponse.json();
+      const groupData = groupResponse.data;
       const groupId = groupData.id;
       const { inviteCode } = groupData;
-      console.log('inviteCode: ', inviteCode);
-      console.log('Group ID:', groupId);
-      Alert.alert('Success', `Group created successfully! ID: ${groupId}`);
+
+      Alert.alert('Successo', `Grupo criado com sucesso! ID: ${groupId}`);
 
       const defaultCategories = [
         { name: 'Geral', type: 'NORMAL' },
@@ -107,11 +112,18 @@ export default function CreateGroup({ navigation }: any) {
         { name: 'Aulas', type: 'CLASS' },
       ];
 
-      for (const { name, type } of defaultCategories) {
-        await createCategory(name, type, groupId);
-      }
-      api
-        .post(
+      // Create all categories in parallel for better performance
+      const allCategoryPromises = [
+        ...defaultCategories.map(({ name, type }) => createCategory(name, type, groupId)),
+        ...categories.map((category) => createCategory(category, 'NORMAL', groupId)),
+      ];
+
+      // Wait for all categories to be created
+      await Promise.all(allCategoryPromises);
+
+      // Add user as moderator
+      try {
+        await api.post(
           '/participant',
           { groupId, userId: loggedId, role: 'MODERATOR', inviteCode },
           {
@@ -119,24 +131,18 @@ export default function CreateGroup({ navigation }: any) {
               Authorization: `Bearer ${accessToken}`,
             },
           },
-        )
-        .then((res) => {
-          console.log('SUCESSO', res.data);
-          navigation.navigate('Home');
-        })
-        .catch((error) => {
-          if (error.response) {
-            console.log('ERRO', error.response.status, error.response.data);
-          } else {
-            console.log('ERRO DESCONHECIDO', error.message);
-          }
-        });
-      for (const category of categories) {
-        await createCategory(category, 'NORMAL', groupId);
+        );
+
+        navigation.navigate('Home');
+      } catch (participantError: any) {
+        if (participantError.response) {
+          Alert.alert('Error', 'Falha ao adicionar usuário como moderador');
+        } else {
+          Alert.alert('Error', 'Falha desconhecida');
+        }
       }
     } catch (error) {
-      console.error('Error creating group or categories:', error);
-      Alert.alert('Error', 'Failed to create group or categories. Please try again.');
+      Alert.alert('Error', 'Falha ao criar grupo ou categoria');
     }
   };
 
@@ -153,9 +159,9 @@ export default function CreateGroup({ navigation }: any) {
           <Input
             value={groupName}
             onChangeText={setGroupName}
+            testID="group-name-input"
+            accessibilityLabel="Nome do Grupo"
             style={{
-              outline: 'none',
-              boxShadow: 'none',
               backgroundColor: 'transparent',
               borderColor: '#5e6366',
               borderRadius: 5,
@@ -168,9 +174,9 @@ export default function CreateGroup({ navigation }: any) {
             value={groupDescription}
             onChangeText={setGroupDescription}
             multiline
+            testID="group-description-input"
+            accessibilityLabel="Descrição do Grupo"
             style={{
-              outline: 'none',
-              boxShadow: 'none',
               backgroundColor: 'transparent',
               borderColor: '#5e6366',
               borderRadius: 5,
@@ -190,6 +196,7 @@ export default function CreateGroup({ navigation }: any) {
             <Input
               value={newCategory}
               onChangeText={setNewCategory}
+              testID="category-input"
               onKeyPress={({ nativeEvent }) => {
                 if (nativeEvent.key === 'Enter') {
                   handleAddCategory();
@@ -197,14 +204,12 @@ export default function CreateGroup({ navigation }: any) {
               }}
               style={{
                 marginBottom: 0,
-                outline: 'none',
-                boxShadow: 'none',
                 backgroundColor: 'transparent',
                 borderRadius: 5,
                 flex: 1,
               }}
             />
-            <AddCategoryButton onPress={handleAddCategory}>
+            <AddCategoryButton onPress={handleAddCategory} testID="add-category-button">
               <Text style={{ fontSize: 18, color: '#AAAAAA' }}>+</Text>
             </AddCategoryButton>
           </CategoryContainer>
@@ -212,11 +217,12 @@ export default function CreateGroup({ navigation }: any) {
             <Category>Geral</Category>
             <Category>Aulas</Category>
             <Category>Eventos</Category>
-            {categories.map((category, index) => (
-              <Category key={index}>
+            {categories.map((category) => (
+              <Category key={category}>
                 {category}
                 <TouchableOpacity
                   onPress={() => handleRemoveCategory(category)}
+                  testID={`category-${category}`}
                   style={{ marginLeft: 8 }}>
                   <Text>-</Text>
                 </TouchableOpacity>
@@ -229,6 +235,7 @@ export default function CreateGroup({ navigation }: any) {
               backColor="#160E47"
               fontColor="white"
               text="Criar"
+              testID="create-group-button"
             />
           </View>
         </ContentContainer>
