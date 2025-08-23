@@ -204,15 +204,15 @@ export default function NewLesson({ navigation }: any) {
       if (result.assets && result.assets.length > 0) {
         const newFiles = await Promise.all(
           result.assets.map(async (file) => {
-            const base64 = await FileSystem.readAsStringAsync(file.uri, {
-              encoding: FileSystem.EncodingType.Base64,
-            });
-            return {
-              id: Date.now() + Math.random(),
-              name: file.name,
-              uri: base64,
-              mimeType: file.mimeType,
-            };
+                const base64 = await FileSystem.readAsStringAsync(file.uri, {
+                  encoding: FileSystem.EncodingType.Base64,
+                });
+                return {
+                    id: Date.now() + Math.random(),
+                    name: file.name,
+                    uri: base64,
+                    mimeType: file.mimeType,
+                };
           }),
         );
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
