@@ -109,7 +109,9 @@ export default function PostCard({
             <View />
           )}
           {dotsMenu ? (
-            <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
+            <TouchableOpacity
+              testID={`dots-menu-${postId}`}
+              onPress={() => setModalOptions(!modalOptions)}>
               <DotsMenuIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
@@ -143,7 +145,7 @@ export default function PostCard({
             {numComments}
           </GroupDataText>
           {fix ? (
-            <TouchableOpacity>
+            <TouchableOpacity testID={`fix-button-${postId}`} onPress={onPressFix}>
               <FixIcon width="15px" height="15px" />
             </TouchableOpacity>
           ) : (
