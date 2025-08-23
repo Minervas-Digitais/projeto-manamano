@@ -349,37 +349,40 @@ export default function GroupPage({ navigation }: any) {
             </GroupPageCategoryContainer>
             <GroupPagePostList>
               {posts?.length > 0 ? (
-                posts?.map((item: any) => {
-                  if (filterPosts === item.categoryName && item.type === 'NORMAL') {
-                    return (
-                      <PostCard
-                        nameUser={item.nameUser}
-                        imageUser={duckImage}
-                        postContent={item.input}
-                        numComments={item.numComments}
-                        date={formatRelativeDate(item.createdAt)}
-                        onPressFix={() => fixActions(item.id, item.isPinned)}
-                        onPressPost={() => onPressPostAction(item.id)}
-                        dotsMenu
-                        postId={item.id}
-                      />
-                    );
-                  }
-                  if (filterPosts === item.categoryName && item.type === 'EVENT') {
-                    return (
-                      <EventCard
-                        date={formatRelativeDate(item.createdAt)}
-                        title={item.title}
-                        description={item.input}
-                      />
-                    );
-                  }
-                })
+                posts
+                  .filter((item: any) => !item.isPinned)
+                  .map((item: any) => {
+                    if (filterPosts === item.categoryName && item.type === 'NORMAL') {
+                      return (
+                        <PostCard
+                          nameUser={item.nameUser}
+                          imageUser={duckImage}
+                          postContent={item.input}
+                          numComments={item.numComments}
+                          date={formatRelativeDate(item.createdAt)}
+                          onPressFix={() => fixActions(item.id, item.isPinned)}
+                          onPressPost={() => onPressPostAction(item.id)}
+                          dotsMenu
+                          postId={item.id}
+                        />
+                      );
+                    }
+                    if (filterPosts === item.categoryName && item.type === 'EVENT') {
+                      return (
+                        <EventCard
+                          date={formatRelativeDate(item.createdAt)}
+                          title={item.title}
+                          description={item.input}
+                        />
+                      );
+                    }
+                  })
               ) : (
                 <View />
               )}
             </GroupPagePostList>
             <GroupPageAddPostButton
+              testID="add-post-button"
               onPress={() => {
                 console.log('groupId no GroupPage', groupId);
                 navigation.navigate('NewPost', { groupId });
