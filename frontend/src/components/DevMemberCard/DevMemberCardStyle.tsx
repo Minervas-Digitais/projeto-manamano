@@ -24,7 +24,7 @@ export const DevMemberCardImage = styled.Image`
   position: relative;
   width: 75px;
   height: 75px;
-  border-radius: 50%;
+  border-radius: 37.5px;
 `;
 
 export const DevMemberCardView = styled.View`

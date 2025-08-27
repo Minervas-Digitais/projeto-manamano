@@ -1,8 +1,8 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { View } from 'react-native';
-import { useEffect, useState } from 'react';
+import { Alert, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
@@ -12,9 +12,10 @@ import { RedText, SemiBoldRedText } from './GetInTouchStyle';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import ArrowIcon from '../../assets/arrow-icon.svg';
 
 export default function GetInTouch() {
-  const arrowIcon = require('../../assets/arrow-icon.svg');
+  
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   useEffect(() => {
@@ -50,10 +51,10 @@ export default function GetInTouch() {
           },
         },
       );
-      alert('Mensagem enviada com sucesso!');
+      Alert.alert('Mensagem enviada com sucesso!');
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      alert('Erro ao enviar mensagem. Tente novamente mais tarde.');
+      Alert.alert('Erro ao enviar mensagem. Tente novamente mais tarde.');
     }
   };
 
@@ -112,13 +113,16 @@ export default function GetInTouch() {
             backColor="#160E47"
             fontColor="white"
             text="Enviar"
-            rightIcon={arrowIcon}
+            rightIcon={ArrowIcon}
           />
-          <RedText>
+          <RedText font="inter-regular">
             * Sua mensagem será
-            <SemiBoldRedText> encaminhada </SemiBoldRedText>
-            para o <SemiBoldRedText>e-mail do ManaMano.</SemiBoldRedText> Portanto, caso necessário,{' '}
-            <SemiBoldRedText>confira seu e-mail para obter respostas. </SemiBoldRedText>
+            <SemiBoldRedText font="inter-semibold"> encaminhada </SemiBoldRedText>
+            para o <SemiBoldRedText font="inter-semibold">e-mail do ManaMano.</SemiBoldRedText>{' '}
+            Portanto, caso necessário,{' '}
+            <SemiBoldRedText font="inter-semibold">
+              confira seu e-mail para obter respostas.{' '}
+            </SemiBoldRedText>
           </RedText>
         </SignInInputContainer>
       </SignInForm>

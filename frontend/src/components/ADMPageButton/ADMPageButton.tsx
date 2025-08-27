@@ -14,7 +14,7 @@ export default function ADMPageButton({ fontColor, text, onPress, border, icon }
   return (
     <ADMButtonContainer onPress={onPress} border={border}>
       <ADMButtonGradient>
-        <Image source={icon} />
+        {icon}
         <ADMButtonText fontColor={fontColor} fontFamily="inter-bold">
           {text}
         </ADMButtonText>

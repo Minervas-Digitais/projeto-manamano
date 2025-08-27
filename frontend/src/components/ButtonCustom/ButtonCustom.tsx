@@ -1,7 +1,6 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
-import { Image } from 'react-native';
 import { ButtonContainer, ButtonText } from './ButtonStyle';
 
 export default function ButtonCustom({
@@ -12,6 +11,7 @@ export default function ButtonCustom({
   border,
   leftIcon,
   rightIcon,
+  testID,
 }: any) {
   const [fontsLoaded] = useFonts({
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -20,12 +20,12 @@ export default function ButtonCustom({
     return undefined;
   }
   return (
-    <ButtonContainer backgroundColor={backColor} onPress={onPress} border={border}>
-      <Image source={leftIcon} />
-      <ButtonText fontColor={fontColor} fontFamily="inter-bold">
+    <ButtonContainer backgroundColor={backColor} onPress={onPress} border={border} testID={testID}>
+      {leftIcon}
+      <ButtonText accessibilityLabel={text} fontColor={fontColor} fontFamily="inter-bold">
         {text}
       </ButtonText>
-      <Image source={rightIcon} />
+      {rightIcon}
     </ButtonContainer>
   );
 }

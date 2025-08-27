@@ -2,7 +2,10 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
-import { Image, Share } from 'react-native';
+import { Share } from 'react-native';
+import ShareIcon from '../../assets/share-icon.svg';
+import Fix from '../../assets/fix-blue-icon.svg';
+import Save from '../../assets/save-icon.svg';
 
 import {
   ModalOptionsContainer,
@@ -10,11 +13,7 @@ import {
   ModalOptionsOptionsText,
 } from './ModalOptionsStyle';
 
-export default function ModalOptions({ onShare }: any) {
-  const share = require('../../assets/share-icon.svg');
-  const fix = require('../../assets/fix-blue-icon.svg');
-  const save = require('../../assets/save-icon.svg');
-
+export default function ModalOptions({ onShare, onPressFix, fixed, postId }: any) {
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
@@ -23,26 +22,42 @@ export default function ModalOptions({ onShare }: any) {
   }
   return (
     <ModalOptionsContainer>
-      <ModalOptionsOptionsContainer>
-        <Image source={share} />
-        <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px" onPress={onShare}>
+      <ModalOptionsOptionsContainer onPress={onShare}>
+        <ShareIcon />
+        <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px">
           Compartilhar
         </ModalOptionsOptionsText>
       </ModalOptionsOptionsContainer>
 
       <ModalOptionsOptionsContainer>
-        <Image source={save} />
+        <Save />
         <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px">
           Salvar
         </ModalOptionsOptionsText>
       </ModalOptionsOptionsContainer>
-
-      <ModalOptionsOptionsContainer>
-        <Image source={fix} />
-        <ModalOptionsOptionsText font="inter-regular" color="#515151" size="13px">
-          Fixar
-        </ModalOptionsOptionsText>
-      </ModalOptionsOptionsContainer>
+      {fixed ? (
+        <ModalOptionsOptionsContainer>
+          <Fix />
+          <ModalOptionsOptionsText
+            font="inter-regular"
+            color="#515151"
+            size="13px"
+            onPress={onPressFix}>
+            Desfixar
+          </ModalOptionsOptionsText>
+        </ModalOptionsOptionsContainer>
+      ) : (
+        <ModalOptionsOptionsContainer>
+          <Fix />
+          <ModalOptionsOptionsText
+            font="inter-regular"
+            color="#515151"
+            size="13px"
+            onPress={onPressFix}>
+            Fixar
+          </ModalOptionsOptionsText>
+        </ModalOptionsOptionsContainer>
+      )}
     </ModalOptionsContainer>
   );
 }

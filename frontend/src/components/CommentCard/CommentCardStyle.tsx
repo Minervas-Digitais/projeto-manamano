@@ -1,9 +1,12 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
+const { width, height } = Dimensions.get('window');
 
 export const CommentTextContainer = styled.View`
   left: 50px;
-  width: calc(88vw - 50px);
+  width: ${() => width * 0.88 - 50}px;
 `;
 
 export const CommentText = styled.Text<{ font?: string }>`

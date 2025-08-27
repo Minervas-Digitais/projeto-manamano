@@ -13,32 +13,26 @@ import { useFonts } from 'expo-font';
 import { MMKV } from 'react-native-mmkv';
 import {
   PageContainer,
-  SearchHeader,
-  Title,
   SearchInputWrapper,
   SearchIcon,
   RecentSection,
   ContentContainer,
-  Avatar,
 } from './SearchStyle';
 import ResultSection from '../../components/ResultSection/ResultSection';
-import BackButton from '../../components/BackButton/BackButton';
+import Lupa from '../../assets/lupa-search.svg';
+import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import api from '../../services/api';
+import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 
-// Setup MMKV storage
 const storage = new MMKV();
 
-// Interface for a user
 interface User {
   id: number;
   name: string;
   avatar: any;
 }
 
-// Main Search Component
 export default function Search() {
-  const BackArrow = require('../../assets/back-arrow.svg');
-  const Lupa = require('../../assets/lupa-search.svg');
-
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -46,9 +40,13 @@ export default function Search() {
 
   const [searchText, setSearchText] = useState<string>('');
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [accessTokenState, setAccessTokenState] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
+  const avatar = require('../../assets/duck.png');
   // Fetch recent users from MMKV on mount
   useEffect(() => {
     const storedUsers = storage.getString('recentUsers');
@@ -56,7 +54,33 @@ export default function Search() {
       setRecentUsers(JSON.parse(storedUsers));
     }
   }, []);
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const accessToken = storage.getString('accessToken');
+      const loggedId = storage.getString('loggedId');
 
+      if (accessToken && loggedId) {
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+
+        try {
+          const res = await api.get(`/user/${loggedId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          if (res.data?.sysRole === 'ADMIN') {
+            setIsAdmin(true);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar o usuário:', error);
+        }
+      }
+    };
+
+    fetchUserRole();
+  }, []);
   const saveRecentUser = (user: User) => {
     // Check if user already exists in recent users
     const updatedUsers = [user, ...recentUsers.filter((u) => u.id !== user.id)];
@@ -113,15 +137,11 @@ export default function Search() {
 
   return (
     <PageContainer>
-      <SearchHeader>
-        <BackButton />
-        <Title style={{ fontFamily: 'inter-bold' }}>Pesquisa</Title>
-      </SearchHeader>
-
-      <ContentContainer style={{ flex: 1 }}>
+      <HeaderCustom font="inter-bold" text="Pesquisa" testID="titulo-pesquisa"/>
+      <ContentContainer>
         <SearchInputWrapper>
           <SearchIcon>
-            <Image source={Lupa} />
+            <Lupa />
           </SearchIcon>
           <TextInput
             placeholder="Pesquisar"
@@ -134,15 +154,19 @@ export default function Search() {
               padding: 0,
               margin: 0,
               borderWidth: 0,
-              outline: 'none',
-              boxShadow: 'none',
               fontFamily: 'inter-regular',
             }}
+            testID="input-pesquisa"
           />
         </SearchInputWrapper>
 
-        {debouncedSearchText.length > 0 ? (
-          <ResultSection searchText={debouncedSearchText} saveRecentUser={saveRecentUser} />
+        {debouncedSearchText.length > 0 && accessTokenState ? (
+          <ResultSection
+            searchText={debouncedSearchText}
+            saveRecentUser={saveRecentUser}
+            accessToken={accessTokenState}
+            admin={isAdmin}
+          />
         ) : (
           <RecentSection>
             {recentUsers.length > 0 && (
@@ -153,24 +177,18 @@ export default function Search() {
                   marginBottom: 10,
                   fontFamily: 'inter-bold',
                   color: '#515151',
-                }}
-              >
+                }}>
                 Recentes
               </Text>
             )}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              nestedScrollEnabled
-              style={{ flexDirection: 'row', paddingLeft: 10 }}
-            >
+            <ScrollView testID="scroll-recentes" horizontal showsHorizontalScrollIndicator={false} nestedScrollEnabled>
               {recentUsers.map((user) => {
                 const nameParts = user.name.split(' ');
                 return (
-                  <View key={user.id} style={{ alignItems: 'center', marginRight: 20 }}>
-                    <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
+                  <View key={user.id} style={{ alignItems: 'center', marginRight: 20 }} testID={`usuario-${user.name.toLowerCase().replace(/\s/g, '-')}`}>
+                    <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-image-${user.id}`}>
                       <Image
-                        source={user.avatar}
+                        source={avatar}
                         style={{
                           width: screenWidth / 8,
                           height: screenWidth / 8,
@@ -181,14 +199,13 @@ export default function Search() {
 
                     {nameParts.length >= 2 ? (
                       <View>
-                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
+                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-name1-${user.id}`}>
                           <Text
                             style={{
                               textAlign: 'center',
                               fontFamily: 'inter-regular',
                               fontSize: 10,
-                            }}
-                          >
+                            }}>
                             {nameParts[0]}
                           </Text>
                           <Text
@@ -196,22 +213,20 @@ export default function Search() {
                               textAlign: 'center',
                               fontFamily: 'inter-regular',
                               fontSize: 10,
-                            }}
-                          >
+                            }}>
                             {nameParts[1]}
                           </Text>
                         </TouchableOpacity>
                       </View>
                     ) : (
                       <View>
-                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)}>
+                        <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-name-${user.id}`}>
                           <Text
                             style={{
                               textAlign: 'center',
                               fontFamily: 'inter-regular',
                               fontSize: 10,
-                            }}
-                          >
+                            }}>
                             {user.name}
                           </Text>
                         </TouchableOpacity>

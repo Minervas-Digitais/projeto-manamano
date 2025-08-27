@@ -1,8 +1,9 @@
 import { useFonts } from 'expo-font';
-import { ToastAndroid, View } from 'react-native';
+import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Toast from 'react-native-toast-message';
+import { useRoute } from '@react-navigation/native';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
@@ -12,6 +13,8 @@ import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import { GlobalNotificationContainer, toastConfig } from './GlobalNotificationPageStyle';
 
 export default function GlobalNotificationPage({ navigation }: any) {
+  const route = useRoute();
+  const { id } = route.params as { id: string };
   const {
     control,
     handleSubmit,
@@ -19,8 +22,6 @@ export default function GlobalNotificationPage({ navigation }: any) {
   } = useForm({});
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
-  const [userInfo, setUserInfo] = useState(null);
-
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');

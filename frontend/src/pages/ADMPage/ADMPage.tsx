@@ -1,6 +1,8 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { WhiteBackground } from '../EditProfile/EditProfileStyle';
 import ADMPageButton from '../../components/ADMPageButton/ADMPageButton';
 import {
@@ -10,13 +12,14 @@ import {
   ADMTextContainer,
 } from './ADMPageStyle';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
+import GroupIcon from '../../assets/white-group.svg';
+import MegaphoneIcon from '../../assets/white-megaphone.svg';
+import GearIcon from '../../assets/white-gear.svg';
+import SearchIcon from '../../assets/white-MG.svg';
+import { RootStackParamList } from '../../navigation/types';
 
 export default function ADMPage() {
-  const searchIcon = require('../../assets/white-MG.svg');
-  const gearIcon = require('../../assets/white-gear.svg');
-  const megaphoneIcon = require('../../assets/white-megaphone.svg');
-  const groupIcon = require('../../assets/white-group.svg');
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -27,6 +30,7 @@ export default function ADMPage() {
   }
   return (
     <ADMBlueBackground>
+      <StatusBar backgroundColor="white" />
       <ADMTextContainer>
         <GroupDataText font="inter-bold" color="#EF4036" size="20px">
           Olá,
@@ -44,22 +48,27 @@ export default function ADMPage() {
         <ADMPageContainer>
           <ADMPageButton
             fontColor="white"
-            icon={searchIcon}
+            icon={<SearchIcon />}
             text="Pesquisar"
             onPress={() => navigation.navigate('Search')}
           />
           <ADMPageButton
             fontColor="white"
-            icon={groupIcon}
+            icon={<GroupIcon />}
             text="Criar Grupo"
             onPress={() => navigation.navigate('CreateGroup')}
           />
-          <ADMPageButton fontColor="white" icon={megaphoneIcon} text="Comunicados" />
           <ADMPageButton
             fontColor="white"
-            icon={gearIcon}
+            icon={<MegaphoneIcon />}
+            text="Comunicados"
+            onPress={() => navigation.navigate('Notification')}
+          />
+          <ADMPageButton
+            fontColor="white"
+            icon={<GearIcon />}
             text="Configurações"
-            onPress={() => navigation.navigate('Configurações')}
+            onPress={() => navigation.navigate('Config')}
           />
         </ADMPageContainer>
       </WhiteBackground>

@@ -1,10 +1,13 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
+const { height } = Dimensions.get('window');
 
 export const GroupDataPage = styled.View`
   display: flex;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   overflow: auto;
 `;
 
@@ -16,7 +19,7 @@ export const GroupDataText = styled.Text<{ font?: string; color?: string; size?:
 
 export const GroupDataContainer = styled.View`
   display: flex;
-  height: 90vh;
+  height: ${height * 0.9}px;
   width: 100%;
   background-color: #f2f6fa;
 `;

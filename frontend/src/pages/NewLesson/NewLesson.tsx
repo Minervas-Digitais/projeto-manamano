@@ -2,8 +2,9 @@
 import { useFonts } from 'expo-font';
 import React, { useEffect, useRef, useState } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, Dimensions } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
+import * as FileSystem from 'expo-file-system';
 import { useRoute } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -17,16 +18,21 @@ import ArchiveCard from '../../components/ArchiveCard/ArchiveCard';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
+import ArrowIcon from '../../assets/arrow-icon.svg';
+import LinkIcon from '../../assets/input-link-icon.svg';
+import CalendarIcon from '../../assets/calendar-icon.svg';
 
 export default function NewLesson({ navigation }: any) {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [files, setFiles] = useState<{ name: string; uri: string; mimeType?: string }[]>([]);
-  const [visibility, setVisibility] = useState({});
-  const handleClick = (id) => {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [files, setFiles] = useState<
+    { id: number; name: string; uri: string; mimeType?: string }[]
+  >([]);
+  const [visibility, setVisibility] = useState<{ [key: number]: boolean }>({});
+  const handleClick = (id: number) => {
     setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
     setVisibility((prevState) => {
       const updatedState = { ...prevState };
@@ -53,6 +59,7 @@ export default function NewLesson({ navigation }: any) {
     };
     fetchCategories();
   }, [accessTokenState, groupId]);
+
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
@@ -73,28 +80,8 @@ export default function NewLesson({ navigation }: any) {
   const onSubmit = async (data: any) => {
     const selectedCategory = categories.find((category) => category.name === 'Aulas');
     try {
-      await Promise.all(
-        files.map(async (file) => {
-          await api.post(
-            '/archives',
-            {
-              name: file.name,
-              userId: loggedIdState,
-              mimeType: file.mimeType,
-              groupId,
-              contentBase64: file.uri,
-              type: file.mimeType,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${accessTokenState}`,
-              },
-            },
-          );
-        }),
-      );
       const formattedDate = formatDate(data.date);
-      const datetimeISO = `${formattedDate}T${data.hour}:00.000Z`;
+      const datetimeISO = new Date(`${formattedDate}T${data.hour}:00`).toISOString();
       const response = await api.post(
         '/post',
         {
@@ -114,6 +101,28 @@ export default function NewLesson({ navigation }: any) {
           },
         },
       );
+      const { id } = response.data;
+      await Promise.all(
+        files.map(async (file) => {
+          await api.post(
+            '/archives',
+            {
+              name: file.name,
+              userId: loggedIdState,
+              mimeType: file.mimeType,
+              groupId,
+              contentBase64: file.uri,
+              type: file.mimeType,
+              postId: id,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${accessTokenState}`,
+              },
+            },
+          );
+        }),
+      );
       Toast.show({
         type: 'success',
         text1: 'Aula criada com sucesso!',
@@ -132,9 +141,6 @@ export default function NewLesson({ navigation }: any) {
     }
   };
 
-  const arrowIcon = require('../../assets/arrow-icon.svg');
-  const linkIcon = require('../../assets/input-link-icon.svg');
-  const calendarIcon = require('../../assets/calendar-icon.svg');
   const dateRef = useRef(null);
   const hourRef = useRef(null);
   const {
@@ -178,13 +184,19 @@ export default function NewLesson({ navigation }: any) {
       });
 
       if (result.assets && result.assets.length > 0) {
-        const newFiles = result.assets.map((file) => ({
-          id: Date.now() + Math.random(),
-          name: file.name,
-          uri: file.uri,
-          mimeType: file.mimeType,
-        }));
-
+        const newFiles = await Promise.all(
+          result.assets.map(async (file) => {
+            const base64 = await FileSystem.readAsStringAsync(file.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            return {
+              id: Date.now() + Math.random(),
+              name: file.name,
+              uri: base64,
+              mimeType: file.mimeType,
+            };
+          }),
+        );
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
         setVisibility((prevState) => {
           const updatedVisibility = { ...prevState };
@@ -215,6 +227,7 @@ export default function NewLesson({ navigation }: any) {
   if (!fontsLoaded) {
     return undefined;
   }
+  const { width } = Dimensions.get('window');
   return (
     <ScrollView
       style={{ backgroundColor: '#f2f6fa', minHeight: '100%' }}
@@ -241,7 +254,7 @@ export default function NewLesson({ navigation }: any) {
           {errors.title && <ErrorWarning errorText={errors.title.message} />}
         </NamePart>
         <MiddlePart>
-          <View style={{ flex: 1, marginRight: `${6.27 / 2}vw` }}>
+          <View style={{ flex: 1, marginRight: width * 0.03135 }}>
             <Controller
               control={control}
               name="date"
@@ -254,7 +267,7 @@ export default function NewLesson({ navigation }: any) {
                   onChangeText={onChange}
                   value={value}
                   label="Data"
-                  imageIcon={calendarIcon}
+                  imageIcon={<CalendarIcon />}
                   type="datetime"
                   options={{ format: 'DD/MM/YYYY' }}
                   innerRef={(value) => (dateRef.current = value)}
@@ -263,7 +276,7 @@ export default function NewLesson({ navigation }: any) {
             />
             {errors.date && <ErrorWarning errorText={errors.date.message} />}
           </View>
-          <View style={{ flex: 1, marginLeft: `${6.27 / 2}vw` }}>
+          <View style={{ flex: 1, marginLeft: width * 0.03135 }}>
             <Controller
               control={control}
               name="hour"
@@ -298,7 +311,7 @@ export default function NewLesson({ navigation }: any) {
                 onChangeText={onChange}
                 value={value}
                 label="Link"
-                imageIcon={linkIcon}
+                imageIcon={<LinkIcon />}
               />
             )}
           />
@@ -314,7 +327,7 @@ export default function NewLesson({ navigation }: any) {
                 onChangeText={onChange}
                 value={value}
                 label="Aula gravada"
-                imageIcon={linkIcon}
+                imageIcon={LinkIcon}
               />
             )}
           />
@@ -340,9 +353,12 @@ export default function NewLesson({ navigation }: any) {
             horizontal
             style={{ flex: 1, paddingTop: 10, paddingBottom: 10 }}
             contentContainerStyle={{ alignItems: 'center' }}>
-            {files.map((item: any) => (
+            {files.map((item) => (
               <ArchiveCard
+                key={item.id}
                 name={item.name}
+                mimeType={item.mimeType}
+                uri={item.uri}
                 archive
                 removed={visibility[item.id]}
                 onPress={() => handleClick(item.id)}
@@ -356,7 +372,7 @@ export default function NewLesson({ navigation }: any) {
             backColor="#160E47"
             fontColor="white"
             text="Publicar"
-            rightIcon={arrowIcon}
+            rightIcon={<ArrowIcon />}
           />
         </LinkPart>
       </NewLessonContainer>

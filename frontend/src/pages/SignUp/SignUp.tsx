@@ -3,7 +3,7 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Text, View, Image, StyleSheet } from 'react-native';
+import { Text, View, Image, StyleSheet, StatusBar } from 'react-native';
 import { useFonts } from 'expo-font';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { SignUpContainer, SignUpInputContainer, SignUpForm } from './SignUpStyle';
@@ -11,6 +11,10 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import BackButton from '../../components/BackButton/BackButton';
 import api from '../../services/api';
+import IconProfile from '../../assets/profile-icon.svg';
+import IconEmail from '../../assets/e-mail-icon.svg';
+import IconWhats from '../../assets/whats-icon.svg';
+import IconPassword from '../../assets/lock-icon.svg';
 
 export default function SignUp({ navigation }: any) {
   function cleanPhoneNumber(num: string): string {
@@ -37,11 +41,6 @@ export default function SignUp({ navigation }: any) {
       }
     });
   };
-  const iconProfile = require('../../assets/profile-icon.svg');
-  const iconEmail = require('../../assets/e-mail-icon.svg');
-  const iconWhats = require('../../assets/whats-icon.svg');
-  const iconPassword = require('../../assets/lock-icon.svg');
-
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
@@ -51,8 +50,9 @@ export default function SignUp({ navigation }: any) {
 
   return (
     <SignUpContainer>
+      <StatusBar backgroundColor="black" />
       <SignUpForm>
-        <View style={{ gap: '30px' }}>
+        <View style={{ gap: 30 }}>
           <BackButton />
           <View>
             <Text style={styles.redText}>Olá,</Text>
@@ -70,7 +70,7 @@ export default function SignUp({ navigation }: any) {
                   onChangeText={onChange}
                   value={value}
                   label="Nome Completo"
-                  imageIcon={iconProfile}
+                  imageIcon={<IconProfile height={20} width={20} />}
                 />
               )}
             />
@@ -87,7 +87,7 @@ export default function SignUp({ navigation }: any) {
                   onChangeText={onChange}
                   value={value}
                   label="E-mail"
-                  imageIcon={iconEmail}
+                  imageIcon={<IconEmail height={20} width={20} />}
                 />
               )}
             />
@@ -104,12 +104,14 @@ export default function SignUp({ navigation }: any) {
                   onChangeText={onChange}
                   value={value}
                   label="WhatsApp"
-                  imageIcon={iconWhats}
+                  imageIcon={<IconWhats height={20} width={20} />}
                   type="cel-phone"
                 />
               )}
             />
-            {errors.whatsApp && <ErrorWarning errorText="Campo obrigatório" />}
+            
+            // o nome do erro precisa dar match com o nome especificado no Controller 
+            {errors.phone && <ErrorWarning errorText="Campo obrigatório" />}
 
             <Controller
               control={control}
@@ -122,12 +124,14 @@ export default function SignUp({ navigation }: any) {
                   onChangeText={onChange}
                   value={value}
                   label="Senha"
-                  imageIcon={iconPassword}
+                  imageIcon={<IconPassword height={20} width={20} />}
                   isPassword
                 />
               )}
             />
-            {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
+
+            // o nome do erro precisa dar match com o nome especificado no Controller 
+            {errors.hash && <ErrorWarning errorText="Campo obrigatório" />}
           </SignUpInputContainer>
         </View>
         <ButtonCustom

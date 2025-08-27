@@ -45,7 +45,7 @@ export class UserService {
         },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -57,7 +57,7 @@ export class UserService {
       }
       return users;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -71,7 +71,7 @@ export class UserService {
       }
       return user;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -83,7 +83,7 @@ export class UserService {
         data: updateUserDto,
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -95,7 +95,7 @@ export class UserService {
       });
       return 'Usuário deletado com sucesso.';
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -120,7 +120,7 @@ export class UserService {
         data: { hash: hashedPassword },
       });
     } catch (error) {
-      return error;
+      throw error;
     }
   }
   async updateUserRole(userId: string, sysRole: RoleType) {

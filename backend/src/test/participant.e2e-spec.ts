@@ -127,6 +127,24 @@ describe('Participant', () => {
             expect(response.body.error).toBe('Not Found')
         })
 
+        it("deve entrar erro 409 caso já esteja no grupo", async () => {
+            const dto: CreateParticipantDto = await createParticipantDto(prismaService)
+
+            await request(app.getHttpServer())
+                .post('/participant')
+                .set('Authorization', 'Bearer ' + userToken)
+                .send(dto);
+
+
+            const response = await request(app.getHttpServer())
+                .post('/participant')
+                .set('Authorization', 'Bearer ' + userToken)
+                .send(dto);
+
+            expect(response.status).toBe(409)
+            expect(response.body.message).toBe("Você já está neste grupo.")
+        })
+
         it("deve retornar erro 401 caso o jwt token for invalido", async () => {
             const dto: CreateParticipantDto = await createParticipantDto(prismaService)
 

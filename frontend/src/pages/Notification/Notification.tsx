@@ -1,37 +1,73 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { Image, Alert } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   ConfigNotificationContainer,
-  ConfigNotificationHeaderContainer,
-  ConfigNotificationTitle,
   NotificationInfoContainer,
   NotificationInfoText,
   NotificationBodyContainer,
 } from './NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import NotificationCard from '../../components/NotificationCard/NotificationCard';
-import BackButton from '../../components/BackButton/BackButton';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import ModalOptionsNotification from '../../components/ModalOptionsNotification/ModalOptionsNotification';
-import DeleteConfirmation from '../../components/DeleteConfirmation/DeleteConfirmation';
+import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
+import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAllConfirmation';
+import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
+import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import NoNotification from '../../assets/no-notification-icon.svg';
+
+export interface IUser {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  birthday?: string;
+  ethnicity?: string;
+  neighborhood?: string;
+  expertise?: string;
+  enterprise?: string;
+  bio?: string;
+  savedPost?: string[];
+  createdAt: string;
+  updatedAt: string;
+  sysRole: 'ADMIN' | 'USER' | string;
+}
+
+export interface INotification {
+  id: string;
+  senderName: string;
+  groupName: string;
+  body: string;
+  type: 'COMMENT' | 'WARNING' | "FIXED" | string;
+  idContent: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
 
 export default function Notification({ navigation }: any) {
-  const noNotification = require('../../assets/no-notification-icon.svg');
   const duckPhoto = require('../../assets/duck.png');
-  const dotsMenuIcon = require('../../assets/dotsMenuBig.svg');
 
-  const [notification, setNotification] = useState([]);
+  const [notification, setNotification] = useState<INotification[]>([]);
   const [display, setDisplay] = useState(false);
+  const [accessTokenState, setAccessTokenState] = useState('');
+  const [userInfo, setUserInfo] = useState<IUser | null>(null);
+  const [loggedIdState, setLoggedIdState] = useState('');
+  const [admin, setAdmin] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({
+    visible: false,
+    notifId: '',
+  });
 
   const fetchNotifications = useCallback(() => {
     const loggedId = storage.getString('loggedId');
     const accessToken = storage.getString('accessToken');
-
     if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
       api
         .get(`notifications/user/${loggedId}`, {
           headers: {
@@ -44,7 +80,33 @@ export default function Notification({ navigation }: any) {
   }, []);
 
   useEffect(() => {
-    fetchNotifications();
+  const fetchUserInfo = async () => {
+    if (loggedIdState && accessTokenState) {
+      try {
+        const response = await api.get(`/user/${loggedIdState}`, {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        });
+
+        const userData: IUser = response.data;
+        setUserInfo(userData);
+
+        if (userData.sysRole === 'ADMIN') {
+          setAdmin(true);
+        } else {
+          setAdmin(false);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar informações do usuário:', error);
+      }
+    }
+  };
+
+  fetchUserInfo();
+}, [loggedIdState, accessTokenState]);
+  useEffect(() => {
+    // fetchNotifications();
     const interval = setInterval(fetchNotifications, 1000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
@@ -62,65 +124,113 @@ export default function Notification({ navigation }: any) {
   });
   if (!fontsLoaded) return null;
 
-  const onPressActions = (body: string, id: string, type: string) => {
+  const onPressActions = (body: string, id: string, type: string, idContent?: string) => {
     storage.set('body', body);
     setNotification((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
+      prev?.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
     );
-    api.patch(`notifications/${id}`, { isRead: true });
+    api
+      .patch(
+        `notifications/${id}`,
+        { isRead: true },
+        {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
+          },
+        },
+      )
+      .then((res) => console.log(JSON.stringify(res.data)))
+      .catch((err) => console.log('Erro ao atualizar a notificação:', err));
 
-    if (type !== 'COMMENT') {
+    if (type === 'WARNING') {
       navigation.navigate('NotificationPage');
+    }
+    if (type !== 'WARNING') {
+      navigation.navigate('Post', { postId: idContent });
     }
   };
 
-  const onPressDeleteConfirm = (id: any) => {};
+  // Function to handle delete icon/button press
+  const handleDeletePress = (notifId: string) => {
+    setDeleteModal({ visible: true, notifId });
+  };
+
+  // Function to confirm deletion
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`notifications/${deleteModal.notifId}`, {
+        headers: {
+          Authorization: `Bearer ${accessTokenState}`,
+        },
+      });
+      setNotification((prev) => prev.filter((n: any) => n.id !== deleteModal.notifId));
+      Alert.alert('Sucesso', 'Notificação excluída com sucesso!');
+    } catch (error: any) {
+      Alert.alert('Erro', error?.response?.data?.message || 'Não foi possível excluir a notificação.');
+      console.error('Erro ao excluir notificação:', error);
+    }
+    setDeleteModal({ visible: false, notifId: '' });
+  };
+
+  // Function to cancel deletion
+  const handleCancelDelete = () => {
+    setDeleteModal({ visible: false, notifId: '' });
+  };
 
   return (
     <>
-      <DeleteConfirmation
-        text="Tem certeza que deseja excluir as notificações?"
-        onPress={() => {}}
+      <DeleteOneConfirmation
+        visible={deleteModal.visible}
+        text="Tem certeza que deseja excluir a notificação?"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
       />
 
       <ConfigNotificationContainer>
-        <ModalOptionsNotification display={display} type="header" style={{ top: 60 }} height={80} />
-        <ConfigNotificationHeaderContainer>
-          <BackButton />
-          <ConfigNotificationTitle font="inter-bold">Notificações</ConfigNotificationTitle>
-          <TouchableOpacity onPress={() => setDisplay(!display)}>
-            <Image source={dotsMenuIcon} />
-          </TouchableOpacity>
-        </ConfigNotificationHeaderContainer>
-
+        <HeaderCustom
+          icon
+          headerButton={<DotsMenuIcon />}
+          text={admin ? 'Comunicados' : 'Notificação'}
+          font="inter-bold"
+          onPress={() => setDisplay(!display)}
+        />
+        <ModalOptionsNotification
+          display={display}
+          type="header"
+          style={{ top: 60, zIndex: 11 }}
+          height="80px"
+          admin={admin}
+        />
         <NotificationBodyContainer>
           <NotificationInfoContainer>
-            {notification?.length > 0 ? (
-              notification.map((item: any) => (
+            {notification && notification.length > 0 ? (
+              notification?.map((item: any) => (
                 <NotificationCard
                   key={item.id}
                   user={item.senderName}
                   group={item.groupName}
                   image={duckPhoto}
-                  onPress={() => onPressActions(item.body, item.id, item.type)}
+                  onPress={() => onPressActions(item.body, item.id, item.type, item.idContent)}
                   type={item.type}
                   body={item.body}
                   date={item.createdAt}
                   isread={item.isRead}
                   idNotif={item.id}
                   confirm={false}
+                  admin={admin}
+                  onDelete={admin ? () => handleDeletePress(item.id) : undefined}
                 />
               ))
             ) : (
               <>
-                <Image source={noNotification} />
+                <NoNotification />
                 <NotificationInfoText font="inter-bold">
                   Você não possui notificações no momento
                 </NotificationInfoText>
               </>
             )}
           </NotificationInfoContainer>
-          {notification?.length === 0 && (
+
             <ButtonCustom
               onPress={() => {}}
               backColor="#EF4036"
@@ -128,7 +238,7 @@ export default function Notification({ navigation }: any) {
               text="Retornar para a tela inicial"
               border={false}
             />
-          )}
+
         </NotificationBodyContainer>
       </ConfigNotificationContainer>
     </>

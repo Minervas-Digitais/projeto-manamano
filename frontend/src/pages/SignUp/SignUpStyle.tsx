@@ -5,8 +5,8 @@ export const SignUpForm = styled.View`
   display: flex;
   justify-content: space-between;
   width: 100%;
-  height: 100vh;
-  padding: 30px;
+  height: 100%;
+  padding: 25px;
   padding-top: 45px;
 `;
 export const SignUpInputContainer = styled.View`
@@ -18,7 +18,5 @@ export const SignUpInputContainer = styled.View`
 export const SignUpContainer = styled.View`
   display: flex;
   align-items: center;
-  width: 100vw;
-  height: 100vh;
   background-color: #f2f6fa;
 `;

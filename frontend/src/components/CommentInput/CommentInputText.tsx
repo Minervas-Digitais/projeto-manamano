@@ -10,6 +10,8 @@ import {
   ButtonContainer,
   LargerProfileImage,
 } from './CommentInputTextStyle';
+import SendButton from '../../assets/submit-comment.svg';
+import LinkIcon from '../../assets/comment-link-icon.svg';
 
 export default function CommentInputTextCustom({
   onChangeText,
@@ -20,14 +22,13 @@ export default function CommentInputTextCustom({
   onBlur,
 }: any) {
   const profileImage = require('../../assets/test-profile-icon.png');
-  const sendButton = require('../../assets/submit-comment.svg');
-  const linkIcon = require('../../assets/comment-link-icon.svg');
   return (
     <CommentInputTextContainer>
       <LargerProfileImage source={profileImage} />
       {isFocused ? (
         <CommentInputContainerFocused>
           <CommentInputTextFocused
+            testID="input-comentario"
             maxLength={255}
             multiline
             onChangeText={onChangeText}
@@ -37,10 +38,10 @@ export default function CommentInputTextCustom({
           />
           <ButtonContainer>
             <Pressable onPress={onPressLink}>
-              <Image source={linkIcon} />
+              <LinkIcon />
             </Pressable>
-            <Pressable onPress={onPressSubmit}>
-              <Image source={sendButton} />
+            <Pressable onPress={onPressSubmit} testID="enviar-comentario">
+              <SendButton />
             </Pressable>
           </ButtonContainer>
         </CommentInputContainerFocused>
@@ -51,6 +52,7 @@ export default function CommentInputTextCustom({
             onChangeText={onChangeText}
             value={value}
             placeholder="Deixe um comentário"
+            editable={false}
           />
         </CommentInputContainer>
       )}

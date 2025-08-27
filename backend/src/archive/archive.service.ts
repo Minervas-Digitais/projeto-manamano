@@ -45,30 +45,24 @@ export class ArchiveService {
       postId: archive.postId,
     };
   }
-  
+
   async getArchivesByPostId(postId: string): Promise<ResponseArchiveDto[]> {
     const archives = await this.prisma.archive.findMany({
       where: { postId },
     });
-  
-    if (!archives || archives.length === 0) {
-      throw new NotFoundException('No archives found for this post');
-    }
-  
+
     return archives.map(this.mapToResponseDto);
   }
-  
+
   async getArchivesByGroupId(groupId: string): Promise<ResponseArchiveDto[]> {
     const archives = await this.prisma.archive.findMany({
       where: { groupId },
     });
-  
-    if (!archives || archives.length === 0) {
+
+    if (archives.length === 0) {
       throw new NotFoundException('No archives found for this group');
     }
-  
+
     return archives.map(this.mapToResponseDto);
   }
-  
 }
-

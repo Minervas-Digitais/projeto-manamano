@@ -75,9 +75,6 @@ export class UserController {
     @Body() updateUserRoleDto: UpdateUserRoleDto,
   ) {
     const { role } = updateUserRoleDto;
-    if (!role) {
-      throw new BadRequestException('Role is required');
-    }
     return this.userService.updateUserRole(id, role);
   }
 }

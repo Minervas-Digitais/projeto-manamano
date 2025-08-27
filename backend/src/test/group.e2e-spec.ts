@@ -35,7 +35,6 @@ describe('Group E2E', () => {
 
         userToken = await getUserToken(authService, prismaService);
         adminToken = await getAdminToken(authService, prismaService);
-
     });
 
     describe("create()", () => {
@@ -249,7 +248,18 @@ describe('Group E2E', () => {
         });
     })
 
+    it("deve retornar erro se nao houver grupos", async () => {
+        await prismaService.group.deleteMany({})
+        
+        const response = await request(app.getHttpServer())
+            .get('/group')
+            .set('Authorization', 'Bearer ' + adminToken)
 
+
+        expect(response.status).toBe(404);
+        expect(response.body.message).toBe('Não há grupos cadastrados.');
+    });
+    
     afterAll(async () => {
         await app.close();
     });

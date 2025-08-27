@@ -3,7 +3,8 @@ import { useFonts } from 'expo-font';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRoute } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
-import { Image, View, ScrollView } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import { View, ScrollView, Dimensions } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -27,26 +28,68 @@ import api from '../../services/api';
 import { storage } from '../SignIn/SignIn';
 import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
+import ArrowIcon from '../../assets/arrow-icon.svg';
+import linkIcon from '../../assets/comment-link-icon.svg';
+import AttachmentIcon from '../../assets/add-attachment-icon.svg';
+import CalendarIcon from '../../assets/calendar-icon.svg';
+
+export const validateDateInternal = (dateRef: React.RefObject<any>) => {
+  const inputDate = dateRef.current ? new Date(dateRef.current.getRawValue()) : new Date();
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+  if (!dateRef.current || !dateRef.current.isValid() || inputDate < currentDate) {
+    return 'Data inválida';
+  }
+  return true;
+};
+
+export const validateHourInternal = (
+  dateRef: React.RefObject<any>,
+  hourRef: React.RefObject<any>,
+) => {
+  if (!dateRef.current || !hourRef.current) return false; // Adicionado para segurança
+  const inputDate = new Date(dateRef.current.getRawValue());
+  const currentDate = new Date();
+  const currentHours = currentDate.getHours();
+  const currentMinutes = currentDate.getMinutes();
+  const currentHourMin = `${currentHours}:${currentMinutes}`;
+  const inputDateHours = new Date(hourRef.current.getRawValue());
+  const inputHours = inputDateHours.getHours();
+  const inputMinutes = inputDateHours.getMinutes();
+  const inputHourMin = `${inputHours}:${inputMinutes}`;
+  currentDate.setHours(0, 0, 0, 0);
+  if (!hourRef.current.isValid()) {
+    return 'Hora inválida';
+  }
+  if (inputDate.getTime() === currentDate.getTime() && currentHourMin > inputHourMin) {
+    return 'Esta hora já passou';
+  }
+  return true;
+};
 
 export default function NewPost({ navigation }: any) {
+  const { width, height } = Dimensions.get('window');
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
+  console.log('groupId no paramns', groupId);
+
   const [files, setFiles] = useState<
     { id: number; name: string; uri: string; mimeType?: string }[]
   >([]);
-  const [categories, setCategories] = useState([]);
+  interface Category {
+    id: string;
+    name: string;
+    type: string;
+  }
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
-  const arrowIcon = require('../../assets/arrow-icon.svg');
-  const linkIcon = require('../../assets/comment-link-icon.svg');
-  const attachmentIcon = require('../../assets/add-attachment-icon.svg');
-  const calendarIcon = require('../../assets/calendar-icon.svg');
   const [filterPosts, setFilterPosts] = useState('Geral');
-  const dateRef = useRef(null);
-  const hourRef = useRef(null);
+  const dateRef = useRef<any>(null);
+  const hourRef = useRef<any>(null);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
-  const [visibility, setVisibility] = useState({});
-  const handleClick = (id) => {
+  const [visibility, setVisibility] = useState<Record<number, boolean>>({});
+  const handleClick = (id: number) => {
     setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
     setVisibility((prevState) => {
       const updatedState = { ...prevState };
@@ -60,27 +103,36 @@ export default function NewPost({ navigation }: any) {
     setSelectedCategoryType(selectedCategory ? selectedCategory.type : null);
   }, [filterPosts, categories]);
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      api.get(`/user/${loggedId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-    }
+    const loadUserData = async () => {
+      const accessToken = storage.getString('accessToken');
+      const loggedId = storage.getString('loggedId');
+      if (loggedId && accessToken) {
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+        const response = await api.get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        console.log('Usuário logado:', accessToken);
+        // .then((res) => console.log(JSON.stringify(res.data)));
+      }
+    };
+    loadUserData();
   }, []);
   useEffect(() => {
     if (!accessTokenState) return;
     const fetchCategories = async () => {
       try {
+        console.log('groupId:', groupId);
+
         const response = await api.get(`category/group/${groupId}`, {
           headers: {
             Authorization: `Bearer ${accessTokenState}`,
           },
         });
+        console.log('Categorias carregadas:', response.data);
+
         setCategories(response.data);
       } catch (error) {
         console.error('Erro ao buscar categorias', error);
@@ -203,34 +255,8 @@ export default function NewPost({ navigation }: any) {
       }
     }
   };
-  const validateDate = () => {
-    const inputDate = new Date(dateRef.current.getRawValue());
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    if (!dateRef.current.isValid() || inputDate < currentDate) {
-      return 'Data inválida';
-    }
-    return true;
-  };
-  const validateHour = () => {
-    const inputDate = new Date(dateRef.current.getRawValue());
-    const currentDate = new Date();
-    const currentHours = currentDate.getHours();
-    const currentMinutes = currentDate.getMinutes();
-    const currentHourMin = `${currentHours}:${currentMinutes}`;
-    const inputDateHours = new Date(hourRef.current.getRawValue());
-    const inputHours = inputDateHours.getHours();
-    const inputMinutes = inputDateHours.getMinutes();
-    const inputHourMin = `${inputHours}:${inputMinutes}`;
-    currentDate.setHours(0, 0, 0, 0);
-    if (!hourRef.current.isValid()) {
-      return 'Hora inválida';
-    }
-    if (inputDate.getTime() === currentDate.getTime() && currentHourMin > inputHourMin) {
-      return 'Esta hora já passou';
-    }
-    return true;
-  };
+  const validateDate = () => validateDateInternal(dateRef);
+  const validateHour = () => validateHourInternal(dateRef, hourRef);
   const pickFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -239,13 +265,19 @@ export default function NewPost({ navigation }: any) {
       });
 
       if (result.assets && result.assets.length > 0) {
-        const newFiles = result.assets.map((file) => ({
-          id: Date.now() + Math.random(),
-          name: file.name,
-          uri: file.uri,
-          mimeType: file.mimeType,
-        }));
-
+        const newFiles = await Promise.all(
+          result.assets.map(async (file) => {
+            const base64 = await FileSystem.readAsStringAsync(file.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            return {
+              id: Date.now() + Math.random(),
+              name: file.name,
+              uri: base64,
+              mimeType: file.mimeType,
+            };
+          }),
+        );
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
         setVisibility((prevState) => {
           const updatedVisibility = { ...prevState };
@@ -294,6 +326,7 @@ export default function NewPost({ navigation }: any) {
               .filter((category) => category.name !== 'Aulas')
               .map((category) => (
                 <CategoryButton
+                  key={category.id}
                   categoryName={category.name}
                   onPress={() => setFilterPosts(category.name)}
                   filter={filterPosts}
@@ -311,7 +344,12 @@ export default function NewPost({ navigation }: any) {
                   required: true,
                 }}
                 render={({ field: { onChange, value } }) => (
-                  <BigInputTextCustom onChangeText={onChange} value={value} imageIcon={null} />
+                  <BigInputTextCustom
+                    onChangeText={onChange}
+                    value={value}
+                    imageIcon={null}
+                    accessibilityLabel="Mensagem"
+                  />
                 )}
               />
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
@@ -334,8 +372,8 @@ export default function NewPost({ navigation }: any) {
                     />
                   ))}
                 </ScrollView>
-                <LinkIcon onPress={pickFile}>
-                  <Image source={attachmentIcon} />
+                <LinkIcon onPress={pickFile} testID="attach-file-button">
+                  <AttachmentIcon />
                 </LinkIcon>
               </View>
               <Toast config={toastConfig} />
@@ -346,7 +384,7 @@ export default function NewPost({ navigation }: any) {
                 backColor="#160E47"
                 fontColor="white"
                 text="Publicar"
-                rightIcon={arrowIcon}
+                rightIcon={<ArrowIcon />}
               />
             </View>
           </NewPostInputContainer>
@@ -371,7 +409,7 @@ export default function NewPost({ navigation }: any) {
               {errors.title && <ErrorWarning errorText={errors.title.message} />}
             </NamePart>
             <MiddlePart>
-              <View style={{ flex: 1, marginRight: `${6.27 / 2}vw` }}>
+              <View style={{ flex: 1, marginRight: width * 0.03135 }}>
                 <Controller
                   control={control}
                   name="date"
@@ -384,16 +422,18 @@ export default function NewPost({ navigation }: any) {
                       onChangeText={onChange}
                       value={value}
                       label="Data"
-                      imageIcon={calendarIcon}
+                      imageIcon={<CalendarIcon />}
                       type="datetime"
                       options={{ format: 'DD/MM/YYYY' }}
-                      innerRef={(value) => (dateRef.current = value)}
+                      innerRef={(refValue: any) => {
+                        dateRef.current = refValue;
+                      }}
                     />
                   )}
                 />
                 {errors.date && <ErrorWarning errorText={errors.date.message} />}
               </View>
-              <View style={{ flex: 1, marginLeft: `${6.27 / 2}vw` }}>
+              <View style={{ flex: 1, marginLeft: width * 0.03135 }}>
                 <Controller
                   control={control}
                   name="hour"
@@ -409,7 +449,9 @@ export default function NewPost({ navigation }: any) {
                       imageIcon={null}
                       type="datetime"
                       options={{ format: 'HH:mm' }}
-                      innerRef={(value) => (hourRef.current = value)}
+                      innerRef={(refValue: any) => {
+                        hourRef.current = refValue;
+                      }}
                     />
                   )}
                 />
@@ -434,13 +476,12 @@ export default function NewPost({ navigation }: any) {
                 )}
               />
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-              {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
               <ButtonCustom
                 onPress={handleSubmit(onSubmit)}
                 backColor="#160E47"
                 fontColor="white"
                 text="Publicar"
-                rightIcon={arrowIcon}
+                rightIcon={<ArrowIcon />}
               />
             </BottomPartContainer>
           </NewEventInputContainer>

@@ -47,16 +47,12 @@ export default function ShowPopup({ visible, position, onClose, onOptionSelect }
               }}>
               {/* Option for creating a new group */}
               <PopupOption onPress={() => onOptionSelect('Criar Grupo')}>
-                <PopupText>Criar Grupo</PopupText>
-                {' '}
-                {/* Option text */}
+                <PopupText>Criar Grupo</PopupText> {/* Option text */}
               </PopupOption>
 
               {/* Option for joining an existing group */}
               <PopupOption onPress={() => onOptionSelect('Entrar Grupo')}>
-                <PopupText>Entrar em Grupo</PopupText>
-                {' '}
-                {/* Option text */}
+                <PopupText>Entrar em Grupo</PopupText> {/* Option text */}
               </PopupOption>
             </PopupContainer>
           </TouchableWithoutFeedback>

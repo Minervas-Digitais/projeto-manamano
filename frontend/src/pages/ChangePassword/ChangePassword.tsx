@@ -1,9 +1,11 @@
+/* eslint-disable import/no-duplicates */
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import React from 'react';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
@@ -11,10 +13,11 @@ import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import IconPassword from '../../assets/lock-icon.svg';
+import { RootStackParamList } from '../../navigation/types';
 
 export default function ChangePassword() {
-  const navigation = useNavigation();
-  const iconPassword = require('../../assets/lock-icon.svg');
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   useEffect(() => {
@@ -52,7 +55,7 @@ export default function ChangePassword() {
         },
       );
       alert('Senha atualizada com sucesso!');
-      navigation.navigate('Configurações');
+      navigation.navigate('Config');
     } catch (error) {
       console.error('Erro ao mudar senha:', error);
       alert('Erro ao mudar senha. Tente novamente mais tarde.');
@@ -85,7 +88,7 @@ export default function ChangePassword() {
                 onChangeText={onChange}
                 value={value}
                 label="Digite a senha atual"
-                imageIcon={iconPassword}
+                imageIcon={<IconPassword />}
                 isPassword
               />
             )}
@@ -102,7 +105,7 @@ export default function ChangePassword() {
                 onChangeText={onChange}
                 value={value}
                 label="Digite a nova senha"
-                imageIcon={iconPassword}
+                imageIcon={<IconPassword />}
                 isPassword
               />
             )}
@@ -120,21 +123,19 @@ export default function ChangePassword() {
                 onChangeText={onChange}
                 value={value}
                 label="Confirme a nova senha"
-                imageIcon={iconPassword}
+                imageIcon={<IconPassword />}
                 isPassword
               />
             )}
           />
           {errors.confirmedpassword && <ErrorWarning errorText="Senhas não coincidem" />}
         </SignInInputContainer>
-        <View style={{ marginBottom: 100 }}>
-          <ButtonCustom
-            onPress={handleSubmit(onSubmit)}
-            backColor="#160E47"
-            fontColor="white"
-            text="Confirmar"
-          />
-        </View>
+        <ButtonCustom
+          onPress={handleSubmit(onSubmit)}
+          backColor="#160E47"
+          fontColor="white"
+          text="Confirmar"
+        />
       </SignInForm>
     </View>
   );

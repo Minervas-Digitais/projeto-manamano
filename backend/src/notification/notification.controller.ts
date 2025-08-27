@@ -42,6 +42,12 @@ export class NotificationController {
     }
   }
 
+  @Patch('update/:id')
+  @UseGuards(JwtAuthGuard)
+  async updateNotification(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
+    return this.notificationService.updateNotification(id, updateNotificationDto);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async deleteNotification(@Param('id') id: string) {

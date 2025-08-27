@@ -78,7 +78,7 @@ export const GroupPageAddPostButton = styled.TouchableOpacity`
   align-items: center;
   width: 70px;
   height: 70px;
-  border-radius: 50%;
+  border-radius: 35px;
   background-image: linear-gradient(to bottom, #1c1049, #363061);
   margin: 0px 25px 50px 0px;
 `;
@@ -86,6 +86,7 @@ export const GroupPageAddPostButton = styled.TouchableOpacity`
 export const GroupPageLessonsContainer = styled.View`
   display: flex;
   width: 100%;
+  //flex: 1;
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: none;
@@ -112,10 +113,3 @@ export const ImageContainer = styled.View`
   overflow-y: auto;
   flex: 1;
 `;
-
-
-
-
-
-
-

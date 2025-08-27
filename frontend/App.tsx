@@ -41,18 +41,21 @@ export default function App() {
         Profile: 'profile/:id',
         NewPost: 'newpost/:groupId',
         NewLesson: 'newlesson/:groupId',
+        VisitorProfile: 'visitorprofile/:id',
+        GroupPage: 'group/:groupId',
+        EditProfile: 'editprofile/:id',
       },
     },
   };
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="WelcomeScreen">
+      <Stack.Navigator initialRouteName="Home">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="Configurações" component={Config} options={{ headerShown: false }} />
+        <Stack.Screen name="Config" component={Config} options={{ headerShown: false }} />
         <Stack.Screen name="ADMPage" component={ADMPage} options={{ headerShown: false }} />
         <Stack.Screen
           name="GlobalNotification"
@@ -67,7 +70,7 @@ export default function App() {
         <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
         <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
         <Stack.Screen
-          name="MudarSenha"
+          name="ChangePassword"
           component={ChangePassword}
           options={{ headerShown: false }}
         />
@@ -93,9 +96,9 @@ export default function App() {
           component={VisitorProfile}
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="FaleConosco" component={GetInTouch} options={{ headerShown: false }} />
+        <Stack.Screen name="GetInTouch" component={GetInTouch} options={{ headerShown: false }} />
         <Stack.Screen
-          name="Config Notifications"
+          name="ConfigNotification"
           component={ConfigNotification}
           options={{ headerShown: false }}
         />
