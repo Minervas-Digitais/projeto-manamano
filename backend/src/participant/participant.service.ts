@@ -33,11 +33,11 @@ export class ParticipantService {
       }
 
       const participantBody = {
-        groupId: createParticipantDto.groupId,
+        groupId: group.id,
         userId: createParticipantDto.userId,
-        role: createParticipantDto.role,
+        role: createParticipantDto.role ? createParticipantDto.role : 'MEMBER',
       };
-      participantBody.role = 'MEMBER';
+
 
       return await this.prismaService.participant.create({
         data: participantBody,
