@@ -21,6 +21,7 @@ export default function InputTextCustom({
   type,
   options,
   innerRef,
+  testID
 }: any) {
   const [eyeIcon, setEyeIcon] = useState(true);
 
@@ -39,6 +40,7 @@ export default function InputTextCustom({
             ref={innerRef}
             // ADICIONADO PARA O TESTE
             accessibilityLabel={label}
+            testID={testID}
           />
         ) : (
           <InputText
@@ -47,6 +49,7 @@ export default function InputTextCustom({
             secureTextEntry={eyeIcon && isPassword}
             // ADICIONADO PARA O TESTE
             accessibilityLabel={label}
+            testID={testID}
           />
         )}
         <InputTextIconContainer onPress={() => setEyeIcon(!eyeIcon)} isPassword={isPassword}>

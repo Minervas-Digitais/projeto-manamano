@@ -73,6 +73,7 @@ export default function ArchiveCard({
   name,
   mimeType,
   uri,
+  testID
 }: any) {
   const [fontsLoaded] = useFonts({
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -81,6 +82,10 @@ export default function ArchiveCard({
   if (!fontsLoaded) {
     return undefined;
   }
+  const addArchive = require('../../assets/add-archive.svg');
+  const removeArchive = require('../../assets/remove-archive.svg');
+  const noArchive = require('../../assets/paperclip.svg');
+  const magnifyingGlass = require('../../assets/magnifying-glass.svg');
   return (
     <View>
       {archive ? (
@@ -99,7 +104,7 @@ export default function ArchiveCard({
                   {name}
                 </CenteredText>
               </PreviewContainer>
-              <AddRemoveArchiveIcon onPress={onPress}>
+              <AddRemoveArchiveIcon onPress={onPress} testID={testID}>
                 <RemoveArchiveIcon />
               </AddRemoveArchiveIcon>
             </ArchivePressable>
@@ -110,7 +115,7 @@ export default function ArchiveCard({
           <ArchivePressable>
             <ArchiveCardContainer>
               <PaperclipSvgIcon />
-              <AddRemoveArchiveIcon onPress={onClick}>
+              <AddRemoveArchiveIcon onPress={onClick} testID={testID}>
                 <AddArchiveIcon />
               </AddRemoveArchiveIcon>
             </ArchiveCardContainer>
