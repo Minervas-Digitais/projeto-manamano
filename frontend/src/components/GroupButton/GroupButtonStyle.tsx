@@ -2,10 +2,11 @@ import styled from 'styled-components/native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // eslint-disable-next-line import/prefer-default-export
-export const GroupButtonContainer = styled(LinearGradient).attrs(() => ({
-  colors: ['#1A0E47FF', '#170E47E3', '#160E47D1', '#170E47C7'],
-  locations: [0, 0.85, 1, 1],
-}))`
+export const GroupButtonContainer = styled.TouchableOpacity`
+  border-radius: 15px;
+`;
+
+export const GroupButtonGradient = styled(LinearGradient)`
   display: flex;
   width: 157px;
   height: 133px;

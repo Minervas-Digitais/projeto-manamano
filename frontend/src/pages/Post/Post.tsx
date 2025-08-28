@@ -6,9 +6,10 @@ import { Dimensions, Pressable, ScrollView, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { format, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useNavigation, useRoute, NavigationProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import React from 'react';
+import { StackNavigationProp } from '@react-navigation/stack';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import PostAttachment from '../../components/PostAttachmentCard/PostAttachment';
 import {
@@ -30,9 +31,8 @@ import api from '../../services/api';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
-import { StackNavigationProp } from '@react-navigation/stack';
-const { width, height } = Dimensions.get('window');
 
+const { width, height } = Dimensions.get('window');
 
 interface Comment {
   id: string;
@@ -189,9 +189,10 @@ export default function Post() {
     fetchCommentUsers();
   }, [accessTokenState, post?.Comment]);
   const postDate = post?.createdAt ? new Date(post.createdAt) : null;
-  const formattedDate = postDate && isValid(postDate)
-  ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
-  : '';
+  const formattedDate =
+    postDate && isValid(postDate)
+      ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
+      : '';
   const [modalOptions, setModalOptions] = useState(false);
   const {
     control,

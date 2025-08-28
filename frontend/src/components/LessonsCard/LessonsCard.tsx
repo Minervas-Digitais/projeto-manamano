@@ -3,7 +3,7 @@
 /* eslint-disable global-require */
 import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
-import { Alert, Image, Linking } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../../pages/GlobalNotificationPage/GlobalNotificationPageStyle';
@@ -14,12 +14,12 @@ import {
   LessonsCardInfoContainer,
 } from './LessonsCardStyle';
 import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
+import CalendarIcon from '../../assets/calendar-icon.svg';
+import BookIcon from '../../assets/book-icon.svg';
+import LinkIcon from '../../assets/link-icon.svg';
 
 export default function LessonsCard({ date, title, urlLive }: any) {
   const [selected, setSelected] = useState(false);
-  const calendar = require('../../assets/calendar-icon.svg');
-  const book = require('../../assets/book-icon.svg');
-  const link = require('../../assets/link-icon.svg');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -48,7 +48,6 @@ export default function LessonsCard({ date, title, urlLive }: any) {
       type: 'success',
       text1: 'Link Copiado!',
       visibilityTime: 1000,
-
     });
   };
 
@@ -63,7 +62,7 @@ export default function LessonsCard({ date, title, urlLive }: any) {
           </LessonsCardInfoContainer>
 
           <LessonsCardInfoContainer>
-            <Image source={calendar} />
+            <CalendarIcon />
             <GroupDataText font="inter-bold" size="12px" color="#4E4E4E">
               Começa em
               <GroupDataText font="inter-bold" size="12px" color="#160E47">
@@ -76,7 +75,7 @@ export default function LessonsCard({ date, title, urlLive }: any) {
             </GroupDataText>
             <GroupDataText font="inter-bold" size="12px" color="#160E47" />
           </LessonsCardInfoContainer>
-          <LessonsCardInfoContainer style={{ gap: '10px' }}>
+          <LessonsCardInfoContainer style={{ gap: 10 }}>
             <LessonsCardButtonContainer backgroundColor="#160E47" onPress={openLink}>
               <GroupDataText font="inter-bold" size="13px" color="white">
                 Entrar na aula
@@ -86,28 +85,26 @@ export default function LessonsCard({ date, title, urlLive }: any) {
               backgroundColor="none"
               border
               style={{ flexDirection: 'row' }}
-              onPress={copyLink}
-            >
-              <Image style={{ width: 20, height: 21 }} source={link} />
+              onPress={copyLink}>
+              <LinkIcon style={{ width: 20, height: 21 }} />
 
               <GroupDataText font="inter-bold" size="13px" color="#160E47">
                 {' '}
-                Copiar link da aula
+                Copiar link
               </GroupDataText>
             </LessonsCardButtonContainer>
           </LessonsCardInfoContainer>
         </>
       ) : (
         <LessonsCardInfoContainer style={{ justifyContent: 'space-between', position: 'relative' }}>
-          <LessonsCardInfoContainer style={{ width: 'fit-content', gap: '3px' }}>
-            <Image source={book} />
+          <LessonsCardInfoContainer>
+            <BookIcon />
             <GroupDataText
               font="inter-bold"
               size="16px"
               color="#4E4E4E"
               numberOfLines={1}
-              style={{ zIndex: 3 }}
-            >
+              style={{ zIndex: 3 }}>
               {title}
             </GroupDataText>
           </LessonsCardInfoContainer>
@@ -117,7 +114,6 @@ export default function LessonsCard({ date, title, urlLive }: any) {
         </LessonsCardInfoContainer>
       )}
       <Toast config={toastConfig} />
-
     </LessonsCardContainer>
   );
 }
