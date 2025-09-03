@@ -58,11 +58,6 @@ export default function Groups() {
           });
           setUserData(fetchedUserData);
 
-          if (fetchedUserData.role === 'MODERATOR') {
-            setShowPopup(true);
-          } else {
-            setShowPopup(false);
-          }
         } catch (error) {
           console.error('Error fetching user data:', error);
         }
