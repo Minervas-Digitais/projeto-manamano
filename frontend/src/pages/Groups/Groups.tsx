@@ -72,6 +72,14 @@ export default function Groups() {
   }
 
   const handleAddButtonPress = () => {
+
+    // Handle the AddButton press logic
+    // If the user doesn't have the correct ID, navigate to EntrarGrupo
+    if (!userData || userData.role !== 'MODERATOR') {
+        navigation.navigate('EntrarGrupo');
+        return;
+    }
+
     const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
     addButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
@@ -84,15 +92,9 @@ export default function Groups() {
 
       console.log('Popup Position:', adjustedPosition); // Debugging
       setPopupPosition(adjustedPosition);
-    });
 
-    // Handle the AddButton press logic
-    if (userData && userData.role === 'MODERATOR') {
-      setShowPopup(true); // Show the popup only if the user is the one with the ID
-    } else {
-      // If the user doesn't have the correct ID, navigate to EntrarGrupo
-      navigation.navigate('EntrarGrupo');
-    }
+      setShowPopup(true);
+    });
   };
 
   const handlePopupOption = (option: string) => {
