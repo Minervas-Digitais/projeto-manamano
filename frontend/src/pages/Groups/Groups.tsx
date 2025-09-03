@@ -136,7 +136,7 @@ export default function Groups() {
       <View ref={addButtonRef}>
         {' '}
         {/* Wrap AddButton with a View for measuring */}
-        <AddButton icon={<Add />} onPress={handleAddButtonPress} />
+        <AddButton testID="add-button" icon={<Add />} onPress={handleAddButtonPress} />
       </View>
       <ShowPopup
         visible={showPopup}
