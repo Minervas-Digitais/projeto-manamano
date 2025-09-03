@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
@@ -11,9 +11,10 @@ import ShowPopup from '../../components/GroupPopup/GroupPopup';
 import api from '../../services/api';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import Add from '../../assets/add-icon.svg';
+import { RootStackParamList } from '../../navigation/types';
 
 export default function Groups() {
-  const navigation = useNavigation(); // Use navigation instance
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Use navigation instance
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
@@ -122,7 +123,7 @@ export default function Groups() {
                 groupName={item.group.name}
                 onlineMembers={item.participantCount}
                 onPress={() => {
-                  navigation.navigate('GroupPage');
+                  navigation.navigate('GroupPage', item.groupId);
                   storage.set('groupInfo', item);
                 }}
                 size
