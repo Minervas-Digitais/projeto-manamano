@@ -138,7 +138,8 @@ export default function Groups() {
       </View>
       <ShowPopup
         visible={showPopup}
-        position={popupPosition} // Pass the position, including bottom and right
+        // TEM QUE VER ISSO DPS!!!!
+        position={popupPosition as any} // Pass the position, including bottom and right
         onClose={() => setShowPopup(false)}
         onOptionSelect={handlePopupOption}
       />
