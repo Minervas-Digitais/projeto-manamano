@@ -19,4 +19,5 @@ export type RootStackParamList = {
   GroupPage: { groupId: string };
   CreateGroup: undefined;
   NewLesson: { groupId: string }
+  EntrarGrupo: undefined;
 };
