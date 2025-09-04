@@ -13,8 +13,8 @@ export const LessonsCardContainer = styled.TouchableOpacity<{ selected: any }>`
 
 export const LessonsCardInfoContainer = styled.View`
   display: flex;
-  width: 100%;
   flex-direction: row;
+  gap: 5px;
   align-items: center;
 `;
 

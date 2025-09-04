@@ -36,13 +36,15 @@ export const HomeContainerGroup = styled.View`
   padding-left: 25px;
   gap: 25px;
 `;
-export const HomeContainerListGroup = styled.View`
-  display: flex;
+export const HomeContainerListGroup = styled.ScrollView.attrs({
+  horizontal: true,
+  showsHorizontalScrollIndicator: false,
+  contentContainerStyle: {
+    gap: 25,
+    paddingRight: 25,
+  },
+})`
   flex-direction: row;
-  gap: 25px;
-  overflow-x: auto;
-  padding: 0px 25px 0px 0px;
-  scrollbar-width: none;
 `;
 
 export const HomeContainerMural = styled.View`
