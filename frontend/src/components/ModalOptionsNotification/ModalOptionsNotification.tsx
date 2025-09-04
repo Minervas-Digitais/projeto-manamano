@@ -112,7 +112,12 @@ export default function ModalOptionsNotification({ type, display, id, height, st
         id={id}
         onPress={() => {}}
       />
-      <ModalOptionsNotificationContainer display={displayConfirm} height={height} style={style}>
+      <ModalOptionsNotificationContainer
+        display={displayConfirm}
+        height={height}
+        style={style}
+        type={type}
+        admin={admin}>
         {!(admin && type === 'header') && (
           <ModalOptionsNotificationInfo onPress={optionsActions}>
             <Trash />
