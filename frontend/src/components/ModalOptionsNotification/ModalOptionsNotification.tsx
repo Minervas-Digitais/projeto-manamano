@@ -18,7 +18,15 @@ import CheckRead from '../../assets/check-read-icon.svg';
 import Trash from '../../assets/trash-red-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 
-export default function ModalOptionsNotification({ type, display, id, height, style, admin }: any) {
+export default function ModalOptionsNotification({
+  type,
+  display,
+  id,
+  height,
+  style,
+  admin,
+  body,
+}: any) {
   const [displayConfirm, setDisplayConfirm] = useState(display ?? false);
   const [displayDelete, setDisplayDelete] = useState(false);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -50,8 +58,11 @@ export default function ModalOptionsNotification({ type, display, id, height, st
         )
         .then((res) => console.log(JSON.stringify(res.data)))
         .catch((err) => console.log('Erro ao atualizar as notificações:', err));
-    } else if (type === 'WARNING' || (admin && type === 'header')) {
+    } else if (type === 'header' && admin) {
       navigation.navigate('GlobalNotification', { id });
+      setDisplayConfirm(false);
+    } else if (type === 'WARNING' && admin) {
+      navigation.navigate('GlobalNotification', { id, body });
       setDisplayConfirm(false);
     } else {
       api
