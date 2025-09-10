@@ -7,6 +7,8 @@
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Image, TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
+import { Buffer } from 'buffer';
+import { useFocusEffect } from '@react-navigation/native';
 import { storage } from '../SignIn/SignIn';
 import { district } from './ProfileData'; // Adjust the path based on your folder structure
 import {
@@ -59,8 +61,9 @@ export default function Profile({ navigation }: any) {
 
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
+  const [profileImage, setProfileImage] = useState<any>(null);
 
-  useEffect(() => {
+  useFocusEffect(() => {
     const token = storage.getString('accessToken');
 
     if (token) {
@@ -78,6 +81,17 @@ export default function Profile({ navigation }: any) {
           setNeighborhood(data.neighborhood);
           setEnterprise(data.enterprise);
           setBio(data.bio);
+
+          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            responseType: 'arraybuffer',
+          });
+
+          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+          const imageUri = `data:image/jpeg;base64,${imageStr}`;
+          setProfileImage({ uri: imageUri });
 
           const fetchUserPosts = async () => {
             try {
@@ -128,7 +142,7 @@ export default function Profile({ navigation }: any) {
 
       fetchUserData();
     }
-  }, []);
+  });
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -156,7 +170,7 @@ export default function Profile({ navigation }: any) {
           </TouchableOpacity>
         </ProfileContainerButtons>
         <ProfileContainerData>
-          <ProfileImage radius height="78px" width="78px" source={duckImage} />
+          <ProfileImage radius height="78px" width="78px" source={profileImage || duckImage} />
 
           <View style={{ gap: '4px' }}>
             <ProfileContainerData gap={10} center>
@@ -228,7 +242,7 @@ export default function Profile({ navigation }: any) {
                 <PostCard
                   key={item.id}
                   nameUser={item.nameUser}
-                  imageUser={duckImage}
+                  imageUser={profileImage || duckImage}
                   postContent={item.input}
                   numComments={item.numComments}
                   date={item.createdAt}
@@ -246,7 +260,7 @@ export default function Profile({ navigation }: any) {
               <PostCard
                 key={item.id}
                 nameUser={item.nameUser}
-                imageUser={duckImage}
+                imageUser={profileImage || duckImage}
                 postContent={item.input}
                 numComments={item.numComments}
                 date={item.createdAt}

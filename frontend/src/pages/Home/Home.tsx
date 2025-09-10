@@ -11,7 +11,9 @@ import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
+import { Buffer } from 'buffer';
 import { StatusBar } from 'expo-status-bar';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   HomeContainerGroup,
   HomeContainerInfo,
@@ -45,6 +47,7 @@ export default function Home({ navigation }: any) {
   const [fullName, setFullName] = useState('');
   const [groups, setGroups] = useState<any[]>([]);
   const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
+  const [profileImage, setProfileImage] = useState<any>(null);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -76,6 +79,33 @@ export default function Home({ navigation }: any) {
         .catch(() => setGroups([]));
     }
   }, []);
+
+  useFocusEffect(() => {
+    const token = storage.getString('accessToken');
+
+    if (token) {
+      const fetchUserData = async () => {
+        try {
+          const userId = storage.getString('loggedId');
+
+          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            responseType: 'arraybuffer',
+          });
+
+          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+          const imageUri = `data:image/jpeg;base64,${imageStr}`;
+          setProfileImage({ uri: imageUri });
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      };
+
+      fetchUserData();
+    }
+  });
 
   if (!fontsLoaded) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -146,7 +176,7 @@ export default function Home({ navigation }: any) {
             <TouchableOpacity
               testID="profile-button"
               onPress={() => navigation.navigate('Profile')}>
-              <PostCardImageUser source={duckImage} />
+              <PostCardImageUser source={profileImage || duckImage} />
             </TouchableOpacity>
           </PostCardIcons>
         </PostCardSpaceBetween>
@@ -206,7 +236,7 @@ export default function Home({ navigation }: any) {
                   <PostCard
                     key={postIndex}
                     nameUser={post.user.fullName}
-                    imageUser={duckImage}
+                    imageUser={profileImage || duckImage}
                     postContent={post.input}
                     numComments={post.commentsCount}
                     date={formatRelativeDate(post.createdAt)}
