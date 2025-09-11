@@ -247,9 +247,6 @@ export default function GroupPage({ navigation }: any) {
         font="inter-bold"
         text={groupName}
         icon={<NotificationIcon />}
-        onPressMenu={() => {
-          setSideMenu(!sideMenu);
-        }}
         onPress={() => navigation.navigate('Notification')}
         onPressTitle={() => navigation.navigate('GroupData', { groupId })}
         menu

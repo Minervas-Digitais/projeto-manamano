@@ -44,6 +44,7 @@ export default function App() {
         VisitorProfile: 'visitorprofile/:id',
         GroupPage: 'group/:groupId',
         EditProfile: 'editprofile/:id',
+        GroupData: 'groupdata/:groupId',
       },
     },
   };

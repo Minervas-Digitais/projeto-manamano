@@ -3,7 +3,7 @@
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
-import { TouchableOpacity, Image, View } from 'react-native';
+import { TouchableOpacity, View, Dimensions } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import {
   GroupDataPage,
@@ -19,18 +19,19 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import GroupMembers from '../../components/GroupMembers/GroupMembers';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
+import NotificationIcon from '../../assets/notification-icon.svg';
+import EditIcon from '../../assets/edit-icon.svg';
 
 export default function GroupData({ navigation }: any) {
   const route = useRoute();
+  const { height: screenHeight } = Dimensions.get('window');
 
   const { groupId } = route.params as { groupId: string };
-  const notificationIcon = require('../../assets/notification-icon.svg');
   const duckPhoto = require('../../assets/duck.png');
   const [groupInfo, setGroupInfo] = useState<any>();
   const [groupParticipant, setGroupParticipant] = useState<any>();
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
-  const editIcon = require('../../assets/edit-icon.svg');
 
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
@@ -89,37 +90,35 @@ export default function GroupData({ navigation }: any) {
       <HeaderCustom
         font="inter-bold"
         text="Dados do grupo"
-        icon={notificationIcon}
+        icon={<NotificationIcon />}
         onPress={() => navigation.navigate('Notification')}
       />
       <GroupDataContainer>
         <GroupDataContainerInfo>
-          <View style={{ flexDirection: 'row', gap: 3 }}>
-            <GroupDataText color="#EF4036" font="inter-bold" size="20">
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+            <GroupDataText color="#EF4036" font="inter-bold" size="20px">
               {groupInfo?.name || 'Erro'}
             </GroupDataText>
             <TouchableOpacity onPress={() => navigation.navigate('EditGroup')}>
-              <Image source={editIcon} />
+              <EditIcon />
             </TouchableOpacity>
           </View>
-
-          <GroupDataText color="#160E47" font="inter-semiBold" size="18">
+          <GroupDataText color="#160E47" font="inter-bold" size="18px">
             Descrição
           </GroupDataText>
-          <GroupDataScrollView size="12vh">
-            <GroupDataText color="#515151" font="inter-regular" size="13">
+          <GroupDataScrollView size={`${screenHeight * 0.12}px`}>
+            <GroupDataText color="#515151" font="inter-regular" size="13px">
               {groupInfo?.description || 'Erro carregar os dados'}
             </GroupDataText>
           </GroupDataScrollView>
         </GroupDataContainerInfo>
         <GroupDataLine />
         <GroupDataContainerInfo>
-          <GroupDataText color="#160E47" font="inter-semiBold" size="18">
+          <GroupDataText color="#160E47" font="inter-semiBold" size="18px">
             Membros
           </GroupDataText>
-
-          <GroupDataScrollView gap="20px" size="40vh">
-            <GroupDataText color="#3F3D3D" font="inter-bold" size="14">
+          <GroupDataScrollView gap="20px" size={`${screenHeight * 0.4}px`}>
+            <GroupDataText color="#3F3D3D" font="inter-bold" size="14px">
               Docentes
             </GroupDataText>
             {groupParticipant?.length > 0 ? (
@@ -129,11 +128,11 @@ export default function GroupData({ navigation }: any) {
                 }
               })
             ) : (
-              <GroupDataText color="#515151" font="inter-regular" size="12">
+              <GroupDataText color="#515151" font="inter-regular" size="12px">
                 Vazio...
               </GroupDataText>
             )}
-            <GroupDataText color="#3F3D3D" font="inter-bold" size="14">
+            <GroupDataText color="#3F3D3D" font="inter-bold" size="14px">
               Colegas
             </GroupDataText>
             {groupParticipant?.length > 0 ? (
