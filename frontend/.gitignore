@@ -40,3 +40,5 @@ coverage/
 .yarn/*
 
 android/*
+
+google-services.json
