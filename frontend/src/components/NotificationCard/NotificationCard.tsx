@@ -112,7 +112,13 @@ export default function NotificationCard({
           onPress={onPress}
           style={{ gap: 3, justifyContent: 'space-between' }}
           isread={isread}>
-          <ModalOptionsNotification admin={admin} type={type} display={display} id={idNotif} />
+          <ModalOptionsNotification
+            admin={admin}
+            type={type}
+            display={display}
+            id={idNotif}
+            body={body}
+          />
 
           <View>
             <NotificationTextContainerWarning height="min-content">

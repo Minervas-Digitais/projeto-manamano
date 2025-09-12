@@ -11,7 +11,7 @@ export const NotificationContainer = styled.TouchableOpacity<{ isread?: any }>`
   padding: 14px;
   border: ${(prop) => (prop.isread ? 'none' : 'solid 1px red')};
   border-radius: 5px;
-  box-shadow: 0 4px 8px rgba(39, 39, 39, 0.2);
+  elevation: 6;
 `;
 
 export const NotificationTextContainer = styled.View`
