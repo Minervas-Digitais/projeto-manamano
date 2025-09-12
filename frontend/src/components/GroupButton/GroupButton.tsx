@@ -12,6 +12,7 @@ import {
   GroupOnlineContainer,
   GroupFilterContainer,
   GroupButtonImage,
+  GroupButtonGradient,
 } from './GroupButtonStyle';
 import FilterOnIcon from '../../assets/filter-on-icon.svg';
 import FilterOffIcon from '../../assets/filter-off-icon.svg';
