@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
@@ -11,9 +11,10 @@ import ShowPopup from '../../components/GroupPopup/GroupPopup';
 import api from '../../services/api';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import Add from '../../assets/add-icon.svg';
+import { RootStackParamList } from '../../navigation/types';
 
 export default function Groups() {
-  const navigation = useNavigation(); // Use navigation instance
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Use navigation instance
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
@@ -57,11 +58,6 @@ export default function Groups() {
           });
           setUserData(fetchedUserData);
 
-          if (fetchedUserData.role === 'MODERATOR') {
-            setShowPopup(true);
-          } else {
-            setShowPopup(false);
-          }
         } catch (error) {
           console.error('Error fetching user data:', error);
         }
@@ -76,6 +72,14 @@ export default function Groups() {
   }
 
   const handleAddButtonPress = () => {
+
+    // Handle the AddButton press logic
+    // If the user doesn't have the correct ID, navigate to EntrarGrupo
+    if (!userData || userData.role !== 'MODERATOR') {
+        navigation.navigate('EntrarGrupo');
+        return;
+    }
+
     const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
     addButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
@@ -88,15 +92,9 @@ export default function Groups() {
 
       console.log('Popup Position:', adjustedPosition); // Debugging
       setPopupPosition(adjustedPosition);
-    });
 
-    // Handle the AddButton press logic
-    if (userData && userData.role === 'MODERATOR') {
-      setShowPopup(true); // Show the popup only if the user is the one with the ID
-    } else {
-      // If the user doesn't have the correct ID, navigate to EntrarGrupo
-      navigation.navigate('EntrarGrupo');
-    }
+      setShowPopup(true);
+    });
   };
 
   const handlePopupOption = (option: string) => {
@@ -122,7 +120,7 @@ export default function Groups() {
                 groupName={item.group.name}
                 onlineMembers={item.participantCount}
                 onPress={() => {
-                  navigation.navigate('GroupPage');
+                  navigation.navigate('GroupPage', item.groupId);
                   storage.set('groupInfo', item);
                 }}
                 size
@@ -136,11 +134,12 @@ export default function Groups() {
       <View ref={addButtonRef}>
         {' '}
         {/* Wrap AddButton with a View for measuring */}
-        <AddButton icon={<Add />} onPress={handleAddButtonPress} />
+        <AddButton testID="add-button" icon={<Add />} onPress={handleAddButtonPress} />
       </View>
       <ShowPopup
         visible={showPopup}
-        position={popupPosition} // Pass the position, including bottom and right
+        // TEM QUE VER ISSO DPS!!!!
+        position={popupPosition as any} // Pass the position, including bottom and right
         onClose={() => setShowPopup(false)}
         onOptionSelect={handlePopupOption}
       />
