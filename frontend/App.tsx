@@ -59,8 +59,8 @@ export default function App() {
     },
   };
 
-  const { expoPushToken } = useNotifications(); 
-  console.log('Expo Push Token:', expoPushToken);
+  useNotifications(); 
+
   
   useEffect(() => {
     if (Platform.OS === 'android') {

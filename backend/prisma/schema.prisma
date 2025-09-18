@@ -30,6 +30,8 @@ model User {
   muteSystem       Boolean @default(false)
   muteGroups       Boolean @default(false)
 
+  pushNotifToken    String? 
+
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
   sysRole               RoleType?      @default(MEMBER)

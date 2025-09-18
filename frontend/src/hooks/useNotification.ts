@@ -2,25 +2,20 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { useEffect, useRef, useState } from 'react';
 import { Subscription } from 'expo-media-library';
+import api from '../services/api';
+import { storage } from '../pages/SignIn/SignIn';
+
+
 
 export function useNotifications() {
-    const [expoPushToken, setExpoPushToken] = useState('');
     const notificationListener = useRef<Subscription | null>(null);
     const responseListener = useRef<Subscription | null>(null);
 
     useEffect(() => {
-        registerForPushNotificationsAsync().then(token => {
-            if (token) {
-                setExpoPushToken(token);
-            }
-        });
-
-        // Notificações recebidas
         notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
             console.log('Notificação recebida:', notification);
         });
 
-        // Usuário toca na notificação
         responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
             console.log('Resposta à notificação:', response);
         });
@@ -33,13 +28,13 @@ export function useNotifications() {
         };
     }, []);
 
-    return { expoPushToken };
+    return {};
 }
 
-async function registerForPushNotificationsAsync() {
+export async function registerForPushNotificationsAsync() {
     if (!Device.isDevice) {
         alert('Você precisa usar um dispositivo físico para receber notificações');
-        return;
+        return null;
     }
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -52,7 +47,7 @@ async function registerForPushNotificationsAsync() {
 
     if (finalStatus !== 'granted') {
         alert('Permissão para notificações não foi concedida');
-        return;
+        return null;
     }
 
     const tokenData = await Notifications.getExpoPushTokenAsync();
