@@ -41,7 +41,7 @@ export const storageHome = new MMKV();
 
 export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
-  const duckImage = require('../../assets/duck.png');
+  const defaultAvatar = require('../../assets/user-profile.png');
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [fullName, setFullName] = useState('');
@@ -106,6 +106,29 @@ export default function Home({ navigation }: any) {
       fetchUserData();
     }
   });
+
+  const getUserProfileImage = async (userId: string) => {
+    const token = storage.getString('accessToken');
+
+    if (!token) {
+      return defaultAvatar;
+    }
+
+    try {
+      const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'arraybuffer',
+      });
+
+      const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+      const imageUri = `data:image/jpeg;base64,${imageStr}`;
+      return { uri: imageUri };
+    } catch (error) {
+      return defaultAvatar;
+    }
+  };
 
   if (!fontsLoaded) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -176,7 +199,7 @@ export default function Home({ navigation }: any) {
             <TouchableOpacity
               testID="profile-button"
               onPress={() => navigation.navigate('Profile')}>
-              <PostCardImageUser source={profileImage || duckImage} />
+              <PostCardImageUser source={profileImage || defaultAvatar} />
             </TouchableOpacity>
           </PostCardIcons>
         </PostCardSpaceBetween>
@@ -235,8 +258,9 @@ export default function Home({ navigation }: any) {
                 item.group.Post.map((post: any, postIndex: number) => (
                   <PostCard
                     key={postIndex}
+                    userId={post.user.id}
+                    getUserProfileImage={getUserProfileImage}
                     nameUser={post.user.fullName}
-                    imageUser={profileImage || duckImage}
                     postContent={post.input}
                     numComments={post.commentsCount}
                     date={formatRelativeDate(post.createdAt)}

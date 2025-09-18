@@ -10,6 +10,7 @@ import Toast from 'react-native-toast-message';
 
 import { StatusBar } from 'expo-status-bar';
 import { TextInputMask } from 'react-native-masked-text';
+import { useFocusEffect } from '@react-navigation/native';
 import { storage } from '../SignIn/SignIn';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
 import SideMenu from '../../components/SideMenu/SideMenu';
@@ -89,7 +90,7 @@ export default function EditProfile() {
       console.error('Error saving user data:', error);
       if (error.response && error.response.data) {
         console.error('Error response from API:', error.response.data);
-        alert(`Failed to save data: ${error.response.data.message || 'Unknown error'}`);
+        alert('Failed to save data: ' + (error.response.data.message || 'Unknown error'));
       } else {
         alert('There was an error saving your changes. Please try again.');
       }
@@ -183,6 +184,33 @@ export default function EditProfile() {
     return format(date, 'dd/MM/yyyy'); // Using date-fns for formatting (optional)
   };
 
+  useFocusEffect(() => {
+    const token = storage.getString('accessToken');
+
+    if (token) {
+      const fetchUserData = async () => {
+        try {
+          const userId = storage.getString('loggedId');
+
+          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            responseType: 'arraybuffer',
+          });
+
+          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+          const imageUri = `data:image/jpeg;base64,${imageStr}`;
+          setProfileImage({ uri: imageUri });
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      };
+
+      fetchUserData();
+    }
+  });
+
   useEffect(() => {
     const token = storage.getString('accessToken');
     const userId = storage.getString('loggedId');
@@ -195,17 +223,6 @@ export default function EditProfile() {
               Authorization: `Bearer ${token}`,
             },
           });
-
-          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            responseType: 'arraybuffer',
-          });
-
-          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
-          const imageUri = `data:image/jpeg;base64,${imageStr}`;
-          setProfileImage({ uri: imageUri });
 
           const userData = response.data;
 
@@ -240,7 +257,7 @@ export default function EditProfile() {
 
       fetchUser();
     }
-  }, []);
+  }, [profileImageData, setValue]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),

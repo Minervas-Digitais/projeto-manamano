@@ -38,7 +38,7 @@ export default function GroupPage({ navigation }: any) {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
   const { groupName } = route.params as { groupName: string };
-  const duckImage = require('../../assets/duck.png');
+  const defaultAvatar = require('../../assets/user-profile.png');
 
   const [muralSelect, setMuralSelect] = useState(true);
   const [classesSelect, setClassesSelect] = useState(false);
@@ -112,6 +112,29 @@ export default function GroupPage({ navigation }: any) {
       }
     }
   }, [groupId]);
+
+  const getUserProfileImage = async (userId: string) => {
+    const token = storage.getString('accessToken');
+
+    if (!token) {
+      return defaultAvatar;
+    }
+
+    try {
+      const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'arraybuffer',
+      });
+
+      const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+      const imageUri = `data:image/jpeg;base64,${imageStr}`;
+      return { uri: imageUri };
+    } catch (error) {
+      return defaultAvatar;
+    }
+  };
 
   const getUserRoleInGroup = useCallback(async () => {
     const token = storage.getString('accessToken');
@@ -305,8 +328,9 @@ export default function GroupPage({ navigation }: any) {
                       return (
                         <PostCard
                           key={item.id}
+                          userId={item.userId}
                           nameUser={item.nameUser}
-                          imageUser={duckImage}
+                          getUserProfileImage={getUserProfileImage}
                           postContent={item.input}
                           numComments={item.numComments}
                           date={formatRelativeDate(item.createdAt)}
@@ -353,7 +377,8 @@ export default function GroupPage({ navigation }: any) {
                       <PostCard
                         key={item.id}
                         nameUser={item.nameUser}
-                        imageUser={duckImage}
+                        userId={item.userId}
+                        getUserProfileImage={getUserProfileImage}
                         postContent={item.input}
                         numComments={item.numComments}
                         date={formatRelativeDate(item.createdAt)}
