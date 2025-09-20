@@ -13,25 +13,17 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "android.frontend"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "package": "android.frontend",
-      "googleServicesFile": "google-services.json"
+      "package": "android.frontend"
     },
     "web": {},
     "plugins": [
       "expo-font"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "9fd28bda-a05d-4110-823c-a7e55eda3c74"
-      }
-    },
-    "owner": "jhooooon"
+    ]
   }
 }
