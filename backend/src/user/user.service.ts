@@ -10,7 +10,6 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UpdateNotificationConfigDto } from './dto/update-notification-config';
 
 export const roundsOfHashing = 10;
 
@@ -181,43 +180,5 @@ export class UserService {
             mimeType: user.profilePicture.mimeType,
             name: user.profilePicture.name,
         };
-    }
-
-    async getNotificationSettings(id: string) {
-        const user = await this.prismaService.user.findUnique({
-            where: { id },
-            select: {
-            disablePopup: true,
-            muteSystem: true,
-            muteGroups: true,
-            },
-        });
-
-        if (!user) throw new NotFoundException('Usuário não encontrado');
-
-        return {
-            disablePopup: user.disablePopup,
-            muteSystem: user.muteSystem,
-            muteGroups: user.muteGroups,
-        };
-    }
-
-    async updateNotificationSettings(
-    id: string,
-    dto: UpdateNotificationConfigDto,
-    ) {
-        if (Object.keys(dto).length === 0) {
-            throw new BadRequestException('Nenhuma configuração para atualizar');
-        }
-
-        const userExists = await this.prismaService.user.findUnique({ where: { id } });
-        if (!userExists) {
-            throw new NotFoundException('Usuário não encontrado');
-        }
-
-        return this.prismaService.user.update({
-            where: { id },
-            data: dto,
-        });
     }
 }

@@ -23,8 +23,6 @@ import { UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import express from 'express';
 import { NotFoundException, Res } from '@nestjs/common';
-import { UpdateNotificationConfigDto } from './dto/update-notification-config';
-
 
 @Controller('user')
 export class UserController {
@@ -111,25 +109,5 @@ export class UserController {
         res.send(buffer);
     }
 
-    @Get(':id/notification-settings')
-    @UseGuards(JwtAuthGuard)
-    async getNotificationSettings(@Param('id') id: string, @Req() req) {
-        if (req.user.id !== id) {
-            throw new UnauthorizedException('Você só pode acessar suas próprias configurações');
-        }
-        return this.userService.getNotificationSettings(id);
-    }
-
-    @Patch(':id/notification-settings')
-    @UseGuards(JwtAuthGuard)
-    async updateNotificationSettings(
-    @Param('id') id: string,
-    @Body() dto: UpdateNotificationConfigDto,
-    @Req() req,
-    ) {
-        if (req.user.id !== id) {
-            throw new UnauthorizedException('Você só pode modificar suas próprias configurações');
-        }
-        return this.userService.updateNotificationSettings(id, dto);
-    }
+    
 }

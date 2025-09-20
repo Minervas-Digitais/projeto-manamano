@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Notification, NotificationType } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -38,7 +38,9 @@ export class NotificationService {
                 await this.sendPushNotification(
                     dto.recipientId,
                     'Nova notificação',
-                    dto.body
+                    dto.body,
+                    dto.groupId ? { groupId: dto.groupId } : undefined,
+                    dto.type
                 );
             } catch (err) {
                 console.warn('Erro ao enviar push:', err.message);
@@ -80,7 +82,9 @@ export class NotificationService {
                     await this.sendPushNotification(
                         participant.userId,
                         'Nova notificação em grupo',
-                        dto.body
+                        dto.body,
+                        dto.groupId ? { groupId: dto.groupId } : undefined,
+                        dto.type
                     );
                 } catch (err) {
                     console.warn(`Erro ao enviar push para ${participant.userId}:`, err.message);
@@ -116,7 +120,9 @@ export class NotificationService {
             await this.sendPushNotification(
                 dto.recipientId,
                 'Nova notificação',
-                dto.body
+                dto.body,
+                dto.groupId ? { groupId: dto.groupId } : undefined,
+                dto.type
             );
         } catch (err) {
             console.warn('Erro ao enviar push:', err.message);
@@ -186,24 +192,22 @@ export class NotificationService {
 
         const result = await this.prisma.notification.createMany({ data });
 
-        // ➕ Enviar push para quem tem token
-        const messages = users
-            .filter(user => user.pushNotifToken && Expo.isExpoPushToken(user.pushNotifToken))
-            .map(user => ({
-                to: user.pushNotifToken!,
-                sound: 'default',
-                title: dto.senderName ?? 'Notificação',
-                body: dto.body,
-            }));
-
-        if (messages.length) {
-            const tickets = await this.expo.sendPushNotificationsAsync(messages);
-            console.log('Push global enviado:', tickets);
+        for (const user of users) {
+            try {
+                await this.sendPushNotification(
+                    user.id,
+                    dto.senderName ?? 'Notificação',
+                    dto.body,
+                    undefined,
+                    dto.type
+                );
+            } catch (err) {
+                console.warn(`Erro ao enviar push para ${user.id}:`, err.message);
+            }
         }
 
         return { count: result.count };
     }
-
 
     async deleteAllNotifications(userId: string): Promise<{ count: number }> {
         const userExists = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -264,7 +268,7 @@ export class NotificationService {
         });
     }
 
-    async sendPushNotification(userId: string, title: string, body: string, data?: any) {
+    async sendPushNotification(userId: string, title: string, body: string, data?: any, type?: NotificationType) {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
         if (!user) {
@@ -279,6 +283,26 @@ export class NotificationService {
             throw new Error('Push token inválido');
         }
 
+        // Flags para desabilitar notificações
+        // Desativar todas
+        if (user.disablePopup) {
+            console.log(`Notificação não enviada: usuário ${userId} desativou popups.`);
+            return { skipped: true };
+        }
+
+        // Desativar do "Sistema"
+        if ((type === NotificationType.COMMENT || type === NotificationType.WARNING) && user.muteSystem) {
+            console.log(`Notificação não enviada: usuário ${userId} silenciou notificações do sistema.`);
+            return { skipped: true };
+        }
+
+        // Desativar do "Grupo"
+        if (type === NotificationType.FIXED && data?.groupId && user.muteGroups) {
+            console.log(`Notificação não enviada: usuário ${userId} silenciou notificações de grupos.`);
+            return { skipped: true };
+        }
+
+
         const messages = [{
             to: user.pushNotifToken,
             sound: 'default',
@@ -289,10 +313,46 @@ export class NotificationService {
 
         const tickets = await this.expo.sendPushNotificationsAsync(messages);
 
-
         console.log('Tickets enviados:', tickets);
 
         return tickets;
     }
 
+    async getNotificationSettings(id: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id },
+            select: {
+                disablePopup: true,
+                muteSystem: true,
+                muteGroups: true,
+            },
+        });
+
+        if (!user) throw new NotFoundException('Usuário não encontrado');
+
+        return {
+            disablePopup: user.disablePopup,
+            muteSystem: user.muteSystem,
+            muteGroups: user.muteGroups,
+        };
+    }
+
+    async updateNotificationSettings(
+        id: string,
+        dto: UpdateNotificationDto,
+    ) {
+        if (Object.keys(dto).length === 0) {
+            throw new BadRequestException('Nenhuma configuração para atualizar');
+        }
+
+        const userExists = await this.prisma.user.findUnique({ where: { id } });
+        if (!userExists) {
+            throw new NotFoundException('Usuário não encontrado');
+        }
+
+        return this.prisma.user.update({
+            where: { id },
+            data: dto,
+        });
+    }
 }

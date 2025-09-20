@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Req, UnauthorizedException } from '@nestjs/common';
 import { Body, Param, Request, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -13,8 +13,9 @@ export class NotificationController {
 
     @Post()
     @UseGuards(JwtAuthGuard)
-    async create(@Body() createNotificationDto: CreateNotificationDto) {
-        return this.notificationService.createNotification(createNotificationDto, 'MEMBER');
+    async create(@Body() createNotificationDto: CreateNotificationDto, @Req() req) {
+        const userRole = req.user.sysRole; 
+        return this.notificationService.createNotification(createNotificationDto, userRole);
     }
 
     @Post('/global')
@@ -91,5 +92,27 @@ export class NotificationController {
             body.title,
             body.message,
         );
+    }
+
+    @Get(':id/notification-settings')
+    @UseGuards(JwtAuthGuard)
+    async getNotificationSettings(@Param('id') id: string, @Req() req) {
+        if (req.user.id !== id) {
+            throw new UnauthorizedException('Você só pode acessar suas próprias configurações');
+        }
+        return this.notificationService.getNotificationSettings(id);
+    }
+
+    @Patch(':id/notification-settings')
+    @UseGuards(JwtAuthGuard)
+    async updateNotificationSettings(
+    @Param('id') id: string,
+    @Body() dto: UpdateNotificationDto,
+    @Req() req,
+    ) {
+        if (req.user.id !== id) {
+            throw new UnauthorizedException('Você só pode modificar suas próprias configurações');
+        }
+        return this.notificationService.updateNotificationSettings(id, dto);
     }
 }

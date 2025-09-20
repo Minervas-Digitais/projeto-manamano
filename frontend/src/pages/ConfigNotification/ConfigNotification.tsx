@@ -29,7 +29,7 @@ export default function ConfigNotification() {
             setAccessTokenState(accessToken);
             setLoggedIdState(loggedId);
             api
-                .get(`/user/${loggedId}`, {
+                .get(`/notifications/${loggedId}`, {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                     },
@@ -44,7 +44,7 @@ export default function ConfigNotification() {
         console.log('User ID:', loggedIdState);
         const fetchPostUser = async () => {
             try {
-                const response = await api.get(`user/${loggedIdState}/notification-settings`, {
+                const response = await api.get(`notifications/${loggedIdState}/notification-settings`, {
                     headers: {
                         Authorization: `Bearer ${accessTokenState}`,
                     },
@@ -66,7 +66,7 @@ export default function ConfigNotification() {
         setSettings(newSettings);
 
         try {
-            await api.patch(`/user/${loggedIdState}/notification-settings`, newSettings, {
+            await api.patch(`/notifications/${loggedIdState}/notification-settings`, newSettings, {
                 headers: { Authorization: `Bearer ${accessTokenState}` },
             });
         } catch (error) {
