@@ -7,7 +7,7 @@ export type RootStackParamList = {
   Groups: undefined;
   Notification: undefined;
   GetInTouch: undefined;
-  GlobalNotification: { id: string };
+  GlobalNotification: { id: string; body?: string };
   NotificationPage: undefined;
   Post: { postId: string };
   Config: undefined;
@@ -19,4 +19,5 @@ export type RootStackParamList = {
   GroupPage: { groupId: string };
   CreateGroup: undefined;
   NewLesson: { groupId: string }
+  EntrarGrupo: undefined;
 };
