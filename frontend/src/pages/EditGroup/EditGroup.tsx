@@ -28,7 +28,13 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import { AddCategoryButton, Input } from '../CreateGroup/CreateGroupStyle';
-import { InputTextContainer, LabelInputText, InputTextIconInputContainer, InputTextIcon, InputText, InputTextIconContainer } from '../../components/InputText/InputTextCustomStyle';
+import {
+  InputTextContainer,
+  LabelInputText,
+  InputTextIconInputContainer,
+  InputText,
+  InputTextIconContainer,
+} from '../../components/InputText/InputTextCustomStyle';
 
 export default function EditGroup({ navigation }: any) {
   const [loggedIdState, setLoggedIdState] = useState('');
@@ -92,17 +98,16 @@ export default function EditGroup({ navigation }: any) {
   const onSubmit = (data: any) => {
     const type = 'NORMAL';
     if (accessTokenState && loggedIdState) {
-      api
-        .patch(
-          `/group/${groupId}`,
-          { name: data.name, description: data.description },
-          {
-            headers: {
-              Authorization: `Bearer ${accessTokenState}`,
-            },
+      api.patch(
+        `/group/${groupId}`,
+        { name: data.name, description: data.description },
+        {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
           },
-        )
-        .then((res) => console.log(JSON.stringify(res)));
+        },
+      );
+      // .then((res) => console.log(JSON.stringify(res)));
 
       navigation.navigate('GroupPage', { groupId, groupName });
     }
@@ -147,10 +152,8 @@ export default function EditGroup({ navigation }: any) {
               )}
             />
             {errors.description && <ErrorWarning errorText={errors.description.message} />}
-
           </EditGroupForm>
         </View>
-
         <ButtonCustom
           onPress={handleSubmit(onSubmit)}
           backColor="#160E47"

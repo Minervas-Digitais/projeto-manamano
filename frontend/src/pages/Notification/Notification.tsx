@@ -191,8 +191,7 @@ export default function Notification({ navigation }: any) {
 
       <ConfigNotificationContainer>
         <HeaderCustom
-          icon
-          headerButton={<DotsMenuIcon />}
+          icon={<DotsMenuIcon />}
           text={admin ? 'Comunicados' : 'Notificação'}
           font="inter-bold"
           onPress={() => setDisplay(!display)}

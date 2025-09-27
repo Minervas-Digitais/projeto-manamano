@@ -10,8 +10,15 @@ import { toastConfig } from '../../pages/GlobalNotificationPage/GlobalNotificati
 
 import {
   LessonsCardButtonContainer,
+  LessonsCardButtonContainerRow,
   LessonsCardContainer,
+  LessonsCardDateText,
   LessonsCardInfoContainer,
+  LessonsCardInfoContainerSpaceBetween,
+  LessonsCardInfoContainerWithGap,
+  LessonsCardLinkIcon,
+  LessonsCardTitleContainer,
+  LessonsCardTitleText,
 } from './LessonsCardStyle';
 import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
 import CalendarIcon from '../../assets/calendar-icon.svg';
@@ -75,43 +82,38 @@ export default function LessonsCard({ date, title, urlLive }: any) {
             </GroupDataText>
             <GroupDataText font="inter-bold" size="12px" color="#160E47" />
           </LessonsCardInfoContainer>
-          <LessonsCardInfoContainer style={{ gap: 10 }}>
+          <LessonsCardInfoContainerWithGap>
             <LessonsCardButtonContainer backgroundColor="#160E47" onPress={openLink}>
               <GroupDataText font="inter-bold" size="13px" color="white">
                 Entrar na aula
               </GroupDataText>
             </LessonsCardButtonContainer>
-            <LessonsCardButtonContainer
+            <LessonsCardButtonContainerRow
               backgroundColor="none"
               border
-              style={{ flexDirection: 'row' }}
               onPress={copyLink}>
-              <LinkIcon style={{ width: 20, height: 21 }} />
-
+              <LessonsCardLinkIcon>
+                <LinkIcon style={{ width: 20, height: 21 }} />
+              </LessonsCardLinkIcon>
               <GroupDataText font="inter-bold" size="13px" color="#160E47">
                 {' '}
                 Copiar link
               </GroupDataText>
-            </LessonsCardButtonContainer>
-          </LessonsCardInfoContainer>
+            </LessonsCardButtonContainerRow>
+          </LessonsCardInfoContainerWithGap>
         </>
       ) : (
-        <LessonsCardInfoContainer style={{ justifyContent: 'space-between', position: 'relative' }}>
-          <LessonsCardInfoContainer>
+        <LessonsCardInfoContainerSpaceBetween>
+          <LessonsCardTitleContainer>
             <BookIcon />
-            <GroupDataText
-              font="inter-bold"
-              size="16px"
-              color="#4E4E4E"
-              numberOfLines={1}
-              style={{ zIndex: 3 }}>
+            <LessonsCardTitleText numberOfLines={1}>
               {title}
-            </GroupDataText>
-          </LessonsCardInfoContainer>
-          <GroupDataText font="inter-bold" size="12px" color="#160E47">
+            </LessonsCardTitleText>
+          </LessonsCardTitleContainer>
+          <LessonsCardDateText>
             {date}
-          </GroupDataText>
-        </LessonsCardInfoContainer>
+          </LessonsCardDateText>
+        </LessonsCardInfoContainerSpaceBetween>
       )}
       <Toast config={toastConfig} />
     </LessonsCardContainer>
