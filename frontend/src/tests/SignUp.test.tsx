@@ -1,7 +1,7 @@
 import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import SignUp from '../pages/SignUp/SignUp';
 import api from '../services/api';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
 // MOCKS
 const mockedNavigate = jest.fn();
@@ -107,6 +107,5 @@ describe('SignUp', () => {
 
     expect(api.post).not.toHaveBeenCalled();
     expect(mockedNavigate).not.toHaveBeenCalled();
-    })
-})
-
+  });
+});

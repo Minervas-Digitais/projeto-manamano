@@ -23,16 +23,14 @@ jest.mock('../assets/pen-icon.svg', () => 'Pen');
 jest.mock('../assets/business-icon.svg', () => 'Business');
 
 // Componente PostCard
-jest.mock('../components/PostCard/PostCard', () => {
-  return ({ nameUser, postContent }: any) => {
-    const { Text } = require('react-native');
-    return (
-      <>
-        <Text>{nameUser}</Text>
-        <Text>{postContent}</Text>
-      </>
-    );
-  };
+jest.mock('../components/PostCard/PostCard', () => ({ nameUser, postContent }: any) => {
+  const { Text } = require('react-native');
+  return (
+    <>
+      <Text>{nameUser}</Text>
+      <Text>{postContent}</Text>
+    </>
+  );
 });
 
 describe('Profile', () => {
