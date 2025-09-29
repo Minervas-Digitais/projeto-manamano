@@ -70,7 +70,6 @@ const mockedApi = api as jest.Mocked<typeof api>;
 const mockedStorage = storage as jest.Mocked<typeof storage>;
 (global as any).alert = jest.fn();
 
-// Helper para renderizar com NavigationContainer
 const renderWithNavigation = (component: React.ReactElement) =>
   render(<NavigationContainer>{component}</NavigationContainer>);
 
