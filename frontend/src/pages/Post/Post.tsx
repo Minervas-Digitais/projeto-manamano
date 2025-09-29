@@ -78,12 +78,6 @@ export default function Post() {
   const [userName, setUserName] = useState('');
   const [modalOptions, setModalOptions] = useState(false);
 
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-    'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
-  });
-
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
@@ -200,7 +194,6 @@ export default function Post() {
     postDate && isValid(postDate)
       ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
       : '';
-  const [modalOptions, setModalOptions] = useState(false);
 
   const getUserProfileImage = async (userId: string): Promise<any> => {
     if (!accessTokenState) {

@@ -278,6 +278,7 @@ export default function EditProfile() {
       <WhiteBackground>
         <UpperPart>
           <EditImageButton
+            testID="edit-profile-picture-button"
             onPress={() => {
               pickFile();
             }}
