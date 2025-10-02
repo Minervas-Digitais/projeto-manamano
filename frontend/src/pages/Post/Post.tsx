@@ -135,7 +135,6 @@ export default function Post() {
     };
     fetchPostUser();
   }, [accessTokenState, post?.userId]);
-  
   useEffect(() => {
     if (!accessTokenState) return;
     const fetchArchives = async () => {

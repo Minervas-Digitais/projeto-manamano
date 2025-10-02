@@ -20,109 +20,109 @@ import { registerForPushNotificationsAsync } from '../../hooks/useNotification';
 export const storage = new MMKV();
 
 export default function SignIn({ navigation }: any) {
-    storage.clearAll();
-    const {
-        control,
-        handleSubmit,
-        formState: { errors },
-    } = useForm({});
-    const onSubmit = (data: any) => {
-        api.post('/auth/login', data)
-            .then(async (res) => {
-                if (res.data.accessToken) {
-                    alert(res.data.accessToken);
-                    alert(res.data.loggedId);
-                    storage.set('accessToken', res?.data.accessToken);
-                    storage.set('loggedId', res?.data.loggedId);
+  storage.clearAll();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({});
+  const onSubmit = (data: any) => {
+    api
+      .post('/auth/login', data)
+      .then(async (res) => {
+        if (res.data.accessToken) {
+          alert(res.data.accessToken);
+          alert(res.data.loggedId);
+          storage.set('accessToken', res?.data.accessToken);
+          storage.set('loggedId', res?.data.loggedId);
 
-                    const pushToken = await registerForPushNotificationsAsync();
+          const pushToken = await registerForPushNotificationsAsync();
 
-                    if (pushToken) {
-                        try {
-                            await api.post(
-                                '/notifications/register-token',
-                                { pushNotifToken: pushToken },
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${res.data.accessToken}`,
-                                    },
-                                }
-                            );
-                        } catch (error) {
-                            console.error('Erro ao enviar push token para o backend:', error);
-                        }
-                    }
+          if (pushToken) {
+            try {
+              await api.post(
+                '/notifications/register-token',
+                { pushNotifToken: pushToken },
+                {
+                  headers: {
+                    Authorization: `Bearer ${res.data.accessToken}`,
+                  },
+                },
+              );
+            } catch (error) {
+              console.error('Erro ao enviar push token para o backend:', error);
+            }
+          }
 
-                    navigation.navigate('Home');
-                } else {
-                    alert('E-mail ou senha incorretos');
-                }
-            })
-            .catch((error) => {
-                console.error('Erro ao fazer login:', error);
-                alert('Erro ao conectar com o servidor. Verifique sua conexão e tente novamente.');
-            });
+          navigation.navigate('Home');
+        } else {
+          alert('E-mail ou senha incorretos');
+        }
+      })
+      .catch((error) => {
+        console.error('Erro ao fazer login:', error);
+        alert('Erro ao conectar com o servidor. Verifique sua conexão e tente novamente.');
+      });
+  };
 
-    };
+  const [fontsLoaded] = useFonts({
+    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
+  });
+  if (!fontsLoaded) {
+    return undefined;
+  }
 
-    const [fontsLoaded] = useFonts({
-        'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    });
-    if (!fontsLoaded) {
-        return undefined;
-    }
-
-    return (
-        <SignInContainer>
-            <StatusBar backgroundColor="black" />
-            <SignInForm>
-                <View style={{ gap: 45 }}>
-                    <BackButton />
-                    <ManaManoLogo />
-                    <SignInInputContainer>
-                        <Controller
-                            control={control}
-                            name="email"
-                            rules={{
-                                required: true,
-                            }}
-                            render={({ field: { onChange, value } }) => (
-                                <InputTextCustom
-                                    onChangeText={onChange}
-                                    value={value}
-                                    label="E-mail"
-                                    imageIcon={<IconEmail />}
-                                />
-                            )}
-                        />
-                        {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
-                        <Controller
-                            control={control}
-                            name="password"
-                            rules={{
-                                required: true,
-                            }}
-                            render={({ field: { onChange, value } }) => (
-                                <InputTextCustom
-                                    onChangeText={onChange}
-                                    value={value}
-                                    label="Senha"
-                                    imageIcon={<IconPassword />}
-                                    isPassword
-                                />
-                            )}
-                        />
-                        {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
-                    </SignInInputContainer>
-                </View>
-                <ButtonCustom
-                    onPress={handleSubmit(onSubmit)}
-                    backColor="transparent"
-                    fontColor="#160E47"
-                    text="Entrar"
-                    border
+  return (
+    <SignInContainer>
+      <StatusBar backgroundColor="black" />
+      <SignInForm>
+        <View style={{ gap: 45 }}>
+          <BackButton />
+          <ManaManoLogo />
+          <SignInInputContainer>
+            <Controller
+              control={control}
+              name="email"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, value } }) => (
+                <InputTextCustom
+                  onChangeText={onChange}
+                  value={value}
+                  label="E-mail"
+                  imageIcon={<IconEmail />}
                 />
-            </SignInForm>
-        </SignInContainer>
-    );
+              )}
+            />
+            {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
+            <Controller
+              control={control}
+              name="password"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, value } }) => (
+                <InputTextCustom
+                  onChangeText={onChange}
+                  value={value}
+                  label="Senha"
+                  imageIcon={<IconPassword />}
+                  isPassword
+                />
+              )}
+            />
+            {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
+          </SignInInputContainer>
+        </View>
+        <ButtonCustom
+          onPress={handleSubmit(onSubmit)}
+          backColor="transparent"
+          fontColor="#160E47"
+          text="Entrar"
+          border
+        />
+      </SignInForm>
+    </SignInContainer>
+  );
 }

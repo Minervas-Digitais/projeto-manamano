@@ -43,14 +43,14 @@ export default function SignUp({ navigation }: any) {
       })
       .catch((error) => {
         console.log('Erro na requisição:', error.message);
-        alert('Erro ao criar usuário. Veja o console.');
+        alert('Erro ao criar usuário.');
       });
   };
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
-  
+
   if (!fontsLoaded) {
     return undefined;
   }
