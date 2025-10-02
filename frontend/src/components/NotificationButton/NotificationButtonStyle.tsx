@@ -3,18 +3,13 @@ import styled from 'styled-components/native';
 
 const { width } = Dimensions.get('window');
 
-
 export const NotifButtonContainer = styled.View`
+  display: flex;
+  background-color: #f2f6fa;
   flex-direction: row;
   align-items: center;
-  background-color: #f2f6fa;
-  height: 60px;
-  margin-left: ${width * 0.05}px;
-  margin-right: ${width * 0.05}px;
-  position: relative;
+  margin-left: ${width * 0.058}px;
 `;
-
-
 export const ConfigNotifText = styled.Text<{ font?: string }>`
   font-size: 14px;
   white-space: nowrap;
@@ -22,16 +17,12 @@ export const ConfigNotifText = styled.Text<{ font?: string }>`
   color: #4e4e4e;
   font-family: ${(prop) => prop.font};
 `;
-
 export const ButtonImage = styled.View`
   position: absolute;
-  right: 0;
+  margin-left: ${width * 0.75}px;
 `;
-
-export const PressableCustom = styled.Pressable<{ isMoved?: boolean }>`
- 
-  position: absolute;
-  right: 0;
+export const ToggleThumbContainer = styled.View<{ isMoved?: boolean }>`
   z-index: 1;
-  transform: ${(props) => `translateX(${props.isMoved ? -23 : 2}px)`};
+  margin-left: ${width * 0.75}px;
+  transform: ${(props) => `translateX(${props.isMoved ? 24 : 0}px)`};
 `;

@@ -80,7 +80,7 @@ export default function ConfigNotification() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f2f6fa', gap: 40, padding: 20 }}>
+        <View style={{ flex: 1, backgroundColor: '#f2f6fa', gap: 40 }}>
             <HeaderCustom font="inter-bold" text="Notificações" />
             <NotificationButton
                 font="inter-bold"

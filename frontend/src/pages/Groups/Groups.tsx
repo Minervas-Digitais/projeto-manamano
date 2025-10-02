@@ -121,7 +121,6 @@ export default function Groups() {
                 onlineMembers={item.participantCount}
                 onPress={() => {
                   navigation.navigate('GroupPage', item.groupId);
-                  storage.set('groupInfo', item);
                 }}
                 size
               />

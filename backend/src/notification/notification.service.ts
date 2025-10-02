@@ -81,7 +81,7 @@ export class NotificationService {
                 try {
                     await this.sendPushNotification(
                         participant.userId,
-                        'Nova notificação em grupo',
+                        'Nova notificação em ' + (dto.groupName ?? 'grupo'),
                         dto.body,
                         dto.groupId ? { groupId: dto.groupId } : undefined,
                         dto.type
