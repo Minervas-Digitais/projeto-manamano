@@ -81,19 +81,6 @@ export class NotificationController {
         return { success: true };
     }
 
-    @Post('send/:userId')
-    @UseGuards(JwtAuthGuard)
-    async sendNotificationToUser(
-        @Param('userId') userId: string,
-        @Body() body: { title: string; message: string }
-    ) {
-        return this.notificationService.sendPushNotification(
-            userId,
-            body.title,
-            body.message,
-        );
-    }
-
     @Get(':id/notification-settings')
     @UseGuards(JwtAuthGuard)
     async getNotificationSettings(@Param('id') id: string, @Req() req) {
