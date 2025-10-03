@@ -89,7 +89,7 @@ describe('GroupData', () => {
     });
   });
 
-   it('deve navegar para EditGroup quando o botao de editar grupo for clicado', async () => {
+  it('deve navegar para EditGroup quando o botao de editar grupo for clicado', async () => {
     const { findByText, getByTestId } = render(
       <NavigationContainer>
         <GroupData navigation={{ navigate: mockNavigate }} />
@@ -108,7 +108,7 @@ describe('GroupData', () => {
     // mock para a chamada DELETE, esperando que ela seja bem-sucedida
     mockedApi.delete.mockResolvedValue({ status: 204 });
 
-    const { findByText } = render(
+    const { findByText, getByTestId} = render(
       <NavigationContainer>
         <GroupData navigation={{ navigate: mockNavigate }} />
       </NavigationContainer>,
@@ -118,6 +118,12 @@ describe('GroupData', () => {
 
     fireEvent.press(leaveButton);
 
+    const confirmationText = await findByText('Tem certeza que deseja sair do grupo?');
+    expect(confirmationText).toBeTruthy();
+
+    const confirmButton = getByTestId('confirm-delete-button'); // ajuste o texto se for diferente
+    fireEvent.press(confirmButton);
+
     await waitFor(() => {
       expect(mockedApi.delete).toHaveBeenCalledWith(
         `/participant/user-logged-id,${mockRoute.params.groupId}`,
@@ -125,7 +131,7 @@ describe('GroupData', () => {
           headers: {
             Authorization: 'Bearer fake-token',
           },
-        }
+        },
       );
       expect(mockNavigate).toHaveBeenCalledWith('Home');
     });
