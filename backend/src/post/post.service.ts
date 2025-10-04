@@ -2,10 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class PostService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(private prismaService: PrismaService, private notificationService: NotificationService) {}
 
   private serializePost(post: any) {
     const { user, category, Comment, ...rest } = post;
@@ -20,9 +22,35 @@ export class PostService {
 
   async create(createPostDto: CreatePostDto) {
     try {
-      return await this.prismaService.post.create({
+      const post = await this.prismaService.post.create({
         data: createPostDto,
       });
+
+      const group = await this.prismaService.group.findUnique({
+        where: { id: createPostDto.groupId },
+      });
+
+      const senderUser = await this.prismaService.user.findUnique({
+        where: { id: createPostDto.userId },
+      });
+
+      const notificationBody = `Novo post em ${group?.name ?? 'desconhecido'}`;
+
+      await this.notificationService.createNotification(
+        {
+          senderId: createPostDto.userId,
+          recipientId: undefined, 
+          groupId: createPostDto.groupId,
+          body: notificationBody,
+          type: NotificationType.FIXED,
+          groupName: group?.name ?? null,
+          senderName: senderUser?.fullName ?? null,
+          idContent: post.id,
+        },
+        'USER', 
+      );
+
+      return post;
     } catch (error) {
       throw error;
     }

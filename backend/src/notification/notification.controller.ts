@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Patch, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Body, Param, Request, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -13,10 +21,14 @@ export class NotificationController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Body() createNotificationDto: CreateNotificationDto) {
+  async create(
+    @Body() createNotificationDto: CreateNotificationDto,
+    @Req() req,
+  ) {
+    const userRole = req.user.sysRole;
     return this.notificationService.createNotification(
       createNotificationDto,
-      'MEMBER',
+      userRole,
     );
   }
 
@@ -76,5 +88,51 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard)
   async markAllAsRead(@Param('userId') userId: string) {
     return this.notificationService.markAllAsRead(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('register-token')
+  async registerPushToken(
+    @Req() req,
+    @Body() body: { pushNotifToken: string },
+  ) {
+    const userId = req.user.id;
+
+    if (!body.pushNotifToken) {
+      throw new Error('Push token é obrigatório');
+    }
+
+    await this.notificationService.registerPushNotifToken(
+      userId,
+      body.pushNotifToken,
+    );
+
+    return { success: true };
+  }
+
+  @Get(':id/notification-settings')
+  @UseGuards(JwtAuthGuard)
+  async getNotificationSettings(@Param('id') id: string, @Req() req) {
+    if (req.user.id !== id) {
+      throw new UnauthorizedException(
+        'Você só pode acessar suas próprias configurações',
+      );
+    }
+    return this.notificationService.getNotificationSettings(id);
+  }
+
+  @Patch(':id/notification-settings')
+  @UseGuards(JwtAuthGuard)
+  async updateNotificationSettings(
+    @Param('id') id: string,
+    @Body() dto: UpdateNotificationDto,
+    @Req() req,
+  ) {
+    if (req.user.id !== id) {
+      throw new UnauthorizedException(
+        'Você só pode modificar suas próprias configurações',
+      );
+    }
+    return this.notificationService.updateNotificationSettings(id, dto);
   }
 }
