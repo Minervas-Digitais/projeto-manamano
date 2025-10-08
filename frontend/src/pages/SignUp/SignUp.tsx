@@ -30,20 +30,27 @@ export default function SignUp({ navigation }: any) {
     alert(JSON.stringify(data));
     const onlyNumPhone = cleanPhoneNumber(data.phone);
     const updatedData = { ...data, phone: onlyNumPhone };
-    api.post('/user', updatedData).then((res) => {
-      if (res?.data.code === 'P2002') {
-        alert(
-          'Não foi possível criar uma conta. O e-mail ou o celular já está associado a outra conta!',
-        );
-      } else if (res?.data.code !== 'P2002') {
-        alert(JSON.stringify(data));
-        navigation.navigate('SignIn');
-      }
-    });
+    api
+      .post('/user', updatedData)
+      .then((res) => {
+        console.log('Resposta:', res.data);
+        if (res?.data.code === 'P2002') {
+          alert('E-mail ou celular já está associado a outra conta!');
+        } else {
+          alert('Cadastro realizado!');
+          navigation.navigate('SignIn');
+        }
+      })
+      .catch((error) => {
+        console.log('Erro na requisição:', error.message);
+        alert('Erro ao criar usuário.');
+      });
   };
+
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
+
   if (!fontsLoaded) {
     return undefined;
   }
@@ -75,7 +82,6 @@ export default function SignUp({ navigation }: any) {
               )}
             />
             {errors.fullName && <ErrorWarning errorText="Campo obrigatório" />}
-
             <Controller
               control={control}
               name="email"
@@ -92,7 +98,6 @@ export default function SignUp({ navigation }: any) {
               )}
             />
             {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
-
             <Controller
               control={control}
               name="phone"
@@ -109,10 +114,8 @@ export default function SignUp({ navigation }: any) {
                 />
               )}
             />
-            
-            // o nome do erro precisa dar match com o nome especificado no Controller 
+            // o nome do erro precisa dar match com o nome especificado no Controller
             {errors.phone && <ErrorWarning errorText="Campo obrigatório" />}
-
             <Controller
               control={control}
               name="hash"
@@ -129,8 +132,7 @@ export default function SignUp({ navigation }: any) {
                 />
               )}
             />
-
-            // o nome do erro precisa dar match com o nome especificado no Controller 
+            // o nome do erro precisa dar match com o nome especificado no Controller
             {errors.hash && <ErrorWarning errorText="Campo obrigatório" />}
           </SignUpInputContainer>
         </View>

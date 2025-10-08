@@ -3,6 +3,7 @@ import {
     NotFoundException,
     UnauthorizedException,
     ConflictException,
+    BadRequestException,
 } from '@nestjs/common';
 import { RoleType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';

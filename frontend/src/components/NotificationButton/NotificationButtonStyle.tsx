@@ -21,8 +21,8 @@ export const ButtonImage = styled.View`
   position: absolute;
   margin-left: ${width * 0.75}px;
 `;
-export const PressableCustom = styled.Pressable<{ isMoved?: boolean }>`
+export const ToggleThumbContainer = styled.View<{ isMoved?: boolean }>`
   z-index: 1;
   margin-left: ${width * 0.75}px;
-  transform: ${(props) => `translateX(${props.isMoved ? 28 : 0}px)`};
+  transform: ${(props) => `translateX(${props.isMoved ? 24 : 0}px)`};
 `;
