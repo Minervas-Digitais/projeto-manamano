@@ -3,6 +3,12 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import Notification from '../pages/Notification/Notification';
 import api from '../services/api';
 import { storage } from '../pages/SignIn/SignIn';
+import { Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
+
+jest.mock('react-native-toast-message', () => ({
+  show: jest.fn(),
+}));
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
@@ -275,6 +281,58 @@ describe('Notification', () => {
   });
 
   it('Deve excluir uma notificação após a confirmação do admin', async () => {
+    jest.useFakeTimers();
+
+    let currentNotifications = [...mockNotifications];
+    const notifToDelete = mockNotifications[1];
+
+    mockedStorage.getString.mockImplementation((key: string) => {
+      if (key === 'loggedId') return 'admin-123';
+      if (key === 'accessToken') return 'admin-fake-token';
+      return undefined;
+    });
+
+    mockedApi.get.mockImplementation((url: string) => {
+      if (url.includes('notifications/user/')) {
+        return Promise.resolve({ data: currentNotifications });
+      }
+      if (url.includes('/user/')) {
+        return Promise.resolve({ data: mockAdmin });
+      }
+      return Promise.reject(new Error(`API URL not mocked: ${url}`));
+    });
+
+    mockedApi.delete.mockImplementation(async (url) => {
+      const idToDelete = url.split('/')[1];
+      currentNotifications = currentNotifications.filter((n) => n.id !== idToDelete);
+      return Promise.resolve({});
+    });
+
+    const { findByTestId, queryByText } = render(
+      <Notification navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    const optionsMenu = await findByTestId(`options-menu-${notifToDelete.id}`);
+    fireEvent.press(optionsMenu);
+
+    const deleteButton = await findByTestId(`delete-button-${notifToDelete.id}`);
+
+    await act(async () => {
+      fireEvent.press(deleteButton);
+    });
+
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+    });
+
+    await waitFor(() => {
+      expect(queryByText(notifToDelete.body)).toBeNull();
+    });
+
+    jest.useRealTimers();
+  });
+
+  it('deve exibir um alerta de erro se a deleção da notificação falhar', async () => {
     mockedStorage.getString.mockImplementation((key: string) => {
       if (key === 'loggedId') return 'admin-123';
       if (key === 'accessToken') return 'admin-fake-token';
@@ -285,32 +343,38 @@ describe('Notification', () => {
       if (url.includes('notifications/user/')) {
         return Promise.resolve({ data: mockNotifications });
       }
-
       if (url.includes('/user/')) {
         return Promise.resolve({ data: mockAdmin });
       }
-      return Promise.reject(new Error(`URL da API não mockada no teste: ${url}`));
+      return Promise.reject(new Error(`API URL not mocked: ${url}`));
     });
 
-    mockedApi.delete.mockResolvedValue({});
+    mockedApi.delete.mockRejectedValue(new Error('Failed to delete'));
 
-    const { findByTestId, queryByText } = render(
-      <Notification navigation={{ navigate: mockedNavigate }} />,
-    );
+    const { findByTestId } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
-    const notifToDelete = mockNotifications[1];
-    const optionsMenu = await findByTestId(`options-menu-${notifToDelete.id}`);
+    const optionsMenu = await findByTestId(`options-menu-${mockNotifications[1].id}`);
     fireEvent.press(optionsMenu);
 
-    const deleteButton = await findByTestId(`delete-button-${notifToDelete.id}`);
+    const deleteButton = await findByTestId(`delete-button-${mockNotifications[1].id}`);
     fireEvent.press(deleteButton);
 
     await waitFor(() => {
-      expect(mockedApi.delete).toHaveBeenCalledWith(
-        `notifications/${notifToDelete.id}`,
-        expect.any(Object),
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text1: 'Erro ao excluir notificação.',
+        }),
       );
-      expect(queryByText(notifToDelete.body)).toBeNull();
     });
+  });
+
+  it('deve navegar para a tela inicial ao clicar no botão de retorno', async () => {
+    const { findByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
+
+    const returnButton = await findByText('Retornar para a tela inicial');
+    fireEvent.press(returnButton);
+
+    expect(mockedNavigate).toHaveBeenCalledWith('Home');
   });
 });
