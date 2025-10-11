@@ -67,6 +67,7 @@ export default function SideMenu({ display, onPress }: any) {
             icon={<SavedIcon width={24} height={24} />}
             text="Publicações salvas"
             font="inter-bold"
+            onPress={() => navigation.navigate('Profile', { initialTab: 'saved' })}
           />
           <SideMenuOptions
             icon={<NotificationIcon width={24} height={24} />}
