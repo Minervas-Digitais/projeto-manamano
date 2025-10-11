@@ -4,7 +4,7 @@
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useFonts } from 'expo-font';
-import { Image, StatusBar, View } from 'react-native';
+import { Image, StatusBar, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { SignInContainer, SignInForm, SignInInputContainer } from './SignInStyle';
@@ -75,54 +75,64 @@ export default function SignIn({ navigation }: any) {
   return (
     <SignInContainer>
       <StatusBar backgroundColor="black" />
-      <SignInForm>
-        <View style={{ gap: 45 }}>
-          <BackButton />
-          <ManaManoLogo />
-          <SignInInputContainer>
-            <Controller
-              control={control}
-              name="email"
-              rules={{
-                required: true,
-              }}
-              render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="E-mail"
-                  imageIcon={<IconEmail />}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={50}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <SignInForm>
+            <View style={{ gap: 45 }}>
+              <BackButton />
+              <ManaManoLogo />
+              <SignInInputContainer>
+                <Controller
+                  control={control}
+                  name="email"
+                  rules={{
+                    required: true,
+                  }}
+                  render={({ field: { onChange, value } }) => (
+                    <InputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      label="E-mail"
+                      imageIcon={<IconEmail />}
+                    />
+                  )}
                 />
-              )}
-            />
-            {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
-            <Controller
-              control={control}
-              name="password"
-              rules={{
-                required: true,
-              }}
-              render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Senha"
-                  imageIcon={<IconPassword />}
-                  isPassword
+                {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
+                <Controller
+                  control={control}
+                  name="password"
+                  rules={{
+                    required: true,
+                  }}
+                  render={({ field: { onChange, value } }) => (
+                    <InputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      label="Senha"
+                      imageIcon={<IconPassword />}
+                      isPassword
+                    />
+                  )}
                 />
-              )}
+                {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
+              </SignInInputContainer>
+            </View>
+            <ButtonCustom
+              onPress={handleSubmit(onSubmit)}
+              backColor="transparent"
+              fontColor="#160E47"
+              text="Entrar"
+              border
             />
-            {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
-          </SignInInputContainer>
-        </View>
-        <ButtonCustom
-          onPress={handleSubmit(onSubmit)}
-          backColor="transparent"
-          fontColor="#160E47"
-          text="Entrar"
-          border
-        />
-      </SignInForm>
+          </SignInForm>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SignInContainer>
   );
 }
