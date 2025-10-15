@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateArchiveDto, ResponseArchiveDto } from './dto/archive.dto';
+import { NotificationType } from '@prisma/client';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class ArchiveService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private notificationService: NotificationService) {}
 
   async createArchive(data: CreateArchiveDto): Promise<ResponseArchiveDto> {
     const createdArchive = await this.prisma.archive.create({
@@ -17,6 +19,33 @@ export class ArchiveService {
         postId: data.postId,
       },
     });
+
+    if (data.groupId) {
+      const group = await this.prisma.group.findUnique({
+        where: { id: data.groupId },
+      });
+
+      const sender = await this.prisma.user.findUnique({
+        where: { id: data.userId },
+        select: { fullName: true },
+      });
+
+      const notificationBody = `Novo arquivo enviado no grupo ${group?.name ?? 'desconhecido'}`;
+
+      await this.notificationService.createNotification(
+        {
+          senderId: data.userId,
+          recipientId: undefined, 
+          groupId: data.groupId,
+          body: notificationBody,
+          type: NotificationType.FIXED,
+          groupName: group?.name ?? null,
+          senderName: sender?.fullName ?? null,
+          idContent: createdArchive.id,
+        },
+        'USER',
+      );
+    }
 
     return this.mapToResponseDto(createdArchive);
   }

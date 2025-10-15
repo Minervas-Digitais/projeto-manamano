@@ -57,7 +57,6 @@ export default function Groups() {
             },
           });
           setUserData(fetchedUserData);
-
         } catch (error) {
           console.error('Error fetching user data:', error);
         }
@@ -72,12 +71,11 @@ export default function Groups() {
   }
 
   const handleAddButtonPress = () => {
-
     // Handle the AddButton press logic
     // If the user doesn't have the correct ID, navigate to EntrarGrupo
     if (!userData || userData.role !== 'MODERATOR') {
-        navigation.navigate('EntrarGrupo');
-        return;
+      navigation.navigate('EntrarGrupo');
+      return;
     }
 
     const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -121,7 +119,6 @@ export default function Groups() {
                 onlineMembers={item.participantCount}
                 onPress={() => {
                   navigation.navigate('GroupPage', item.groupId);
-                  storage.set('groupInfo', item);
                 }}
                 size
               />
