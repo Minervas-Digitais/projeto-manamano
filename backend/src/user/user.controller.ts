@@ -20,7 +20,8 @@ import { Roles } from 'src/auth/roles.decorator';
 import { UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import express from 'express';
-import { NotFoundException, Res } from '@nestjs/common';
+import { Res } from '@nestjs/common';
+import { RoleType } from '@prisma/client';
 
 @Controller('user')
 export class UserController {
@@ -35,7 +36,7 @@ export class UserController {
   @HttpCode(200)
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles(RoleType.ADMIN)
   findAll() {
     return this.userService.findAll();
   }
@@ -57,7 +58,7 @@ export class UserController {
   @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles(RoleType.ADMIN)
   remove(@Param('id') id: string) {
     return this.userService.remove(id);
   }
@@ -74,7 +75,8 @@ export class UserController {
   }
 
   @Patch(':id/role')
-  async updateRole( // SysRole
+  async updateRole(
+    // SysRole
     @Param('id') id: string,
     @Body() updateUserRoleDto: UpdateUserRoleDto,
   ) {

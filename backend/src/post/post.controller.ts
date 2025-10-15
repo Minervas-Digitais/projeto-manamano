@@ -15,6 +15,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { PostService } from './post.service';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
+import { RoleType } from '@prisma/client';
 
 @Controller('post')
 export class PostController {
@@ -30,7 +31,7 @@ export class PostController {
   @HttpCode(200)
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles(RoleType.ADMIN)
   findAll() {
     return this.postService.findAll();
   }
@@ -45,7 +46,7 @@ export class PostController {
   @HttpCode(201)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles(RoleType.ADMIN)
   update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
     return this.postService.update(id, updatePostDto);
   }
@@ -53,7 +54,7 @@ export class PostController {
   @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles(RoleType.ADMIN)
   remove(@Param('id') id: string) {
     return this.postService.remove(id);
   }

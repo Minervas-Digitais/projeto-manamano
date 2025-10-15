@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
-import { RoleType, UserRole } from '@prisma/client';
+import { RoleType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -114,7 +114,13 @@ export class UserService {
   }
 
   async updateProfilePicture(id: string, file: Express.Multer.File) {
-    await this.findOne(id);
+    const user = await this.findOne(id);
+
+    if (user.profilePictureId) {
+      await this.prismaService.archive.delete({
+        where: { id: user.profilePictureId },
+      });
+    }
 
     const archive = await this.prismaService.archive.create({
       data: {
