@@ -1,4 +1,4 @@
-import { PrismaClient, PostType } from "@prisma/client";
+import { PrismaClient, PostType, UserRole } from "@prisma/client";
 import { faker } from "@faker-js/faker";
 import { writeFileSync } from "fs";
 
@@ -63,7 +63,7 @@ async function main() {
         data: {
           userId: user.id,
           groupId: faker.helpers.arrayElement(groups).id,
-          role: "MEMBER",
+          role: UserRole.STUDENT,
         },
       })
     )

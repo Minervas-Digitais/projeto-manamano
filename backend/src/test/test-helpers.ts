@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { NotificationType, RoleType } from '@prisma/client';
+import { NotificationType, RoleType, UserRole } from '@prisma/client';
 import { CreateGroupDto } from 'src/group/dto/create-group.dto';
 import { CreatePostDto } from 'src/post/dto/create-post.dto';
 import { PostType } from '@prisma/client';
@@ -346,7 +346,7 @@ export async function createParticipantDto(prisma: PrismaService) {
   });
 
   const dto: CreateParticipantDto = {
-    role: RoleType.MEMBER,
+    role: UserRole.STUDENT,
     groupId: groupId,
     userId: userId,
     inviteCode: fullGroup.inviteCode,

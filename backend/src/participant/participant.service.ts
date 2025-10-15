@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class ParticipantService {
@@ -35,9 +36,8 @@ export class ParticipantService {
       const participantBody = {
         groupId: group.id,
         userId: createParticipantDto.userId,
-        role: createParticipantDto.role ? createParticipantDto.role : 'MEMBER',
+        role: createParticipantDto.role ? createParticipantDto.role : UserRole.STUDENT,
       };
-
 
       return await this.prismaService.participant.create({
         data: participantBody,

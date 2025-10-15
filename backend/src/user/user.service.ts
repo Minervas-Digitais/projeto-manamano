@@ -39,7 +39,6 @@ export class UserService {
       email: createUserDto.email,
       phone: createUserDto.phone,
       hash: hashedPassword,
-      role: UserRole.STUDENT,
       savedPost: [],
       birthday: createUserDto.birthday,
       ethnicity: createUserDto.ethnicity,

@@ -24,6 +24,12 @@ model User {
  
   profilePictureId      String?        @unique
   profilePicture        Archive?       @relation("UserProfilePicture", fields: [profilePictureId], references: [id], onDelete: SetNull)
+  
+  disablePopup     Boolean @default(false)
+  muteSystem       Boolean @default(false)
+  muteGroups       Boolean @default(false)
+
+  pushNotifToken    String? 
 
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt

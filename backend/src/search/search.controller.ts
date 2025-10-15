@@ -5,11 +5,12 @@ import {
   HttpCode,
   Param,
   UseGuards,
+  ParseEnumPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateSearchDto } from './dto/create-search.dto';
 import { SearchService } from './search.service';
-import { BadRequestException } from '@nestjs/common'; 
+import { SearchFilter } from './search-filter.enum';
 
 @Controller('search')
 export class SearchController {
@@ -27,7 +28,7 @@ export class SearchController {
   @UseGuards(JwtAuthGuard)
   searchByFilter(
     @Body() createSearchDto: CreateSearchDto,
-    @Param('filter') filter: string,
+    @Param('filter', new ParseEnumPipe(SearchFilter)) filter: SearchFilter,
   ) {
     return this.searchService.searchByFilter(createSearchDto, filter);
   }
