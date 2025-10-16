@@ -14,6 +14,8 @@ export default function About() {
   const talesMoreiraDev = require('../../assets/talesMoreira.png');
   const jhonataMonteiroDev = require('../../assets/jhonataMonteiro.png');
   const guilhermeSobreiraDev = require('../../assets/guilhermeSobreira.png');
+  const thiagoBarcellosDev = require('../../assets/thiagoBarcellos.jpg');
+
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -64,6 +66,12 @@ export default function About() {
       image: guilhermeSobreiraDev,
       linkedin:
         'https://www.linkedin.com/in/guilherme-vasconcellos-sobreira-de-carvalho-b115ab260/',
+      description: 'Colaborou com a fase de desenvolvimento do aplicativo.',
+    },
+    {
+      name: 'Thiago Barcellos',
+      image: thiagoBarcellosDev,
+      linkedin: 'https://www.linkedin.com/in/thiago-barcellos/',
       description: 'Colaborou com a fase de desenvolvimento do aplicativo.',
     },
   ];
