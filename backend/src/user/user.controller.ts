@@ -21,7 +21,7 @@ import { UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import express from 'express';
 import { Res } from '@nestjs/common';
-import { RoleType } from '@prisma/client';
+import { Archive, RoleType, User } from '@prisma/client';
 
 @Controller('user')
 export class UserController {
@@ -29,7 +29,7 @@ export class UserController {
 
   @HttpCode(201)
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Body() createUserDto: CreateUserDto): Promise<Omit<User, 'hash'>> {
     return this.userService.create(createUserDto);
   }
 
@@ -37,21 +37,24 @@ export class UserController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleType.ADMIN)
-  findAll() {
+  findAll(): Promise<User[]> {
     return this.userService.findAll();
   }
 
   @HttpCode(200)
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): Promise<User> {
     return this.userService.findOne(id);
   }
 
   @HttpCode(201)
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
     return this.userService.update(id, updateUserDto);
   }
 
@@ -59,7 +62,7 @@ export class UserController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleType.ADMIN)
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.userService.remove(id);
   }
 
@@ -70,7 +73,7 @@ export class UserController {
     @Param('id') id: string,
     @Body('oldPassword') oldPassword: string,
     @Body('newPassword') newPassword: string,
-  ) {
+  ): Promise<User> {
     return this.userService.changePassword(id, oldPassword, newPassword);
   }
 
@@ -79,7 +82,7 @@ export class UserController {
     // SysRole
     @Param('id') id: string,
     @Body() updateUserRoleDto: UpdateUserRoleDto,
-  ) {
+  ): Promise<User> {
     const { sysRole } = updateUserRoleDto;
     return this.userService.updateUserRole(id, sysRole);
   }
@@ -90,7 +93,7 @@ export class UserController {
   async updateProfilePicture(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
-  ) {
+  ): Promise<User & { profilePicture: Archive | null }> {
     if (!file) {
       throw new BadRequestException('Um arquivo é necessário.');
     }
@@ -101,7 +104,7 @@ export class UserController {
   async getProfilePicture(
     @Param('id') id: string,
     @Res() res: express.Response,
-  ) {
+  ): Promise<void> {
     const { buffer, mimeType, name } =
       await this.userService.getProfilePictureBuffer(id);
 

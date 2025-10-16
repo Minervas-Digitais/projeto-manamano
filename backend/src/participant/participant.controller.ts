@@ -12,7 +12,8 @@ import {
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
-import { ParticipantService } from './participant.service';
+import { GroupWithDetails, ParticipantService, UserInGroup } from './participant.service';
+import { Participant } from '@prisma/client';
 
 @Controller('participant')
 export class ParticipantController {
@@ -21,35 +22,37 @@ export class ParticipantController {
   @HttpCode(201)
   @Post()
   @UseGuards(JwtAuthGuard)
-  joinGroup(@Body() createParticipantDto: CreateParticipantDto) {
+  joinGroup(
+    @Body() createParticipantDto: CreateParticipantDto,
+  ): Promise<Participant> {
     return this.participantService.joinGroupWithInvite(createParticipantDto);
   }
 
   @HttpCode(200)
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll() {
+  findAll(): Promise<Participant[]> {
     return this.participantService.findAll();
   }
 
   @HttpCode(200)
   @Get('group/:groupId')
   @UseGuards(JwtAuthGuard)
-  findUsersInGroup(@Param('groupId') groupId: string) {
+  findUsersInGroup(@Param('groupId') groupId: string): Promise<UserInGroup[]> {
     return this.participantService.findUsersInGroup(groupId);
   }
 
   @HttpCode(200)
   @Get('groups/:id')
   @UseGuards(JwtAuthGuard)
-  findUserGroups(@Param('id') id: string) {
+  findUserGroups(@Param('id') id: string): Promise<GroupWithDetails[]> {
     return this.participantService.findUserGroups(id);
   }
 
   @HttpCode(200)
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): Promise<Participant> {
     return this.participantService.findOne(id);
   }
 
@@ -59,14 +62,14 @@ export class ParticipantController {
   update(
     @Param('id') id: string,
     @Body() updateParticipantDto: UpdateParticipantDto,
-  ) {
+  ): Promise<Participant> {
     return this.participantService.update(id, updateParticipantDto);
   }
 
   @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.participantService.remove(id);
   }
 }
