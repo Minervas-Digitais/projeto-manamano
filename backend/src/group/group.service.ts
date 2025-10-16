@@ -53,10 +53,7 @@ export class GroupService {
 
   async update(id: string, updateGroupDto: UpdateGroupDto) {
     try {
-      const group = await this.findOne(id);
-      if (typeof group === 'object' && group instanceof Error) {
-        throw group;
-      }
+      await this.findOne(id);
       return await this.prismaService.group.update({
         where: {
           id,
@@ -70,10 +67,8 @@ export class GroupService {
 
   async remove(id: string) {
     try {
-      const group = await this.findOne(id);
-      if (typeof group === 'object' && group instanceof Error) {
-        throw group;
-      }
+      await this.findOne(id);
+     
       await this.prismaService.group.delete({
         where: {
           id,

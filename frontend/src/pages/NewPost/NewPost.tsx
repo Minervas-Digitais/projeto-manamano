@@ -33,6 +33,40 @@ import linkIcon from '../../assets/comment-link-icon.svg';
 import AttachmentIcon from '../../assets/add-attachment-icon.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
 
+export const validateDateInternal = (dateRef: React.RefObject<any>) => {
+  const inputDate = dateRef.current ? new Date(dateRef.current.getRawValue()) : new Date();
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+  if (!dateRef.current || !dateRef.current.isValid() || inputDate < currentDate) {
+    return 'Data inválida';
+  }
+  return true;
+};
+
+export const validateHourInternal = (
+  dateRef: React.RefObject<any>,
+  hourRef: React.RefObject<any>,
+) => {
+  if (!dateRef.current || !hourRef.current) return false; // Adicionado para segurança
+  const inputDate = new Date(dateRef.current.getRawValue());
+  const currentDate = new Date();
+  const currentHours = currentDate.getHours();
+  const currentMinutes = currentDate.getMinutes();
+  const currentHourMin = `${currentHours}:${currentMinutes}`;
+  const inputDateHours = new Date(hourRef.current.getRawValue());
+  const inputHours = inputDateHours.getHours();
+  const inputMinutes = inputDateHours.getMinutes();
+  const inputHourMin = `${inputHours}:${inputMinutes}`;
+  currentDate.setHours(0, 0, 0, 0);
+  if (!hourRef.current.isValid()) {
+    return 'Hora inválida';
+  }
+  if (inputDate.getTime() === currentDate.getTime() && currentHourMin > inputHourMin) {
+    return 'Esta hora já passou';
+  }
+  return true;
+};
+
 export default function NewPost({ navigation }: any) {
   const { width, height } = Dimensions.get('window');
   const route = useRoute();
@@ -40,15 +74,20 @@ export default function NewPost({ navigation }: any) {
   const [files, setFiles] = useState<
     { id: number; name: string; uri: string; mimeType?: string }[]
   >([]);
-  const [categories, setCategories] = useState([]);
+  interface Category {
+    id: string;
+    name: string;
+    type: string;
+  }
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
   const [filterPosts, setFilterPosts] = useState('Geral');
-  const dateRef = useRef(null);
-  const hourRef = useRef(null);
+  const dateRef = useRef<any>(null);
+  const hourRef = useRef<any>(null);
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
-  const [visibility, setVisibility] = useState({});
-  const handleClick = (id) => {
+  const [visibility, setVisibility] = useState<Record<number, boolean>>({});
+  const handleClick = (id: number) => {
     setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
     setVisibility((prevState) => {
       const updatedState = { ...prevState };
@@ -62,17 +101,21 @@ export default function NewPost({ navigation }: any) {
     setSelectedCategoryType(selectedCategory ? selectedCategory.type : null);
   }, [filterPosts, categories]);
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      api.get(`/user/${loggedId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-    }
+    const loadUserData = async () => {
+      const accessToken = storage.getString('accessToken');
+      const loggedId = storage.getString('loggedId');
+      if (loggedId && accessToken) {
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+        const response = await api.get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        // .then((res) => console.log(JSON.stringify(res.data)));
+      }
+    };
+    loadUserData();
   }, []);
   useEffect(() => {
     if (!accessTokenState) return;
@@ -205,34 +248,8 @@ export default function NewPost({ navigation }: any) {
       }
     }
   };
-  const validateDate = () => {
-    const inputDate = new Date(dateRef.current.getRawValue());
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-    if (!dateRef.current.isValid() || inputDate < currentDate) {
-      return 'Data inválida';
-    }
-    return true;
-  };
-  const validateHour = () => {
-    const inputDate = new Date(dateRef.current.getRawValue());
-    const currentDate = new Date();
-    const currentHours = currentDate.getHours();
-    const currentMinutes = currentDate.getMinutes();
-    const currentHourMin = `${currentHours}:${currentMinutes}`;
-    const inputDateHours = new Date(hourRef.current.getRawValue());
-    const inputHours = inputDateHours.getHours();
-    const inputMinutes = inputDateHours.getMinutes();
-    const inputHourMin = `${inputHours}:${inputMinutes}`;
-    currentDate.setHours(0, 0, 0, 0);
-    if (!hourRef.current.isValid()) {
-      return 'Hora inválida';
-    }
-    if (inputDate.getTime() === currentDate.getTime() && currentHourMin > inputHourMin) {
-      return 'Esta hora já passou';
-    }
-    return true;
-  };
+  const validateDate = () => validateDateInternal(dateRef);
+  const validateHour = () => validateHourInternal(dateRef, hourRef);
   const pickFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -302,6 +319,7 @@ export default function NewPost({ navigation }: any) {
               .filter((category) => category.name !== 'Aulas')
               .map((category) => (
                 <CategoryButton
+                  key={category.id}
                   categoryName={category.name}
                   onPress={() => setFilterPosts(category.name)}
                   filter={filterPosts}
@@ -319,7 +337,12 @@ export default function NewPost({ navigation }: any) {
                   required: true,
                 }}
                 render={({ field: { onChange, value } }) => (
-                  <BigInputTextCustom onChangeText={onChange} value={value} imageIcon={null} />
+                  <BigInputTextCustom
+                    onChangeText={onChange}
+                    value={value}
+                    imageIcon={null}
+                    accessibilityLabel="Mensagem"
+                  />
                 )}
               />
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
@@ -342,7 +365,7 @@ export default function NewPost({ navigation }: any) {
                     />
                   ))}
                 </ScrollView>
-                <LinkIcon onPress={pickFile}>
+                <LinkIcon onPress={pickFile} testID="attach-file-button">
                   <AttachmentIcon />
                 </LinkIcon>
               </View>
@@ -379,7 +402,7 @@ export default function NewPost({ navigation }: any) {
               {errors.title && <ErrorWarning errorText={errors.title.message} />}
             </NamePart>
             <MiddlePart>
-              <View style={{ flex: 1, marginRight: `${width * 0.03135}` }}>
+              <View style={{ flex: 1, marginRight: width * 0.03135 }}>
                 <Controller
                   control={control}
                   name="date"
@@ -395,13 +418,15 @@ export default function NewPost({ navigation }: any) {
                       imageIcon={<CalendarIcon />}
                       type="datetime"
                       options={{ format: 'DD/MM/YYYY' }}
-                      innerRef={(value) => (dateRef.current = value)}
+                      innerRef={(refValue: any) => {
+                        dateRef.current = refValue;
+                      }}
                     />
                   )}
                 />
                 {errors.date && <ErrorWarning errorText={errors.date.message} />}
               </View>
-              <View style={{ flex: 1, marginLeft: `${width * 0.03135}` }}>
+              <View style={{ flex: 1, marginLeft: width * 0.03135 }}>
                 <Controller
                   control={control}
                   name="hour"
@@ -417,7 +442,9 @@ export default function NewPost({ navigation }: any) {
                       imageIcon={null}
                       type="datetime"
                       options={{ format: 'HH:mm' }}
-                      innerRef={(value) => (hourRef.current = value)}
+                      innerRef={(refValue: any) => {
+                        hourRef.current = refValue;
+                      }}
                     />
                   )}
                 />

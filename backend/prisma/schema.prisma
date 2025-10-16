@@ -22,10 +22,20 @@ model User {
   expertise             String?
   enterprise            String?
   bio                   String?
+ 
+  profilePictureId      String?        @unique
+  profilePicture        Archive?       @relation("UserProfilePicture", fields: [profilePictureId], references: [id], onDelete: SetNull)
+
+  disablePopup     Boolean @default(false)
+  muteSystem       Boolean @default(false)
+  muteGroups       Boolean @default(false)
+
+  pushNotifToken    String? 
+
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
   sysRole               RoleType?      @default(MEMBER)
-  archives              Archive[]
+  archives              Archive[]      @relation("UserArchives")
   Comment               Comment[]
   notificationsReceived Notification[] @relation("ReceivedNotifications")
   notificationsSent     Notification[] @relation("SentNotifications")
@@ -84,24 +94,10 @@ model Post {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   Comment     Comment[]
-  File        File[]
   category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   archives    Archive[]
-}
-
-model File {
-  id        String   @id @default(uuid())
-  title     String?
-  url       String?
-  type      String
-  size      Bytes?
-  content   String?
-  postId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  post      Post     @relation(fields: [postId], references: [id])
 }
 
 model Comment {
@@ -123,9 +119,9 @@ enum NotificationType {
 
 model Notification {
   id           String   @id @default(uuid())
-  sender       User     @relation("SentNotifications", fields: [senderId], references: [id])
+  sender       User     @relation("SentNotifications", fields: [senderId], references: [id], onDelete: Cascade)
   senderId     String
-  recipient    User     @relation("ReceivedNotifications", fields: [recipientId], references: [id])
+  recipient    User     @relation("ReceivedNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
   recipientId  String
   body         String
   type         NotificationType
@@ -147,7 +143,10 @@ model Archive {
   postId        String?
   uploadDate    DateTime @default(now())
   Group         Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  User          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  User          User?    @relation("UserArchives", fields: [userId], references: [id], onDelete: Cascade)
+  profileOf     User?    @relation("UserProfilePicture")
+
   Post          Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
 
 }

@@ -23,6 +23,12 @@ import { GroupDataText } from '../GroupData/GroupDataStyle';
 import { GroupPageTabs } from '../GroupPage/GroupPageStyle';
 import PostCard from '../../components/PostCard/PostCard';
 import SideMenu from '../../components/SideMenu/SideMenu';
+import Location from '../../assets/location-icon.svg';
+import ShareWhite from '../../assets/share-white-icon.svg';
+import MenuIcon from '../../assets/menuWhite-icon.svg';
+import Pen from '../../assets/pen-icon.svg';
+import Business from '../../assets/business-icon.svg';
+import api from '../../services/api';
 
 export default function Profile({ navigation }: any) {
   const [profileId, setProfileId] = useState(1);
@@ -50,93 +56,63 @@ export default function Profile({ navigation }: any) {
   const [filterPosts, setFilterPosts] = useState('userPosts');
 
   const duckImage = require('../../assets/duck.png');
-  const location = require('../../assets/location-icon.svg');
-  const shareWhite = require('../../assets/share-white-icon.svg');
-  const menuIcon = require('../../assets/menuWhite-icon.svg');
-  const pen = require('../../assets/pen-icon.svg');
-  const business = require('../../assets/business-icon.svg');
 
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
-
-  // State to store fetched posts
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
 
   useEffect(() => {
     const token = storage.getString('accessToken');
+
     if (token) {
       const fetchUserData = async () => {
         try {
           const userId = storage.getString('loggedId');
-          const response = await fetch(`http://localhost:3000/user/${userId}`, {
-            method: 'GET',
+
+          const { data } = await api.get(`/user/${userId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
             },
           });
 
-          const data = await response.json();
-          // Set fetched user data to state
           setFullName(data.fullName);
           setNeighborhood(data.neighborhood);
           setEnterprise(data.enterprise);
           setBio(data.bio);
 
-          // Fetch user posts
           const fetchUserPosts = async () => {
             try {
-              const response = await fetch(`http://localhost:3000/post/${userId}/posts`, {
-                method: 'GET',
+              const { data: postData } = await api.get(`/post/${userId}/posts`, {
                 headers: {
                   Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
                 },
               });
-
-              const postData = await response.json();
-              setUserPosts(postData); // Store posts in state
+              setUserPosts(postData);
             } catch (error) {
               console.error('Error fetching posts:', error);
             }
           };
 
-          // Fetch saved posts
           const fetchSavedPosts = async () => {
             try {
-              const response = await fetch(`http://localhost:3000/user/${userId}`, {
-                method: 'GET',
+              const { data } = await api.get(`/user/${userId}`, {
                 headers: {
                   Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
                 },
               });
 
-              const data = await response.json();
               const postIds = data.savedPost;
 
-              // Create an array of post requests using postIds
-              const postRequests = postIds.map(async (postId : any) => {
-                const postResponse = await fetch(`http://localhost:3000/post/${postId}`, {
-                  method: 'GET',
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                  },
-                });
-                return postResponse.json(); // Return the post data
-              });
+              const postRequests = postIds.map((postId: any) =>
+                api
+                  .get(`/post/${postId}`, {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  })
+                  .then((res) => res.data),
+              );
 
-              // Wait for all post requests to resolve
               const postsData = await Promise.all(postRequests);
-
-              // Once all the posts are fetched, update the state
               setSavedPosts(postsData);
             } catch (error) {
               console.error('Error fetching saved posts:', error);
@@ -152,12 +128,20 @@ export default function Profile({ navigation }: any) {
 
       fetchUserData();
     }
-  }, []); // Empty array means the effect runs only once, similar to componentDidMount
-
+  }, []);
+  const [fontsLoaded] = useFonts({
+    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
+    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
+  });
+  if (!fontsLoaded) {
+    return undefined;
+  }
   // Split the fullName to display the first two names
   const fullNameSplit = fullName.split(' ');
-  const displayName = fullNameSplit.length > 1 ? `${fullNameSplit[0]} ${fullNameSplit[1]}` : fullName;
-  const districtLabel = district.find((item) => item.value === String(neighborhood))?.label || 'Unknown';
+  const displayName =
+    fullNameSplit.length > 1 ? `${fullNameSplit[0]} ${fullNameSplit[1]}` : fullName;
+  const districtLabel =
+    district.find((item) => item.value === String(neighborhood))?.label || 'Unknown';
 
   return (
     <HomePageBlue>
@@ -165,10 +149,10 @@ export default function Profile({ navigation }: any) {
       <ProfileContainerInfo>
         <ProfileContainerButtons>
           <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
-            <Image source={menuIcon} />
+            <MenuIcon />
           </TouchableOpacity>
           <TouchableOpacity onPress={onShare}>
-            <Image source={shareWhite} />
+            <ShareWhite />
           </TouchableOpacity>
         </ProfileContainerButtons>
         <ProfileContainerData>
@@ -178,23 +162,21 @@ export default function Profile({ navigation }: any) {
             <ProfileContainerData gap={10} center>
               <GroupDataText color="white" size="20px" font="inter-bold">
                 {displayName}
-                {' '}
-                {/* Display first two names */}
               </GroupDataText>
               <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
-                <ProfileImage height="24px" width="24px" radius={false} source={pen} />
+                <Pen height="24px" width="24px" />
               </TouchableOpacity>
             </ProfileContainerData>
 
             <ProfileContainerData gap={10} center>
-              <ProfileImage height="19px" width="19px" radius={false} source={location} />
+              <Location height="19px" width="19px" />
               <GroupDataText color="white" size="12px" font="inter-regular">
                 {districtLabel}
               </GroupDataText>
             </ProfileContainerData>
 
             <ProfileContainerData gap={10} center>
-              <ProfileImage height="19px" width="19px" radius={false} source={business} />
+              <Business height="19px" width="19px" />
               <GroupDataText color="white" size="12px" font="inter-regular">
                 {enterprise}
               </GroupDataText>
@@ -203,7 +185,7 @@ export default function Profile({ navigation }: any) {
         </ProfileContainerData>
       </ProfileContainerInfo>
       <HomePageWhite style={{ gap: 0 }}>
-        <ProfileTextContainer style={{ padding: '25px 0px 25px 0px' }}>
+       <ProfileTextContainer style={{ paddingVertical: 25, paddingHorizontal: 0 }}>
           <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
             {bio}
           </GroupDataText>
@@ -217,7 +199,10 @@ export default function Profile({ navigation }: any) {
               setFilterPosts('userPosts');
             }}
             style={myPostsSelect ? style.selectStyleTab : {}}>
-            <GroupDataText font="inter-bold" size="18px" color={myPostsSelect ? '#EF4036' : '#8F8F8F'}>
+            <GroupDataText
+              font="inter-bold"
+              size="18px"
+              color={myPostsSelect ? '#EF4036' : '#8F8F8F'}>
               Publicações
             </GroupDataText>
           </ProfileTabsContainer>
@@ -228,7 +213,10 @@ export default function Profile({ navigation }: any) {
               setFilterPosts('savedPosts');
             }}
             style={savedPostsSelect ? style.selectStyleTab : {}}>
-            <GroupDataText font="inter-bold" size="18px" color={savedPostsSelect ? '#EF4036' : '#8F8F8F'}>
+            <GroupDataText
+              font="inter-bold"
+              size="18px"
+              color={savedPostsSelect ? '#EF4036' : '#8F8F8F'}>
               Salvas
             </GroupDataText>
           </ProfileTabsContainer>
@@ -240,33 +228,37 @@ export default function Profile({ navigation }: any) {
                 <PostCard
                   key={item.id}
                   nameUser={item.nameUser}
-                  imageUser={item.imageUser}
-                  postContent={item.postContent}
+                  imageUser={duckImage}
+                  postContent={item.input}
                   numComments={item.numComments}
-                  date={item.date}
+                  date={item.createdAt}
                   share
                   postId={item.id}
                 />
               ))
             ) : (
-              <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>Nenhuma Publicação encontrada</Text>
+              <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
+                Nenhuma Publicação encontrada
+              </Text>
             )
           ) : savedPosts?.length > 0 ? (
             savedPosts?.map((item: any) => (
               <PostCard
                 key={item.id}
                 nameUser={item.nameUser}
-                imageUser={item.imageUser}
-                postContent={item.postContent}
+                imageUser={duckImage}
+                postContent={item.input}
                 numComments={item.numComments}
-                date={item.date}
+                date={item.createdAt}
                 share
                 saved
                 postId={item.id}
               />
             ))
           ) : (
-            <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>Nenhuma Publicação salva</Text>
+            <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
+              Nenhuma Publicação salva
+            </Text>
           )}
         </ProfilePostsContainer>
       </HomePageWhite>

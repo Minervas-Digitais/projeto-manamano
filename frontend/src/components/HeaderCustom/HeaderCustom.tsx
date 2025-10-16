@@ -13,7 +13,7 @@ export default function HeaderCustom({
   onPress,
   onPressTitle,
   menu,
-  headerButton,
+  testID,
 }: any) {
   const [sideMenu, setSideMenu] = useState(true);
 
@@ -31,10 +31,10 @@ export default function HeaderCustom({
       ) : (
         <BackButton />
       )}
-      <TouchableOpacity activeOpacity={onPressTitle || 1}>
-        <HeaderText font={font}>{text}</HeaderText>
+      <TouchableOpacity onPress={onPressTitle}>
+        <HeaderText font={font} {...(testID ? { testID } : {})}>{text}</HeaderText>
       </TouchableOpacity>
-      {icon ? <TouchableOpacity onPress={onPress}>{headerButton}</TouchableOpacity> : <NoIcon />}
+      {icon ? <TouchableOpacity onPress={onPress}>{icon}</TouchableOpacity> : <NoIcon />}
     </HeaderContainer>
   );
 }

@@ -5,5 +5,5 @@
     "strict": true,
     "esModuleInterop": true
   },
-  "include": ["src", "**/*.ts", "**/*.tsx", ".eslintrc.js"]
+  "include": ["src", "**/*.ts", "**/*.tsx", ".eslintrc.js", "__mocks__/react-native-gesture-handler.js"]
 }

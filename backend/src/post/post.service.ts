@@ -1,18 +1,56 @@
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class PostService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(private prismaService: PrismaService, private notificationService: NotificationService) {}
+
+  private serializePost(post: any) {
+    const { user, category, Comment, ...rest } = post;
+    return {
+      ...rest,
+      nameUser: user?.fullName,
+      categoryName: category?.name,
+      numComments: Comment?.length ?? 0,
+      Comment,
+    };
+  }
 
   async create(createPostDto: CreatePostDto) {
     try {
-      return await this.prismaService.post.create({
+      const post = await this.prismaService.post.create({
         data: createPostDto,
       });
+
+      const group = await this.prismaService.group.findUnique({
+        where: { id: createPostDto.groupId },
+      });
+
+      const senderUser = await this.prismaService.user.findUnique({
+        where: { id: createPostDto.userId },
+      });
+
+      const notificationBody = `Novo post em ${group?.name ?? 'desconhecido'}`;
+
+      await this.notificationService.createNotification(
+        {
+          senderId: createPostDto.userId,
+          recipientId: undefined, 
+          groupId: createPostDto.groupId,
+          body: notificationBody,
+          type: NotificationType.FIXED,
+          groupName: group?.name ?? null,
+          senderName: senderUser?.fullName ?? null,
+          idContent: post.id,
+        },
+        'USER', 
+      );
+
+      return post;
     } catch (error) {
       throw error;
     }
@@ -22,13 +60,37 @@ export class PostService {
     try {
       const posts = await this.prismaService.post.findMany({
         include: {
-          Comment: true,
+          Comment: {
+            include: {
+              user: {
+                select: {
+                  fullName: true,
+                  id: true,
+                },
+              },
+            },
+          },
+          category: {
+            select: {
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       });
-      if (posts.length === 0) {
+
+      if (!posts || posts.length === 0) {
         throw new NotFoundException('Nenhuma publicação encontrada.');
       }
-      return posts;
+
+      return posts.map(this.serializePost);
     } catch (error) {
       throw error;
     }
@@ -37,17 +99,36 @@ export class PostService {
   async findOne(id: string) {
     try {
       const post = await this.prismaService.post.findUnique({
-        where: {
-          id,
-        },
+        where: { id },
         include: {
-          Comment: true,
+          Comment: {
+            include: {
+              user: {
+                select: {
+                  fullName: true,
+                  id: true,
+                },
+              },
+            },
+          },
+          category: {
+            select: {
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              fullName: true,
+            },
+          },
         },
       });
+
       if (!post) {
         throw new NotFoundException('Publicação não encontrada.');
       }
-      return post;
+
+      return this.serializePost(post);
     } catch (error) {
       throw error;
     }
@@ -55,14 +136,9 @@ export class PostService {
 
   async update(id: string, updatePostDto: UpdatePostDto) {
     try {
-      const post = await this.findOne(id);
-      if (typeof post === 'object' && post instanceof Error) {
-        return post;
-      }
+      await this.findOne(id);
       return await this.prismaService.post.update({
-        where: {
-          id,
-        },
+        where: { id },
         data: updatePostDto,
       });
     } catch (error) {
@@ -72,14 +148,9 @@ export class PostService {
 
   async remove(id: string) {
     try {
-      const post = await this.findOne(id);
-      if (typeof post === 'object' && post instanceof Error) {
-        return post;
-      }
+      await this.findOne(id);
       return await this.prismaService.post.delete({
-        where: {
-          id,
-        },
+        where: { id },
       });
     } catch (error) {
       throw error;
@@ -90,18 +161,14 @@ export class PostService {
     try {
       const [postId, userId] = ids.split(',');
       const user = await this.prismaService.user.findUnique({
-        where: {
-          id: userId,
-        },
+        where: { id: userId },
       });
       if (!user) {
         throw new NotFoundException('Usuário não encontrado.');
       }
 
       const post = await this.prismaService.post.findUnique({
-        where: {
-          id: postId,
-        },
+        where: { id: postId },
       });
       if (post.userId === userId) {
         throw new NotFoundException(
@@ -110,9 +177,7 @@ export class PostService {
       }
 
       return await this.prismaService.user.update({
-        where: {
-          id: userId,
-        },
+        where: { id: userId },
         data: {
           savedPost: [...user.savedPost, postId],
         },
@@ -126,17 +191,13 @@ export class PostService {
     try {
       const [postId, userId] = ids.split(',');
       const user = await this.prismaService.user.findUnique({
-        where: {
-          id: userId,
-        },
+        where: { id: userId },
       });
       if (!user) {
         throw new NotFoundException('Usuário não encontrado.');
       }
       return await this.prismaService.user.update({
-        where: {
-          id: userId,
-        },
+        where: { id: userId },
         data: {
           savedPost: user.savedPost.filter((id) => id !== postId),
         },
@@ -148,10 +209,7 @@ export class PostService {
 
   async pinPost(postId: string) {
     try {
-      const post = await this.findOne(postId);
-      if (typeof post === 'object' && post instanceof Error) {
-        return post;
-      }
+      await this.findOne(postId);
       return await this.prismaService.post.update({
         where: { id: postId },
         data: { isPinned: true },
@@ -163,10 +221,7 @@ export class PostService {
 
   async unpinPost(postId: string) {
     try {
-      const post = await this.findOne(postId);
-      if (typeof post === 'object' && post instanceof Error) {
-        return post;
-      }
+      await this.findOne(postId);
       return await this.prismaService.post.update({
         where: { id: postId },
         data: { isPinned: false },
@@ -178,12 +233,39 @@ export class PostService {
 
   async getPinnedPosts(groupId: string) {
     try {
-      return this.prismaService.post.findMany({
+      const posts = await this.prismaService.post.findMany({
         where: {
           groupId,
           isPinned: true,
         },
+        include: {
+          Comment: {
+            include: {
+              user: {
+                select: {
+                  fullName: true,
+                  id: true,
+                },
+              },
+            },
+          },
+          category: {
+            select: {
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
       });
+
+      return posts.map(this.serializePost);
     } catch (error) {
       throw error;
     }
@@ -192,17 +274,41 @@ export class PostService {
   async getGroupPosts(groupId: string) {
     try {
       const posts = await this.prismaService.post.findMany({
-        where: {
-          groupId,
+        where: { groupId },
+        include: {
+          Comment: {
+            include: {
+              user: {
+                select: {
+                  fullName: true,
+                  id: true,
+                },
+              },
+            },
+          },
+          category: {
+            select: {
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              fullName: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
         },
       });
-      if (posts.length === 0) {
-        throw new NotFoundException('Nenhuma publicação encontrada.');
+
+      if (!posts || posts.length === 0) {
+        throw new NotFoundException(
+          'Nenhuma publicação encontrada neste grupo.',
+        );
       }
-      return posts;
+
+      return posts.map(this.serializePost);
     } catch (error) {
       throw error;
     }
@@ -211,17 +317,41 @@ export class PostService {
   async getCategoryPosts(categoryId: string) {
     try {
       const posts = await this.prismaService.post.findMany({
-        where: {
-          categoryId,
+        where: { categoryId },
+        include: {
+          Comment: {
+            include: {
+              user: {
+                select: {
+                  fullName: true,
+                  id: true,
+                },
+              },
+            },
+          },
+          category: {
+            select: {
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              fullName: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
         },
       });
-      if (posts.length === 0) {
-        throw new NotFoundException('Nenhuma publicação encontrada.');
+
+      if (!posts || posts.length === 0) {
+        throw new NotFoundException(
+          'Nenhuma publicação encontrada nesta categoria.',
+        );
       }
-      return posts;
+
+      return posts.map(this.serializePost);
     } catch (error) {
       throw error;
     }
@@ -230,21 +360,43 @@ export class PostService {
   async getUserPosts(userId: string) {
     try {
       const posts = await this.prismaService.post.findMany({
-        where: {
-          userId,
+        where: { userId },
+        include: {
+          Comment: {
+            include: {
+              user: {
+                select: {
+                  fullName: true,
+                  id: true,
+                },
+              },
+            },
+          },
+          category: {
+            select: {
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              fullName: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
         },
       });
-      if (posts.length === 0) {
-        throw new NotFoundException('Nenhuma publicação encontrada.');
+
+      if (!posts || posts.length === 0) {
+        throw new NotFoundException(
+          'Nenhuma publicação encontrada para este usuário.',
+        );
       }
-      return posts;
+
+      return posts.map(this.serializePost);
     } catch (error) {
       throw error;
     }
   }
 }
-
-

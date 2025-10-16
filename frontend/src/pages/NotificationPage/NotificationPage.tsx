@@ -11,6 +11,7 @@ import {
   NotificationTextRed,
 } from '../../components/NotificationCard/NotificationCardStyle';
 import { storage } from '../SignIn/SignIn';
+import MegaPhone from '../../assets/megaphone-icon.svg';
 
 export default function NotificationPage() {
   useEffect(() => {
@@ -30,7 +31,6 @@ export default function NotificationPage() {
   if (!fontsLoaded) {
     return undefined;
   }
-  const megaPhone = require('../../assets/megaphone-icon.svg');
   return (
     <>
       <HeaderCustom font="inter-bold" text="Notificação" onPress={() => {}} />
@@ -38,7 +38,7 @@ export default function NotificationPage() {
       <NotificationPageContainer>
         <View>
           <NotificationTextContainerWarning height="min-content" style={{ justifyContent: 'none' }}>
-            <Image source={megaPhone} />
+            <MegaPhone />
             <NotificationTextRed font="inter-bold">Comunicado: </NotificationTextRed>
           </NotificationTextContainerWarning>
           <NotificationTextContainerWarning height={39}>

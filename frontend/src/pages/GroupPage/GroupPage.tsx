@@ -2,37 +2,43 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable global-require */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFonts } from 'expo-font';
-import { StyleSheet, View, Image, Dimensions } from 'react-native';
+import { StyleSheet, View, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRoute } from '@react-navigation/native';
 import { storage } from '../SignIn/SignIn';
 import {
   GroupPageAddPostButton,
+  GroupPageArchivesContainer,
   GroupPageCategoryContainer,
   GroupPageCategoryList,
   GroupPageContainer,
   GroupPageContent,
-  GroupPageImage,
-  GroupPageImageContainer,
   GroupPageLessonsContainer,
   GroupPageListFixPost,
   GroupPagePostList,
   GroupPageTabs,
   GroupPageTabsContainer,
-  ImageContainer,
 } from './GroupPageStyle';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
 import PostCard from '../../components/PostCard/PostCard';
 import CategoryButton from '../../components/CategoryButton/CategoryButton';
 import LessonsCard from '../../components/LessonsCard/LessonsCard';
-import FileCard from '../../components/FileCard/FileCard';
 import SideMenu from '../../components/SideMenu/SideMenu';
+import api from '../../services/api';
+import { storageHome } from '../Home/Home';
+import EventCard from '../../components/EventCard/EventCard';
+import GroupArchives from '../../components/GroupArchives/GroupArchives';
+import NotificationIcon from '../../assets/notification-icon.svg';
+import AddPostIcon from '../../assets/add-post-icon.svg';
 
 export default function GroupPage({ navigation }: any) {
-  const notificationIcon = require('../../assets/notification-icon.svg');
+  const route = useRoute();
+  const { groupId } = route.params as { groupId: string };
+  const { groupName } = route.params as { groupName: string };
   const duckImage = require('../../assets/duck.png');
-  const addPost = require('../../assets/add-post-icon.svg');
 
   const [muralSelect, setMuralSelect] = useState(true);
   const [classesSelect, setClassesSelect] = useState(false);
@@ -40,8 +46,10 @@ export default function GroupPage({ navigation }: any) {
   const [filterPosts, setFilterPosts] = useState('Geral');
   const [filterFiles, setFilterFiles] = useState('Fotos');
   const [sideMenu, setSideMenu] = useState(true);
-  const [categories, setCategories] = useState<any[]>([]); // State for storing categories
-  const [posts, setPosts] = useState<any[]>([]); // State for storing posts
+  const [categories, setCategories] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [archives, setArchives] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string>('');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -49,11 +57,90 @@ export default function GroupPage({ navigation }: any) {
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
   });
 
+  const getGroupPosts = useCallback(async () => {
+    const token = storage.getString('accessToken');
+    if (!token || !groupId) {
+      console.error('Access token or Group ID is missing.');
+      return;
+    }
+    try {
+      const response = await api.get(`/post/group/${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPosts(response.data);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+  }, [groupId]);
+
+  const getGroupCategory = useCallback(async () => {
+    const token = storage.getString('accessToken');
+    if (!token || !groupId) {
+      console.error('Access token or Group ID is missing.');
+      return;
+    }
+    try {
+      const response = await api.get(`/category/group/${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const filteredData = response.data.filter((category: any) => category.name !== 'Aulas');
+      setCategories(filteredData);
+    } catch (error) {
+      console.error('Error fetching group categories:', error);
+    }
+  }, [groupId]);
+
+  const getGroupArchives = useCallback(async () => {
+    const token = storage.getString('accessToken');
+    if (!token || !groupId) {
+      console.error('Access token or Group ID is missing.');
+      return;
+    }
+    try {
+      const response = await api.get(`/archives/group/${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setArchives(response.data);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        // Se o endpoint não existe ou não há arquivos, definir array vazio
+        console.log('No archives found or endpoint not available for group:', groupId);
+        setArchives([]);
+      } else {
+        console.error('Error fetching group archives:', error);
+        setArchives([]);
+      }
+    }
+  }, [groupId]);
+
+  const getUserRoleInGroup = useCallback(async () => {
+    const token = storage.getString('accessToken');
+    const loggedId = storage.getString('loggedId');
+    if (!token || !groupId || !loggedId) {
+      console.error('Access token, Group ID or User ID is missing.');
+      return;
+    }
+    try {
+      const response = await api.get(`/participant/${loggedId},${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserRole(response.data.role || 'MEMBER');
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      setUserRole('MEMBER'); // Default para membro
+    }
+  }, [groupId]);
+
+  useEffect(() => {
+    getGroupPosts();
+    getGroupCategory();
+    getGroupArchives();
+    getUserRoleInGroup();
+  }, [getGroupPosts, getGroupCategory, getGroupArchives, getUserRoleInGroup]);
+
   if (!fontsLoaded) {
     return undefined;
   }
-
-  const groupName = 'Turma 24.1';
 
   const fileCategory = [
     { categoryName: 'Fotos' },
@@ -61,141 +148,107 @@ export default function GroupPage({ navigation }: any) {
     { categoryName: 'Documentos' },
   ];
 
-  const fakeLessonsCard: any = [
-    { title: 'Aula 1', date: '23/09/24', time: '12:30' },
-    { title: 'Aula 2', date: '02/10/24', time: '16:00' },
-    { title: 'Aula 3', date: '12/11/24', time: '13:30' },
-    { title: 'Aula 4', date: '20/11/24', time: '17:00' },
-  ];
+  // Função para categorizar arquivos por tipo
+  const getFileTypeFromMime = (mimeType: string) => {
+    if (mimeType && mimeType.startsWith('image/')) return 'Fotos';
+    if (
+      mimeType &&
+      (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('text/'))
+    )
+      return 'Documentos';
+    if (mimeType && (mimeType.includes('link') || mimeType.includes('url'))) return 'Links';
+    // Se não tem mimeType ou não conseguiu categorizar, tentar pela extensão se disponível
+    return 'Documentos'; // Default para outros tipos
+  };
 
-  const fakeFiles: any = [
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    { file: duckImage, type: 'Fotos' },
-    {
-      file: 'https://www.youtube.com/watch?v=M8r3x4Re8-I&list=RDnFYwcndNuOY&index=3',
-      type: 'Links',
-    },
-    {
-      file: 'https://www.youtube.com/watch?v=M8r3x4Re8-I&list=RDnFYwcndNuOY&index=3',
-      type: 'Links',
-    },
-    {
-      file: 'https://www.youtube.com/watch?v=M8r3x4Re8-I&list=RDnFYwcndNuOY&index=3',
-      type: 'Links',
-    },
-    {
-      file: 'https://www.youtube.com/watch?v=M8r3x4Re8-I&list=RDnFYwcndNuOY&index=3',
-      type: 'Links',
-    },
-    {
-      file: 'https://docs.google.com/document/d/1ey-q9oZH27DizO-vdU5kKc42Wgm9QWBcxOSdxQekZHQ/edit#heading=h.izon6a0gzjm',
-      type: 'Documentos',
-    },
-    {
-      file: 'https://docs.google.com/document/d/1ey-q9oZH27DizO-vdU5kKc42Wgm9QWBcxOSdxQekZHQ/edit#heading=h.izon6a0gzjm',
-      type: 'Documentos',
-    },
-    {
-      file: 'https://docs.google.com/document/d/1ey-q9oZH27DizO-vdU5kKc42Wgm9QWBcxOSdxQekZHQ/edit#heading=h.izon6a0gzjm',
-      type: 'Documentos',
-    },
-    {
-      file: 'https://docs.google.com/document/d/1ey-q9oZH27DizO-vdU5kKc42Wgm9QWBcxOSdxQekZHQ/edit#heading=h.izon6a0gzjm',
-      type: 'Documentos',
-    },
-  ];
+  function formatRelativeDate(postDate: string): string {
+    const currentDate = new Date();
+    const postDateObj = new Date(postDate);
+    const differenceInMilliseconds = currentDate.getTime() - postDateObj.getTime();
+    const differenceInMinutes = Math.floor(differenceInMilliseconds / (1000 * 60));
+    const differenceInHours = Math.floor(differenceInMinutes / 60);
+    const differenceInDays = Math.floor(differenceInHours / 24);
 
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  useEffect(() => {
+    const hours = postDateObj.getHours();
+    const minutes = postDateObj.getMinutes();
+    const formattedTime = `${hours}:${minutes < 10 ? `0${minutes}` : minutes}`;
+
+    if (differenceInMinutes < 60) {
+      return `hoje, ${formattedTime}`;
+    }
+    if (differenceInHours < 24) {
+      return `ontem, ${formattedTime}`;
+    }
+    if (differenceInDays < 3) {
+      return `há ${differenceInDays} dia${differenceInDays !== 1 ? 's' : ''}`;
+    }
+    return postDateObj.toLocaleDateString('pt-BR');
+  }
+
+  function formatDateTime(createdAt: string | Date): string {
+    const date = new Date(createdAt);
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // mês começa em 0
+    const year = String(date.getFullYear()).slice(-2); // últimos 2 dígitos do ano
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${day}/${month}/${year} - ${hours}:${minutes}`;
+  }
+  const fixActions = async (id: string, isPinned: boolean) => {
     const token = storage.getString('accessToken');
-    if (token) setAccessToken(token);
-  }, []);
-
-  // Fetch the posts from the API
-  const getGroupPosts = async (groupId: string) => {
-    if (!accessToken) {
-      console.error('Access token is missing.');
-      return;
-    }
+    const loggedId = storage.getString('loggedId');
 
     try {
-      const response = await fetch(`http://localhost:3000/post/group/${groupId}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+      await api.patch(
+        `/post/${id}`,
+        { isPinned: !isPinned },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
-      const data = await response.json();
-      setPosts(data); // Assuming the response is a list of posts
+      );
+
+      if (!isPinned) {
+        await api.post(
+          '/notifications',
+          {
+            senderId: loggedId,
+            groupId,
+            groupName,
+            type: 'FIXED',
+            body: '',
+            idContent: id,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+      }
+
+      await getGroupPosts();
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error('Erro ao fixar/desfixar post:', error);
     }
   };
 
-  useEffect(() => {
-    const groupId = 'your-group-id'; // Replace with actual group ID
-    getGroupPosts(groupId);
-  }, [accessToken]);
-
-  // Fetch the categories from the API
-  const getGroupCategory = async (groupId: string) => {
-    if (!accessToken) {
-      console.error('Access token is missing.');
-      return;
-    }
-
-    try {
-      const response = await fetch(`http://localhost:3000/group/${groupId}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-      setCategories(data.categories);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  useEffect(() => {
-    const groupId = 'your-group-id'; // Replace with actual group ID
-    getGroupCategory(groupId);
-  }, [accessToken]);
-
+  function onPressPostAction(id: string) {
+    storageHome.set('idPost', id);
+    navigation.navigate('Post', { postId: id });
+  }
   return (
     <GroupPageContainer>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
-
       <HeaderCustom
         font="inter-bold"
         text={groupName}
-        icon={notificationIcon}
-        onPressMenu={() => {
-          setSideMenu(!sideMenu);
-        }}
+        icon={<NotificationIcon />}
         onPress={() => navigation.navigate('Notification')}
-        onPressTitle={() => navigation.navigate('GroupData')}
+        onPressTitle={() => navigation.navigate('GroupData', { groupId })}
         menu
       />
       <GroupPageTabs style={style.line}>
@@ -238,24 +291,32 @@ export default function GroupPage({ navigation }: any) {
       </GroupPageTabs>
       <GroupPageContent>
         {muralSelect ? (
-          <>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 120 }}>
             <GroupPageListFixPost>
               {posts.length > 0 ? (
                 posts
-                  .filter((item: any) => item.isPinned) // Filter pinned posts
-                  .map((item: any) => (
-                    <PostCard
-                      nameUser={item.nameUser}
-                      imageUser={item.imageUser}
-                      postContent={item.postContent}
-                      numComments={item.numComments}
-                      date={item.date}
-                      originGroup={item.originGroup}
-                      dotsMenu
-                      fix
-                      postId="123"
-                    />
-                  ))
+                  .filter((item: any) => item.isPinned)
+                  .toReversed()
+                  .map((item: any) => {
+                    if (item.type === 'NORMAL') {
+                      return (
+                        <PostCard
+                          key={item.id}
+                          nameUser={item.nameUser}
+                          imageUser={duckImage}
+                          postContent={item.input}
+                          numComments={item.numComments}
+                          date={formatRelativeDate(item.createdAt)}
+                          onPressFix={() => fixActions(item.id, item.isPinned)}
+                          onPressPost={() => onPressPostAction(item.id)}
+                          dotsMenu
+                          fix
+                          postId={item.id}
+                        />
+                      );
+                    }
+                    return null;
+                  })
               ) : (
                 <View />
               )}
@@ -268,9 +329,10 @@ export default function GroupPage({ navigation }: any) {
                 {categories?.length > 0 ? (
                   categories.map((item: any) => (
                     <CategoryButton
-                      categoryName={item.categoryName}
+                      key={item.id || item.name}
+                      categoryName={item.name}
                       onPress={() => {
-                        setFilterPosts(item.categoryName);
+                        setFilterPosts(item.name);
                       }}
                       filter={filterPosts}
                     />
@@ -283,45 +345,68 @@ export default function GroupPage({ navigation }: any) {
             <GroupPagePostList>
               {posts?.length > 0 ? (
                 posts?.map((item: any) => {
-                  if (filterPosts === item.categoryName) {
+                  if (filterPosts === item.categoryName && item.type === 'NORMAL') {
                     return (
                       <PostCard
+                        key={item.id}
                         nameUser={item.nameUser}
-                        imageUser={item.imageUser}
-                        postContent={item.postContent}
+                        imageUser={duckImage}
+                        postContent={item.input}
                         numComments={item.numComments}
-                        date={item.date}
-                        originGroup={item.originGroup}
+                        date={formatRelativeDate(item.createdAt)}
+                        onPressFix={() => fixActions(item.id, item.isPinned)}
+                        onPressPost={() => onPressPostAction(item.id)}
                         dotsMenu
-                        postId="123"
+                        postId={item.id}
                       />
                     );
                   }
+                  if (filterPosts === item.categoryName && item.type === 'EVENT') {
+                    return (
+                      <EventCard
+                        key={item.id}
+                        date={formatRelativeDate(item.createdAt)}
+                        title={item.title}
+                        description={item.input}
+                      />
+                    );
+                  }
+                  return null;
                 })
               ) : (
                 <View />
               )}
             </GroupPagePostList>
-            <GroupPageAddPostButton onPress={() => {}}>
-              <Image source={addPost} />
-            </GroupPageAddPostButton>
-          </>
+          </ScrollView>
         ) : classesSelect ? (
-          <GroupPageLessonsContainer>
-            {fakeLessonsCard?.length > 0 ? (
-              fakeLessonsCard?.map((item: any) => (
-                <LessonsCard date={item.date} time={item.time} title={item.title} />
-              ))
-            ) : (
-              <View />
-            )}
-          </GroupPageLessonsContainer>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 120 }}>
+            <GroupPageLessonsContainer style={{ paddingBottom: 0 }}>
+              {posts?.length > 0 ? (
+                posts?.map((item: any) => {
+                  if (item.type === 'CLASS') {
+                    return (
+                      <LessonsCard
+                        key={item.id}
+                        date={formatDateTime(item.schedule)}
+                        title={item.title}
+                        urlLive={item.urlLive}
+                      />
+                    );
+                  }
+                  return null;
+                })
+              ) : (
+                <View />
+              )}
+            </GroupPageLessonsContainer>
+          </ScrollView>
         ) : (
-          <>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }}>
             <GroupPageLessonsContainer style={{ justifyContent: 'center', flexDirection: 'row' }}>
               {fileCategory?.length > 0 ? (
                 fileCategory?.map((item: any) => (
                   <CategoryButton
+                    key={item.categoryName}
                     categoryName={item.categoryName}
                     onPress={() => {
                       setFilterFiles(item.categoryName);
@@ -333,38 +418,60 @@ export default function GroupPage({ navigation }: any) {
                 <View />
               )}
             </GroupPageLessonsContainer>
-            {fakeFiles?.length > 0 && filterFiles === 'Fotos' ? (
-              <ImageContainer>
-                <GroupPageImageContainer>
-                  {fakeFiles?.map((item: any) => {
-                    if (filterFiles === item.type) {
-                      switch (filterFiles) {
-                        case 'Fotos':
-                          return <GroupPageImage source={item.file} />;
-                        default:
-                      }
-                    }
-                  })}
-                </GroupPageImageContainer>
-              </ImageContainer>
-            ) : (
-              <GroupPageLessonsContainer style={{ paddingTop: 0 }}>
-                {fakeFiles?.map((item: any) => {
-                  if (filterFiles === item.type) {
-                    switch (filterFiles) {
-                      case 'Links':
-                        return <FileCard info={item.file} type={item.type} />;
-                      case 'Documentos':
-                        return <FileCard info={item.file} type={item.type} />;
-                      default:
-                    }
-                  }
-                })}
-              </GroupPageLessonsContainer>
-            )}
-          </>
+            <GroupPageArchivesContainer>
+              {archives?.map((item: any) => {
+                const fileType = getFileTypeFromMime(item.mimeType);
+                if (filterFiles === fileType) {
+                  return (
+                    <GroupArchives
+                      key={item.id}
+                      archive={{
+                        id: item.id,
+                        name: item.name || 'Arquivo',
+                        uri: item.contentBase64,
+                        mimeType: item.mimeType || 'application/octet-stream',
+                      }}
+                    />
+                  );
+                }
+                return null;
+              })}
+            </GroupPageArchivesContainer>
+          </ScrollView>
         )}
       </GroupPageContent>
+      {(muralSelect || (classesSelect && (userRole === 'ADMIN' || userRole === 'MODERATOR'))) && (
+        <GroupPageAddPostButton>
+          <TouchableOpacity
+            onPress={() => {
+              console.log('groupId no GroupPage', groupId);
+              if (classesSelect) {
+                navigation.navigate('NewLesson', { groupId });
+              } else {
+                navigation.navigate('NewPost', { groupId });
+              }
+            }}
+            style={{
+              width: 70,
+              height: 70,
+              borderRadius: 35,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <LinearGradient
+              colors={['#1c1049', '#363061']}
+              style={{
+                width: 70,
+                height: 70,
+                borderRadius: 35,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+              <AddPostIcon />
+            </LinearGradient>
+          </TouchableOpacity>
+        </GroupPageAddPostButton>
+      )}
     </GroupPageContainer>
   );
 }

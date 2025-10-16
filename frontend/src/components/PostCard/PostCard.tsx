@@ -2,16 +2,25 @@
 import React, { useState } from 'react';
 import { useFonts } from 'expo-font';
 import { Share, TouchableOpacity, View } from 'react-native';
+import { ptBR } from 'date-fns/locale';
+import { format, isValid } from 'date-fns';
 import {
   PostCardContainer,
   PostCardIcons,
-  PostCardImage,
   PostCardSpaceBetween,
   PostCardImageUser,
   PostCardTag,
 } from './PostCardStyle';
 import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
 import ModalOptions from '../ModalOptions/ModalOptions';
+import api from '../../services/api';
+import { storage } from '../../pages/SignIn/SignIn';
+import ShareIcon from '../../assets/share-icon.svg';
+import SaveIcon from '../../assets/save-icon.svg';
+import SavedIcon from '../../assets/saved-icon.svg';
+import CommentIcon from '../../assets/comment-icon.svg';
+import FixIcon from '../../assets/fix-icon.svg';
+import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 
 export default function PostCard({
   nameUser,
@@ -28,26 +37,25 @@ export default function PostCard({
   fix,
   postId,
   onPressPost,
+  onPressFix,
 }: any) {
   const createDeepLink = () => `manamano://post/${postId}`;
   const onShare = async () => {
     const deepLink = createDeepLink();
     try {
       await Share.share({
-        message: `Confira este perfil: ${deepLink}`,
+        message: `Confira este post: ${deepLink}`,
       });
     } catch (error) {
       console.error('Erro ao compartilhar:', error);
     }
   };
-  const shareIcon = require('../../assets/share-icon.svg');
-  const saveIcon = require('../../assets/save-icon.svg');
-  const savedIcon = require('../../assets/saved-icon.svg');
-  const commentIcon = require('../../assets/comment-icon.svg');
-  const fixIcon = require('../../assets/fix-icon.svg');
-  const dotsMenuIcon = require('../../assets/dotsMenu-icon.svg');
   const [modalOptions, setModalOptions] = useState(false);
-
+  const postDate = date ? new Date(date) : null;
+  const formattedDate =
+    postDate && isValid(postDate)
+      ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
+      : '';
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -57,7 +65,7 @@ export default function PostCard({
   }
   return (
     <PostCardContainer shadowColor={fix} onPress={onPressPost}>
-      {modalOptions ? <ModalOptions onShare={onShare} /> : ''}
+      {modalOptions ? <ModalOptions onShare={onShare} onPressFix={onPressFix} fixed={fix} /> : ''}
       <PostCardSpaceBetween style={{ position: 'relative' }}>
         {tag ? (
           <PostCardTag>
@@ -69,40 +77,40 @@ export default function PostCard({
             </GroupDataText>
           </PostCardTag>
         ) : (
-          <View style={{ paddingTop: '14px' }} />
+          <View style={{ paddingTop: 14 }} />
         )}
         <PostCardIcons
           style={{
             flex: 1,
             justifyContent: 'flex-end',
             position: 'absolute',
-            paddingTop: '10px',
+            paddingTop: 10,
             right: 0,
           }}>
           {share ? (
             <TouchableOpacity onPress={onShare}>
-              <PostCardImage width="20px" height="20px" source={shareIcon} />
+              <ShareIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {save ? (
             <TouchableOpacity>
-              <PostCardImage width="20px" height="20px" source={saveIcon} />
+              <SaveIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {saved ? (
             <TouchableOpacity>
-              <PostCardImage width="20px" height="20px" source={savedIcon} />
+              <SavedIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
           )}
           {dotsMenu ? (
             <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
-              <PostCardImage width="20px" height="20px" source={dotsMenuIcon} />
+              <DotsMenuIcon width="20px" height="20px" />
             </TouchableOpacity>
           ) : (
             <View />
@@ -118,32 +126,32 @@ export default function PostCard({
           </GroupDataText>
         </PostCardIcons>
       </PostCardSpaceBetween>
-      <GroupDataText numberOfLines={4} font="inter-regular" color="#515151" size="12px">
+      <GroupDataText
+        numberOfLines={4}
+        font="inter-regular"
+        color="#515151"
+        size="12px"
+        style={{ textAlign: 'justify' }}>
         {postContent}
       </GroupDataText>
-      <PostCardSpaceBetween style={{ alignItems: 'flex-end', paddingTop: '15px' }}>
+      <PostCardSpaceBetween style={{ alignItems: 'flex-end', paddingTop: 15 }}>
         <PostCardIcons>
           <TouchableOpacity>
-            <PostCardImage width="15px" height="15px" source={commentIcon} />
+            <CommentIcon width="15px" height="15px" />
           </TouchableOpacity>
           <GroupDataText font="inter-bold" color="#160E47" size="10px">
             {numComments}
           </GroupDataText>
           {fix ? (
             <TouchableOpacity>
-              <PostCardImage width="15px" height="15px" source={fixIcon} />
+              <FixIcon width="15px" height="15px" />
             </TouchableOpacity>
           ) : (
             ''
           )}
         </PostCardIcons>
-        <GroupDataText
-          font="inter-regular"
-          color="#515151"
-          size="10px"
-          style={{ marginRight: '8px' }}
-        >
-          {date}
+        <GroupDataText font="inter-regular" color="#515151" size="10px" style={{ marginRight: 8 }}>
+          {formattedDate}
         </GroupDataText>
       </PostCardSpaceBetween>
     </PostCardContainer>

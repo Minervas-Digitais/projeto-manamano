@@ -1,5 +1,8 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
+const { height } = Dimensions.get('window');
 
 export const HomePageBlue = styled.View`
   display: flex;
@@ -24,7 +27,7 @@ export const HomeContainerInfo = styled.View`
   display: flex;
   justify-content: space-between;
   width: 100%;
-  height: 21vh;
+  height: ${height * 0.21}px;
   padding: 40px 25px 25px 25px;
 `;
 
@@ -33,27 +36,22 @@ export const HomeContainerGroup = styled.View`
   padding-left: 25px;
   gap: 25px;
 `;
-export const HomeContainerListGroup = styled.View`
-  display: flex;
+export const HomeContainerListGroup = styled.ScrollView.attrs({
+  horizontal: true,
+  showsHorizontalScrollIndicator: false,
+  contentContainerStyle: {
+    gap: 25,
+    paddingRight: 25,
+  },
+})`
   flex-direction: row;
-  gap: 25px;
-  overflow-x: auto;
-  padding: 0px 25px 0px 0px;
-  scrollbar-width: none;
 `;
 
 export const HomeContainerMural = styled.View`
   display: flex;
-  padding: 0px 25px 25px 30px;
+  padding: 0px 25px 35px 30px;
   gap: 25px;
   flex: 1;
 `;
-export const HomeContainerListMural = styled.View`
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-  scrollbar-width: none;
-  overflow-y: auto;
-  height: 100%;
-  padding-bottom: 10px;
-`;
+
+export const HomeContainerListMural = styled.ScrollView``;

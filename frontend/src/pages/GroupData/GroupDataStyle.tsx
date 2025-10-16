@@ -1,11 +1,18 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
+const { height } = Dimensions.get('window');
 
 export const GroupDataPage = styled.View`
   display: flex;
-  width: 100vw;
-  height: 100vh;
-  overflow: auto;
+  flex: 1;
+  margin-bottom: 15px;
+`;
+
+export const GroupDataScrollView = styled.ScrollView`
+  flex: 1;
+  background-color: #f2f6fa;
 `;
 
 export const GroupDataText = styled.Text<{ font?: string; color?: string; size?: string }>`
@@ -16,7 +23,7 @@ export const GroupDataText = styled.Text<{ font?: string; color?: string; size?:
 
 export const GroupDataContainer = styled.View`
   display: flex;
-  height: 90vh;
+  height: ${height * 0.9}px;
   width: 100%;
   background-color: #f2f6fa;
 `;
@@ -30,7 +37,7 @@ export const GroupDataContainerInfo = styled.View<{ size?: any }>`
   gap: 20px;
 `;
 
-export const GroupDataScrollView = styled.View<{ size?: any; gap?: any }>`
+export const GroupDataScrollContent = styled.View<{ size?: any; gap?: any }>`
   width: 100%;
   height: ${(prop) => prop.size};
   overflow: auto;

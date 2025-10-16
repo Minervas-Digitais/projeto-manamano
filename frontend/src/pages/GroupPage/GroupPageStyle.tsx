@@ -5,8 +5,9 @@ export const GroupPageContainer = styled.View`
   display: flex;
   position: relative;
   background-color: #f2f6fa;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+  flex: 1;
 `;
 
 export const GroupPageTabs = styled.View`
@@ -25,7 +26,6 @@ export const GroupPageTabsContainer = styled.TouchableOpacity`
 
 export const GroupPageContent = styled.View`
   display: flex;
-  height: fit-content;
   flex: 1;
 `;
 
@@ -69,7 +69,7 @@ export const GroupPagePostList = styled.View`
   gap: 17px;
 `;
 
-export const GroupPageAddPostButton = styled.TouchableOpacity`
+export const GroupPageAddPostButton = styled.View`
   display: flex;
   position: absolute;
   bottom: 0;
@@ -79,7 +79,6 @@ export const GroupPageAddPostButton = styled.TouchableOpacity`
   width: 70px;
   height: 70px;
   border-radius: 35px;
-  background-image: linear-gradient(to bottom, #1c1049, #363061);
   margin: 0px 25px 50px 0px;
 `;
 
@@ -91,6 +90,15 @@ export const GroupPageLessonsContainer = styled.View`
   scrollbar-width: none;
   padding: 25px;
   gap: 10px;
+`;
+export const GroupPageArchivesContainer = styled.View`
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  flex-wrap: wrap;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-left: 25px;
 `;
 
 export const GroupPageImageContainer = styled.View`

@@ -4,11 +4,12 @@ import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { Dimensions, Pressable, ScrollView, View } from 'react-native';
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import React from 'react';
+import { StackNavigationProp } from '@react-navigation/stack';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import PostAttachment from '../../components/PostAttachmentCard/PostAttachment';
 import {
@@ -29,24 +30,51 @@ import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
+import { RootStackParamList } from '../../navigation/types';
 
 const { width, height } = Dimensions.get('window');
+
+interface Comment {
+  id: string;
+  content: string;
+  userId: string;
+  createdAt: string;
+}
+
+interface Post {
+  id: string;
+  input: string;
+  userId: string;
+  groupId: string;
+  createdAt: string;
+  Comment: Comment[];
+}
+
+interface User {
+  id: string;
+  fullName: string;
+}
+
+interface Archive {
+  id: string;
+  name: string;
+}
 
 export default function Post() {
   const route = useRoute();
   const { postId } = route.params as { postId: string };
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [post, setPost] = useState(null);
-  const [postUser, setPostUser] = useState(null);
-  const [commentUsers, setCommentUsers] = useState({});
-  const [postArchives, setPostArchives] = useState([]);
+  const [post, setPost] = useState<Post | null>(null);
+  const [postUser, setPostUser] = useState<User | null>(null);
+  const [commentUsers, setCommentUsers] = useState<Record<string, User>>({});
+  const [postArchives, setPostArchives] = useState<Archive[]>([]);
   const profileImage = require('../../assets/test-profile-icon.png');
   const [recipientId, setRecipientId] = useState('');
   const [idGroup, setIdGroup] = useState('');
-  const [groupName, setGroupName] = useState('');
+  const [groupName, setGroupName] = useState<string>('');
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
@@ -144,7 +172,7 @@ export default function Post() {
             return { userId, data: response.data };
           }),
         );
-        const usersMap = usersData.reduce((acc, user) => {
+        const usersMap = usersData.reduce<Record<string, User>>((acc, user) => {
           acc[user.userId] = user.data;
           return acc;
         }, {});
@@ -161,7 +189,10 @@ export default function Post() {
     fetchCommentUsers();
   }, [accessTokenState, post?.Comment]);
   const postDate = post?.createdAt ? new Date(post.createdAt) : null;
-  const formattedDate = format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR });
+  const formattedDate =
+    postDate && isValid(postDate)
+      ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
+      : '';
   const [modalOptions, setModalOptions] = useState(false);
   const {
     control,
@@ -190,7 +221,7 @@ export default function Post() {
           Authorization: `Bearer ${accessTokenState}`,
         },
       });
-      if (post.userId !== loggedIdState) {
+      if (post && post.userId !== loggedIdState) {
         const groupNameFromApi = groupResponse.data.name;
         console.log({
           senderId: loggedIdState,
@@ -257,9 +288,8 @@ export default function Post() {
       <HeaderCustom
         font="inter-bold"
         text="Publicação"
-        icon
+        icon={<DotsMenuIcon width="30px" height="30px" />}
         onPress={() => setModalOptions(!modalOptions)}
-        headerButton={<DotsMenuIcon width="30px" height="30px" />}
       />
       {modalOptions ? <ModalOptions postId={postId} /> : ''}
       <ScrollView
@@ -293,7 +323,7 @@ export default function Post() {
                 required: true,
               }}
               render={({ field: { onChange, value } }) => (
-                <Pressable onPress={() => setIsFocused(true)}>
+                <Pressable testID="input-container" onPress={() => setIsFocused(true)}>
                   <CommentInputTextCustom
                     onChangeText={onChange}
                     value={value}
@@ -304,8 +334,8 @@ export default function Post() {
                 </Pressable>
               )}
             />
-            {errors.groupcode && <ErrorWarning errorText="Campo obrigatório" />}
-            {post?.Comment.length > 0 ? (
+            {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
+            {Array.isArray(post?.Comment) && post.Comment.length > 0 ? (
               post?.Comment.map((item: any) => {
                 const formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
                   locale: ptBR,

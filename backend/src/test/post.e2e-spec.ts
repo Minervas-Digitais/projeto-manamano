@@ -9,6 +9,7 @@ import { AuthModule } from "src/auth/auth.module";
 import { AuthService } from "src/auth/auth.service";
 import { PostModule } from "src/post/post.module";
 import { CreatePostDto } from "src/post/dto/create-post.dto";
+import { RoleType } from "@prisma/client";
 
 describe("Posts", () => {
     let app: INestApplication;
@@ -110,7 +111,6 @@ describe("Posts", () => {
             const response = await request(app.getHttpServer())
                 .get("/post")
                 .set("Authorization", `Bearer ${adminToken}`);
-
             expect(response.status).toBe(404);
             expect(response.body.message).toBe('Nenhuma publicação encontrada.');
         });
@@ -312,7 +312,7 @@ describe("Posts", () => {
             const response = await request(app.getHttpServer())
                 .patch(`/post/save/${idsParam}`)
                 .set('Authorization', `Bearer ${userToken}`);
-
+            
             expect(response.status).toBe(404);
             expect(response.body.message).toBe('Usuário não encontrado.');
         });
@@ -521,13 +521,24 @@ describe("Posts", () => {
         it('deve retornar error 404 se o grupo não tiver posts', async () => {
             const groupId = await createTestGroup(prismaService);
 
+            const userId = await createTestUser(prismaService, '1234567890', '1234567890@example.com');
+
+            await prismaService.participant.create({
+                data: {
+                userId,
+                groupId,
+                role: RoleType.MEMBER,
+                },
+            });
+
             const response = await request(app.getHttpServer())
                 .get(`/post/group/${groupId}`)
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
-            expect(response.body.message).toBe('Nenhuma publicação encontrada.');
-        });
+            expect(response.body.message).toBe('Nenhuma publicação encontrada neste grupo.');
+            });
+
 
         it('deve retornar 401 se o token for inválido', async () => {
             const groupId = await createTestGroup(prismaService, 'postTeste');
@@ -569,7 +580,7 @@ describe("Posts", () => {
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
-            expect(response.body.message).toBe('Nenhuma publicação encontrada.');
+            expect(response.body.message).toBe('Nenhuma publicação encontrada nesta categoria.');
         });
 
         it('deve retornar 401 se o token for inválido', async () => {
@@ -612,7 +623,7 @@ describe("Posts", () => {
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(404);
-            expect(response.body.message).toBe('Nenhuma publicação encontrada.');
+            expect(response.body.message).toBe('Nenhuma publicação encontrada para este usuário.');
         });
 
         it('deve retornar 401 se o token for inválido', async () => {

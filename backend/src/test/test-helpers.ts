@@ -80,29 +80,26 @@ export async function getAdminToken(
 export async function getSenderToken(
   authService: AuthService,
   prisma: PrismaService,
-) {
+): Promise<string | null> {
   const email = 'testsender@example.com';
+  const phone = '1234567892';
 
-  const existingUser = await prisma.user.findUnique({
+  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+  await prisma.user.upsert({
     where: { email },
+    update: {},
+    create: {
+      fullName: 'TestSenderUser',
+      email,
+      phone,
+      hash: hashedPassword,
+    },
   });
-
-  if (!existingUser) {
-    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-
-    await prisma.user.create({
-      data: {
-        fullName: 'TestSenderUser',
-        email,
-        phone: '1234567892',
-        hash: hashedPassword,
-      },
-    });
-  }
 
   const loginResponse = await authService.login({
     email,
-    password: 'password123',
+    password: DEFAULT_PASSWORD, 
   });
 
   return loginResponse.accessToken;
@@ -111,33 +108,34 @@ export async function getSenderToken(
 export async function getRecipientToken(
   authService: AuthService,
   prisma: PrismaService,
-) {
+): Promise<string | null> {
   const email = 'testrecipient@example.com';
+  const phone = '1234567231523541';
 
-  const existingUser = await prisma.user.findUnique({
+  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+
+
+  await prisma.user.upsert({
     where: { email },
+    update: {},
+    create: {
+      fullName: 'TestRecipientUser',
+      email,
+      phone,
+      hash: hashedPassword,
+    },
   });
 
-  if (!existingUser) {
-    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
-    await prisma.user.create({
-      data: {
-        fullName: 'TestRecipientUser',
+    const loginResponse = await authService.login({
         email,
-        phone: '1234567891',
-        hash: hashedPassword,
-      },
+        password: DEFAULT_PASSWORD,
     });
-  }
 
-  const loginResponse = await authService.login({
-    email,
-    password: 'password123',
-  });
+    return loginResponse?.accessToken || null;
 
-  return loginResponse.accessToken;
 }
+
 
 export async function createTestGroup(
   prisma: PrismaService,
@@ -265,7 +263,9 @@ export async function createTestUser(
   email: string = 'testeuser@example.com',
 ) {
   const existingUser = await prisma.user.findFirst({
-    where: { phone },
+    where: {
+      OR: [{ phone }, { email }],
+    },
   });
 
   if (existingUser != null) {
@@ -331,6 +331,7 @@ export async function deleteAllTestArchives(prisma: PrismaService) {
 
 export async function createParticipantDto(prisma: PrismaService) {
   const groupId = await createTestGroup(prisma);
+  
   const number = Array.from({ length: 10 }, () =>
     Math.floor(Math.random() * 10),
   ).join('');
@@ -425,6 +426,10 @@ export async function getNotificationId(
     where: { email: 'testuser@example.com' },
   });
 
+  if (!senderUser || !recipientUser) {
+    throw new Error('Usuário sender ou recipient não encontrado no banco');
+  }
+  
   const notificationDTO: CreateNotificationDto = {
     senderId: senderUser.id,
     body: 'bodyTeste',

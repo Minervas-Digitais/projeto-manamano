@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import { useRef, useState, useEffect } from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View, Dimensions } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 import React from 'react';
@@ -25,6 +25,12 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { district, ethnicity, expertise } from './EditProfileData';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
+import api from '../../services/api';
+import Menu from '../../assets/menuw-icon.svg';
+import EditButton from '../../assets/edit-button.svg';
+import CalendarIcon from '../../assets/calendar-icon.svg';
+import { StatusBar } from 'expo-status-bar';
+import { TextInputMask } from 'react-native-masked-text';
 
 export default function EditProfile() {
   const {
@@ -46,20 +52,21 @@ export default function EditProfile() {
     },
     mode: 'onSubmit',
   });
-
+  const { width, height } = Dimensions.get('window');
   const onSubmit = async (data: any) => {
     try {
       console.log('Form submitted with data:', data);
 
       // Convert birthday to ISO string (if it's not already)
       if (data.birthday) {
-        const [day, month, year] = data.birthday.split('/'); // Split the date string into day, month, year
-        const formattedBirthday = new Date(`${year}-${month}-${day}`).toISOString(); // Create a new Date object and convert to ISO string
+        const [day, month, year] = data.birthday.split('/');
+        const formattedBirthday = new Date(`${year}-${month}-${day}`).toISOString();
         data.birthday = formattedBirthday;
       }
 
       const token = storage.getString('accessToken');
       const userId = storage.getString('loggedId');
+
       if (!token || !userId) {
         console.log('Missing token or user ID.');
         alert('No access token or user ID found. Please sign in again.');
@@ -67,37 +74,31 @@ export default function EditProfile() {
       }
 
       console.log('Sending request to API...');
-      const response = await fetch(`http://localhost:3000/user/${userId}`, {
-        method: 'PATCH',
+      const response = await api.patch(`/user/${userId}`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
       });
 
-      console.log('API response:', response);
-
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        console.error('Failed to save data:', errorResponse);
-        alert('Failed to save data');
-        return;
-      }
-
+      console.log('API response:', response.data);
       alert('Changes saved successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving user data:', error);
-      alert('There was an error saving your changes. Please try again.');
+      if (error.response && error.response.data) {
+        console.error('Error response from API:', error.response.data);
+        alert('Failed to save data: ' + (error.response.data.message || 'Unknown error'));
+      } else {
+        alert('There was an error saving your changes. Please try again.');
+      }
     }
   };
-
   const cpfInputRef = useRef(null);
-  const phoneInputRef = useRef(null);
+  const phoneInputRef = useRef<TextInputMask | null>(null);
 
-  const validatePhoneNumber = (value) => {
+  const validatePhoneNumber = (value: string) => {
     if (phoneInputRef.current) {
-      const rawValue = phoneInputRef.current.getRawValue();
+      // Ser visto com mais cuidado!!!
+      const rawValue = (phoneInputRef.current as any).getRawValue();
       if (rawValue.length < 11) {
         return 'Telefone inválido';
       }
@@ -108,42 +109,35 @@ export default function EditProfile() {
   const [sideMenu, setSideMenu] = useState(true);
   const [profileData, setProfileData] = useState<any>(null);
 
-  const menu = require('../../assets/menuw-icon.svg');
-  const editButton = require('../../assets/edit-button.svg');
   const defaultProfImage = require('../../assets/test-profile-icon.png');
-  const calendarIcon = require('../../assets/calendar-icon.svg');
 
-  const formatDateToDDMMYYYY = (dateString) => {
+  const formatDateToDDMMYYYY = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, 'dd/MM/yyyy'); // Using date-fns for formatting (optional)
   };
 
   useEffect(() => {
-    // Retrieve the access token from storage
     const token = storage.getString('accessToken');
-    if (token) {
-      // Fetch user information to check the "tipo"
+    const userId = storage.getString('loggedId');
+
+    if (token && userId) {
       const fetchUser = async () => {
         try {
-          const userId = storage.getString('loggedId');
-          const response = await fetch(`http://localhost:3000/user/${userId}`, {
-            method: 'GET',
+          const response = await api.get(`/user/${userId}`, {
             headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
             },
           });
 
-          const userData = await response.json();
+          const userData = response.data;
 
-          // Fetch the user posts to set profile info
           const profileInfo = {
             profileImage: defaultProfImage,
             phone: userData.phone || '',
             fullName: userData.fullName || '',
             email: userData.email || '',
             ethnicity: userData.ethnicity || '',
-            birthday: userData.birthday ? formatDateToDDMMYYYY(userData.birthday) : '', // Convert birthday to DD/MM/YYYY
+            birthday: userData.birthday ? formatDateToDDMMYYYY(userData.birthday) : '',
             bio: userData.bio || '',
             expertise: userData.expertise || '',
             neighborhood: userData.neighborhood || '',
@@ -152,7 +146,6 @@ export default function EditProfile() {
 
           setProfileData(profileInfo);
 
-          // Set form values with the fetched data
           setValue('phone', profileInfo.phone);
           setValue('fullName', profileInfo.fullName);
           setValue('email', profileInfo.email);
@@ -163,9 +156,10 @@ export default function EditProfile() {
           setValue('expertise', profileInfo.expertise);
           setValue('neighborhood', profileInfo.neighborhood);
         } catch (error) {
-          console.error('Error fetching user data:', error);
+          console.error('Erro ao buscar os dados do usuário:', error);
         }
       };
+
       fetchUser();
     }
   }, []);
@@ -179,9 +173,12 @@ export default function EditProfile() {
 
   return (
     <BlueBackground>
+      <StatusBar />
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
-        <MenuW source={menu} />
+        <MenuW>
+          <Menu width={24} height={24} />
+        </MenuW>
       </TouchableOpacity>
       <WhiteBackground>
         <UpperPart>
@@ -192,7 +189,11 @@ export default function EditProfile() {
             }}
           />
           <ProfilePic source={profileData ? profileData.profileImage : defaultProfImage} />
-          <PencilButton source={editButton} />
+          <PencilButton>
+            <TouchableOpacity onPress={() => {}}>
+              <EditButton width={24} height={24} />
+            </TouchableOpacity>
+          </PencilButton>
           <Controller
             control={control}
             name="phone"
@@ -203,7 +204,7 @@ export default function EditProfile() {
                 label="Telefone"
                 imageIcon={null}
                 type="cel-phone"
-                innerRef={(value) => (phoneInputRef.current = value)}
+                innerRef={(value: TextInputMask) => (phoneInputRef.current = value)}
               />
             )}
             rules={{
@@ -213,7 +214,7 @@ export default function EditProfile() {
           />
           {errors.phone && <ErrorWarning errorText={errors.phone.message} />}
         </UpperPart>
-        <View style={{ gap: '3.5vw', marginBottom: 10 }}>
+        <View style={{ gap: width * 0.035, marginBottom: 10 }}>
           <NamePart>
             <Controller
               control={control}
@@ -248,7 +249,7 @@ export default function EditProfile() {
                   onChangeText={onChange}
                   value={value}
                   label="Data de Nascimento"
-                  imageIcon={calendarIcon}
+                  imageIcon={<CalendarIcon width={15} height={15} />}
                   type="datetime"
                   options={{ format: 'DD/MM/YYYY' }}
                 />

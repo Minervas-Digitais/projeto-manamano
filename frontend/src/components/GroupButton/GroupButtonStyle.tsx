@@ -1,17 +1,23 @@
 import styled from 'styled-components/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // eslint-disable-next-line import/prefer-default-export
-export const GroupButtonContainer = styled.TouchableOpacity<{ size?: any }>`
+export const GroupButtonContainer = styled.TouchableOpacity`
+  border-radius: 15px;
+`;
+
+export const GroupButtonGradient = styled(LinearGradient)`
   display: flex;
-  background-image: linear-gradient(to bottom, #1c1049, #363061);
-  width: ${(prop) => (prop.size ? '100%' : '157px')};
+  width: 157px;
   height: 133px;
   border-radius: 15px;
   padding: 18px;
   justify-content: space-between;
+  overflow: hidden;
 `;
 
 export const GroupTextContainer = styled.View`
+  z-index: 1;
   width: 100%;
   gap: 8px;
   display: flex;
@@ -27,6 +33,7 @@ export const GroupOnlineContainer = styled.View`
   display: flex;
   flex-direction: row;
   gap: 5px;
+  align-items: center;
 `;
 
 export const GroupOnline = styled.Text<{ fontFamily: string }>`
@@ -48,6 +55,6 @@ export const GroupFilterContainer = styled.TouchableOpacity`
   justify-content: flex-end;
 `;
 
-export const GroupButtonImage = styled.TouchableOpacity<{ size?: any }>`
-  display: ${(prop) => (prop.size ? 'none' : 'flex')};
+export const GroupButtonImage = styled.TouchableOpacity<{ $size?: any }>`
+  display: ${(prop) => (prop.$size ? 'none' : 'flex')};
 `;

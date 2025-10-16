@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Patch, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Body, Param, Request, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -13,8 +21,15 @@ export class NotificationController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Body() createNotificationDto: CreateNotificationDto) {
-    return this.notificationService.createNotification(createNotificationDto, 'MEMBER');
+  async create(
+    @Body() createNotificationDto: CreateNotificationDto,
+    @Req() req,
+  ) {
+    const userRole = req.user.sysRole;
+    return this.notificationService.createNotification(
+      createNotificationDto,
+      userRole,
+    );
   }
 
   @Post('/global')
@@ -35,11 +50,26 @@ export class NotificationController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  async markAsRead(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
+  async markAsRead(
+    @Param('id') id: string,
+    @Body() updateNotificationDto: UpdateNotificationDto,
+  ) {
     const { isRead } = updateNotificationDto;
     if (isRead) {
       return this.notificationService.markAsRead(id);
     }
+  }
+
+  @Patch('update/:id')
+  @UseGuards(JwtAuthGuard)
+  async updateNotification(
+    @Param('id') id: string,
+    @Body() updateNotificationDto: UpdateNotificationDto,
+  ) {
+    return this.notificationService.updateNotification(
+      id,
+      updateNotificationDto,
+    );
   }
 
   @Delete(':id')
@@ -58,5 +88,51 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard)
   async markAllAsRead(@Param('userId') userId: string) {
     return this.notificationService.markAllAsRead(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('register-token')
+  async registerPushToken(
+    @Req() req,
+    @Body() body: { pushNotifToken: string },
+  ) {
+    const userId = req.user.id;
+
+    if (!body.pushNotifToken) {
+      throw new Error('Push token é obrigatório');
+    }
+
+    await this.notificationService.registerPushNotifToken(
+      userId,
+      body.pushNotifToken,
+    );
+
+    return { success: true };
+  }
+
+  @Get(':id/notification-settings')
+  @UseGuards(JwtAuthGuard)
+  async getNotificationSettings(@Param('id') id: string, @Req() req) {
+    if (req.user.id !== id) {
+      throw new UnauthorizedException(
+        'Você só pode acessar suas próprias configurações',
+      );
+    }
+    return this.notificationService.getNotificationSettings(id);
+  }
+
+  @Patch(':id/notification-settings')
+  @UseGuards(JwtAuthGuard)
+  async updateNotificationSettings(
+    @Param('id') id: string,
+    @Body() dto: UpdateNotificationDto,
+    @Req() req,
+  ) {
+    if (req.user.id !== id) {
+      throw new UnauthorizedException(
+        'Você só pode modificar suas próprias configurações',
+      );
+    }
+    return this.notificationService.updateNotificationSettings(id, dto);
   }
 }

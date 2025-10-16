@@ -9,7 +9,15 @@ import {
   BigInputTextIconInputContainer,
 } from './BigInputTextStyle';
 
-export default function BigInputTextCustom({ onChangeText, label, value, type, options }: any) {
+export default function BigInputTextCustom({
+  onChangeText,
+  label,
+  value,
+  type,
+  options,
+  accessibilityLabel,
+  testID
+}: any) {
   return (
     <BigInputTextContainer>
       <LabelInputText>{label}</LabelInputText>
@@ -20,10 +28,17 @@ export default function BigInputTextCustom({ onChangeText, label, value, type, o
             value={value}
             onChangeText={onChangeText}
             style={styles.input}
+            testID={testID}
             options={options}
           />
         ) : (
-          <BigInputText multiline onChangeText={onChangeText} value={value} />
+          <BigInputText
+            multiline
+            onChangeText={onChangeText}
+            value={value}
+            testID={testID}
+            accessibilityLabel={accessibilityLabel || label}
+          />
         )}
       </BigInputTextIconInputContainer>
     </BigInputTextContainer>
@@ -38,6 +53,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 5,
     color: '#5e6366',
-    outlineStyle: 'none',
+    // outlineStyle: 'none',
   },
 });

@@ -34,4 +34,13 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-android/
+# Arquivos criados pelos teste
+coverage/
+#yarn
+.yarn/*
+
+android/*
+
+google-services.json
+
+ios/

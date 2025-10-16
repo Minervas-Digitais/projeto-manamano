@@ -28,21 +28,20 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import { AddCategoryButton, Input } from '../CreateGroup/CreateGroupStyle';
-import { InputTextContainer, LabelInputText, InputTextIconInputContainer, InputTextIcon, InputText, InputTextIconContainer } from '../../components/InputText/InputTextCustomStyle';
+import {
+  InputTextContainer,
+  LabelInputText,
+  InputTextIconInputContainer,
+  InputText,
+  InputTextIconContainer,
+} from '../../components/InputText/InputTextCustomStyle';
 
 export default function EditGroup({ navigation }: any) {
-  const addIcon = require('../../assets/add-category-icon.svg');
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [groupId, setGroupId] = useState('');
   const [groupName, setGroupName] = useState('');
   const [descriptionGroup, setDescriptionGroup] = useState('');
-  const [newCategory, setNewCategory] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
-  const [categoriesList, setCategoriesList] = useState<any>([]);
-  const [categoriesToRemove, setCategoriesToRemove] = useState<any>([]);
-
-  // const groupId = '3ef6db63-e240-4abd-a974-6bdf4144636d'; // <---------------------------------- [ LEMBRETE: puxar do storage ]
 
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
@@ -64,21 +63,6 @@ export default function EditGroup({ navigation }: any) {
           setGroupName(res.data.name);
           setDescriptionGroup(res.data.description);
         });
-
-      api
-        .get(`/category/group/${groupIdAux}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
-          if (Array.isArray(res.data)) {
-            setCategoriesList(res.data);
-          } else {
-            console.error('Resposta inesperada:', res.data);
-          }
-        })
-        .catch((err) => console.error('Erro ao buscar categorias:', err));
     }
   }, []);
 
@@ -100,12 +84,6 @@ export default function EditGroup({ navigation }: any) {
     name: groupName,
     description: descriptionGroup,
   };
-  const handleAddCategory = () => {
-    if (newCategory.trim()) {
-      setCategories([...categories, newCategory]);
-      setNewCategory('');
-    }
-  };
 
   setValue('name', EditGroupData.name);
   setValue('description', EditGroupData.description);
@@ -117,56 +95,21 @@ export default function EditGroup({ navigation }: any) {
     return undefined;
   }
 
-  const deleteCategory = (id: any) => {
-    api.delete(`/category/${id}`, {
-      headers: {
-        Authorization: `Bearer ${accessTokenState}`,
-      },
-    }).then((res) => console.log('Categoria deletada com sucesso!'));
-  };
-
-  const handleRemoveCategory = (category: string) => {
-    setCategories(categories.filter((cat) => cat !== category));
-  };
-
-  const removeDatabaseCategory = (category: any) => {
-    setCategoriesList((prevList: any) => {
-      const updatedList = prevList.filter((cat: any) => cat.name !== category.name);
-      console.log('Lista atualizada:', updatedList);
-      return updatedList;
-    });
-
-    setCategoriesToRemove((prev: any) => [...prev, category.id]);
-  };
-
   const onSubmit = (data: any) => {
     const type = 'NORMAL';
     if (accessTokenState && loggedIdState) {
-      api
-        .patch(
-          `/group/${groupId}`,
-          { name: data.name, description: data.description },
-          {
-            headers: {
-              Authorization: `Bearer ${accessTokenState}`,
-            },
+      api.patch(
+        `/group/${groupId}`,
+        { name: data.name, description: data.description },
+        {
+          headers: {
+            Authorization: `Bearer ${accessTokenState}`,
           },
-        )
-        .then((res) => console.log(JSON.stringify(res)));
-      categories.length > 0 ? categories.map((item) => {
-        api
-          .post('/category', { name: item, type, groupId }, {
-            headers: {
-              Authorization: `Bearer ${accessTokenState}`,
-            },
-          }).then((res) => console.log(JSON.stringify(res)));
-      }) : null;
+        },
+      );
+      // .then((res) => console.log(JSON.stringify(res)));
 
-      categoriesToRemove.length > 0 ? categoriesToRemove.map((item: any) => {
-        deleteCategory(item);
-      }) : null;
-
-      navigation.navigate('GroupPage');
+      navigation.navigate('GroupPage', { groupId, groupName });
     }
   };
   return (
@@ -209,47 +152,8 @@ export default function EditGroup({ navigation }: any) {
               )}
             />
             {errors.description && <ErrorWarning errorText={errors.description.message} />}
-            <View style={{ gap: 11, display: 'flex', width: '100%' }}>
-
-            <InputTextContainer>
-      <LabelInputText>Categorias</LabelInputText>
-      <InputTextIconInputContainer>
-          <InputText
-            onChangeText={setNewCategory}
-            value={newCategory}
-          />
-        <TouchableOpacity onPress={handleAddCategory}>
-              <Image source={addIcon} />
-        </TouchableOpacity>
-      </InputTextIconInputContainer>
-            </InputTextContainer>
-
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
-
-                        {categoriesList.map((item: any) => (
-                          <CategoryEditGroup
-                            onPress={() => (
-                              item.name === 'Mural'
-                              || item.name === 'Eventos' || item.name === 'Aulas'
-                                ? null : removeDatabaseCategory(item)
-                            )}
-                            categoryName={item.name}
-                            noIcon={!!((item.name === 'Mural'
-                              || item.name === 'Eventos' || item.name === 'Aulas'))}
-                          />
-                        ))}
-
-                        {categories.map((item: any) => (
-                          <CategoryEditGroup
-                            onPress={() => handleRemoveCategory(item)}
-                            categoryName={item}
-                          />
-                        ))}
-            </View>
-            </View>
           </EditGroupForm>
         </View>
-
         <ButtonCustom
           onPress={handleSubmit(onSubmit)}
           backColor="#160E47"
