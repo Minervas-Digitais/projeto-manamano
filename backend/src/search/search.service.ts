@@ -3,12 +3,17 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSearchDto } from './dto/create-search.dto';
 import { SearchFilter } from './search-filter.enum';
 import { SEARCH_MESSAGES } from 'src/messages/search.messages';
+import { Group, Post, User } from '@prisma/client';
 
 @Injectable()
 export class SearchService {
   constructor(private prismaService: PrismaService) {}
 
-  async search(createSearchDto: CreateSearchDto) {
+  async search(createSearchDto: CreateSearchDto): Promise<{
+    users: User[];
+    groups: Group[];
+    posts: Post[];
+  }> {
     const [users, groups, posts] = await Promise.all([
       this.prismaService.user.findMany({
         where: {
@@ -56,7 +61,10 @@ export class SearchService {
     };
   }
 
-  async searchByFilter(createSearchDto: CreateSearchDto, filter: SearchFilter) {
+  async searchByFilter(
+    createSearchDto: CreateSearchDto,
+    filter: SearchFilter,
+  ): Promise<User[] | Group[] | Post[]> {
     switch (filter) {
       case SearchFilter.USERS:
         return await this.prismaService.user.findMany({

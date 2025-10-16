@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
-import { RoleType } from '@prisma/client';
+import { Archive, RoleType, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -13,11 +13,17 @@ import { USER_MESSAGES } from 'src/messages/user.messages';
 
 export const roundsOfHashing = 10;
 
+interface ProfilePictureBuffer {
+  buffer: Buffer;
+  mimeType: string;
+  name: string;
+}
+
 @Injectable()
 export class UserService {
   constructor(private prismaService: PrismaService) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'hash'>> {
     const existingUser = await this.prismaService.user.findFirst({
       where: {
         OR: [{ email: createUserDto.email }, { phone: createUserDto.phone }],
@@ -55,7 +61,7 @@ export class UserService {
     return user;
   }
 
-  async findAll() {
+  async findAll(): Promise<User[]> {
     const users = await this.prismaService.user.findMany();
     if (users.length === 0) {
       throw new NotFoundException(USER_MESSAGES.EMPTY_LIST);
@@ -63,7 +69,7 @@ export class UserService {
     return users;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<User> {
     const user = await this.prismaService.user.findUnique({
       where: { id },
     });
@@ -73,7 +79,7 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     await this.findOne(id);
     return await this.prismaService.user.update({
       where: { id },
@@ -81,7 +87,7 @@ export class UserService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<{ message: string }> {
     await this.findOne(id);
     await this.prismaService.user.delete({
       where: { id },
@@ -89,7 +95,11 @@ export class UserService {
     return { message: USER_MESSAGES.DELETE_SUCCESS };
   }
 
-  async changePassword(id: string, oldPassword: string, newPassword: string) {
+  async changePassword(
+    id: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<User> {
     const user = await this.findOne(id);
 
     const isPasswordValid = await bcrypt.compare(oldPassword, user.hash);
@@ -104,7 +114,8 @@ export class UserService {
       data: { hash: hashedPassword },
     });
   }
-  async updateUserRole(id: string, sysRole: RoleType) {
+
+  async updateUserRole(id: string, sysRole: RoleType): Promise<User> {
     await this.findOne(id);
 
     return this.prismaService.user.update({
@@ -113,7 +124,10 @@ export class UserService {
     });
   }
 
-  async updateProfilePicture(id: string, file: Express.Multer.File) {
+  async updateProfilePicture(
+    id: string,
+    file: Express.Multer.File,
+  ): Promise<User & { profilePicture: Archive | null }> {
     const user = await this.findOne(id);
 
     if (user.profilePictureId) {
@@ -144,7 +158,7 @@ export class UserService {
     return updatedUser;
   }
 
-  async getProfilePictureBuffer(id: string) {
+  async getProfilePictureBuffer(id: string): Promise<ProfilePictureBuffer> {
     const user = await this.prismaService.user.findUnique({
       where: { id: id },
       include: { profilePicture: true },
