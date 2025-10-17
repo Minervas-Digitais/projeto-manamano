@@ -5,5 +5,6 @@ export const POST_MESSAGES = {
   NO_POST_IN_CATEGORY: 'Nenhuma publicação encontrada nesta categoria.',
   NO_POST_IN_USER: 'Nenhuma publicação encontrada para este usuário.',
   CANNOT_SAVE_OWN: 'Você não pode salvar sua própria publicação.',
-  USER_NOT_FOUND: 'Usuário não encontrado.'
+  NO_SAVED_POSTS: 'Nenhuma publicação salva',
+  USER_NOT_FOUND: 'Usuário não encontrado.',
 } as const;

@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -113,5 +114,15 @@ export class PostController {
   @UseGuards(JwtAuthGuard)
   async findUserPosts(@Param('id') id: string) {
     return this.postService.getUserPosts(id);
+  }
+
+  @Get('saved/:userId')
+  @UseGuards(JwtAuthGuard)
+  async getSavedPosts(
+    @Param('userId') userId: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+  ) {
+    return this.postService.getSavedPosts(userId, Number(page), Number(limit));
   }
 }

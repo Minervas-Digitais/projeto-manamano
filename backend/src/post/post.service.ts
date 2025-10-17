@@ -231,4 +231,28 @@ export class PostService {
 
     return posts.map(this.serializePost);
   }
+
+  async getSavedPosts(userId: string, page = 1, pageSize = 10) {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+      select: { savedPost: true },
+    });
+
+    if (!user || user.savedPost.length === 0) {
+      throw new NotFoundException(POST_MESSAGES.NO_SAVED_POSTS);
+    }
+
+    const postIds = user.savedPost.slice(
+      (page - 1) * pageSize,
+      page * pageSize,
+    );
+
+    const posts = await this.prismaService.post.findMany({
+      where: { id: { in: postIds } },
+      include: postInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return posts.map(this.serializePost);
+  }
 }
