@@ -111,8 +111,7 @@ export class PostService {
         groupName: group?.name ?? null,
         senderName: senderUser?.fullName ?? null,
         idContent: post.id,
-      },
-      'USER',
+      }
     );
 
     return this.serializePost(post);

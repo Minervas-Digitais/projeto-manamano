@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Notification, NotificationType } from '@prisma/client';
+import { Notification, NotificationType, RoleType } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Expo } from 'expo-server-sdk';
@@ -17,9 +17,20 @@ export class NotificationService {
   constructor(private prisma: PrismaService) {}
 
   async createNotification(
-    dto: CreateNotificationDto,
-    userRole: string,
+    dto: CreateNotificationDto
   ): Promise<Notification | { count: number }> {
+
+    const sender = await this.prisma.user.findUnique({
+      where: { id: dto.senderId },
+      select: { sysRole: true },
+    });
+
+    if (!sender) {
+      throw new NotFoundException('Remetente não encontrado');
+    }
+
+    const userRole: RoleType = sender.sysRole;
+
     if (dto.type === NotificationType.WARNING && userRole !== 'ADMIN') {
       throw new ForbiddenException(
         'Apenas ADMIN podem criar notificações do tipo WARNING',

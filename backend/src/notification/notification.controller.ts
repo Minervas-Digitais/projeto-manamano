@@ -22,13 +22,10 @@ export class NotificationController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(
-    @Body() createNotificationDto: CreateNotificationDto,
-    @Req() req,
+    @Body() createNotificationDto: CreateNotificationDto
   ) {
-    const userRole = req.user.sysRole;
     return this.notificationService.createNotification(
-      createNotificationDto,
-      userRole,
+      createNotificationDto
     );
   }
 

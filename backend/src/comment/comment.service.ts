@@ -2,13 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { NotificationService } from 'src/notification/notification.service';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, RoleType } from '@prisma/client';
+import { COMMENT_MESSAGES } from 'src/messages/comment.messages';
 
 @Injectable()
 export class CommentService {
-  constructor(private prismaService: PrismaService, private notificationService: NotificationService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
   async create(createCommentDto: CreateCommentDto) {
-  try {
     const comment = await this.prismaService.comment.create({
       data: createCommentDto,
     });
@@ -21,45 +24,48 @@ export class CommentService {
       },
     });
 
+    if (!post) {
+      throw new NotFoundException(COMMENT_MESSAGES.POST_NOT_FOUND);
+    }
+
     const sender = await this.prismaService.user.findUnique({
       where: { id: createCommentDto.userId },
       select: { fullName: true },
     });
 
-    if (post?.userId && post.userId !== createCommentDto.userId) {
-      const notificationBody = `${sender?.fullName ?? 'Alguém'} comentou no seu post no grupo ${post.group?.name ?? 'desconhecido'}`;
+    if (!sender) {
+      throw new NotFoundException(COMMENT_MESSAGES.USER_NOT_FOUND);
+    }
 
-      await this.notificationService.createNotification({
-        senderId: createCommentDto.userId,
-        recipientId: post.userId, 
-        groupId: post.groupId,
-        body: notificationBody,
-        type: NotificationType.COMMENT,
-        groupName: post.group?.name,
-        senderName: sender?.fullName ?? 'Usuário desconhecido',
-        idContent: comment.id,
-      }, 'USER');
+    if (post.userId !== createCommentDto.userId) {
+      const notificationBody = `${sender.fullName} comentou no seu post no grupo ${post.group.name}`;
+
+      await this.notificationService.createNotification(
+        {
+          senderId: createCommentDto.userId,
+          recipientId: post.userId,
+          groupId: post.groupId,
+          body: notificationBody,
+          type: NotificationType.COMMENT,
+          groupName: post.group?.name,
+          senderName: sender.fullName,
+          idContent: comment.id,
+        }
+      );
     }
 
     return comment;
-    } catch (error) {
-        throw error;
-    }
   }
 
   async remove(id: string) {
-    try {
-      const comment = await this.prismaService.comment.findUnique({
-        where: { id },
-      });
-      if (!comment) {
-        throw new NotFoundException('Comentário não encontrado.');
-      }
-      return await this.prismaService.comment.delete({
-        where: { id },
-      });
-    } catch (error) {
-      throw error;
+    const comment = await this.prismaService.comment.findUnique({
+      where: { id },
+    });
+    if (!comment) {
+      throw new NotFoundException(COMMENT_MESSAGES.NOT_FOUND);
     }
+    return await this.prismaService.comment.delete({
+      where: { id },
+    });
   }
 }
