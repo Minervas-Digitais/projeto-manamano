@@ -22,6 +22,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import express from 'express';
 import { Res } from '@nestjs/common';
 import { Archive, RoleType, User } from '@prisma/client';
+import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
 
 @Controller('user')
 export class UserController {
@@ -43,14 +44,14 @@ export class UserController {
 
   @HttpCode(200)
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
   findOne(@Param('id') id: string): Promise<User> {
     return this.userService.findOne(id);
   }
 
   @HttpCode(201)
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -68,7 +69,7 @@ export class UserController {
 
   @HttpCode(201)
   @Patch(':id/change-password')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
   changePassword(
     @Param('id') id: string,
     @Body('oldPassword') oldPassword: string,
@@ -88,7 +89,7 @@ export class UserController {
   }
 
   @Patch(':id/profile-picture')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
   @UseInterceptors(FileInterceptor('file'))
   async updateProfilePicture(
     @Param('id') id: string,

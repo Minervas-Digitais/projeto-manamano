@@ -29,6 +29,22 @@ const postInclude: Prisma.PostInclude = {
   },
 };
 
+export interface SerializedPost {
+  id: string;
+  title: string;
+  content: string;
+  userId: string;
+  groupId: string;
+  categoryId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  isPinned: boolean;
+  nameUser?: string;
+  categoryName?: string;
+  numComments?: number;
+  Comment?: any[];
+}
+
 @Injectable()
 export class PostService {
   constructor(
@@ -59,7 +75,7 @@ export class PostService {
     }
   }
 
-  private serializePost(post: any) {
+  private serializePost(post: any): SerializedPost {
     const { user, category, Comment, ...rest } = post;
     return {
       ...rest,
@@ -70,7 +86,7 @@ export class PostService {
     };
   }
 
-  async create(createPostDto: CreatePostDto) {
+  async create(createPostDto: CreatePostDto): Promise<SerializedPost> {
     const post = await this.prismaService.post.create({
       data: createPostDto,
     });
@@ -99,10 +115,10 @@ export class PostService {
       'USER',
     );
 
-    return post;
+    return this.serializePost(post);
   }
 
-  async findAll() {
+  async findAll(): Promise<SerializedPost[]> {
     const posts = await this.findPosts();
 
     if (posts.length === 0) {
@@ -112,7 +128,7 @@ export class PostService {
     return posts.map(this.serializePost);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<SerializedPost> {
     const post = await this.prismaService.post.findUnique({
       where: { id },
       include: postInclude,
@@ -125,22 +141,29 @@ export class PostService {
     return this.serializePost(post);
   }
 
-  async update(id: string, updatePostDto: UpdatePostDto) {
+  async update(
+    id: string,
+    updatePostDto: UpdatePostDto,
+  ): Promise<SerializedPost> {
     await this.validatePostExists(id);
-    return await this.prismaService.post.update({
+    const updated = await this.prismaService.post.update({
       where: { id },
       data: updatePostDto,
+      include: postInclude,
     });
+    return this.serializePost(updated);
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<SerializedPost> {
     await this.validatePostExists(id);
-    return await this.prismaService.post.delete({
+    const deleted = await this.prismaService.post.delete({
       where: { id },
+      include: postInclude,
     });
+    return this.serializePost(deleted);
   }
 
-  async savePost(ids: string) {
+  async savePost(ids: string): Promise<any> {
     const [postId, userId] = ids.split(',');
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
@@ -164,7 +187,7 @@ export class PostService {
     });
   }
 
-  async removeSavedPost(ids: string) {
+  async removeSavedPost(ids: string): Promise<any> {
     const [postId, userId] = ids.split(',');
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
@@ -180,29 +203,33 @@ export class PostService {
     });
   }
 
-  async pinPost(postId: string) {
+  async pinPost(postId: string): Promise<SerializedPost> {
     await this.validatePostExists(postId);
-    return await this.prismaService.post.update({
+    const post = await this.prismaService.post.update({
       where: { id: postId },
       data: { isPinned: true },
+      include: postInclude,
     });
+    return this.serializePost(post);
   }
 
-  async unpinPost(postId: string) {
+  async unpinPost(postId: string): Promise<SerializedPost> {
     await this.validatePostExists(postId);
-    return await this.prismaService.post.update({
+    const post = await this.prismaService.post.update({
       where: { id: postId },
       data: { isPinned: false },
+      include: postInclude,
     });
+    return this.serializePost(post);
   }
 
-  async getPinnedPosts(groupId: string) {
+  async getPinnedPosts(groupId: string): Promise<SerializedPost[]> {
     const posts = await this.findPosts({ groupId, isPinned: true });
 
     return posts.map(this.serializePost);
   }
 
-  async getGroupPosts(groupId: string) {
+  async getGroupPosts(groupId: string): Promise<SerializedPost[]> {
     const posts = await this.findPosts({ groupId });
 
     if (posts.length === 0) {
@@ -212,7 +239,7 @@ export class PostService {
     return posts.map(this.serializePost);
   }
 
-  async getCategoryPosts(categoryId: string) {
+  async getCategoryPosts(categoryId: string): Promise<SerializedPost[]> {
     const posts = await this.findPosts({ categoryId });
 
     if (posts.length === 0) {
@@ -222,7 +249,7 @@ export class PostService {
     return posts.map(this.serializePost);
   }
 
-  async getUserPosts(userId: string) {
+  async getUserPosts(userId: string): Promise<SerializedPost[]> {
     const posts = await this.findPosts({ userId });
 
     if (posts.length === 0) {
@@ -232,7 +259,11 @@ export class PostService {
     return posts.map(this.serializePost);
   }
 
-  async getSavedPosts(userId: string, page = 1, pageSize = 10) {
+  async getSavedPosts(
+    userId: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<SerializedPost[]> {
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
       select: { savedPost: true },
