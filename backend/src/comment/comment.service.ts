@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { NotificationService } from 'src/notification/notification.service';
-import { NotificationType, RoleType } from '@prisma/client';
+import { NotificationType } from '@prisma/client';
 import { COMMENT_MESSAGES } from 'src/messages/comment.messages';
 
 @Injectable()
@@ -11,7 +15,11 @@ export class CommentService {
     private prismaService: PrismaService,
     private notificationService: NotificationService,
   ) {}
-  async create(createCommentDto: CreateCommentDto) {
+  async create(createCommentDto: CreateCommentDto, currentUserId: string) {
+    if (createCommentDto.userId !== currentUserId) {
+      throw new ForbiddenException(COMMENT_MESSAGES.UNAUTHORIZED_CREATE);
+    }
+
     const comment = await this.prismaService.comment.create({
       data: createCommentDto,
     });
@@ -28,42 +36,39 @@ export class CommentService {
       throw new NotFoundException(COMMENT_MESSAGES.POST_NOT_FOUND);
     }
 
-    const sender = await this.prismaService.user.findUnique({
-      where: { id: createCommentDto.userId },
-      select: { fullName: true },
-    });
-
-    if (!sender) {
-      throw new NotFoundException(COMMENT_MESSAGES.USER_NOT_FOUND);
-    }
+    const senderName = post.user.fullName;
 
     if (post.userId !== createCommentDto.userId) {
-      const notificationBody = `${sender.fullName} comentou no seu post no grupo ${post.group.name}`;
+      const notificationBody = `${senderName} comentou no seu post no grupo ${post.group.name}`;
 
-      await this.notificationService.createNotification(
-        {
-          senderId: createCommentDto.userId,
-          recipientId: post.userId,
-          groupId: post.groupId,
-          body: notificationBody,
-          type: NotificationType.COMMENT,
-          groupName: post.group?.name,
-          senderName: sender.fullName,
-          idContent: comment.id,
-        }
-      );
+      await this.notificationService.createNotification({
+        senderId: createCommentDto.userId,
+        recipientId: post.userId,
+        groupId: post.groupId,
+        body: notificationBody,
+        type: NotificationType.COMMENT,
+        groupName: post.group?.name,
+        senderName: senderName,
+        idContent: comment.id,
+      });
     }
 
     return comment;
   }
 
-  async remove(id: string) {
+  async remove(id: string, currentUserId: string) {
     const comment = await this.prismaService.comment.findUnique({
       where: { id },
     });
+
     if (!comment) {
       throw new NotFoundException(COMMENT_MESSAGES.NOT_FOUND);
     }
+
+    if (comment.userId !== currentUserId) {
+      throw new ForbiddenException(COMMENT_MESSAGES.UNAUTHORIZED_DELETE);
+    }
+
     return await this.prismaService.comment.delete({
       where: { id },
     });

@@ -7,4 +7,5 @@ export const POST_MESSAGES = {
   CANNOT_SAVE_OWN: 'Você não pode salvar sua própria publicação.',
   NO_SAVED_POSTS: 'Nenhuma publicação salva',
   USER_NOT_FOUND: 'Usuário não encontrado.',
+  GROUP_NOT_FOUND: 'Grupo não encontrado'
 } as const;

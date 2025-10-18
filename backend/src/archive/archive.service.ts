@@ -42,8 +42,7 @@ export class ArchiveService {
           groupName: group?.name ?? null,
           senderName: sender?.fullName ?? null,
           idContent: createdArchive.id,
-        },
-        'USER',
+        }
       );
     }
 

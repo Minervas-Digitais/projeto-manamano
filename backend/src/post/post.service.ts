@@ -87,32 +87,41 @@ export class PostService {
   }
 
   async create(createPostDto: CreatePostDto): Promise<SerializedPost> {
-    const post = await this.prismaService.post.create({
-      data: createPostDto,
-    });
-
     const group = await this.prismaService.group.findUnique({
       where: { id: createPostDto.groupId },
     });
+
+    if (!group) {
+      throw new NotFoundException(POST_MESSAGES.GROUP_NOT_FOUND);
+    }
 
     const senderUser = await this.prismaService.user.findUnique({
       where: { id: createPostDto.userId },
     });
 
-    const notificationBody = `Novo post em ${group?.name ?? 'desconhecido'}`;
+    if (!senderUser) {
+      throw new NotFoundException(POST_MESSAGES.USER_NOT_FOUND);
+    }
 
-    await this.notificationService.createNotification(
-      {
-        senderId: createPostDto.userId,
-        recipientId: undefined,
-        groupId: createPostDto.groupId,
-        body: notificationBody,
-        type: NotificationType.FIXED,
-        groupName: group?.name ?? null,
-        senderName: senderUser?.fullName ?? null,
-        idContent: post.id,
-      }
-    );
+    const post = await this.prismaService.post.create({
+      data: createPostDto,
+      include: {
+        user: true,
+      },
+    });
+
+    const notificationBody = `Novo post em ${group.name}`;
+
+    await this.notificationService.createNotification({
+      senderId: createPostDto.userId,
+      recipientId: undefined,
+      groupId: createPostDto.groupId,
+      body: notificationBody,
+      type: NotificationType.FIXED,
+      groupName: group.name,
+      senderName: post.user.fullName,
+      idContent: post.id,
+    });
 
     return this.serializePost(post);
   }
