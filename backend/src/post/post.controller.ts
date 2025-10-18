@@ -132,7 +132,14 @@ export class PostController {
     @Param('userId') userId: string,
     @Query('page') page = '1',
     @Query('limit') limit = '10',
+    @Query('all') all = 'false',
   ): Promise<SerializedPost[]> {
-    return this.postService.getSavedPosts(userId, Number(page), Number(limit));
+    const isAll = all === 'true';
+    return this.postService.getSavedPosts(
+      userId,
+      isAll ? undefined : Number(page),
+      isAll ? undefined : Number(limit),
+      isAll,
+    );
   }
 }

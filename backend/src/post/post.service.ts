@@ -263,6 +263,7 @@ export class PostService {
     userId: string,
     page = 1,
     pageSize = 10,
+    all = false,
   ): Promise<SerializedPost[]> {
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
@@ -273,10 +274,9 @@ export class PostService {
       throw new NotFoundException(POST_MESSAGES.NO_SAVED_POSTS);
     }
 
-    const postIds = user.savedPost.slice(
-      (page - 1) * pageSize,
-      page * pageSize,
-    );
+    const postIds = all
+      ? user.savedPost
+      : user.savedPost.slice((page - 1) * pageSize, page * pageSize);
 
     const posts = await this.prismaService.post.findMany({
       where: { id: { in: postIds } },
