@@ -7,9 +7,9 @@
 /* eslint-disable react/jsx-indent-props */
 /* eslint-disable react/jsx-indent */
 /* eslint-disable implicit-arrow-linebreak */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useFonts } from 'expo-font';
-import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, View, ActivityIndicator, ScrollView } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
 import { Buffer } from 'buffer';
 import { StatusBar } from 'expo-status-bar';
@@ -18,7 +18,6 @@ import {
   HomeContainerGroup,
   HomeContainerInfo,
   HomeContainerListGroup,
-  HomeContainerListMural,
   HomeContainerMural,
   HomePageBlue,
   HomePageWhite,
@@ -39,6 +38,8 @@ import LupaIcon from '../../assets/lupaWhite-icon.svg';
 
 export const storageHome = new MMKV();
 
+const POSTS_PER_PAGE = 15;
+
 export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
   const defaultAvatar = require('../../assets/user-profile.png');
@@ -48,6 +49,13 @@ export default function Home({ navigation }: any) {
   const [groups, setGroups] = useState<any[]>([]);
   const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
   const [profileImage, setProfileImage] = useState<any>(null);
+
+  // Estados para paginação
+  const [posts, setPosts] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -60,6 +68,7 @@ export default function Home({ navigation }: any) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
 
+      // Buscar informações do usuário
       api
         .get(`/user/${loggedId}`, {
           headers: {
@@ -69,16 +78,122 @@ export default function Home({ navigation }: any) {
         .then((res) => setFullName(res.data.fullName))
         .catch(() => setFullName('Usuário'));
 
+      // Buscar grupos (sem posts)
       api
         .get(`participant/groups/${loggedId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
         })
-        .then((res) => setGroups(res.data || []))
+        .then((res) => {
+          // Remover posts dos grupos pois vamos buscá-los separadamente
+          const groupsWithoutPosts = (res.data || []).map((group: any) => ({
+            ...group,
+            group: {
+              ...group.group,
+              Post: [],
+            },
+          }));
+          setGroups(groupsWithoutPosts);
+        })
         .catch(() => setGroups([]));
+
+      // Carregar primeira página de posts
+      loadPosts(1, accessToken, loggedId, true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadPosts = useCallback(
+    async (pageNumber: number, token: string, userId: string, isInitial: boolean = false) => {
+      if (loading) return;
+
+      setLoading(true);
+      if (isInitial) setInitialLoading(true);
+
+      try {
+        const response = await api.get(`participant/groups/${userId}/posts`, {
+          params: {
+            page: pageNumber,
+            limit: POSTS_PER_PAGE,
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const { posts: newPosts, pagination } = response.data;
+
+        setPosts((prevPosts) => (pageNumber === 1 ? newPosts : [...prevPosts, ...newPosts]));
+        setHasMore(pagination.hasMore);
+        setPage(pageNumber);
+      } catch (error: any) {
+        // Fallback: Se a rota não existir (404), usar a rota antiga
+        if (error?.response?.status === 404) {
+          try {
+            const fallbackResponse = await api.get(`participant/groups/${userId}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            // Extrair e paginar posts manualmente
+            const allGroups = fallbackResponse.data || [];
+            const allPosts: any[] = [];
+
+            allGroups.forEach((group: any) => {
+              if (group.group?.Post) {
+                group.group.Post.forEach((post: any) => {
+                  allPosts.push({
+                    ...post,
+                    groupId: group.groupId,
+                    group: {
+                      name: group.group.name,
+                    },
+                    user: {
+                      id: post.user?.id || post.userId,
+                      fullName: post.user?.fullName || 'Usuário',
+                    },
+                  });
+                });
+              }
+            });
+
+            // Ordenar por data decrescente
+            allPosts.sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            );
+
+            // Paginar manualmente
+            const limit = POSTS_PER_PAGE;
+            const startIndex = (pageNumber - 1) * limit;
+            const endIndex = startIndex + limit;
+            const paginatedPosts = allPosts.slice(startIndex, endIndex);
+
+            setPosts((prevPosts) =>
+              pageNumber === 1 ? paginatedPosts : [...prevPosts, ...paginatedPosts],
+            );
+            setHasMore(endIndex < allPosts.length);
+            setPage(pageNumber);
+          } catch (fallbackError) {
+            console.error('Erro ao carregar posts (fallback):', fallbackError);
+          }
+        } else {
+          console.error('Erro ao carregar posts:', error);
+        }
+      } finally {
+        setLoading(false);
+        if (isInitial) setInitialLoading(false);
+      }
+    },
+    [loading],
+  );
+
+  const handleLoadMore = useCallback(() => {
+    if (!loading && hasMore && accessTokenState && loggedIdState) {
+      loadPosts(page + 1, accessTokenState, loggedIdState);
+    }
+  }, [loading, hasMore, page, accessTokenState, loggedIdState, loadPosts]);
 
   useFocusEffect(() => {
     const token = storage.getString('accessToken');
@@ -169,17 +284,24 @@ export default function Home({ navigation }: any) {
     );
   };
 
-  const filteredGroups = Array.isArray(groups)
-    ? groups.map((group: any) => ({
-        ...group,
-        group: {
-          ...group.group,
-          Post: hiddenGroupIds.includes(group.groupId) ? [] : group.group.Post || [],
-        },
-      }))
-    : [];
+  // Filtrar posts baseado nos grupos ocultos
+  const filteredPosts = posts.filter((post) => !hiddenGroupIds.includes(post.groupId));
 
-  const hasPosts = filteredGroups.some((group) => group.group.Post && group.group.Post.length > 0);
+  const isCloseToBottom = ({
+    layoutMeasurement,
+    contentOffset,
+    contentSize,
+  }: {
+    layoutMeasurement: any;
+    contentOffset: any;
+    contentSize: any;
+  }) => {
+    const paddingToBottom = 200; // Aumentado para 200px para carregar antes
+    const isClose =
+      layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+
+    return isClose;
+  };
 
   return (
     <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
@@ -212,75 +334,118 @@ export default function Home({ navigation }: any) {
           </GroupDataText>
         </View>
       </HomeContainerInfo>
-      <HomePageWhite>
-        <HomeContainerGroup>
-          <GroupDataText font="inter-bold" color="#3F3D3D" size="20px">
-            Grupos
-          </GroupDataText>
-          <HomeContainerListGroup>
-            {groups?.length > 0 ? (
-              groups.map((item: any) => (
-                <GroupButton
-                  key={item.groupId}
-                  testID={`group-button-${item.groupId}`}
-                  onPress={() => {
-                    navigation.navigate('GroupPage', {
-                      groupId: item.groupId,
-                      groupName: item.group.name,
-                    });
-                    storage.set('groupId', item.groupId);
-                    console.log(`groupId home: ${item.groupId}`);
-                  }}
-                  groupId={item.groupId}
-                  groupName={item.group.name}
-                  onlineMembers={item.participantCount}
-                  onPressFilter={() => toggleGroupFilter(item.groupId)}
-                  filterIcon={!hiddenGroupIds.includes(item.groupId)}
-                />
-              ))
-            ) : (
-              <GroupDataText font="inter-bold" color="#959393" size="20px">
-                Você não possui grupos...
-              </GroupDataText>
-            )}
-          </HomeContainerListGroup>
-        </HomeContainerGroup>
-        <GroupDataLine />
-        <HomeContainerMural>
-          <GroupDataText font="inter-bold" color="#3F3D3D" size="20px">
-            Mural
-          </GroupDataText>
-          <HomeContainerListMural
-            contentContainerStyle={{ gap: 25 }}
-            showsVerticalScrollIndicator={false}>
-            {hasPosts ? (
-              filteredGroups.map((item: any) =>
-                item.group.Post.map((post: any, postIndex: number) => (
-                  <PostCard
-                    key={postIndex}
-                    userId={post.user.id}
-                    getUserProfileImage={getUserProfileImage}
-                    nameUser={post.user.fullName}
-                    postContent={post.input}
-                    numComments={post.commentsCount}
-                    date={formatRelativeDate(post.createdAt)}
-                    originGroup={item.group.name}
-                    tag
-                    save
-                    share
-                    onPressPost={() => onPressPostAction(post.id)}
-                    postId={post.id}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={({ nativeEvent }) => {
+          if (isCloseToBottom(nativeEvent)) {
+            handleLoadMore();
+          }
+        }}
+        scrollEventThrottle={200}>
+        <HomePageWhite>
+          <HomeContainerGroup>
+            <GroupDataText font="inter-bold" color="#3F3D3D" size="20px">
+              Grupos
+            </GroupDataText>
+            <HomeContainerListGroup>
+              {groups?.length > 0 ? (
+                groups.map((item: any) => (
+                  <GroupButton
+                    key={item.groupId}
+                    testID={`group-button-${item.groupId}`}
+                    onPress={() => {
+                      navigation.navigate('GroupPage', {
+                        groupId: item.groupId,
+                        groupName: item.group.name,
+                      });
+                      storage.set('groupId', item.groupId);
+                      console.log(`groupId home: ${item.groupId}`);
+                    }}
+                    groupId={item.groupId}
+                    groupName={item.group.name}
+                    onlineMembers={item.participantCount}
+                    onPressFilter={() => toggleGroupFilter(item.groupId)}
+                    filterIcon={!hiddenGroupIds.includes(item.groupId)}
                   />
-                )),
-              )
+                ))
+              ) : (
+                <GroupDataText font="inter-bold" color="#959393" size="20px">
+                  Você não possui grupos...
+                </GroupDataText>
+              )}
+            </HomeContainerListGroup>
+          </HomeContainerGroup>
+          <GroupDataLine />
+          <HomeContainerMural>
+            <GroupDataText font="inter-bold" color="#3F3D3D" size="20px">
+              Mural
+            </GroupDataText>
+            {initialLoading ? (
+              <ActivityIndicator size="large" color="#EF4036" style={{ marginTop: 20 }} />
             ) : (
-              <GroupDataText font="inter-bold" color="#959393" size="20px">
-                Não há Posts...
-              </GroupDataText>
+              <>
+                <View style={{ gap: 25 }}>
+                  {filteredPosts.length > 0 ? (
+                    filteredPosts.map((post: any) => (
+                      <PostCard
+                        key={post.id}
+                        userId={post.user.id}
+                        getUserProfileImage={getUserProfileImage}
+                        nameUser={post.user.fullName}
+                        postContent={post.input}
+                        numComments={post.commentsCount}
+                        date={formatRelativeDate(post.createdAt)}
+                        originGroup={post.group.name}
+                        tag
+                        save
+                        share
+                        onPressPost={() => onPressPostAction(post.id)}
+                        postId={post.id}
+                      />
+                    ))
+                  ) : (
+                    <GroupDataText font="inter-bold" color="#959393" size="20px">
+                      Não há Posts...
+                    </GroupDataText>
+                  )}
+                </View>
+                {loading && !initialLoading && (
+                  <ActivityIndicator
+                    size="large"
+                    color="#EF4036"
+                    style={{ marginTop: 20, marginBottom: 20 }}
+                  />
+                )}
+                {!loading && hasMore && filteredPosts.length > 0 && (
+                  <TouchableOpacity
+                    onPress={handleLoadMore}
+                    style={{
+                      backgroundColor: '#EF4036',
+                      padding: 15,
+                      borderRadius: 10,
+                      marginTop: 20,
+                      marginBottom: 20,
+                      alignItems: 'center',
+                    }}>
+                    <GroupDataText font="inter-bold" color="#fff" size="16px">
+                      Carregar mais posts
+                    </GroupDataText>
+                  </TouchableOpacity>
+                )}
+                {!hasMore && filteredPosts.length > 0 && (
+                  <GroupDataText
+                    font="inter-bold"
+                    color="#959393"
+                    size="16px"
+                    style={{ textAlign: 'center', marginTop: 20, marginBottom: 20 }}>
+                    Você chegou ao fim! 🎉
+                  </GroupDataText>
+                )}
+              </>
             )}
-          </HomeContainerListMural>
-        </HomeContainerMural>
-      </HomePageWhite>
+          </HomeContainerMural>
+        </HomePageWhite>
+      </ScrollView>
     </HomePageBlue>
   );
 }

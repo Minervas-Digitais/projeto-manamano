@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -44,6 +45,23 @@ export class ParticipantController {
   @UseGuards(JwtAuthGuard)
   findUserGroups(@Param('id') id: string) {
     return this.participantService.findUserGroups(id);
+  }
+
+  @HttpCode(200)
+  @Get('groups/:id/posts')
+  @UseGuards(JwtAuthGuard)
+  findUserGroupsPosts(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNumber = page ? parseInt(page, 10) : 1;
+    const limitNumber = limit ? parseInt(limit, 10) : 15;
+    return this.participantService.findUserGroupsPostsPaginated(
+      id,
+      pageNumber,
+      limitNumber,
+    );
   }
 
   @HttpCode(200)

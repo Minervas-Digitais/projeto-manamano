@@ -26,24 +26,10 @@ export default function EnterGroup({ navigation }: any) {
     }
 
     try {
-      const res = await api.get('/group', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const groupIdFind = res?.data.find((item: any) => item.inviteCode === data.inviteCode);
-
-      if (!groupIdFind) {
-        alert('Código de convite inválido.');
-        return;
-      }
-
       const participantData = {
         userId: loggedId,
         role: 'MEMBER',
         inviteCode: data.inviteCode,
-        groupId: groupIdFind.id,
       };
 
       const resp = await api.post('/participant', participantData, {
@@ -54,9 +40,16 @@ export default function EnterGroup({ navigation }: any) {
 
       console.log('Participante adicionado com sucesso:', resp.data);
       alert('Você entrou no grupo com sucesso!');
-    } catch (error) {
+      navigation.navigate('Groups');
+    } catch (error: any) {
       console.error('Erro ao entrar no grupo:', error);
-      alert('Ocorreu um erro ao tentar entrar no grupo.');
+      if (error?.response?.status === 404) {
+        alert('Código de convite inválido.');
+      } else if (error?.response?.status === 409) {
+        alert('Você já está neste grupo.');
+      } else {
+        alert('Ocorreu um erro ao tentar entrar no grupo.');
+      }
     }
   };
 

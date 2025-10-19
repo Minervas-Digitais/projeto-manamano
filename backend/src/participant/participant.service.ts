@@ -14,7 +14,6 @@ export class ParticipantService {
           inviteCode: createParticipantDto.inviteCode,
         },
       });
-
       if (!group) {
         throw new NotFoundException('Código de convite inválido.');
       }
@@ -77,7 +76,6 @@ export class ParticipantService {
                   createdAt: true,
                   user: {
                     select: {
-                      id: true,
                       fullName: true,
                     },
                   },
@@ -124,6 +122,112 @@ export class ParticipantService {
       );
 
       return groupsWithCounts;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findUserGroupsPostsPaginated(
+    userId: string,
+    page: number = 1,
+    limit: number = 15,
+  ) {
+    try {
+      // Buscar os grupos do usuário (sem posts)
+      const userGroups = await this.prismaService.participant.findMany({
+        where: { userId },
+        select: {
+          groupId: true,
+          role: true,
+          group: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (userGroups.length === 0) {
+        return {
+          posts: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        };
+      }
+
+      const groupIds = userGroups.map((group) => group.groupId);
+
+      // Contar total de posts nos grupos do usuário
+      const totalPosts = await this.prismaService.post.count({
+        where: {
+          groupId: {
+            in: groupIds,
+          },
+        },
+      });
+
+      // Buscar posts paginados com suas informações
+      const posts = await this.prismaService.post.findMany({
+        where: {
+          groupId: {
+            in: groupIds,
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          input: true,
+          createdAt: true,
+          groupId: true,
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+            },
+          },
+          group: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      // Adicionar contagem de comentários para cada post
+      const postsWithCommentsCount = await Promise.all(
+        posts.map(async (post) => {
+          const commentsCount = await this.prismaService.comment.count({
+            where: { postId: post.id },
+          });
+          return {
+            ...post,
+            commentsCount,
+          };
+        }),
+      );
+
+      const totalPages = Math.ceil(totalPosts / limit);
+
+      return {
+        posts: postsWithCommentsCount,
+        pagination: {
+          page,
+          limit,
+          total: totalPosts,
+          totalPages,
+          hasMore: page < totalPages,
+        },
+      };
     } catch (error) {
       throw error;
     }
