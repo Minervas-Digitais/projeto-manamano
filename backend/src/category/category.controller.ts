@@ -13,6 +13,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { Category } from '@prisma/client';
 
 @Controller('category')
 export class CategoryController {
@@ -21,28 +22,30 @@ export class CategoryController {
   @HttpCode(201)
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(@Body() createCategoryDto: CreateCategoryDto) {
+  create(@Body() createCategoryDto: CreateCategoryDto): Promise<Category> {
     return this.categoryService.create(createCategoryDto);
   }
 
   @HttpCode(200)
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll() {
+  findAll(): Promise<Category[]> {
     return this.categoryService.findAll();
   }
 
   @HttpCode(200)
   @Get('group/:groupId')
   @UseGuards(JwtAuthGuard)
-  findCategoriesInGroup(@Param('groupId') groupId: string) {
+  findCategoriesInGroup(
+    @Param('groupId') groupId: string,
+  ): Promise<Category[]> {
     return this.categoryService.findCategoriesInGroup(groupId);
   }
 
   @HttpCode(200)
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): Promise<Category> {
     return this.categoryService.findOne(id);
   }
 
@@ -52,14 +55,14 @@ export class CategoryController {
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
-  ) {
+  ): Promise<Category> {
     return this.categoryService.update(id, updateCategoryDto);
   }
 
   @HttpCode(200)
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string): Promise<Category> {
     return this.categoryService.remove(id);
   }
 }
