@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, StyleSheet, ActivityIndicator, Text, Share } from 'react-native';
+import { Buffer } from 'buffer';
 import { useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
@@ -42,8 +43,9 @@ export default function VisitorProfile({ navigation }: any) {
   const [user, setUser] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileImage, setProfileImage] = useState<any>(null);
 
-  const duckImage = require('../../assets/duck.png');
+  const defaultAvatar = require('../../assets/user-profile.png');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -85,6 +87,7 @@ export default function VisitorProfile({ navigation }: any) {
       }
 
       try {
+        const token = storage.getString('accessToken');
         setLoading(true);
         const userResponse = await api.get(`/user/${userId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -94,6 +97,15 @@ export default function VisitorProfile({ navigation }: any) {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setPosts(userPostsResponse.data);
+        const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: 'arraybuffer',
+        });
+        const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+        const imageUri = `data:image/jpeg;base64,${imageStr}`;
+        setProfileImage({ uri: imageUri });
       } catch (error) {
         console.error('Failed to fetch visitor profile data:', error);
       } finally {
@@ -126,7 +138,7 @@ export default function VisitorProfile({ navigation }: any) {
             </TouchableOpacity>
           </ProfileContainerButtons>
           <ProfileContainerData>
-            <ProfileImage radius height="78px" width="78px" source={duckImage} />
+            <ProfileImage radius height="78px" width="78px" source={profileImage || defaultAvatar} />
             <View style={{ gap: '4px' }}>
               <ProfileContainerData gap={10} center>
                 <GroupDataText color="white" size="20px" font="inter-bold">
@@ -147,6 +159,29 @@ export default function VisitorProfile({ navigation }: any) {
     );
   }
 
+  const getUserProfileImage = async () => {
+    const token = storage.getString('accessToken');
+
+    if (!token) {
+      return defaultAvatar;
+    }
+
+    try {
+      const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'arraybuffer',
+      });
+
+      const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+      const imageUri = `data:image/jpeg;base64,${imageStr}`;
+      return { uri: imageUri };
+    } catch (error) {
+      return defaultAvatar;
+    }
+  };
+
   return (
     <HomePageBlue>
       <StatusBar />
@@ -161,7 +196,7 @@ export default function VisitorProfile({ navigation }: any) {
           </TouchableOpacity>
         </ProfileContainerButtons>
         <ProfileContainerData>
-          <ProfileImage radius height="78px" width="78px" source={duckImage} />
+          <ProfileImage radius height="78px" width="78px" source={profileImage || defaultAvatar} />
           <View style={{ flex: 1, gap: 4, marginLeft: 5 }}>
             <ProfileContainerData gap={10} center>
               <GroupDataText color="white" size="18px" font="inter-bold" numberOfLines={1}>
@@ -208,7 +243,8 @@ export default function VisitorProfile({ navigation }: any) {
                 key={item.id}
                 postId={item.id}
                 nameUser={user.fullName}
-                imageUser={duckImage}
+                userId={item.userId}
+                getUserProfileImage={getUserProfileImage}
                 postContent={item.input}
                 numComments={item.numComments || 0}
                 date={item.createdAt}

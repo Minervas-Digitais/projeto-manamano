@@ -77,6 +77,7 @@ export class ParticipantService {
                   createdAt: true,
                   user: {
                     select: {
+                      id: true,
                       fullName: true,
                     },
                   },
