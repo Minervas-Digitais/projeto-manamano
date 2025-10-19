@@ -9,56 +9,55 @@ const fs = require('fs');
 
 // Mock fonts
 jest.mock('expo-font', () => ({
-    useFonts: () => [true],
+  useFonts: () => [true],
 }));
 
 jest.mock('expo-file-system', () => ({
-
-    readAsStringAsync: jest.fn(async (uri: string) => {
-        const fileBuffer = fs.readFileSync(uri);
-        return fileBuffer.toString('base64');
-    }),
-    writeAsStringAsync: jest.fn(),
-    deleteAsync: jest.fn(),
-    getInfoAsync: jest.fn(),
-    documentDirectory: 'file://mocked/path/',
-    EncodingType: {
-        Base64: 'base64',
-    },
+  readAsStringAsync: jest.fn(async (uri: string) => {
+    const fileBuffer = fs.readFileSync(uri);
+    return fileBuffer.toString('base64');
+  }),
+  writeAsStringAsync: jest.fn(),
+  deleteAsync: jest.fn(),
+  getInfoAsync: jest.fn(),
+  documentDirectory: 'file://mocked/path/',
+  EncodingType: {
+    Base64: 'base64',
+  },
 }));
 
 jest.mock('expo-modules-core', () => ({
-    EventEmitter: jest.fn(),
-    EventSubscription: jest.fn(),
+  EventEmitter: jest.fn(),
+  EventSubscription: jest.fn(),
 }));
 
 jest.mock('expo-document-picker', () => ({
-    getDocumentAsync: jest.fn(() =>
-        Promise.resolve({
-            type: 'success',
-            assets: [
-                {
-                    name: 'Logo.png',
-                    uri: 'file://mocked_logo.png',
-                    mimeType: 'image/png',
-                },
-            ],
-        }),
-    ),
+  getDocumentAsync: jest.fn(() =>
+    Promise.resolve({
+      type: 'success',
+      assets: [
+        {
+          name: 'Logo.png',
+          uri: 'file://mocked_logo.png',
+          mimeType: 'image/png',
+        },
+      ],
+    }),
+  ),
 }));
 
 // Mock SVGs importados como componentes React vazios
 jest.mock('../../assets/arrow-icon.svg', () => {
-    const React = require('react');
-    return () => null;
+  const React = require('react');
+  return () => null;
 });
 jest.mock('../../assets/input-link-icon.svg', () => {
-    const React = require('react');
-    return () => null;
+  const React = require('react');
+  return () => null;
 });
 jest.mock('../../assets/calendar-icon.svg', () => {
-    const React = require('react');
-    return () => null;
+  const React = require('react');
+  return () => null;
 });
 
 // Mock do react-navigation
@@ -67,367 +66,354 @@ const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 
 jest.mock('@react-navigation/native', () => {
-    const actualNav = jest.requireActual('@react-navigation/native');
-    return {
-        ...actualNav,
-        useRoute: () => ({ params: { groupId: '123' } }),
-        useNavigation: () => ({
-            navigate: mockNavigate,
-            goBack: mockGoBack,
-        }),
-    };
+  const actualNav = jest.requireActual('@react-navigation/native');
+  return {
+    ...actualNav,
+    useRoute: () => ({ params: { groupId: '123' } }),
+    useNavigation: () => ({
+      navigate: mockNavigate,
+      goBack: mockGoBack,
+    }),
+  };
 });
 
 jest.mock('../pages/SignIn/SignIn', () => ({
-    storage: {
-        getString: jest.fn((key) => {
-            if (key === 'accessToken') return 'fake-token';
-            if (key === 'loggedId') return 'fake-user-id';
-            return null;
-        }),
-    },
+  storage: {
+    getString: jest.fn((key) => {
+      if (key === 'accessToken') return 'fake-token';
+      if (key === 'loggedId') return 'fake-user-id';
+      return null;
+    }),
+  },
 }));
 
 // Mock api
 jest.mock('../services/api', () => {
-    const post = jest.fn((url, data) => {
-        return Promise.resolve({ data: { success: true } });
-    });
+  const post = jest.fn((url, data) => {
+    return Promise.resolve({ data: { success: true } });
+  });
 
-    const get = jest.fn((url) => {
-        if (url === 'category/group/123') {
-            return Promise.resolve({ data: [{ id: '1', name: 'Aulas' }] });
-        }
-        return Promise.resolve({ data: [] });
-    });
+  const get = jest.fn((url) => {
+    if (url === 'category/group/123') {
+      return Promise.resolve({ data: [{ id: '1', name: 'Aulas' }] });
+    }
+    return Promise.resolve({ data: [] });
+  });
 
-    return {
-        __esModule: true,
-        default: {
-            post,
-            get,
-        },
-    };
+  return {
+    __esModule: true,
+    default: {
+      post,
+      get,
+    },
+  };
 });
 
 // Mock Toast
 jest.mock('react-native-toast-message', () => {
-    const React = require('react');
-    const { View } = require('react-native');
-    const show = jest.fn();
-    const hide = jest.fn();
+  const React = require('react');
+  const { View } = require('react-native');
+  const show = jest.fn();
+  const hide = jest.fn();
 
-    const ToastComponent = (props: any) => <View {...props} />;
-    ToastComponent.show = show;
-    ToastComponent.hide = hide;
+  const ToastComponent = (props: any) => <View {...props} />;
+  ToastComponent.show = show;
+  ToastComponent.hide = hide;
 
-    return {
-        __esModule: true,
-        default: ToastComponent,
-        show,
-        hide,
-    };
+  return {
+    __esModule: true,
+    default: ToastComponent,
+    show,
+    hide,
+  };
 });
 
 const Stack = createStackNavigator();
 const renderWithNavigation = () =>
-    render(
-        <NavigationContainer>
-            <Stack.Navigator>
-                <Stack.Screen name="NewLesson" component={NewLesson} />
-            </Stack.Navigator>
-            <Toast />
-        </NavigationContainer>
-    );
-
+  render(
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="NewLesson" component={NewLesson} />
+      </Stack.Navigator>
+      <Toast />
+    </NavigationContainer>,
+  );
 
 (global as any).alert = jest.fn();
 
 describe('NewLesson', () => {
-    beforeAll(() => {
-        // ignora os erros do act e causados pelo proprio teste
-        jest.spyOn(console, 'error').mockImplementation((msg) => {
-            if (typeof msg === 'string') {
-                if (
-                    msg.includes('An update to') ||
-                    msg.includes('inside a test was not wrapped in act')
-                ) {
-                    return;
-                }
-            }
+  beforeAll(() => {
+    // ignora os erros do act e causados pelo proprio teste
+    jest.spyOn(console, 'error').mockImplementation((msg) => {
+      if (typeof msg === 'string') {
+        if (msg.includes('An update to') || msg.includes('inside a test was not wrapped in act')) {
+          return;
+        }
+      }
 
-            console.warn(msg);
-        });
-    })
+      console.warn(msg);
+    });
+  });
 
-    beforeEach(() => {
-        jest.clearAllMocks();
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renderiza corretamente o componente com os campos principais', async () => {
+    const { getByTestId, queryByTestId } = renderWithNavigation();
+
+    await waitFor(() => {
+      expect(getByTestId('input-title')).toBeTruthy();
+      expect(getByTestId('input-date')).toBeTruthy();
+      expect(getByTestId('input-hour')).toBeTruthy();
+      expect(getByTestId('input-link')).toBeTruthy();
+      expect(getByTestId('input-vod')).toBeTruthy();
+      expect(getByTestId('input-description')).toBeTruthy();
+      expect(getByTestId('btn-add-file')).toBeTruthy();
+      expect(getByTestId('btn-publish')).toBeTruthy();
     });
 
-    it('renderiza corretamente o componente com os campos principais', async () => {
-        const { getByTestId, queryByTestId } = renderWithNavigation();
+    expect(queryByTestId('error-title')).toBeNull();
+  });
 
-        await waitFor(() => {
-            expect(getByTestId('input-title')).toBeTruthy();
-            expect(getByTestId('input-date')).toBeTruthy();
-            expect(getByTestId('input-hour')).toBeTruthy();
-            expect(getByTestId('input-link')).toBeTruthy();
-            expect(getByTestId('input-vod')).toBeTruthy();
-            expect(getByTestId('input-description')).toBeTruthy();
-            expect(getByTestId('btn-add-file')).toBeTruthy();
-            expect(getByTestId('btn-publish')).toBeTruthy();
-        });
+  it('deve mostrar erros ao tentar enviar formulário vazio', async () => {
+    const { getByTestId, findAllByText } = renderWithNavigation();
 
-        expect(queryByTestId('error-title')).toBeNull();
+    fireEvent.press(getByTestId('btn-publish'));
+    const errors = await findAllByText('Campo obrigatório');
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it('deve chamar picker ao clicar em adicionar arquivo', async () => {
+    const DocumentPicker = require('expo-document-picker');
+
+    const FileSystem = require('expo-file-system');
+    FileSystem.readAsStringAsync.mockResolvedValueOnce('base64-mockado');
+
+    DocumentPicker.getDocumentAsync.mockResolvedValue({
+      assets: [{ name: 'arquivo.pdf', uri: 'file://arquivo.pdf', mimeType: 'application/pdf' }],
     });
 
-    it('deve mostrar erros ao tentar enviar formulário vazio', async () => {
-        const { getByTestId, findAllByText } = renderWithNavigation();
+    const { getByTestId, findByTestId } = renderWithNavigation();
 
-        fireEvent.press(getByTestId('btn-publish'));
-        const errors = await findAllByText('Campo obrigatório');
-        expect(errors.length).toBeGreaterThan(0);
+    fireEvent.press(getByTestId('btn-add-file'));
+
+    expect(await findByTestId(/file-item-/)).toBeTruthy();
+  });
+
+  it('envia o formulário corretamente com dados válidos', async () => {
+    const DocumentPicker = require('expo-document-picker');
+
+    const FileSystem = require('expo-file-system');
+    FileSystem.readAsStringAsync.mockResolvedValueOnce('base64-mockado');
+    const { getByTestId, findByTestId } = renderWithNavigation();
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledWith('category/group/123', expect.anything());
     });
 
-    it('deve chamar picker ao clicar em adicionar arquivo', async () => {
-        const DocumentPicker = require('expo-document-picker');
+    fireEvent.changeText(getByTestId('input-title'), 'Aula Teste');
+    fireEvent.changeText(getByTestId('input-date'), '31/12/2099');
+    fireEvent.changeText(getByTestId('input-hour'), '23:59');
+    fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
+    fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/aula');
+    fireEvent.changeText(getByTestId('input-description'), 'Descrição da aula de teste.');
 
-        const FileSystem = require('expo-file-system');
-        FileSystem.readAsStringAsync.mockResolvedValueOnce('base64-mockado');
+    fireEvent.press(getByTestId('btn-add-file'));
+    const fileItem = await findByTestId(/file-item-/);
+    expect(fileItem).toBeTruthy();
 
-        DocumentPicker.getDocumentAsync.mockResolvedValue({
-            assets: [
-                { name: 'arquivo.pdf', uri: 'file://arquivo.pdf', mimeType: 'application/pdf' },
-            ],
-        });
+    fireEvent.press(getByTestId('btn-publish'));
 
-        const { getByTestId, findByTestId } = renderWithNavigation()
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
+    });
+  });
 
-        fireEvent.press(getByTestId('btn-add-file'));
+  it('remove um arquivo ao clicar no card', async () => {
+    const DocumentPicker = require('expo-document-picker');
 
-        expect(await findByTestId(/file-item-/)).toBeTruthy();
+    const FileSystem = require('expo-file-system');
+    FileSystem.readAsStringAsync.mockResolvedValueOnce('base64-mockado');
+    const { debug, getByTestId, findByTestId, queryByTestId } = renderWithNavigation();
+
+    fireEvent.press(getByTestId('btn-add-file'));
+
+    const fileItem = await findByTestId(/file-item-/);
+    fireEvent.press(fileItem);
+
+    await waitFor(() => {
+      expect(queryByTestId(/file-item-/)).toBeNull();
+    });
+  });
+
+  it('mostra erro ao falhar na seleção de arquivos', async () => {
+    const DocumentPicker = require('expo-document-picker');
+    DocumentPicker.getDocumentAsync.mockRejectedValueOnce(new Error('Falha ao selecionar'));
+
+    const { getByTestId } = renderWithNavigation();
+
+    fireEvent.press(getByTestId('btn-add-file'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text1: 'Erro ao selecionar os arquivos.',
+        }),
+      );
+    });
+  });
+
+  it('mostra erro ao não selecionar nenhum arquivo', async () => {
+    const DocumentPicker = require('expo-document-picker');
+    DocumentPicker.getDocumentAsync.mockResolvedValueOnce({ assets: [] });
+
+    const { getByTestId } = renderWithNavigation();
+
+    fireEvent.press(getByTestId('btn-add-file'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text1: 'Nenhum arquivo selecionado.',
+        }),
+      );
+    });
+  });
+
+  it('mostra erro se categoria "Aulas" não for encontrada', async () => {
+    const apiMock = require('../services/api').default;
+    apiMock.get.mockResolvedValueOnce({ data: [{ id: '1', name: 'Outros' }] });
+
+    const { getByTestId } = renderWithNavigation();
+
+    fireEvent.changeText(getByTestId('input-title'), 'Aula sem categoria Aulas');
+    fireEvent.changeText(getByTestId('input-date'), '31/12/2099');
+    fireEvent.changeText(getByTestId('input-hour'), '23:59');
+    fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
+    fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/aula');
+    fireEvent.changeText(getByTestId('input-description'), 'Descrição');
+
+    fireEvent.press(getByTestId('btn-publish'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text1: 'Categoria "Aulas" não encontrada.',
+        }),
+      );
+    });
+  });
+
+  it('valida que data não pode ser no passado', async () => {
+    const { getByTestId, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(getByTestId('input-date'), '01/01/2000');
+    fireEvent.changeText(getByTestId('input-hour'), '12:00');
+    fireEvent.press(getByTestId('btn-publish'));
+
+    expect(await findByText('Data inválida')).toBeTruthy();
+  });
+
+  it('valida que horário não pode estar no passado no mesmo dia', async () => {
+    const { getByTestId, findByText } = renderWithNavigation();
+
+    const today = new Date();
+    const todayStr = today.toLocaleDateString('pt-BR');
+
+    fireEvent.changeText(getByTestId('input-date'), todayStr);
+    fireEvent.changeText(getByTestId('input-hour'), '00:01');
+
+    fireEvent.press(getByTestId('btn-publish'));
+
+    expect(await findByText('Esta hora já passou')).toBeTruthy();
+  });
+
+  it('exibe erro quando a API falha ao enviar dados da aulaa', async () => {
+    const apiMock = require('../services/api').default;
+    apiMock.post.mockRejectedValueOnce(new Error('Erro na API'));
+
+    const { getByTestId } = renderWithNavigation();
+
+    fireEvent.changeText(getByTestId('input-title'), 'Aula Teste');
+    fireEvent.changeText(getByTestId('input-date'), '31/12/2025');
+    fireEvent.changeText(getByTestId('input-hour'), '23:59');
+    fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
+    fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/aula');
+    fireEvent.changeText(getByTestId('input-description'), 'Descrição da aula de teste.');
+
+    fireEvent.press(getByTestId('btn-publish'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+    });
+  });
+
+  it('exibe erro quando ocorre exceção ao criar aula após obter categoria', async () => {
+    const apiMock = require('../services/api').default;
+
+    apiMock.get.mockResolvedValueOnce({
+      data: [{ id: '1', name: 'Aulas' }],
     });
 
-    it('envia o formulário corretamente com dados válidos', async () => {
-        const DocumentPicker = require('expo-document-picker');
-
-        const FileSystem = require('expo-file-system');
-        FileSystem.readAsStringAsync.mockResolvedValueOnce('base64-mockado');
-        const { getByTestId, findByTestId } = renderWithNavigation();
-
-        await waitFor(() => {
-            expect(api.get).toHaveBeenCalledWith(
-                'category/group/123',
-                expect.anything()
-            );
-
-        });
-
-        fireEvent.changeText(getByTestId('input-title'), 'Aula Teste');
-        fireEvent.changeText(getByTestId('input-date'), '31/12/2099');
-        fireEvent.changeText(getByTestId('input-hour'), '23:59');
-        fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
-        fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/aula');
-        fireEvent.changeText(getByTestId('input-description'), 'Descrição da aula de teste.');
-
-        fireEvent.press(getByTestId('btn-add-file'));
-        const fileItem = await findByTestId(/file-item-/);
-        expect(fileItem).toBeTruthy();
-
-        fireEvent.press(getByTestId('btn-publish'));
-
-        await waitFor(() => {
-            expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
-        });
+    apiMock.post.mockImplementationOnce(() => {
+      throw new Error('Erro simulado ao criar aula');
     });
 
-    it('remove um arquivo ao clicar no card', async () => {
-        const DocumentPicker = require('expo-document-picker');
+    const { getByTestId } = renderWithNavigation();
 
-        const FileSystem = require('expo-file-system');
-        FileSystem.readAsStringAsync.mockResolvedValueOnce('base64-mockado');
-        const { debug, getByTestId, findByTestId, queryByTestId } = renderWithNavigation();
-
-        fireEvent.press(getByTestId('btn-add-file'));
-
-        const fileItem = await findByTestId(/file-item-/);
-        fireEvent.press(fileItem);
-
-        await waitFor(() => {
-            expect(queryByTestId(/file-item-/)).toBeNull();
-        });
+    await waitFor(() => {
+      expect(apiMock.get).toHaveBeenCalledWith(`category/group/123`, expect.anything());
     });
 
-    it('mostra erro ao falhar na seleção de arquivos', async () => {
-        const DocumentPicker = require('expo-document-picker');
-        DocumentPicker.getDocumentAsync.mockRejectedValueOnce(new Error('Falha ao selecionar'));
+    fireEvent.changeText(getByTestId('input-title'), 'Título Teste');
+    fireEvent.changeText(getByTestId('input-date'), '31/12/2099');
+    fireEvent.changeText(getByTestId('input-hour'), '23:59');
+    fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
+    fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/aula');
+    fireEvent.changeText(getByTestId('input-description'), 'Descrição da aula');
 
-        const { getByTestId } = renderWithNavigation();
+    fireEvent.press(getByTestId('btn-publish'));
 
-        fireEvent.press(getByTestId('btn-add-file'));
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text1: 'Erro ao criar aula. Tente novamente mais tarde.',
+        }),
+      );
+    });
+  });
 
-        await waitFor(() => {
-            expect(Toast.show).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: 'error',
-                    text1: 'Erro ao selecionar os arquivos.',
-                })
-            );
-        });
+  it('mostra erro se falhar ao buscar categorias', async () => {
+    const apiMock = require('../services/api').default;
+
+    apiMock.get.mockImplementation((url: string) => {
+      if (url === 'category/group/123') {
+        return Promise.reject(new Error('Erro ao buscar categorias'));
+      }
+      return Promise.resolve({ data: [] });
     });
 
-    it('mostra erro ao não selecionar nenhum arquivo', async () => {
-        const DocumentPicker = require('expo-document-picker');
-        DocumentPicker.getDocumentAsync.mockResolvedValueOnce({ assets: [] });
-
-        const { getByTestId } = renderWithNavigation();
-
-        fireEvent.press(getByTestId('btn-add-file'));
-
-        await waitFor(() => {
-            expect(Toast.show).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: 'error',
-                    text1: 'Nenhum arquivo selecionado.',
-                })
-            );
-        });
+    const storageMock = require('../pages/SignIn/SignIn').storage;
+    storageMock.getString.mockImplementation((key: string) => {
+      if (key === 'accessToken') return 'fake-token';
+      if (key === 'loggedId') return 'fake-user-id';
+      return null;
     });
 
-    it('mostra erro se categoria "Aulas" não for encontrada', async () => {
-        const apiMock = require('../services/api').default;
-        apiMock.get.mockResolvedValueOnce({ data: [{ id: '1', name: 'Outros' }] });
+    renderWithNavigation();
 
-        const { getByTestId } = renderWithNavigation();
-
-        fireEvent.changeText(getByTestId('input-title'), 'Aula sem categoria Aulas');
-        fireEvent.changeText(getByTestId('input-date'), '31/12/2099');
-        fireEvent.changeText(getByTestId('input-hour'), '23:59');
-        fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
-        fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/aula');
-        fireEvent.changeText(getByTestId('input-description'), 'Descrição');
-
-        fireEvent.press(getByTestId('btn-publish'));
-
-        await waitFor(() => {
-            expect(Toast.show).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: 'error',
-                    text1: 'Categoria "Aulas" não encontrada.',
-                })
-            );
-        });
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text1: 'Categoria não encontrada.',
+        }),
+      );
     });
-
-    it('valida que data não pode ser no passado', async () => {
-        const { getByTestId, findByText } = renderWithNavigation();
-
-        fireEvent.changeText(getByTestId('input-date'), '01/01/2000');
-        fireEvent.changeText(getByTestId('input-hour'), '12:00');
-        fireEvent.press(getByTestId('btn-publish'));
-
-        expect(await findByText('Data inválida')).toBeTruthy();
-    });
-
-    it('valida que horário não pode estar no passado no mesmo dia', async () => {
-        const { getByTestId, findByText } = renderWithNavigation();
-
-        const today = new Date();
-        const todayStr = today.toLocaleDateString('pt-BR');
-
-        fireEvent.changeText(getByTestId('input-date'), todayStr);
-        fireEvent.changeText(getByTestId('input-hour'), '00:01');
-
-        fireEvent.press(getByTestId('btn-publish'));
-
-        expect(await findByText('Esta hora já passou')).toBeTruthy();
-    });
-
-    it('exibe erro quando a API falha ao enviar dados da aulaa', async () => {
-        const apiMock = require('../services/api').default;
-        apiMock.post.mockRejectedValueOnce(new Error('Erro na API'));
-
-        const { getByTestId } = renderWithNavigation();
-
-        fireEvent.changeText(getByTestId('input-title'), 'Aula Teste');
-        fireEvent.changeText(getByTestId('input-date'), '31/12/2025');
-        fireEvent.changeText(getByTestId('input-hour'), '23:59');
-        fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
-        fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/aula');
-        fireEvent.changeText(getByTestId('input-description'), 'Descrição da aula de teste.');
-
-        fireEvent.press(getByTestId('btn-publish'));
-
-        await waitFor(() => {
-            expect(Toast.show).toHaveBeenCalledWith(
-                expect.objectContaining({ type: 'error' })
-            );
-        });
-    });
-
-    it('exibe erro quando ocorre exceção ao criar aula após obter categoria', async () => {
-        const apiMock = require('../services/api').default;
-
-        apiMock.get.mockResolvedValueOnce({
-            data: [{ id: '1', name: 'Aulas' }],
-        });
-
-        apiMock.post.mockImplementationOnce(() => {
-            throw new Error('Erro simulado ao criar aula');
-        });
-
-        const { getByTestId } = renderWithNavigation();
-
-        await waitFor(() => {
-            expect(apiMock.get).toHaveBeenCalledWith(`category/group/123`, expect.anything());
-        });
-
-        fireEvent.changeText(getByTestId('input-title'), 'Título Teste');
-        fireEvent.changeText(getByTestId('input-date'), '31/12/2099');
-        fireEvent.changeText(getByTestId('input-hour'), '23:59');
-        fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
-        fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/aula');
-        fireEvent.changeText(getByTestId('input-description'), 'Descrição da aula');
-
-        fireEvent.press(getByTestId('btn-publish'));
-
-        await waitFor(() => {
-            expect(Toast.show).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: 'error',
-                    text1: 'Erro ao criar aula. Tente novamente mais tarde.',
-                })
-            );
-        });
-    });
-
-    it('mostra erro se falhar ao buscar categorias', async () => {
-        const apiMock = require('../services/api').default;
-
-        apiMock.get.mockImplementation((url: string) => {
-            if (url === 'category/group/123') {
-                return Promise.reject(new Error('Erro ao buscar categorias'));
-            }
-            return Promise.resolve({ data: [] });
-        });
-
-        const storageMock = require('../pages/SignIn/SignIn').storage;
-        storageMock.getString.mockImplementation((key: string) => {
-            if (key === 'accessToken') return 'fake-token';
-            if (key === 'loggedId') return 'fake-user-id';
-            return null;
-        });
-
-        renderWithNavigation();
-
-        await waitFor(() => {
-            expect(Toast.show).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    type: 'error',
-                    text1: 'Categoria não encontrada.',
-                })
-            );
-        });
-    });
-
+  });
 });

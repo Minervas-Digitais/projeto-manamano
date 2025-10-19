@@ -1,13 +1,22 @@
 /* eslint-disable import/prefer-default-export */
 import styled from 'styled-components/native';
 
-export const ModalOptionsNotificationContainer = styled.View<{ display: any; height: any }>`
+export const ModalOptionsNotificationContainer = styled.View<{
+  display: any;
+  height: any;
+  type?: string;
+  admin?: boolean;
+}>`
   display: ${(prop) => (prop.display ? 'flex' : 'none')};
   z-index: 9;
   justify-content: flex-start;
   align-items: center;
   flex-direction: column;
-  height: ${(prop) => (prop.height ? prop.height : '70px')};
+  height: ${(prop) => {
+    if (prop.type === 'header' && prop.admin) return '50px';
+    if (prop.height) return prop.height;
+    return '70px';
+  }};
   width: 194px;
   background-color: #f2f6fa;
   box-shadow: 0 4px 8px rgba(39, 39, 39, 0.2);

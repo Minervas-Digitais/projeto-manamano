@@ -15,6 +15,7 @@ import api from '../../services/api';
 import IconEmail from '../../assets/e-mail-icon.svg';
 import IconPassword from '../../assets/lock-icon.svg';
 import ManaManoLogo from '../../assets/logo-boas-vindas.svg';
+import { registerForPushNotificationsAsync } from '../../hooks/useNotification';
 
 export const storage = new MMKV();
 
@@ -26,17 +27,42 @@ export default function SignIn({ navigation }: any) {
     formState: { errors },
   } = useForm({});
   const onSubmit = (data: any) => {
-    api.post('/auth/login', data).then((res) => {
-      if (res.data.accessToken) {
-        alert(res.data.accessToken);
-        alert(res.data.loggedId);
-        storage.set('accessToken', res?.data.accessToken);
-        storage.set('loggedId', res?.data.loggedId);
-        navigation.navigate('Home');
-      } else if (!res.data.accessToken) {
-        alert('E-mail ou senha incorretos');
-      }
-    });
+    api
+      .post('/auth/login', data)
+      .then(async (res) => {
+        if (res.data.accessToken) {
+          alert(res.data.accessToken);
+          alert(res.data.loggedId);
+          storage.set('accessToken', res?.data.accessToken);
+          storage.set('loggedId', res?.data.loggedId);
+
+          const pushToken = await registerForPushNotificationsAsync();
+
+          if (pushToken) {
+            try {
+              await api.post(
+                '/notifications/register-token',
+                { pushNotifToken: pushToken },
+                {
+                  headers: {
+                    Authorization: `Bearer ${res.data.accessToken}`,
+                  },
+                },
+              );
+            } catch (error) {
+              console.error('Erro ao enviar push token para o backend:', error);
+            }
+          }
+
+          navigation.navigate('Home');
+        } else {
+          alert('E-mail ou senha incorretos');
+        }
+      })
+      .catch((error) => {
+        console.error('Erro ao fazer login:', error);
+        alert('Erro ao conectar com o servidor. Verifique sua conexão e tente novamente.');
+      });
   };
 
   const [fontsLoaded] = useFonts({

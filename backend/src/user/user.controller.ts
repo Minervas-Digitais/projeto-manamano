@@ -1,5 +1,6 @@
 import {
     BadRequestException,
+    UnauthorizedException,
     Body,
     Controller,
     Delete,
@@ -9,6 +10,7 @@ import {
     Patch,
     Post,
     UseGuards,
+    Req,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,7 +23,6 @@ import { UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import express from 'express';
 import { NotFoundException, Res } from '@nestjs/common';
-
 
 @Controller('user')
 export class UserController {
@@ -107,4 +108,6 @@ export class UserController {
 
         res.send(buffer);
     }
+
+    
 }

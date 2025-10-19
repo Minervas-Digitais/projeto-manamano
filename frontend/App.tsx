@@ -1,5 +1,5 @@
 /* eslint-disable global-require */
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import EnterGroup from './src/pages/EnterGroup/EnterGroup';
@@ -29,6 +29,17 @@ import NotificationPage from './src/pages/NotificationPage/NotificationPage';
 import ADMPage from './src/pages/ADMPage/ADMPage';
 import GlobalNotificationPage from './src/pages/GlobalNotificationPage/GlobalNotificationPage';
 import Groups from './src/pages/Groups/Groups';
+import { useNotifications } from './src/hooks/useNotification';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 const Stack = createNativeStackNavigator();
 
@@ -44,12 +55,27 @@ export default function App() {
         VisitorProfile: 'visitorprofile/:id',
         GroupPage: 'group/:groupId',
         EditProfile: 'editprofile/:id',
+        GroupData: 'groupdata/:groupId',
       },
     },
   };
+
+  useNotifications();
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync('default', {
+        name: 'Default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FFFFFFFF',
+      });
+    }
+  }, []);
+
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="Home">
+      <Stack.Navigator initialRouteName="SingIn">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}

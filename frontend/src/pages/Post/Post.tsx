@@ -308,9 +308,8 @@ export default function Post() {
       <HeaderCustom
         font="inter-bold"
         text="Publicação"
-        icon
+        icon={<DotsMenuIcon width="30px" height="30px" />}
         onPress={() => setModalOptions(!modalOptions)}
-        headerButton={<DotsMenuIcon width="30px" height="30px" />}
       />
       {modalOptions ? <ModalOptions postId={postId} /> : ''}
       <ScrollView

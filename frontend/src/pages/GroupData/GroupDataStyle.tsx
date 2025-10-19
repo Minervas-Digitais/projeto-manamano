@@ -6,9 +6,13 @@ const { height } = Dimensions.get('window');
 
 export const GroupDataPage = styled.View`
   display: flex;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
+  flex: 1;
+  margin-bottom: 15px;
+`;
+
+export const GroupDataScrollView = styled.ScrollView`
+  flex: 1;
+  background-color: #f2f6fa;
 `;
 
 export const GroupDataText = styled.Text<{ font?: string; color?: string; size?: string }>`
@@ -33,7 +37,7 @@ export const GroupDataContainerInfo = styled.View<{ size?: any }>`
   gap: 20px;
 `;
 
-export const GroupDataScrollView = styled.View<{ size?: any; gap?: any }>`
+export const GroupDataScrollContent = styled.View<{ size?: any; gap?: any }>`
   width: 100%;
   height: ${(prop) => prop.size};
   overflow: auto;

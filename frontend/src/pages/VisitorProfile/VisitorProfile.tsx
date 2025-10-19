@@ -119,7 +119,7 @@ export default function VisitorProfile({ navigation }: any) {
   if (!fontsLoaded || loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#170e49" />
+        <ActivityIndicator testID="activity-indicator" size="large" color="#170e49" />
       </View>
     );
   }
@@ -130,7 +130,7 @@ export default function VisitorProfile({ navigation }: any) {
         <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
         <ProfileContainerInfo>
           <ProfileContainerButtons>
-            <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
+            <TouchableOpacity testID="menu-toggle-button" onPress={() => setSideMenu(!sideMenu)}>
               <MenuIcon />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => {}}>
@@ -149,7 +149,7 @@ export default function VisitorProfile({ navigation }: any) {
           </ProfileContainerData>
         </ProfileContainerInfo>
         <HomePageWhite style={{ gap: 0 }}>
-          <ProfileTextContainer style={{ padding: '25px' }}>
+          <ProfileTextContainer style={{ padding: 25 }}>
             <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
               Este usuário não existe ou teve seu perfil removido.
             </GroupDataText>
@@ -188,10 +188,10 @@ export default function VisitorProfile({ navigation }: any) {
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <ProfileContainerInfo>
         <ProfileContainerButtons>
-          <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
+          <TouchableOpacity testID="menu-toggle-button" onPress={() => setSideMenu(!sideMenu)}>
             <MenuIcon />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onShareProfile}>
+          <TouchableOpacity testID="share-button" onPress={onShareProfile}>
             <ShareWhiteIcon />
           </TouchableOpacity>
         </ProfileContainerButtons>
@@ -221,7 +221,7 @@ export default function VisitorProfile({ navigation }: any) {
               <TouchableOpacity onPress={() => copyToClipboard(user?.phone, 'Número de telefone copiado!')}>
                 <WhatsappIcon height="22px" width="22px" />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => copyToClipboard(user?.email, 'Email copiado!')}>
+              <TouchableOpacity testID="email-button" onPress={() => copyToClipboard(user?.email, 'Email copiado!')}>
                 <EmailIcon height="22px" width="22px" />
               </TouchableOpacity>
             </View>
@@ -229,7 +229,7 @@ export default function VisitorProfile({ navigation }: any) {
         </ProfileContainerData>
       </ProfileContainerInfo>
       <HomePageWhite style={{ gap: 0 }}>
-        <ProfileTextContainer style={{ padding: '25px' }}>
+        <ProfileTextContainer style={{ padding: 25 }}>
           <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
             {user.bio || 'Nenhuma biografia disponível.'}
           </GroupDataText>

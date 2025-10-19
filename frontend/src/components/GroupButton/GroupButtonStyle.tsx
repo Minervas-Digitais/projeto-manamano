@@ -13,9 +13,11 @@ export const GroupButtonGradient = styled(LinearGradient)`
   border-radius: 15px;
   padding: 18px;
   justify-content: space-between;
+  overflow: hidden;
 `;
 
 export const GroupTextContainer = styled.View`
+  z-index: 1;
   width: 100%;
   gap: 8px;
   display: flex;
@@ -53,6 +55,6 @@ export const GroupFilterContainer = styled.TouchableOpacity`
   justify-content: flex-end;
 `;
 
-export const GroupButtonImage = styled.TouchableOpacity<{ size?: any }>`
-  display: ${(prop) => (prop.size ? 'none' : 'flex')};
+export const GroupButtonImage = styled.TouchableOpacity<{ $size?: any }>`
+  display: ${(prop) => (prop.$size ? 'none' : 'flex')};
 `;

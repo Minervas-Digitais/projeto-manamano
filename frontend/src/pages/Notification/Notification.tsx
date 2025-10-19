@@ -42,7 +42,7 @@ export interface INotification {
   senderName: string;
   groupName: string;
   body: string;
-  type: 'COMMENT' | 'WARNING' | "FIXED" | string;
+  type: 'COMMENT' | 'WARNING' | 'FIXED' | string;
   idContent: string | null;
   isRead: boolean;
   createdAt: string;
@@ -80,31 +80,31 @@ export default function Notification({ navigation }: any) {
   }, []);
 
   useEffect(() => {
-  const fetchUserInfo = async () => {
-    if (loggedIdState && accessTokenState) {
-      try {
-        const response = await api.get(`/user/${loggedIdState}`, {
-          headers: {
-            Authorization: `Bearer ${accessTokenState}`,
-          },
-        });
+    const fetchUserInfo = async () => {
+      if (loggedIdState && accessTokenState) {
+        try {
+          const response = await api.get(`/user/${loggedIdState}`, {
+            headers: {
+              Authorization: `Bearer ${accessTokenState}`,
+            },
+          });
 
-        const userData: IUser = response.data;
-        setUserInfo(userData);
+          const userData: IUser = response.data;
+          setUserInfo(userData);
 
-        if (userData.sysRole === 'ADMIN') {
-          setAdmin(true);
-        } else {
-          setAdmin(false);
+          if (userData.sysRole === 'ADMIN') {
+            setAdmin(true);
+          } else {
+            setAdmin(false);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar informações do usuário:', error);
         }
-      } catch (error) {
-        console.error('Erro ao buscar informações do usuário:', error);
       }
-    }
-  };
+    };
 
-  fetchUserInfo();
-}, [loggedIdState, accessTokenState]);
+    fetchUserInfo();
+  }, [loggedIdState, accessTokenState]);
   useEffect(() => {
     // fetchNotifications();
     const interval = setInterval(fetchNotifications, 1000);
@@ -139,7 +139,7 @@ export default function Notification({ navigation }: any) {
           },
         },
       )
-      .then((res) => console.log(JSON.stringify(res.data)))
+      // .then((res) => console.log(JSON.stringify(res.data)))
       .catch((err) => console.log('Erro ao atualizar a notificação:', err));
 
     if (type === 'WARNING') {
@@ -166,7 +166,10 @@ export default function Notification({ navigation }: any) {
       setNotification((prev) => prev.filter((n: any) => n.id !== deleteModal.notifId));
       Alert.alert('Sucesso', 'Notificação excluída com sucesso!');
     } catch (error: any) {
-      Alert.alert('Erro', error?.response?.data?.message || 'Não foi possível excluir a notificação.');
+      Alert.alert(
+        'Erro',
+        error?.response?.data?.message || 'Não foi possível excluir a notificação.',
+      );
       console.error('Erro ao excluir notificação:', error);
     }
     setDeleteModal({ visible: false, notifId: '' });
@@ -188,8 +191,7 @@ export default function Notification({ navigation }: any) {
 
       <ConfigNotificationContainer>
         <HeaderCustom
-          icon
-          headerButton={<DotsMenuIcon />}
+          icon={<DotsMenuIcon />}
           text={admin ? 'Comunicados' : 'Notificação'}
           font="inter-bold"
           onPress={() => setDisplay(!display)}
@@ -231,14 +233,13 @@ export default function Notification({ navigation }: any) {
             )}
           </NotificationInfoContainer>
 
-            <ButtonCustom
-              onPress={() => {}}
-              backColor="#EF4036"
-              fontColor="#ffff"
-              text="Retornar para a tela inicial"
-              border={false}
-            />
-
+          <ButtonCustom
+            onPress={() => {}}
+            backColor="#EF4036"
+            fontColor="#ffff"
+            text="Retornar para a tela inicial"
+            border={false}
+          />
         </NotificationBodyContainer>
       </ConfigNotificationContainer>
     </>
