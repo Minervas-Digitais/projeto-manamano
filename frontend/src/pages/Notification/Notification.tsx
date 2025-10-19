@@ -234,7 +234,7 @@ export default function Notification({ navigation }: any) {
           </NotificationInfoContainer>
 
           <ButtonCustom
-            onPress={() => {}}
+            onPress={() => {navigation.navigate('Home')}}
             backColor="#EF4036"
             fontColor="#ffff"
             text="Retornar para a tela inicial"

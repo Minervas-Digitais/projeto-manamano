@@ -95,7 +95,9 @@ export default function NotificationCard({
               </NotificationTextRed>{' '}
               comentou no seu post! Clique para visualizar!
             </NotificationTextGrey>
-            <TouchableOpacity onPress={() => setDisplay(!display)}>
+            <TouchableOpacity
+              onPress={() => setDisplay(!display)}
+              testID={`options-menu-${idNotif}`}>
               <DotsMenuIcon />
             </TouchableOpacity>
           </NotificationTextContainer>
@@ -127,7 +129,9 @@ export default function NotificationCard({
                 <NotificationTextRed font="inter-bold">Comunicado: </NotificationTextRed>
               </View>
 
-              <TouchableOpacity onPress={() => setDisplay(!display)}>
+              <TouchableOpacity
+                onPress={() => setDisplay(!display)}
+                testID={`options-menu-${idNotif}`}>
                 <DotsMenuIcon />
               </TouchableOpacity>
             </NotificationTextContainerWarning>
