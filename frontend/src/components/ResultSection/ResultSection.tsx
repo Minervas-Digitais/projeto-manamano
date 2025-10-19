@@ -1,9 +1,9 @@
-/* eslint-disable no-nested-ternary */
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
-import { useFonts } from 'expo-font';
-import { TouchableOpacity, View, Text, ScrollView, Dimensions, Alert } from 'react-native';
+import { TouchableOpacity, View, Text, ScrollView, Dimensions, Alert, Image } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
+import { Buffer } from 'buffer';
 import {
   Avatar,
   Card,
@@ -43,7 +43,7 @@ interface Post {
 
 interface ResultSectionProps {
   searchText: string;
-  saveRecentUser: (user: { id: number; name: string; avatar: any }) => void;
+  saveRecentUser: (user: { id: string; name: string; avatar: any }) => void;
   accessToken: string;
   admin: boolean;
 }
@@ -71,12 +71,38 @@ export default function ResultSection({
   const loggedId = storage.getString('loggedId');
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
-  const avatar = require('../../assets/duck.png');
+  const defaultAvatar = require('../../assets/user-profile.png');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
+
+  const [userAvatars, setUserAvatars] = useState<Record<string, any>>({});
+
+  const getUserProfileImage = async (userId: string) => {
+    const token = storage.getString('accessToken');
+    if (!token) {
+      return defaultAvatar;
+    }
+
+    try {
+      const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'arraybuffer',
+      });
+
+      const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+      const imageUri = `data:image/jpeg;base64,${imageStr}`;
+      return { uri: imageUri };
+    } catch (error) {
+      return defaultAvatar;
+    }
+  };
+
+  // Função para buscar dados do servidor
   const fetchData = async (url: string, sectionKey?: keyof DataState): Promise<void> => {
     if (!accessToken) {
       console.error('No access token available.');
@@ -108,6 +134,7 @@ export default function ResultSection({
       console.error('Error fetching data:', error);
     }
   };
+
   // Delete user
   const onPressUser = async (userId: string) => {
     try {
@@ -227,6 +254,36 @@ export default function ResultSection({
     }
   };
 
+  useEffect(() => {
+    const loadUserAvatars = async () => {
+      const newUserAvatars: Record<string, any> = {};
+
+      for (const user of data.users) {
+        const image = await getUserProfileImage(user.id);
+        newUserAvatars[user.id] = image;
+      }
+
+      setUserAvatars(newUserAvatars);
+    };
+
+    if (data.users.length > 0) {
+      loadUserAvatars();
+    }
+  }, [data.users]);
+
+  useEffect(() => {
+    if (searchText && !selectedSection) {
+      fetchData('/search');
+    }
+  }, [searchText, accessToken]);
+
+  useEffect(() => {
+    if (selectedSection) {
+      const url = `/search/filter/${selectedSection.toLowerCase()}`;
+      fetchData(url, selectedSection as keyof DataState);
+    }
+  }, [selectedSection, accessToken]);
+
   const handleFilterPress = (section: string): void => {
     const newSection = selectedSection === section ? '' : section;
     setData({ users: [], groups: [], posts: [] });
@@ -296,7 +353,7 @@ export default function ResultSection({
               gap: 10,
             }}>
             <TouchableOpacity
-              testID='filtro-pessoas'
+              testID="filtro-pessoas"
               style={{
                 flex: 1,
                 backgroundColor: selectedSection === 'users' ? '#FFA8A6' : '#E0E0E0',
@@ -310,7 +367,7 @@ export default function ResultSection({
               <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Pessoas</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              testID='filtro-grupos'
+              testID="filtro-grupos"
               style={{
                 backgroundColor: selectedSection === 'groups' ? '#FFA8A6' : '#E0E0E0',
                 borderRadius: 30,
@@ -324,7 +381,7 @@ export default function ResultSection({
               <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Grupos</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              testID='filtro-publicacoes'
+              testID="filtro-publicacoes"
               style={{
                 backgroundColor: selectedSection === 'posts' ? '#FFA8A6' : '#E0E0E0',
                 borderRadius: 30,
@@ -353,27 +410,31 @@ export default function ResultSection({
                 Pessoas
               </SectionTitle>
               {data.users.map((person) => {
-                const fullName = person.fullName.split(' ');
+                const fullNameParts = person.fullName.split(' ');
                 return (
                   <Card key={person.id} style={{ marginBottom: 10 }} testID={`user-card-${person.id}`}>
                     <TouchableOpacity
                       testID={`user-touchable-${person.id}`}
                       onPress={() => {
                         saveRecentUser({
-                          id: parseInt(person.id, 10),
+                          id: person.id,
                           name: person.fullName,
-                          avatar: require('../../assets/duck.png'),
+                          avatar: userAvatars[person.id] || defaultAvatar,
                         });
-                        if (String(person.id) === String(loggedId)) {
+                        if (person.id === loggedId) {
                           navigation.navigate('Profile', { id: person.id });
                         } else {
                           navigation.navigate('VisitorProfile', { id: person.id });
                         }
                       }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
-                        <Avatar source={avatar} />
-                        <Name testID={`user-name-${person.id}`} fontFamily="inter-regular" fontColor="#3F3D3D">
-                          {`${fullName[0]} ${fullName[1] || ''}`}
+                        <Avatar source={userAvatars[person.id] || defaultAvatar} />
+                        <Name
+                          testID={`user-name-${person.id}`}
+                          fontFamily="inter-regular"
+                          fontColor="#3F3D3D"
+                        >
+                          {`${fullNameParts[0]} ${fullNameParts[1] || ''}`}
                         </Name>
                       </View>
                     </TouchableOpacity>
@@ -425,14 +486,14 @@ export default function ResultSection({
                     testID={`group-touchable-${group.id}`}
                     onPress={() => {
                       saveRecentUser({
-                        id: parseInt(group.id, 10),
+                        id: group.id,
                         name: group.name,
-                        avatar: require('../../assets/duck.png'),
+                        avatar: defaultAvatar,
                       });
                       navigation.navigate('GroupPage', { groupId: group.id });
                     }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Avatar source={avatar} testID={`group-avatar-${group.id}`} />
+                      <Avatar source={defaultAvatar} testID={`group-avatar-${group.id}`} />
                       <Name fontFamily="inter-regular" fontColor="#3F3D3D" testID={`group-name-${group.id}`}>
                         {group.name}
                       </Name>

@@ -7,6 +7,8 @@
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Image, TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
+import { Buffer } from 'buffer';
+import { useFocusEffect } from '@react-navigation/native';
 import { storage } from '../SignIn/SignIn';
 import { district } from './ProfileData'; // Adjust the path based on your folder structure
 import {
@@ -55,10 +57,11 @@ export default function Profile({ navigation, route }: any) {
   const [savedPostsSelect, setSavedPostsSelect] = useState(false);
   const [filterPosts, setFilterPosts] = useState('userPosts');
 
-  const duckImage = require('../../assets/duck.png');
+  const defaultAvatar = require('../../assets/user-profile.png');
 
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
+  const [profileImage, setProfileImage] = useState<any>(null);
 
   useEffect(() => {
     if (route?.params?.initialTab === 'saved') {
@@ -67,8 +70,8 @@ export default function Profile({ navigation, route }: any) {
       setFilterPosts('savedPosts');
     }
   }, [route?.params?.initialTab]);
-
-  useEffect(() => {
+    
+  useFocusEffect(() => {
     const token = storage.getString('accessToken');
 
     if (token) {
@@ -86,6 +89,17 @@ export default function Profile({ navigation, route }: any) {
           setNeighborhood(data.neighborhood);
           setEnterprise(data.enterprise);
           setBio(data.bio);
+
+          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            responseType: 'arraybuffer',
+          });
+
+          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+          const imageUri = `data:image/jpeg;base64,${imageStr}`;
+          setProfileImage({ uri: imageUri });
 
           const fetchUserPosts = async () => {
             try {
@@ -136,7 +150,7 @@ export default function Profile({ navigation, route }: any) {
 
       fetchUserData();
     }
-  }, []);
+  });
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -151,6 +165,29 @@ export default function Profile({ navigation, route }: any) {
   const districtLabel =
     district.find((item) => item.value === String(neighborhood))?.label || 'Unknown';
 
+  const getUserProfileImage = async (userId: string) => {
+    const token = storage.getString('accessToken');
+
+    if (!token) {
+      return defaultAvatar;
+    }
+
+    try {
+      const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'arraybuffer',
+      });
+
+      const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+      const imageUri = `data:image/jpeg;base64,${imageStr}`;
+      return { uri: imageUri };
+    } catch (error) {
+      return defaultAvatar;
+    }
+  };
+
   return (
     <HomePageBlue>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
@@ -164,7 +201,7 @@ export default function Profile({ navigation, route }: any) {
           </TouchableOpacity>
         </ProfileContainerButtons>
         <ProfileContainerData>
-          <ProfileImage radius height="78px" width="78px" source={duckImage} />
+          <ProfileImage radius height="78px" width="78px" source={profileImage || defaultAvatar} />
 
           <View style={{ gap: '4px' }}>
             <ProfileContainerData gap={10} center>
@@ -236,7 +273,8 @@ export default function Profile({ navigation, route }: any) {
                 <PostCard
                   key={item.id}
                   nameUser={item.nameUser}
-                  imageUser={duckImage}
+                  userId={item.userId}
+                  getUserProfileImage={getUserProfileImage}
                   postContent={item.input}
                   numComments={item.numComments}
                   date={item.createdAt}
@@ -254,7 +292,8 @@ export default function Profile({ navigation, route }: any) {
               <PostCard
                 key={item.id}
                 nameUser={item.nameUser}
-                imageUser={duckImage}
+                userId={item.userId}
+                getUserProfileImage={getUserProfileImage}
                 postContent={item.input}
                 numComments={item.numComments}
                 date={item.createdAt}

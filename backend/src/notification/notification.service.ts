@@ -65,7 +65,9 @@ export class NotificationService {
       });
 
       if (participants.length === 0) {
-        throw new Error('Não há participantes neste grupo para notificar.');
+        throw new BadRequestException(
+          'Não há participantes neste grupo para notificar.',
+        );
       }
 
       const notificationsData = participants.map((p) => ({
@@ -364,7 +366,6 @@ export class NotificationService {
         muteGroups: true,
       },
     });
-
     if (!user) throw new NotFoundException('Usuário não encontrado');
 
     return {

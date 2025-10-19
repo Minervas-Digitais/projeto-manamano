@@ -6,6 +6,7 @@ import {
   Delete,
   Req,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Body, Param, Request, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
@@ -99,7 +100,7 @@ export class NotificationController {
     const userId = req.user.id;
 
     if (!body.pushNotifToken) {
-      throw new Error('Push token é obrigatório');
+      throw new BadRequestException('Push token é obrigatório');
     }
 
     await this.notificationService.registerPushNotifToken(

@@ -11,15 +11,12 @@
 import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { TouchableOpacity, View, Image } from 'react-native';
-import { TextInputMask } from 'react-native-masked-text';
+import { View } from 'react-native';
 import {
-  EditGroupCategoryContainer,
   EditGroupContainer,
   EditGroupForm,
   EditGroupPage,
 } from './EditGroupStyle';
-import CategoryEditGroup from '../../components/CategoryEditGroup/CategoryEditGroup';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
@@ -27,14 +24,6 @@ import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
-import { AddCategoryButton, Input } from '../CreateGroup/CreateGroupStyle';
-import {
-  InputTextContainer,
-  LabelInputText,
-  InputTextIconInputContainer,
-  InputText,
-  InputTextIconContainer,
-} from '../../components/InputText/InputTextCustomStyle';
 
 export default function EditGroup({ navigation }: any) {
   const [loggedIdState, setLoggedIdState] = useState('');

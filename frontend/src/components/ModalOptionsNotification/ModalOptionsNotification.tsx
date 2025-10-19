@@ -130,7 +130,7 @@ export default function ModalOptionsNotification({
         type={type}
         admin={admin}>
         {!(admin && type === 'header') && (
-          <ModalOptionsNotificationInfo onPress={optionsActions}>
+          <ModalOptionsNotificationInfo onPress={optionsActions} testID={`delete-button-${id}`}>
             <Trash />
             <ModalOptionsNotificationText color="red" font="inter-regular">
               {type === 'header'
