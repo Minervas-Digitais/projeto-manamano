@@ -1,12 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { Transporter, createTransport } from 'nodemailer';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMailDto } from './dto/create-mail.dto';
+import { MAIL_MESSAGES } from 'src/messages/mail.messages';
 @Injectable()
 export class MailService {
   constructor(private prismaService: PrismaService) {}
 
-  async sendMail(email: CreateMailDto) {
+  async sendMail(email: CreateMailDto): Promise<{ message: string }> {
     const transporter = this.getTransporter();
 
     const user = await this.prismaService.user.findUnique({
@@ -15,26 +20,29 @@ export class MailService {
       },
     });
 
-    const emailContent = `
-Nova mensagem da(o) usuária(o) ${user.fullName}
+    if (!user) {
+      throw new NotFoundException(MAIL_MESSAGES.USER_NOT_FOUND);
+    }
 
-${email.text}
-    `;
+    const emailContent = `Nova mensagem da(o) usuária(o) ${user.fullName}:\n\n${email.text}`;
 
-    await transporter.sendMail({
-      from: process.env.SMTP_USERNAME,
-      to: process.env.SMTP_USERNAME,
-      cc: user.email,
-      subject: email.subject,
-      text: emailContent,
-    });
-    return {
-      message: 'Mail sent successfully',
-    };
+    try {
+      await transporter.sendMail({
+        from: process.env.SMTP_USERNAME,
+        to: process.env.SMTP_USERNAME,
+        cc: user.email,
+        subject: email.subject,
+        text: emailContent,
+      });
+
+      return { message: MAIL_MESSAGES.SEND_SUCCESS };
+    } catch (error) {
+      throw new InternalServerErrorException(MAIL_MESSAGES.SEND_FAILURE);
+    }
   }
 
-  getTransporter() {
-    return nodemailer.createTransport({
+  getTransporter(): Transporter {
+    return createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
       secure: process.env.SMTP_TLS === 'yes' ? true : false,
