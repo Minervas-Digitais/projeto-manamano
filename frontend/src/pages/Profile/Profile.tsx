@@ -32,7 +32,7 @@ import Pen from '../../assets/pen-icon.svg';
 import Business from '../../assets/business-icon.svg';
 import api from '../../services/api';
 
-export default function Profile({ navigation }: any) {
+export default function Profile({ navigation, route }: any) {
   const [profileId, setProfileId] = useState(1);
   const createDeepLink = () => `manamano://profile/${profileId}`;
   const onShare = async () => {
@@ -63,6 +63,14 @@ export default function Profile({ navigation }: any) {
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
   const [profileImage, setProfileImage] = useState<any>(null);
 
+  useEffect(() => {
+    if (route?.params?.initialTab === 'saved') {
+      setMyPostsSelect(false);
+      setSavedPostsSelect(true);
+      setFilterPosts('savedPosts');
+    }
+  }, [route?.params?.initialTab]);
+    
   useFocusEffect(() => {
     const token = storage.getString('accessToken');
 

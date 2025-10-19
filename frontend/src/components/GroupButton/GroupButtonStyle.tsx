@@ -4,9 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 // eslint-disable-next-line import/prefer-default-export
 export const GroupButtonContainer = styled.TouchableOpacity`
   border-radius: 15px;
-`;
-
-export const GroupButtonGradient = styled(LinearGradient)`
   display: flex;
   width: 157px;
   height: 133px;

@@ -12,7 +12,6 @@ export const GroupsBody = styled.View`
   height: 89vh;
   width: 100vw;
   background-color: #f2f6fa;
-  z-index: -1;
   padding: 25px;
 `;
 

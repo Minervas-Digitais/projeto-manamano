@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
@@ -20,10 +20,8 @@ export default function Groups() {
   });
 
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [showPopup, setShowPopup] = useState(false); // Initially the popup is hidden
-  const [popupPosition, setPopupPosition] = useState<{ top: number; left: number } | null>(null);
-  const [userData, setUserData] = useState<any>(null); // State to hold user data
-  const addButtonRef = useRef<View>(null); // Ref for the "AddButton"
+  const [showPopup, setShowPopup] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
   const [groups, setGroups] = useState([]);
 
   useEffect(() => {
@@ -71,28 +69,18 @@ export default function Groups() {
   }
 
   const handleAddButtonPress = () => {
-    // Handle the AddButton press logic
-    // If the user doesn't have the correct ID, navigate to EntrarGrupo
-    if (!userData || userData.role !== 'MODERATOR') {
+    // Check if user has permission: role INSTRUCTOR or sysRole MODERATOR or ADMIN
+    const hasPermission =
+      userData?.role === 'INSTRUCTOR' ||
+      userData?.sysRole === 'MODERATOR' ||
+      userData?.sysRole === 'ADMIN';
+
+    if (!userData || !hasPermission) {
       navigation.navigate('EntrarGrupo');
       return;
     }
 
-    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-    addButtonRef.current?.measure((x, y, width, height, pageX, pageY) => {
-      const adjustedPosition = {
-        top: Math.min(pageY, screenHeight - height - 10), // Prevent overflow on the bottom
-        left: Math.min(pageX, screenWidth - width - 10), // Prevent overflow on the right
-        bottom: Math.max(screenHeight - pageY - height, 10), // Distance from bottom
-        right: Math.max(screenWidth - pageX - width, 10), // Distance from right
-      };
-
-      console.log('Popup Position:', adjustedPosition); // Debugging
-      setPopupPosition(adjustedPosition);
-
-      setShowPopup(true);
-    });
+    setShowPopup(true);
   };
 
   const handlePopupOption = (option: string) => {
@@ -120,7 +108,13 @@ export default function Groups() {
                 onPress={() => {
                   navigation.navigate('GroupPage', item.groupId);
                 }}
-                size
+                showFilter={false}
+                containerStyle={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: '100%',
+                  backgroundColor: '#f2f6fa',
+                }}
               />
             ))
           ) : (
@@ -128,15 +122,9 @@ export default function Groups() {
           )}
         </GroupsList>
       </GroupsBody>
-      <View ref={addButtonRef}>
-        {' '}
-        {/* Wrap AddButton with a View for measuring */}
-        <AddButton testID="add-button" icon={<Add />} onPress={handleAddButtonPress} />
-      </View>
+      <AddButton testID="add-button" icon={<Add />} onPress={handleAddButtonPress} />
       <ShowPopup
         visible={showPopup}
-        // TEM QUE VER ISSO DPS!!!!
-        position={popupPosition as any} // Pass the position, including bottom and right
         onClose={() => setShowPopup(false)}
         onOptionSelect={handlePopupOption}
       />
