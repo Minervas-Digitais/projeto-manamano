@@ -18,22 +18,19 @@ export class MatchUserIdGuard implements CanActivate {
       );
     }
 
-    let userIdFromParam: string | undefined;
+    let userIdFromRequest: string | undefined =
+      request.body?.userId || request.params?.userId || request.params?.id;
 
-    if (request.params.ids) {
+    if (request.params?.ids && !userIdFromRequest) {
       const parts = request.params.ids.split(',');
-      userIdFromParam = parts[1];
-    } else if (request.params.userId) {
-      userIdFromParam = request.params.userId;
-    } else if (request.params.id) {
-      userIdFromParam = request.params.id;
+      userIdFromRequest = parts[1];
     }
 
-    if (!userIdFromParam) {
-      throw new UnauthorizedException('UserId não informado na requisição.');
+    if (!userIdFromRequest) {
+      throw new UnauthorizedException('userId não informado na requisição.');
     }
 
-    if (userIdFromParam !== userIdFromToken) {
+    if (userIdFromRequest !== userIdFromToken) {
       throw new ForbiddenException(
         'Acesso negado: token não corresponde ao usuário solicitado.',
       );

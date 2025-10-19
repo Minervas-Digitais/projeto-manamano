@@ -1,14 +1,43 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateArchiveDto, ResponseArchiveDto } from './dto/archive.dto';
-import { NotificationType } from '@prisma/client';
+import { Archive, NotificationType } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
+import { ARCHIVE_MESSAGES } from 'src/messages/archive.messages';
 
 @Injectable()
 export class ArchiveService {
-  constructor(private readonly prisma: PrismaService, private notificationService: NotificationService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
 
   async createArchive(data: CreateArchiveDto): Promise<ResponseArchiveDto> {
+    let group = null;
+    let sender = null;
+
+    if (data.postId) {
+      const post = await this.prisma.post.findUnique({
+        where: { id: data.postId },
+      });
+      if (!post) throw new NotFoundException(ARCHIVE_MESSAGES.POST_NOT_FOUND);
+    }
+
+    if (data.groupId) {
+      group = await this.prisma.group.findUnique({
+        where: { id: data.groupId },
+      });
+      if (!group) throw new NotFoundException(ARCHIVE_MESSAGES.GROUP_NOT_FOUND);
+    }
+
+    if (data.userId) {
+      sender = await this.prisma.user.findUnique({
+        where: { id: data.userId },
+        select: { fullName: true },
+      });
+      if (!sender) throw new NotFoundException(ARCHIVE_MESSAGES.USER_NOT_FOUND);
+    }
+    
     const createdArchive = await this.prisma.archive.create({
       data: {
         name: data.name,
@@ -20,31 +49,18 @@ export class ArchiveService {
       },
     });
 
-    if (data.groupId) {
-      const group = await this.prisma.group.findUnique({
-        where: { id: data.groupId },
-      });
+    const notificationBody = `Novo arquivo enviado no grupo ${group.name}`;
 
-      const sender = await this.prisma.user.findUnique({
-        where: { id: data.userId },
-        select: { fullName: true },
-      });
-
-      const notificationBody = `Novo arquivo enviado no grupo ${group?.name ?? 'desconhecido'}`;
-
-      await this.notificationService.createNotification(
-        {
-          senderId: data.userId,
-          recipientId: undefined, 
-          groupId: data.groupId,
-          body: notificationBody,
-          type: NotificationType.FIXED,
-          groupName: group?.name ?? null,
-          senderName: sender?.fullName ?? null,
-          idContent: createdArchive.id,
-        }
-      );
-    }
+    await this.notificationService.createNotification({
+      senderId: data.userId,
+      recipientId: undefined,
+      groupId: data.groupId,
+      body: notificationBody,
+      type: NotificationType.FIXED,
+      groupName: group.name,
+      senderName: sender.fullName,
+      idContent: createdArchive.id,
+    });
 
     return this.mapToResponseDto(createdArchive);
   }
@@ -55,7 +71,7 @@ export class ArchiveService {
     });
 
     if (!archive) {
-      throw new NotFoundException('Archive not found');
+      throw new NotFoundException(ARCHIVE_MESSAGES.NOT_FOUND);
     }
 
     return this.mapToResponseDto(archive);
@@ -75,6 +91,12 @@ export class ArchiveService {
   }
 
   async getArchivesByPostId(postId: string): Promise<ResponseArchiveDto[]> {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+
+    if (!post) {
+      throw new NotFoundException(ARCHIVE_MESSAGES.POST_NOT_FOUND);
+    }
+
     const archives = await this.prisma.archive.findMany({
       where: { postId },
     });
@@ -83,12 +105,20 @@ export class ArchiveService {
   }
 
   async getArchivesByGroupId(groupId: string): Promise<ResponseArchiveDto[]> {
+    const group = await this.prisma.group.findUnique({
+      where: { id: groupId },
+    });
+
+    if (!group) {
+      throw new NotFoundException(ARCHIVE_MESSAGES.GROUP_NOT_FOUND);
+    }
+
     const archives = await this.prisma.archive.findMany({
       where: { groupId },
     });
 
     if (archives.length === 0) {
-      throw new NotFoundException('No archives found for this group');
+      throw new NotFoundException(ARCHIVE_MESSAGES.EMPTY_ARCHIVES);
     }
 
     return archives.map(this.mapToResponseDto);
