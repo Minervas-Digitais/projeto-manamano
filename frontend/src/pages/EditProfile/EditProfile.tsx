@@ -1,10 +1,16 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { TouchableOpacity, View, Dimensions } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
-import { format } from 'date-fns';
-import React from 'react';
+import { format, set } from 'date-fns';
+import { Buffer } from 'buffer';
+import * as DocumentPicker from 'expo-document-picker';
+import Toast from 'react-native-toast-message';
+
+import { StatusBar } from 'expo-status-bar';
+import { TextInputMask } from 'react-native-masked-text';
+import { useFocusEffect } from '@react-navigation/native';
 import { storage } from '../SignIn/SignIn';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
 import SideMenu from '../../components/SideMenu/SideMenu';
@@ -29,8 +35,6 @@ import api from '../../services/api';
 import Menu from '../../assets/menuw-icon.svg';
 import EditButton from '../../assets/edit-button.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
-import { StatusBar } from 'expo-status-bar';
-import { TextInputMask } from 'react-native-masked-text';
 
 export default function EditProfile() {
   const {
@@ -108,13 +112,104 @@ export default function EditProfile() {
 
   const [sideMenu, setSideMenu] = useState(true);
   const [profileData, setProfileData] = useState<any>(null);
+  const [profileImageData, setProfileImage] = useState<any>(null);
 
   const defaultProfImage = require('../../assets/test-profile-icon.png');
+
+  const pickFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*'],
+        multiple: false,
+      });
+
+      if (result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+
+        const image = {
+          uri: file.uri,
+          name: file.name,
+          type: file.mimeType || 'image/jpeg',
+        };
+
+        const token = storage.getString('accessToken');
+        const userId = storage.getString('loggedId');
+
+        if (!token || !userId) {
+          Toast.show({
+            type: 'error',
+            text1: 'Você precisa estar logado para atualizar a imagem.',
+          });
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', image as any);
+
+        const response = await api.patch(`/user/${userId}/profile-picture`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setProfileData((prev: any) => ({
+          ...prev,
+          profileImage: { uri: image.uri },
+        }));
+
+        Toast.show({
+          type: 'success',
+          text1: 'Imagem atualizada com sucesso!',
+        });
+
+        console.log('Imagem enviada com sucesso:', response.data);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Nenhum arquivo selecionado.',
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar ou enviar imagem: ', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao enviar imagem.',
+      });
+    }
+  };
 
   const formatDateToDDMMYYYY = (dateString: string) => {
     const date = new Date(dateString);
     return format(date, 'dd/MM/yyyy'); // Using date-fns for formatting (optional)
   };
+
+  useFocusEffect(() => {
+    const token = storage.getString('accessToken');
+
+    if (token) {
+      const fetchUserData = async () => {
+        try {
+          const userId = storage.getString('loggedId');
+
+          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            responseType: 'arraybuffer',
+          });
+
+          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+          const imageUri = `data:image/jpeg;base64,${imageStr}`;
+          setProfileImage({ uri: imageUri });
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      };
+
+      fetchUserData();
+    }
+  });
 
   useEffect(() => {
     const token = storage.getString('accessToken');
@@ -132,7 +227,7 @@ export default function EditProfile() {
           const userData = response.data;
 
           const profileInfo = {
-            profileImage: defaultProfImage,
+            profileImage: profileImageData || defaultProfImage,
             phone: userData.phone || '',
             fullName: userData.fullName || '',
             email: userData.email || '',
@@ -162,7 +257,7 @@ export default function EditProfile() {
 
       fetchUser();
     }
-  }, []);
+  }, [profileImageData, setValue]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -183,9 +278,9 @@ export default function EditProfile() {
       <WhiteBackground>
         <UpperPart>
           <EditImageButton
+            testID="edit-profile-picture-button"
             onPress={() => {
-              // eslint-disable-next-line no-alert
-              alert('teste');
+              pickFile();
             }}
           />
           <ProfilePic source={profileData ? profileData.profileImage : defaultProfImage} />

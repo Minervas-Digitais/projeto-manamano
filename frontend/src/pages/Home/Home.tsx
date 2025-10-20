@@ -11,7 +11,9 @@ import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
+import { Buffer } from 'buffer';
 import { StatusBar } from 'expo-status-bar';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   HomeContainerGroup,
   HomeContainerInfo,
@@ -39,12 +41,13 @@ export const storageHome = new MMKV();
 
 export default function Home({ navigation }: any) {
   const [sideMenu, setSideMenu] = useState(true);
-  const duckImage = require('../../assets/duck.png');
+  const defaultAvatar = require('../../assets/user-profile.png');
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [fullName, setFullName] = useState('');
   const [groups, setGroups] = useState<any[]>([]);
   const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
+  const [profileImage, setProfileImage] = useState<any>(null);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -76,6 +79,56 @@ export default function Home({ navigation }: any) {
         .catch(() => setGroups([]));
     }
   }, []);
+
+  useFocusEffect(() => {
+    const token = storage.getString('accessToken');
+
+    if (token) {
+      const fetchUserData = async () => {
+        try {
+          const userId = storage.getString('loggedId');
+
+          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            responseType: 'arraybuffer',
+          });
+
+          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+          const imageUri = `data:image/jpeg;base64,${imageStr}`;
+          setProfileImage({ uri: imageUri });
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      };
+
+      fetchUserData();
+    }
+  });
+
+  const getUserProfileImage = async (userId: string) => {
+    const token = storage.getString('accessToken');
+
+    if (!token) {
+      return defaultAvatar;
+    }
+
+    try {
+      const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'arraybuffer',
+      });
+
+      const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+      const imageUri = `data:image/jpeg;base64,${imageStr}`;
+      return { uri: imageUri };
+    } catch (error) {
+      return defaultAvatar;
+    }
+  };
 
   if (!fontsLoaded) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -146,7 +199,7 @@ export default function Home({ navigation }: any) {
             <TouchableOpacity
               testID="profile-button"
               onPress={() => navigation.navigate('Profile')}>
-              <PostCardImageUser source={duckImage} />
+              <PostCardImageUser source={profileImage || defaultAvatar} />
             </TouchableOpacity>
           </PostCardIcons>
         </PostCardSpaceBetween>
@@ -205,8 +258,9 @@ export default function Home({ navigation }: any) {
                 item.group.Post.map((post: any, postIndex: number) => (
                   <PostCard
                     key={postIndex}
+                    userId={post.user.id}
+                    getUserProfileImage={getUserProfileImage}
                     nameUser={post.user.fullName}
-                    imageUser={duckImage}
                     postContent={post.input}
                     numComments={post.commentsCount}
                     date={formatRelativeDate(post.createdAt)}

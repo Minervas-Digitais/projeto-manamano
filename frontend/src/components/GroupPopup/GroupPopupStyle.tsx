@@ -3,21 +3,20 @@ import styled from 'styled-components/native';
 // Overlay to darken the background
 export const ModalOverlay = styled.View`
   flex: 1;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
+  justify-content: flex-end;
+  align-items: flex-end;
 `;
 
 // Container for the popup
 export const PopupContainer = styled.View`
-  background-color: #ffffff;
   border-radius: 12px;
-  padding: 10px 0;
   width: 160px;
   align-items: flex-start;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
   elevation: 5;
-  position: absolute; /* Allow absolute positioning */
+  margin-bottom: 80px;
+  margin-right: 20px;
+  padding: 10px 0;
+  background-color: #ffffff;
 `;
 
 // Individual option within the popup

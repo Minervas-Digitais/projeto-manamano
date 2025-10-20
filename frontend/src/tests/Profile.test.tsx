@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import Profile from '../pages/Profile/Profile';
 import api from '../services/api';
 import { storage } from '../pages/SignIn/SignIn';
@@ -22,20 +23,26 @@ jest.mock('../assets/menuWhite-icon.svg', () => 'MenuIcon');
 jest.mock('../assets/pen-icon.svg', () => 'Pen');
 jest.mock('../assets/business-icon.svg', () => 'Business');
 
-// Componente PostCard
-jest.mock('../components/PostCard/PostCard', () => ({ nameUser, postContent }: any) => {
-  const { Text } = require('react-native');
-  return (
-    <>
-      <Text>{nameUser}</Text>
-      <Text>{postContent}</Text>
-    </>
-  );
+// Componente PostCard mockado
+jest.mock('../components/PostCard/PostCard', () => {
+  return ({ nameUser, postContent }: any) => {
+    const { Text } = require('react-native');
+    return (
+      <>
+        <Text>{nameUser}</Text>
+        <Text>{postContent}</Text>
+      </>
+    );
+  };
 });
 
 describe('Profile', () => {
   const mockedApi = api as jest.Mocked<typeof api>;
   const mockedStorage = storage as jest.Mocked<typeof storage>;
+
+  function renderWithNavigation(ui: React.ReactElement) {
+    return render(<NavigationContainer>{ui}</NavigationContainer>);
+  }
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -90,7 +97,7 @@ describe('Profile', () => {
   });
 
   it('deve alternar para aba de postagens salvas', async () => {
-    const { getByText, queryByText } = render(<Profile navigation={{ navigate: jest.fn() }} />);
+    const { getByText, queryByText } = renderWithNavigation(<Profile />);
 
     await waitFor(() => getByText('Publicações'));
 
@@ -122,7 +129,7 @@ describe('Profile', () => {
       return Promise.reject(new Error('Not found'));
     });
 
-    const { getByText } = render(<Profile navigation={{ navigate: jest.fn() }} />);
+    const { getByText } = renderWithNavigation(<Profile />);
 
     await waitFor(() => {
       expect(getByText('Nenhuma Publicação encontrada')).toBeTruthy();

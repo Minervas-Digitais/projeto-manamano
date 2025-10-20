@@ -24,9 +24,8 @@ export async function getUserToken(
     where: { email },
   });
 
-  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-
   if (!existingUser) {
+    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
     await prisma.user.create({
       data: {
         fullName: name,
@@ -39,7 +38,7 @@ export async function getUserToken(
 
   const loginResponse = await authService.login({
     email,
-    password: 'password123',
+    password: DEFAULT_PASSWORD,
   });
 
   return loginResponse.accessToken;
@@ -99,7 +98,7 @@ export async function getSenderToken(
 
   const loginResponse = await authService.login({
     email,
-    password: DEFAULT_PASSWORD, 
+    password: DEFAULT_PASSWORD,
   });
 
   return loginResponse.accessToken;
@@ -114,7 +113,6 @@ export async function getRecipientToken(
 
   const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
-
   await prisma.user.upsert({
     where: { email },
     update: {},
@@ -126,16 +124,13 @@ export async function getRecipientToken(
     },
   });
 
+  const loginResponse = await authService.login({
+    email,
+    password: DEFAULT_PASSWORD,
+  });
 
-    const loginResponse = await authService.login({
-        email,
-        password: DEFAULT_PASSWORD,
-    });
-
-    return loginResponse?.accessToken || null;
-
+  return loginResponse?.accessToken || null;
 }
-
 
 export async function createTestGroup(
   prisma: PrismaService,
@@ -268,16 +263,15 @@ export async function createTestUser(
     },
   });
 
-  if (existingUser != null) {
-    return existingUser.id;
-  }
+  if (existingUser) return existingUser.id;
 
+  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
   const newUser = await prisma.user.create({
     data: {
       fullName: 'Teste User',
       email: email,
-      hash: DEFAULT_PASSWORD,
-      phone,
+      hash: hashedPassword,
+      phone
     },
   });
 
@@ -429,7 +423,7 @@ export async function getNotificationId(
   if (!senderUser || !recipientUser) {
     throw new Error('Usuário sender ou recipient não encontrado no banco');
   }
-  
+
   const notificationDTO: CreateNotificationDto = {
     senderId: senderUser.id,
     body: 'bodyTeste',

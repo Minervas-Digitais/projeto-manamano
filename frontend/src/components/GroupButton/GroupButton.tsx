@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { useFonts } from 'expo-font';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   GroupButtonContainer,
   GroupName,
@@ -12,21 +13,20 @@ import {
   GroupOnlineContainer,
   GroupFilterContainer,
   GroupButtonImage,
-  GroupButtonGradient,
 } from './GroupButtonStyle';
 import FilterOnIcon from '../../assets/filter-on-icon.svg';
 import FilterOffIcon from '../../assets/filter-off-icon.svg';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export default function GroupButton({
   groupName,
   onlineMembers,
-  $size,
   onPress,
   onPressFilter,
   filterIcon,
   groupId,
   testID,
+  containerStyle,
+  showFilter = true,
 }: any) {
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-SemiBold.ttf'),
@@ -36,7 +36,7 @@ export default function GroupButton({
   }
   const [filter, setFilter] = useState(filterIcon);
   return (
-    <GroupButtonContainer onPress={onPress} testID={testID}>
+    <GroupButtonContainer onPress={onPress} testID={testID} style={containerStyle}>
       <LinearGradient
         colors={['#1A0E47FF', '#170E47E3', '#160E47D1', '#170E47C7']}
         locations={[0, 0.85, 1, 1]}
@@ -54,17 +54,18 @@ export default function GroupButton({
           </GroupOnline>
         </GroupOnlineContainer>
       </GroupTextContainer>
-      <GroupFilterContainer>
-        <GroupButtonImage
-          testID={`filter-button-${groupId}`}
-          onPress={() => {
-            onPressFilter();
-            setFilter(!filter);
-          }}
-          $size={$size}>
-          {filter ? <FilterOnIcon /> : <FilterOffIcon />}
-        </GroupButtonImage>
-      </GroupFilterContainer>
+      {showFilter && (
+        <GroupFilterContainer>
+          <GroupButtonImage
+            testID={`filter-button-${groupId}`}
+            onPress={() => {
+              onPressFilter();
+              setFilter(!filter);
+            }}>
+            {filter ? <FilterOnIcon /> : <FilterOffIcon />}
+          </GroupButtonImage>
+        </GroupFilterContainer>
+      )}
     </GroupButtonContainer>
   );
 }

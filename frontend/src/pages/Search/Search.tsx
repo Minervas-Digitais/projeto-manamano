@@ -9,6 +9,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { Buffer } from 'buffer';
 import { useFonts } from 'expo-font';
 import { MMKV } from 'react-native-mmkv';
 import {
@@ -22,12 +23,11 @@ import ResultSection from '../../components/ResultSection/ResultSection';
 import Lupa from '../../assets/lupa-search.svg';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import api from '../../services/api';
-import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 
 const storage = new MMKV();
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   avatar: any;
 }
@@ -46,7 +46,31 @@ export default function Search() {
   const [accessTokenState, setAccessTokenState] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const avatar = require('../../assets/duck.png');
+  const avatar = require('../../assets/user-profile.png');
+
+  const getUserProfileImage = async (userId: string) => {
+    const token = storage.getString('accessToken');
+
+    if (!token) {
+      return avatar;
+    }
+
+    try {
+      const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        responseType: 'arraybuffer',
+      });
+
+      const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+      const imageUri = `data:image/jpeg;base64,${imageStr}`;
+      return { uri: imageUri };
+    } catch (error) {
+      return avatar;
+    }
+  };
+
   // Fetch recent users from MMKV on mount
   useEffect(() => {
     const storedUsers = storage.getString('recentUsers');
@@ -81,23 +105,25 @@ export default function Search() {
 
     fetchUserRole();
   }, []);
-  const saveRecentUser = (user: User) => {
-    // Check if user already exists in recent users
-    const updatedUsers = [user, ...recentUsers.filter((u) => u.id !== user.id)];
+  const saveRecentUser = async (user: { id: string; name: string }) => {
+    const avatar = await getUserProfileImage(user.id);
 
-    // Enforce a limit of 10 users (FIFO)
+    const newUser: User = {
+      ...user,
+      avatar,
+    };
+
+    const updatedUsers = [newUser, ...recentUsers.filter((u) => u.id !== user.id)];
+
     if (updatedUsers.length > 10) {
       updatedUsers.pop();
     }
 
-    // Save to state
     setRecentUsers(updatedUsers);
-
-    // Save to MMKV
     storage.set('recentUsers', JSON.stringify(updatedUsers));
   };
 
-  const handleAvatarPress = (userId: number) => {
+  const handleAvatarPress = (userId: string) => {
     console.log(`Avatar clicked: ${userId}`);
   };
 
@@ -188,7 +214,7 @@ export default function Search() {
                   <View key={user.id} style={{ alignItems: 'center', marginRight: 20 }} testID={`usuario-${user.name.toLowerCase().replace(/\s/g, '-')}`}>
                     <TouchableOpacity onPress={() => handleAvatarPress(user.id)} testID={`touchable-avatar-image-${user.id}`}>
                       <Image
-                        source={avatar}
+                        source={user.avatar || avatar}
                         style={{
                           width: screenWidth / 8,
                           height: screenWidth / 8,

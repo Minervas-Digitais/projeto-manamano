@@ -1,6 +1,7 @@
 /* eslint-disable global-require */
-import React from 'react';
-import { Image, Pressable } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Pressable } from 'react-native';
+import { Buffer } from 'buffer';
 import {
   CommentInputText,
   CommentInputTextFocused,
@@ -12,6 +13,8 @@ import {
 } from './CommentInputTextStyle';
 import SendButton from '../../assets/submit-comment.svg';
 import LinkIcon from '../../assets/comment-link-icon.svg';
+import api from '../../services/api';
+import { storage } from '../../pages/SignIn/SignIn';
 
 export default function CommentInputTextCustom({
   onChangeText,
@@ -21,7 +24,39 @@ export default function CommentInputTextCustom({
   onPressLink,
   onBlur,
 }: any) {
-  const profileImage = require('../../assets/test-profile-icon.png');
+  const defaultAvatar = require('../../assets/user-profile.png');
+  const [profileImage, setProfileImage] = useState<any>(defaultAvatar);
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      const userId = storage.getString('loggedId');
+      const token = storage.getString('accessToken');
+
+      if (!userId || !token) {
+        setProfileImage(defaultAvatar);
+        return;
+      }
+
+      try {
+        const response = await api.get(`/user/${userId}/profile-picture`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: 'arraybuffer',
+        });
+
+        const imageBase64 = Buffer.from(response.data, 'binary').toString('base64');
+        const imageUri = `data:image/jpeg;base64,${imageBase64}`;
+        setProfileImage({ uri: imageUri });
+      } catch (error) {
+        console.error('Erro ao carregar imagem de perfil do input:', error);
+        setProfileImage(defaultAvatar);
+      }
+    };
+
+    fetchProfileImage();
+  }, [defaultAvatar]);
+
   return (
     <CommentInputTextContainer>
       <LargerProfileImage source={profileImage} />

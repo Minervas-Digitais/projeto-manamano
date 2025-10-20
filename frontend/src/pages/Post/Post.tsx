@@ -1,15 +1,15 @@
 /* eslint-disable import/no-duplicates */
 /* eslint-disable global-require */
+import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
-import { Dimensions, Pressable, ScrollView, View } from 'react-native';
-import { useEffect, useState } from 'react';
+import { Dimensions, Pressable, ScrollView, View, Share } from 'react-native';
 import { format, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
-import React from 'react';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { Buffer } from 'buffer'; // se necessário pra conversão base64
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import PostAttachment from '../../components/PostAttachmentCard/PostAttachment';
 import {
@@ -32,7 +32,8 @@ import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageSty
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+const defaultAvatar = require('../../assets/user-profile.png');
 
 interface Comment {
   id: string;
@@ -69,13 +70,13 @@ export default function Post() {
   const [isFocused, setIsFocused] = useState(false);
   const [post, setPost] = useState<Post | null>(null);
   const [postUser, setPostUser] = useState<User | null>(null);
+  const [postUserImage, setPostUserImage] = useState<any>(defaultAvatar);
   const [commentUsers, setCommentUsers] = useState<Record<string, User>>({});
   const [postArchives, setPostArchives] = useState<Archive[]>([]);
-  const profileImage = require('../../assets/test-profile-icon.png');
   const [recipientId, setRecipientId] = useState('');
   const [idGroup, setIdGroup] = useState('');
-  const [groupName, setGroupName] = useState<string>('');
   const [userName, setUserName] = useState('');
+  const [modalOptions, setModalOptions] = useState(false);
 
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
@@ -85,21 +86,22 @@ export default function Post() {
       setLoggedIdState(loggedId);
       api
         .get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${accessToken}` },
         })
-        .then((res) => setUserName(res.data.fullName));
+        .then((res) => setUserName(res.data.fullName))
+        .catch((err) => {
+          console.error('Erro ao buscar nome do usuário logado:', err);
+          setUserName('Usuário');
+        });
     }
   }, []);
+
   useEffect(() => {
     if (!accessTokenState) return;
     const fetchPost = async () => {
       try {
         const response = await api.get(`post/${postId}`, {
-          headers: {
-            Authorization: `Bearer ${accessTokenState}`,
-          },
+          headers: { Authorization: `Bearer ${accessTokenState}` },
         });
         setPost(response.data);
         setRecipientId(response.data.userId);
@@ -117,32 +119,32 @@ export default function Post() {
 
   useEffect(() => {
     if (!accessTokenState || !post?.userId) return;
-    const fetchPostUser = async () => {
+
+    const fetchUserAndImage = async () => {
       try {
-        const response = await api.get(`user/${post.userId}`, {
-          headers: {
-            Authorization: `Bearer ${accessTokenState}`,
-          },
+        const responseUser = await api.get(`user/${post.userId}`, {
+          headers: { Authorization: `Bearer ${accessTokenState}` },
         });
-        setPostUser(response.data);
+        const userData: User = responseUser.data;
+        setPostUser(userData);
+
+        const image = await getUserProfileImage(userData.id);
+        setPostUserImage(image);
       } catch (error) {
-        console.error('Erro ao buscar usuário do post', error);
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao buscar usuário da publicação. Tente novamente mais tarde.',
-        });
+        console.error('Erro ao buscar usuário ou imagem do post:', error);
+        setPostUserImage(defaultAvatar);
       }
     };
-    fetchPostUser();
+
+    fetchUserAndImage();
   }, [accessTokenState, post?.userId]);
+
   useEffect(() => {
     if (!accessTokenState) return;
     const fetchArchives = async () => {
       try {
         const response = await api.get(`archives/post/${postId}`, {
-          headers: {
-            Authorization: `Bearer ${accessTokenState}`,
-          },
+          headers: { Authorization: `Bearer ${accessTokenState}` },
         });
         setPostArchives(response.data);
       } catch (error) {
@@ -153,7 +155,6 @@ export default function Post() {
         });
       }
     };
-
     fetchArchives();
   }, [accessTokenState, postId]);
 
@@ -193,7 +194,26 @@ export default function Post() {
     postDate && isValid(postDate)
       ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
       : '';
-  const [modalOptions, setModalOptions] = useState(false);
+
+  const getUserProfileImage = async (userId: string): Promise<any> => {
+    if (!accessTokenState) {
+      return defaultAvatar;
+    }
+    try {
+      const response = await api.get(`/user/${userId}/profile-picture`, {
+        headers: { Authorization: `Bearer ${accessTokenState}` },
+        responseType: 'arraybuffer',
+      });
+      const imageStr = Buffer.from(response.data, 'binary').toString('base64');
+      const imageUri = `data:image/jpeg;base64,${imageStr}`;
+      return { uri: imageUri };
+    } catch (error) {
+      console.error('Erro ao buscar imagem de perfil:', error);
+      return defaultAvatar;
+    }
+  };
+
+  // Formulário de comentário etc.
   const {
     control,
     handleSubmit,
@@ -297,7 +317,7 @@ export default function Post() {
         style={{ backgroundColor: '#f2f6fa', flex: 1 }}>
         <PostContainer>
           <PostUpperPart>
-            <ProfileImage source={profileImage} />
+            <ProfileImage source={postUserImage} />
             <ProfileName font="inter-bold">{postUser?.fullName}</ProfileName>
             <PostDate font="inter-semibold">{formattedDate}</PostDate>
           </PostUpperPart>
@@ -347,6 +367,7 @@ export default function Post() {
                     fullName={commentUser?.fullName || 'Usuário desconhecido'}
                     input={item.content}
                     createdAt={formattedDate}
+                    userId={item.userId}
                   />
                 );
               })

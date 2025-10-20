@@ -1,8 +1,8 @@
 /* eslint-disable global-require */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Share, TouchableOpacity, View } from 'react-native';
-import { ptBR } from 'date-fns/locale';
+import { de, ptBR } from 'date-fns/locale';
 import { format, isValid } from 'date-fns';
 import {
   PostCardContainer,
@@ -13,8 +13,6 @@ import {
 } from './PostCardStyle';
 import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
 import ModalOptions from '../ModalOptions/ModalOptions';
-import api from '../../services/api';
-import { storage } from '../../pages/SignIn/SignIn';
 import ShareIcon from '../../assets/share-icon.svg';
 import SaveIcon from '../../assets/save-icon.svg';
 import SavedIcon from '../../assets/saved-icon.svg';
@@ -22,9 +20,12 @@ import CommentIcon from '../../assets/comment-icon.svg';
 import FixIcon from '../../assets/fix-icon.svg';
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 
+const defaultAvatar = require('../../assets/user-profile.png');
+
 export default function PostCard({
+  userId,
+  getUserProfileImage,
   nameUser,
-  imageUser,
   postContent,
   numComments,
   date,
@@ -51,6 +52,29 @@ export default function PostCard({
     }
   };
   const [modalOptions, setModalOptions] = useState(false);
+  const [userProfile, setUserProfile] = useState(defaultAvatar);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadImage() {
+      if (!getUserProfileImage || !userId) return;
+
+      try {
+        const img = await getUserProfileImage(userId);
+        if (isMounted && img) setUserProfile(img);
+      } catch (error) {
+        if (isMounted) setUserProfile(defaultAvatar);
+      }
+    }
+
+    loadImage();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId, getUserProfileImage]);
+
   const postDate = date ? new Date(date) : null;
   const formattedDate =
     postDate && isValid(postDate)
@@ -120,7 +144,7 @@ export default function PostCard({
 
       <PostCardSpaceBetween>
         <PostCardIcons>
-          <PostCardImageUser source={imageUser} />
+          <PostCardImageUser source={userProfile} />
           <GroupDataText font="inter-bold" color="#000000" size="12px">
             {nameUser}
           </GroupDataText>
