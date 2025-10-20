@@ -12,7 +12,11 @@ import {
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
-import { GroupWithDetails, ParticipantService, UserInGroup } from './participant.service';
+import {
+  GroupWithDetails,
+  ParticipantService,
+  UserInGroup,
+} from './participant.service';
 import { Participant } from '@prisma/client';
 import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
 

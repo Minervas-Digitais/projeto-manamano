@@ -13,8 +13,6 @@ export class CategoryService {
     private readonly validator: ValidatorService,
   ) {}
 
-
-
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
     await this.validator.validateGroupExists(createCategoryDto.groupId);
 

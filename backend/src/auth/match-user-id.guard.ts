@@ -23,7 +23,6 @@ export class MatchUserIdGuard implements CanActivate {
       request.params?.userId ||
       (request.params?.id?.includes(',') ? undefined : request.params?.id);
 
-
     if (!userIdFromRequest && request.params?.id?.includes(',')) {
       const parts = request.params.id.split(',');
       const matchingPart = parts.find((part) => part === userIdFromToken);

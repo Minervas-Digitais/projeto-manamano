@@ -1,6 +1,6 @@
-import { PrismaClient, PostType, UserRole } from "@prisma/client";
-import { faker } from "@faker-js/faker";
-import { writeFileSync } from "fs";
+import { PrismaClient, PostType, UserRole } from '@prisma/client';
+import { faker } from '@faker-js/faker';
+import { writeFileSync } from 'fs';
 
 const prisma = new PrismaClient();
 
@@ -8,19 +8,22 @@ async function fetchImageBase64(url: string): Promise<string> {
   const { default: fetch } = await import('node-fetch');
   try {
     const response = await fetch(url);
-    if (!response.ok || !response.headers.get("content-type")?.startsWith("image/")) {
-      throw new Error("Resposta inválida ou não é imagem.");
+    if (
+      !response.ok ||
+      !response.headers.get('content-type')?.startsWith('image/')
+    ) {
+      throw new Error('Resposta inválida ou não é imagem.');
     }
     const buffer = await response.arrayBuffer();
-    return Buffer.from(buffer).toString("base64");
+    return Buffer.from(buffer).toString('base64');
   } catch (error) {
-    console.error("Erro ao baixar imagem:", error);
-    return "";
+    console.error('Erro ao baixar imagem:', error);
+    return '';
   }
 }
 
 async function main() {
-  console.log("🌱 Iniciando Seed do Banco...");
+  console.log('🌱 Iniciando Seed do Banco...');
 
   const numberOfUsers = 10;
   const numberOfGroups = 3;
@@ -39,10 +42,10 @@ async function main() {
           enterprise: faker.company.name(),
           expertise: faker.person.jobTitle(),
         },
-      })
-    )
+      }),
+    ),
   );
-  console.log("✅ Usuários criados");
+  console.log('✅ Usuários criados');
 
   const groups = await Promise.all(
     Array.from({ length: numberOfGroups }).map(() =>
@@ -52,10 +55,10 @@ async function main() {
           description: faker.lorem.sentence(),
           inviteCode: faker.string.uuid(),
         },
-      })
-    )
+      }),
+    ),
   );
-  console.log("✅ Grupos criados");
+  console.log('✅ Grupos criados');
 
   await prisma.$transaction(
     users.map((user) =>
@@ -65,10 +68,10 @@ async function main() {
           groupId: faker.helpers.arrayElement(groups).id,
           role: UserRole.STUDENT,
         },
-      })
-    )
+      }),
+    ),
   );
-  console.log("✅ Participações atribuídas");
+  console.log('✅ Participações atribuídas');
 
   const postTypes = [PostType.NORMAL, PostType.EVENT, PostType.CLASS];
 
@@ -81,11 +84,11 @@ async function main() {
             type: faker.helpers.arrayElement(postTypes),
             groupId: group.id,
           },
-        })
-      )
-    )
+        }),
+      ),
+    ),
   );
-  console.log("✅ Categorias criadas");
+  console.log('✅ Categorias criadas');
 
   const posts = await Promise.all(
     categories.flatMap((category) =>
@@ -105,10 +108,10 @@ async function main() {
             isPinned: faker.datatype.boolean(),
           },
         });
-      })
-    )
+      }),
+    ),
   );
-  console.log("✅ Posts criados");
+  console.log('✅ Posts criados');
 
   const comments = await Promise.all(
     posts.flatMap((post) =>
@@ -121,38 +124,39 @@ async function main() {
             postId: post.id,
           },
         });
-      })
-    )
+      }),
+    ),
   );
-  console.log("✅ Comentários criados");
+  console.log('✅ Comentários criados');
 
   const archives = await Promise.all(
     posts.flatMap((post, postIndex) =>
-      Array.from({ length: faker.number.int({ min: 2, max: 4 }) }).map(async (_, fileIndex) => {
-        const imageUrl = `https://picsum.photos/200?random=${postIndex * 10 + fileIndex}`;
+      Array.from({ length: faker.number.int({ min: 2, max: 4 }) }).map(
+        async (_, fileIndex) => {
+          const imageUrl = `https://picsum.photos/200?random=${postIndex * 10 + fileIndex}`;
 
-        const base64 = await fetchImageBase64(imageUrl);
+          const base64 = await fetchImageBase64(imageUrl);
 
-        return prisma.archive.create({
-          data: {
-            name: faker.system.fileName(),
-            mimeType: "image/jpeg",
-            contentBase64: base64,
-            postId: post.id,
-          },
-        });
-      })
-    )
+          return prisma.archive.create({
+            data: {
+              name: faker.system.fileName(),
+              mimeType: 'image/jpeg',
+              contentBase64: base64,
+              postId: post.id,
+            },
+          });
+        },
+      ),
+    ),
   );
-  console.log("✅ Arquivos criados");
+  console.log('✅ Arquivos criados');
 
-
-  console.log("🌱 Seed finalizado com sucesso!");
+  console.log('🌱 Seed finalizado com sucesso!');
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Erro ao rodar o Seed:", e);
+    console.error('❌ Erro ao rodar o Seed:', e);
     process.exit(1);
   })
   .finally(async () => {

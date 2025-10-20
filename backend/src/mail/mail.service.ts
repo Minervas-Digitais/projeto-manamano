@@ -1,5 +1,5 @@
 import {
-    BadRequestException,
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -16,16 +16,17 @@ export class MailService {
     private readonly validator: ValidatorService,
   ) {}
 
-  async sendMail(email: CreateMailDto, userId: string): Promise<{ message: string }> {
+  async sendMail(
+    email: CreateMailDto,
+    userId: string,
+  ): Promise<{ message: string }> {
     if (userId !== email.userId) {
-      throw new BadRequestException(
-        MAIL_MESSAGES.UNAUTHORIZED_ACCESS,
-      );
+      throw new BadRequestException(MAIL_MESSAGES.UNAUTHORIZED_ACCESS);
     }
     const transporter = this.getTransporter();
 
-    const user = await this.validator.validateUserExists(email.userId)
-    
+    const user = await this.validator.validateUserExists(email.userId);
+
     const emailContent = `Nova mensagem da(o) usuária(o) ${user.fullName}:\n\n${email.text}`;
 
     try {

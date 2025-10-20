@@ -34,8 +34,10 @@ export class CommentService {
       throw new NotFoundException(COMMENT_MESSAGES.POST_NOT_FOUND);
     }
 
-    const senderUser = await this.validator.validateUserExists(createCommentDto.userId)
-    
+    const senderUser = await this.validator.validateUserExists(
+      createCommentDto.userId,
+    );
+
     const comment = await this.prismaService.comment.create({
       data: createCommentDto,
     });

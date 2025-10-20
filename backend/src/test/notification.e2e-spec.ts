@@ -844,7 +844,7 @@ describe('Notification', () => {
         .post('/notifications/register-token')
         .send({ pushNotifToken: 'any-token' });
 
-      expect(response.status).toBe(401); 
+      expect(response.status).toBe(401);
     });
   });
 

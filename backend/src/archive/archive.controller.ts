@@ -1,4 +1,13 @@
-import { Body, Controller, Post, Get, Param, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Param,
+  UsePipes,
+  ValidationPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { ArchiveService } from './archive.service';
 import { CreateArchiveDto, ResponseArchiveDto } from './dto/archive.dto';
 import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
@@ -37,4 +46,3 @@ export class ArchiveController {
     return this.archiveService.getArchivesByGroupId(groupId);
   }
 }
-

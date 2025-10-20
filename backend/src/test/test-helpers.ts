@@ -271,7 +271,7 @@ export async function createTestUser(
       fullName: 'Teste User',
       email: email,
       hash: hashedPassword,
-      phone
+      phone,
     },
   });
 
@@ -325,7 +325,7 @@ export async function deleteAllTestArchives(prisma: PrismaService) {
 
 export async function createParticipantDto(prisma: PrismaService) {
   const groupId = await createTestGroup(prisma);
-  
+
   const number = Array.from({ length: 10 }, () =>
     Math.floor(Math.random() * 10),
   ).join('');

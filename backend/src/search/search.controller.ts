@@ -22,7 +22,11 @@ export class SearchController {
   @Post()
   search(
     @Body() createSearchDto: CreateSearchDto,
-  ): Promise<{ users: Omit<User, 'hash'>[]; groups: Group[]; posts: PostEntity[] }> {
+  ): Promise<{
+    users: Omit<User, 'hash'>[];
+    groups: Group[];
+    posts: PostEntity[];
+  }> {
     return this.searchService.search(createSearchDto);
   }
 

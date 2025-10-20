@@ -214,8 +214,8 @@ export class PostService {
   async setPinStatus(postId: string, pinned: boolean): Promise<SerializedPost> {
     const post = await this.validator.validatePostExists(postId);
 
-    if(post.isPinned === pinned){
-        throw new NotFoundException(POST_MESSAGES.POST_PINNED_STATUS_UNCHANGED);
+    if (post.isPinned === pinned) {
+      throw new NotFoundException(POST_MESSAGES.POST_PINNED_STATUS_UNCHANGED);
     }
 
     const updatedPost = await this.prismaService.post.update({

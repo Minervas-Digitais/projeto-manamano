@@ -11,5 +11,5 @@ export const POST_MESSAGES = {
   NO_SAVED_POSTS: 'Nenhuma publicação salva',
   ALREADY_SAVED: 'Post já está salvo.',
   POST_NOT_SAVED: 'Post não está salvo.',
-  POST_PINNED_STATUS_UNCHANGED: 'O post já está com esse status.'
+  POST_PINNED_STATUS_UNCHANGED: 'O post já está com esse status.',
 };

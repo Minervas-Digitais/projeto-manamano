@@ -34,7 +34,7 @@ export class GroupService {
   }
 
   async findOne(id: string): Promise<Group> {
-    const group = await this.validator.validateGroupExists(id)
+    const group = await this.validator.validateGroupExists(id);
     return group;
   }
 

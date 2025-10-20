@@ -36,4 +36,3 @@ export class ResponseArchiveDto {
   contentBase64: string;
   postId: string;
 }
-

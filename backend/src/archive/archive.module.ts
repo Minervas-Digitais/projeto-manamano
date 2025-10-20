@@ -12,4 +12,3 @@ import { ValidatorModule } from 'src/common/validators/validator.module';
   providers: [ArchiveService],
 })
 export class ArchiveModule {}
-
