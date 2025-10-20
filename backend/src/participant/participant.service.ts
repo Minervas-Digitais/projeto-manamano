@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -8,6 +9,7 @@ import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { Participant, UserRole } from '@prisma/client';
 import { PARTICIPANT_MESSAGES } from 'src/messages/participant.messages';
+import { ValidatorService } from 'src/common/validators/validator.service';
 
 export interface PostWithCommentsCount {
   id: string;
@@ -43,10 +45,18 @@ interface UserGroupId {
 
 @Injectable()
 export class ParticipantService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
 
   private parseId(id: string): UserGroupId {
     const [userId, groupId] = id.split(',');
+
+    if (!userId || !groupId) {
+      throw new BadRequestException(PARTICIPANT_MESSAGES.INVALID_ID_FORMAT);
+    }
+
     return { userId, groupId };
   }
 
@@ -60,8 +70,10 @@ export class ParticipantService {
     });
 
     if (!group) {
-      throw new NotFoundException(PARTICIPANT_MESSAGES.GROUP_NOT_FOUND);
+      throw new NotFoundException(PARTICIPANT_MESSAGES.INVALID_INVITE_CODE);
     }
+
+    await this.validator.validateUserExists(createParticipantDto.userId);
 
     const participant = await this.prismaService.participant.findUnique({
       where: {
@@ -128,8 +140,8 @@ export class ParticipantService {
       throw new NotFoundException(PARTICIPANT_MESSAGES.NOT_IN_GROUPS);
     }
 
-    const allPosts = groups.flatMap((g) => g.group.posts);
-    const allPostIds = allPosts.map((p) => p.id);
+    const allPostIds = groups.flatMap((g) => g.group.posts.map((p) => p.id));
+    const allGroupIds = groups.map((g) => g.groupId);
 
     const commentCounts = await this.prismaService.comment.groupBy({
       by: ['postId'],
@@ -141,31 +153,41 @@ export class ParticipantService {
       },
     });
 
-    const commentCountMap = new Map(
+    const commentCountMap = new Map<string, number>(
       commentCounts.map((item) => [item.postId, item._count]),
     );
 
-    const groupsWithCounts = await Promise.all(
-      groups.map(async (group) => {
-        const participantCount = await this.prismaService.participant.count({
-          where: { groupId: group.groupId },
-        });
+    const participantCounts = await this.prismaService.participant.groupBy({
+      by: ['groupId'],
+      _count: true,
+      where: {
+        groupId: {
+          in: allGroupIds,
+        },
+      },
+    });
 
-        const postsWithCommentsCount = group.group.posts.map((post) => ({
+    const participantCountMap = new Map<string, number>(
+      participantCounts.map((item) => [item.groupId, item._count]),
+    );
+
+    const groupsWithCounts: GroupWithDetails[] = groups.map((group) => {
+      const postsWithCommentsCount: PostWithCommentsCount[] =
+        group.group.posts.map((post) => ({
           ...post,
           commentsCount: commentCountMap.get(post.id) || 0,
         }));
 
-        return {
-          ...group,
-          participantCount,
-          group: {
-            ...group.group,
-            posts: postsWithCommentsCount,
-          },
-        };
-      }),
-    );
+      return {
+        role: group.role,
+        groupId: group.groupId,
+        participantCount: participantCountMap.get(group.groupId) || 0,
+        group: {
+          name: group.group.name,
+          posts: postsWithCommentsCount,
+        },
+      };
+    });
 
     return groupsWithCounts;
   }

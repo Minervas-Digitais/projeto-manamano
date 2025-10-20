@@ -17,12 +17,13 @@ import { Participant } from '@prisma/client';
 import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
 
 @Controller('participant')
+@UseGuards(JwtAuthGuard)
 export class ParticipantController {
   constructor(private readonly participantService: ParticipantService) {}
 
   @HttpCode(201)
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(MatchUserIdGuard)
   joinGroup(
     @Body() createParticipantDto: CreateParticipantDto,
   ): Promise<Participant> {
@@ -31,35 +32,32 @@ export class ParticipantController {
 
   @HttpCode(200)
   @Get()
-  @UseGuards(JwtAuthGuard)
   findAll(): Promise<Participant[]> {
     return this.participantService.findAll();
   }
 
   @HttpCode(200)
   @Get('group/:groupId')
-  @UseGuards(JwtAuthGuard)
   findUsersInGroup(@Param('groupId') groupId: string): Promise<UserInGroup[]> {
     return this.participantService.findUsersInGroup(groupId);
   }
 
   @HttpCode(200)
   @Get('groups/:id')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
+  @UseGuards(MatchUserIdGuard)
   findUserGroups(@Param('id') id: string): Promise<GroupWithDetails[]> {
     return this.participantService.findUserGroups(id);
   }
 
   @HttpCode(200)
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string): Promise<Participant> {
     return this.participantService.findOne(id);
   }
 
   @HttpCode(201)
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
+  @UseGuards(MatchUserIdGuard)
   update(
     @Param('id') id: string,
     @Body() updateParticipantDto: UpdateParticipantDto,
@@ -69,7 +67,7 @@ export class ParticipantController {
 
   @HttpCode(200)
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
+  @UseGuards(MatchUserIdGuard)
   remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.participantService.remove(id);
   }

@@ -10,7 +10,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { USER_MESSAGES } from 'src/messages/user.messages';
-
+import { omitHash } from 'src/utils/user.util';
+import { ValidatorService } from 'src/common/validators/validator.service';
 export const roundsOfHashing = 10;
 
 interface ProfilePictureBuffer {
@@ -21,7 +22,10 @@ interface ProfilePictureBuffer {
 
 @Injectable()
 export class UserService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'hash'>> {
     const existingUser = await this.prismaService.user.findFirst({
@@ -29,14 +33,13 @@ export class UserService {
         OR: [{ email: createUserDto.email }, { phone: createUserDto.phone }],
       },
     });
+
     if (existingUser) {
       throw new ConflictException(USER_MESSAGES.EMAIL_OR_PHONE_IN_USE);
     }
 
-    const passwordPlainText = createUserDto.hash;
-
     const hashedPassword = await bcrypt.hash(
-      passwordPlainText,
+      createUserDto.password,
       roundsOfHashing,
     );
 
@@ -54,41 +57,38 @@ export class UserService {
       bio: createUserDto.bio,
     };
 
-    // Cria e remove o hash do objeto do usuario que será retornado
     const user = await this.prismaService.user.create({ data: userData });
-    delete user.hash;
 
-    return user;
+    return omitHash(user);
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(): Promise<Omit<User, 'hash'>[]> {
     const users = await this.prismaService.user.findMany();
     if (users.length === 0) {
       throw new NotFoundException(USER_MESSAGES.EMPTY_LIST);
     }
-    return users;
+    return users.map(omitHash);
   }
 
-  async findOne(id: string): Promise<User> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id },
-    });
-    if (!user) {
-      throw new NotFoundException(USER_MESSAGES.NOT_FOUND);
-    }
-    return user;
+  async findOne(id: string): Promise<Omit<User, 'hash'>> {
+    const user = await this.validator.validateUserExists(id);
+    return omitHash(user);
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    await this.findOne(id);
-    return await this.prismaService.user.update({
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<Omit<User, 'hash'>> {
+    await this.validator.validateUserExists(id);
+    const updatedUser = await this.prismaService.user.update({
       where: { id },
       data: updateUserDto,
     });
+    return omitHash(updatedUser);
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    await this.findOne(id);
+    await this.validator.validateUserExists(id);
     await this.prismaService.user.delete({
       where: { id },
     });
@@ -99,8 +99,12 @@ export class UserService {
     id: string,
     oldPassword: string,
     newPassword: string,
-  ): Promise<User> {
-    const user = await this.findOne(id);
+  ): Promise<Omit<User, 'hash'>> {
+    const user = await this.validator.validateUserExists(id);
+
+    if (oldPassword === newPassword) {
+      throw new ConflictException(USER_MESSAGES.SAME_PASSWORD);
+    }
 
     const isPasswordValid = await bcrypt.compare(oldPassword, user.hash);
     if (!isPasswordValid) {
@@ -109,26 +113,33 @@ export class UserService {
 
     const hashedPassword = await bcrypt.hash(newPassword, roundsOfHashing);
 
-    return await this.prismaService.user.update({
+    const updatedUser = await this.prismaService.user.update({
       where: { id: id },
       data: { hash: hashedPassword },
     });
+
+    return omitHash(updatedUser);
   }
 
-  async updateUserRole(id: string, sysRole: RoleType): Promise<User> {
+  async updateUserRole(
+    id: string,
+    sysRole: RoleType,
+  ): Promise<Omit<User, 'hash'>> {
     await this.findOne(id);
 
-    return this.prismaService.user.update({
+    const updatedUser = await this.prismaService.user.update({
       where: { id: id },
       data: { sysRole: sysRole },
     });
+
+    return omitHash(updatedUser);
   }
 
   async updateProfilePicture(
     id: string,
     file: Express.Multer.File,
-  ): Promise<User & { profilePicture: Archive | null }> {
-    const user = await this.findOne(id);
+  ): Promise<Omit<User, 'hash'> & { profilePicture: Archive | null }> {
+    const user = await this.validator.validateUserExists(id);
 
     if (user.profilePictureId) {
       await this.prismaService.archive.delete({
@@ -155,7 +166,10 @@ export class UserService {
       },
     });
 
-    return updatedUser;
+    return {
+      ...omitHash(updatedUser),
+      profilePicture: updatedUser.profilePicture,
+    };
   }
 
   async getProfilePictureBuffer(id: string): Promise<ProfilePictureBuffer> {

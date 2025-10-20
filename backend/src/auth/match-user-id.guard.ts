@@ -19,11 +19,17 @@ export class MatchUserIdGuard implements CanActivate {
     }
 
     let userIdFromRequest: string | undefined =
-      request.body?.userId || request.params?.userId || request.params?.id;
+      request.body?.userId ||
+      request.params?.userId ||
+      (request.params?.id?.includes(',') ? undefined : request.params?.id);
 
-    if (request.params?.ids && !userIdFromRequest) {
-      const parts = request.params.ids.split(',');
-      userIdFromRequest = parts[1];
+
+    if (!userIdFromRequest && request.params?.id?.includes(',')) {
+      const parts = request.params.id.split(',');
+      const matchingPart = parts.find((part) => part === userIdFromToken);
+      if (matchingPart) {
+        userIdFromRequest = matchingPart;
+      }
     }
 
     if (!userIdFromRequest) {

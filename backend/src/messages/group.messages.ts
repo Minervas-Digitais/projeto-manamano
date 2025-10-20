@@ -1,5 +1,7 @@
+import { BASE_MESSAGES } from './base.messages';
+
 export const GROUP_MESSAGES = {
-  NOT_FOUND: 'Grupo não encontrado.',
+  ...BASE_MESSAGES,
   EMPTY_GROUPS: 'Não há grupos cadastrados.',
   DELETE_SUCCESS: 'Grupo deletado com sucesso.',
 };

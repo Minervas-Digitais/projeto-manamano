@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -20,19 +21,22 @@ import { RoleType } from '@prisma/client';
 import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
 
 @Controller('post')
+@UseGuards(JwtAuthGuard)
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @HttpCode(201)
   @Post()
-  @UseGuards(JwtAuthGuard)
-  create(@Body() createPostDto: CreatePostDto): Promise<SerializedPost> {
-    return this.postService.create(createPostDto);
+  create(
+    @Body() createPostDto: CreatePostDto,
+    @Req() req,
+  ): Promise<SerializedPost> {
+    return this.postService.create(createPostDto, req.user.id);
   }
 
   @HttpCode(200)
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(RoleType.ADMIN)
   findAll(): Promise<SerializedPost[]> {
     return this.postService.findAll();
@@ -40,14 +44,13 @@ export class PostController {
 
   @HttpCode(200)
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string): Promise<SerializedPost> {
     return this.postService.findOne(id);
   }
 
   @HttpCode(201)
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(RoleType.ADMIN)
   update(
     @Param('id') id: string,
@@ -58,7 +61,7 @@ export class PostController {
 
   @HttpCode(200)
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(RoleType.ADMIN)
   remove(@Param('id') id: string): Promise<SerializedPost> {
     return this.postService.remove(id);
@@ -66,35 +69,32 @@ export class PostController {
 
   @HttpCode(201)
   @Patch('save/:ids')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
+  @UseGuards(MatchUserIdGuard)
   async savePost(@Param('ids') ids: string): Promise<any> {
     return this.postService.savePost(ids);
   }
 
   @HttpCode(201)
   @Patch('unsave/:ids')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
+  @UseGuards(MatchUserIdGuard)
   async removeSavedPost(@Param('ids') ids: string): Promise<any> {
     return this.postService.removeSavedPost(ids);
   }
 
   @HttpCode(201)
   @Patch('pin/:postId')
-  @UseGuards(JwtAuthGuard)
   async pinPost(@Param('postId') postId: string): Promise<SerializedPost> {
-    return this.postService.pinPost(postId);
+    return this.postService.setPinStatus(postId, true);
   }
 
   @HttpCode(201)
   @Patch('unpin/:postId')
-  @UseGuards(JwtAuthGuard)
   async unpinPost(@Param('postId') postId: string): Promise<SerializedPost> {
-    return this.postService.unpinPost(postId);
+    return this.postService.setPinStatus(postId, false);
   }
 
   @HttpCode(200)
   @Get('group/pinned/:groupId')
-  @UseGuards(JwtAuthGuard)
   async getPinnedPosts(
     @Param('groupId') groupId: string,
   ): Promise<SerializedPost[]> {
@@ -103,7 +103,6 @@ export class PostController {
 
   @HttpCode(200)
   @Get('group/:groupId')
-  @UseGuards(JwtAuthGuard)
   async getGroupPosts(
     @Param('groupId') groupId: string,
   ): Promise<SerializedPost[]> {
@@ -112,7 +111,6 @@ export class PostController {
 
   @HttpCode(200)
   @Get('category/:categoryId')
-  @UseGuards(JwtAuthGuard)
   async getCategoryPosts(
     @Param('categoryId') categoryId: string,
   ): Promise<SerializedPost[]> {
@@ -121,13 +119,13 @@ export class PostController {
 
   @HttpCode(200)
   @Get(':id/posts')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
+  @UseGuards(MatchUserIdGuard)
   async findUserPosts(@Param('id') id: string): Promise<SerializedPost[]> {
     return this.postService.getUserPosts(id);
   }
 
   @Get('saved/:userId')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
+  @UseGuards(MatchUserIdGuard)
   async getSavedPosts(
     @Param('userId') userId: string,
     @Query('page') page = '1',

@@ -8,21 +8,19 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { NotificationType } from '@prisma/client';
 import { COMMENT_MESSAGES } from 'src/messages/comment.messages';
+import { ValidatorService } from 'src/common/validators/validator.service';
 
 @Injectable()
 export class CommentService {
   constructor(
     private prismaService: PrismaService,
     private notificationService: NotificationService,
+    private readonly validator: ValidatorService,
   ) {}
   async create(createCommentDto: CreateCommentDto, currentUserId: string) {
     if (createCommentDto.userId !== currentUserId) {
       throw new ForbiddenException(COMMENT_MESSAGES.UNAUTHORIZED_CREATE);
     }
-
-    const comment = await this.prismaService.comment.create({
-      data: createCommentDto,
-    });
 
     const post = await this.prismaService.post.findUnique({
       where: { id: createCommentDto.postId },
@@ -36,7 +34,13 @@ export class CommentService {
       throw new NotFoundException(COMMENT_MESSAGES.POST_NOT_FOUND);
     }
 
-    const senderName = post.user.fullName;
+    const senderUser = await this.validator.validateUserExists(createCommentDto.userId)
+    
+    const comment = await this.prismaService.comment.create({
+      data: createCommentDto,
+    });
+
+    const senderName = senderUser.fullName;
 
     if (post.userId !== createCommentDto.userId) {
       const notificationBody = `${senderName} comentou no seu post no grupo ${post.group.name}`;
@@ -47,7 +51,7 @@ export class CommentService {
         groupId: post.groupId,
         body: notificationBody,
         type: NotificationType.COMMENT,
-        groupName: post.group?.name,
+        groupName: post.group.name,
         senderName: senderName,
         idContent: comment.id,
       });

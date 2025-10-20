@@ -1,43 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateArchiveDto, ResponseArchiveDto } from './dto/archive.dto';
-import { Archive, NotificationType } from '@prisma/client';
+import { NotificationType } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
 import { ARCHIVE_MESSAGES } from 'src/messages/archive.messages';
+import { ValidatorService } from 'src/common/validators/validator.service';
 
 @Injectable()
 export class ArchiveService {
   constructor(
     private readonly prisma: PrismaService,
     private notificationService: NotificationService,
+    private readonly validator: ValidatorService,
   ) {}
 
   async createArchive(data: CreateArchiveDto): Promise<ResponseArchiveDto> {
     let group = null;
     let sender = null;
 
-    if (data.postId) {
-      const post = await this.prisma.post.findUnique({
-        where: { id: data.postId },
-      });
-      if (!post) throw new NotFoundException(ARCHIVE_MESSAGES.POST_NOT_FOUND);
-    }
+    if (data.postId) await this.validator.validatePostExists(data.postId);
+    if (data.groupId)
+      group = await this.validator.validateGroupExists(data.groupId);
+    if (data.userId)
+      sender = await this.validator.validateUserExists(data.userId);
 
-    if (data.groupId) {
-      group = await this.prisma.group.findUnique({
-        where: { id: data.groupId },
-      });
-      if (!group) throw new NotFoundException(ARCHIVE_MESSAGES.GROUP_NOT_FOUND);
-    }
-
-    if (data.userId) {
-      sender = await this.prisma.user.findUnique({
-        where: { id: data.userId },
-        select: { fullName: true },
-      });
-      if (!sender) throw new NotFoundException(ARCHIVE_MESSAGES.USER_NOT_FOUND);
-    }
-    
     const createdArchive = await this.prisma.archive.create({
       data: {
         name: data.name,
@@ -91,11 +77,7 @@ export class ArchiveService {
   }
 
   async getArchivesByPostId(postId: string): Promise<ResponseArchiveDto[]> {
-    const post = await this.prisma.post.findUnique({ where: { id: postId } });
-
-    if (!post) {
-      throw new NotFoundException(ARCHIVE_MESSAGES.POST_NOT_FOUND);
-    }
+    await this.validator.validatePostExists(postId);
 
     const archives = await this.prisma.archive.findMany({
       where: { postId },
@@ -105,13 +87,7 @@ export class ArchiveService {
   }
 
   async getArchivesByGroupId(groupId: string): Promise<ResponseArchiveDto[]> {
-    const group = await this.prisma.group.findUnique({
-      where: { id: groupId },
-    });
-
-    if (!group) {
-      throw new NotFoundException(ARCHIVE_MESSAGES.GROUP_NOT_FOUND);
-    }
+    await this.validator.validateGroupExists(groupId);
 
     const archives = await this.prisma.archive.findMany({
       where: { groupId },

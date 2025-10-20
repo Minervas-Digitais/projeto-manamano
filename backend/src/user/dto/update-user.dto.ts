@@ -42,8 +42,4 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   bio?: string;
-
-  //   @IsArray()
-  //   @IsOptional()
-  //   savedPost: string[];
 }

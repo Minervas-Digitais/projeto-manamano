@@ -4,10 +4,14 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { Group } from '@prisma/client';
 import { GROUP_MESSAGES } from 'src/messages/group.messages';
+import { ValidatorService } from 'src/common/validators/validator.service';
 
 @Injectable()
 export class GroupService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
 
   async create(createGroupDto: CreateGroupDto): Promise<Group> {
     const inviteCode = await this.generateUniqueInviteCode();
@@ -30,19 +34,12 @@ export class GroupService {
   }
 
   async findOne(id: string): Promise<Group> {
-    const group = await this.prismaService.group.findUnique({
-      where: {
-        id,
-      },
-    });
-    if (!group) {
-      throw new NotFoundException(GROUP_MESSAGES.NOT_FOUND);
-    }
+    const group = await this.validator.validateGroupExists(id)
     return group;
   }
 
   async update(id: string, updateGroupDto: UpdateGroupDto): Promise<Group> {
-    await this.validateGroupExists(id);
+    await this.validator.validateGroupExists(id);
     return await this.prismaService.group.update({
       where: {
         id,
@@ -51,8 +48,8 @@ export class GroupService {
     });
   }
 
-  async remove(id: string): Promise <{message: string}> {
-    await this.validateGroupExists(id);
+  async remove(id: string): Promise<{ message: string }> {
+    await this.validator.validateGroupExists(id);
 
     await this.prismaService.group.delete({
       where: {
@@ -63,17 +60,6 @@ export class GroupService {
   }
 
   /* Funções auxiliares */
-  private async validateGroupExists(id: string): Promise<void> {
-    const exists = await this.prismaService.group.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-
-    if (!exists) {
-      throw new NotFoundException(GROUP_MESSAGES.NOT_FOUND);
-    }
-  }
-
   private generateInviteCode(length: number = 8) {
     const characters =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

@@ -1,5 +1,7 @@
+import { BASE_MESSAGES } from './base.messages';
+
 export const MAIL_MESSAGES = {
-  USER_NOT_FOUND: 'Usuário não encontrado.',
+  ...BASE_MESSAGES,
   SEND_SUCCESS: 'E-mail enviado com sucesso.',
   SEND_FAILURE: 'Falha ao enviar e-mail.',
 };

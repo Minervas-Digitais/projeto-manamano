@@ -8,7 +8,6 @@ export class CreateParticipantDto {
   role?: UserRole;
 
   @IsString()
-  @IsNotEmpty()
   @IsOptional()
   groupId?: string;
 

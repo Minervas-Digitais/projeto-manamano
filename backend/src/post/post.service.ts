@@ -1,10 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, Prisma } from '@prisma/client';
+import { NotificationType, Prisma, User } from '@prisma/client';
 import { POST_MESSAGES } from '../messages/post.messages';
+import { omitHash } from 'src/utils/user.util';
+import { ValidatorService } from 'src/common/validators/validator.service';
 
 const postInclude: Prisma.PostInclude = {
   Comment: {
@@ -50,6 +57,7 @@ export class PostService {
   constructor(
     private prismaService: PrismaService,
     private notificationService: NotificationService,
+    private readonly validator: ValidatorService,
   ) {}
 
   private async findPosts(where?: Prisma.PostWhereInput) {
@@ -64,17 +72,6 @@ export class PostService {
     return posts;
   }
 
-  private async validatePostExists(id: string) {
-    const exists = await this.prismaService.post.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-
-    if (!exists) {
-      throw new NotFoundException(POST_MESSAGES.NOT_FOUND);
-    }
-  }
-
   private serializePost(post: any): SerializedPost {
     const { user, category, Comment, ...rest } = post;
     return {
@@ -86,22 +83,19 @@ export class PostService {
     };
   }
 
-  async create(createPostDto: CreatePostDto): Promise<SerializedPost> {
-    const group = await this.prismaService.group.findUnique({
-      where: { id: createPostDto.groupId },
-    });
-
-    if (!group) {
-      throw new NotFoundException(POST_MESSAGES.GROUP_NOT_FOUND);
+  async create(
+    createPostDto: CreatePostDto,
+    userIdFromToken: string,
+  ): Promise<SerializedPost> {
+    if (createPostDto.userId !== userIdFromToken) {
+      throw new ForbiddenException(POST_MESSAGES.UNAUTHORIZED_ACCESS);
     }
 
-    const senderUser = await this.prismaService.user.findUnique({
-      where: { id: createPostDto.userId },
-    });
+    const group = await this.validator.validateGroupExists(
+      createPostDto.groupId,
+    );
 
-    if (!senderUser) {
-      throw new NotFoundException(POST_MESSAGES.USER_NOT_FOUND);
-    }
+    await this.validator.validateUserExists(createPostDto.userId);
 
     const post = await this.prismaService.post.create({
       data: createPostDto,
@@ -153,7 +147,7 @@ export class PostService {
     id: string,
     updatePostDto: UpdatePostDto,
   ): Promise<SerializedPost> {
-    await this.validatePostExists(id);
+    await this.validator.validatePostExists(id);
     const updated = await this.prismaService.post.update({
       where: { id },
       data: updatePostDto,
@@ -163,7 +157,7 @@ export class PostService {
   }
 
   async remove(id: string): Promise<SerializedPost> {
-    await this.validatePostExists(id);
+    await this.validator.validatePostExists(id);
     const deleted = await this.prismaService.post.delete({
       where: { id },
       include: postInclude,
@@ -171,64 +165,65 @@ export class PostService {
     return this.serializePost(deleted);
   }
 
-  async savePost(ids: string): Promise<any> {
+  async savePost(ids: string): Promise<Omit<User, 'hash'>> {
     const [postId, userId] = ids.split(',');
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
-    if (!user) {
-      throw new NotFoundException(POST_MESSAGES.USER_NOT_FOUND);
-    }
 
-    const post = await this.prismaService.post.findUnique({
-      where: { id: postId },
-    });
+    const user = await this.validator.validateUserExists(userId);
+    const post = await this.validator.validatePostExists(postId);
+
     if (post.userId === userId) {
-      throw new NotFoundException(POST_MESSAGES.CANNOT_SAVE_OWN);
+      throw new ForbiddenException(POST_MESSAGES.CANNOT_SAVE_OWN);
     }
 
-    return await this.prismaService.user.update({
+    if (user.savedPost.includes(postId)) {
+      throw new ConflictException(POST_MESSAGES.ALREADY_SAVED);
+    }
+
+    const updatedUser = await this.prismaService.user.update({
       where: { id: userId },
       data: {
-        savedPost: [...user.savedPost, postId],
+        savedPost: {
+          push: postId,
+        },
       },
     });
+
+    return omitHash(updatedUser);
   }
 
-  async removeSavedPost(ids: string): Promise<any> {
+  async removeSavedPost(ids: string): Promise<Omit<User, 'hash'>> {
     const [postId, userId] = ids.split(',');
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
-    if (!user) {
-      throw new NotFoundException(POST_MESSAGES.USER_NOT_FOUND);
+
+    const user = await this.validator.validateUserExists(userId);
+    await this.validator.validatePostExists(postId);
+
+    if (!user.savedPost.includes(postId)) {
+      throw new NotFoundException(POST_MESSAGES.POST_NOT_SAVED);
     }
-    return await this.prismaService.user.update({
+
+    const updatedUser = await this.prismaService.user.update({
       where: { id: userId },
       data: {
         savedPost: user.savedPost.filter((id) => id !== postId),
       },
     });
+
+    return omitHash(updatedUser);
   }
 
-  async pinPost(postId: string): Promise<SerializedPost> {
-    await this.validatePostExists(postId);
-    const post = await this.prismaService.post.update({
-      where: { id: postId },
-      data: { isPinned: true },
-      include: postInclude,
-    });
-    return this.serializePost(post);
-  }
+  async setPinStatus(postId: string, pinned: boolean): Promise<SerializedPost> {
+    const post = await this.validator.validatePostExists(postId);
 
-  async unpinPost(postId: string): Promise<SerializedPost> {
-    await this.validatePostExists(postId);
-    const post = await this.prismaService.post.update({
+    if(post.isPinned === pinned){
+        throw new NotFoundException(POST_MESSAGES.POST_PINNED_STATUS_UNCHANGED);
+    }
+
+    const updatedPost = await this.prismaService.post.update({
       where: { id: postId },
-      data: { isPinned: false },
+      data: { isPinned: pinned },
       include: postInclude,
     });
-    return this.serializePost(post);
+    return this.serializePost(updatedPost);
   }
 
   async getPinnedPosts(groupId: string): Promise<SerializedPost[]> {

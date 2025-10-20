@@ -38,14 +38,14 @@ export class UserController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleType.ADMIN)
-  findAll(): Promise<User[]> {
+  findAll(): Promise<Omit<User, 'hash'>[]> {
     return this.userService.findAll();
   }
 
   @HttpCode(200)
   @Get(':id')
   @UseGuards(JwtAuthGuard, MatchUserIdGuard)
-  findOne(@Param('id') id: string): Promise<User> {
+  findOne(@Param('id') id: string): Promise<Omit<User, 'hash'>> {
     return this.userService.findOne(id);
   }
 
@@ -55,7 +55,7 @@ export class UserController {
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
+  ): Promise<Omit<User, 'hash'>> {
     return this.userService.update(id, updateUserDto);
   }
 
@@ -74,16 +74,17 @@ export class UserController {
     @Param('id') id: string,
     @Body('oldPassword') oldPassword: string,
     @Body('newPassword') newPassword: string,
-  ): Promise<User> {
+  ): Promise<Omit<User, 'hash'>> {
     return this.userService.changePassword(id, oldPassword, newPassword);
   }
 
   @Patch(':id/role')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleType.ADMIN)
   async updateRole(
-    // SysRole
     @Param('id') id: string,
     @Body() updateUserRoleDto: UpdateUserRoleDto,
-  ): Promise<User> {
+  ): Promise<Omit<User, 'hash'>> {
     const { sysRole } = updateUserRoleDto;
     return this.userService.updateUserRole(id, sysRole);
   }
@@ -94,7 +95,7 @@ export class UserController {
   async updateProfilePicture(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
-  ): Promise<User & { profilePicture: Archive | null }> {
+  ): Promise<Omit<User, 'hash'> & { profilePicture: Archive | null }> {
     if (!file) {
       throw new BadRequestException('Um arquivo é necessário.');
     }

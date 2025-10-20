@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Notification, NotificationType, RoleType, User } from '@prisma/client';
@@ -10,6 +11,10 @@ import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Expo } from 'expo-server-sdk';
 import { NOTIFICATION_MESSAGES } from 'src/messages/notification.messages';
+import { omitHash } from 'src/utils/user.util';
+import { ValidatorService } from 'src/common/validators/validator.service';
+import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
 
 export interface NotificationSettings {
   disablePopup: boolean;
@@ -21,40 +26,10 @@ export interface NotificationSettings {
 export class NotificationService {
   private expo = new Expo();
 
-  constructor(private prisma: PrismaService) {}
-
-  private async validateTokenMatchUser(notifId: string, userId: string) {
-    const notification = await this.validateNotificationExists(notifId);
-
-    if (notification.recipientId !== userId) {
-      throw new ForbiddenException(
-        NOTIFICATION_MESSAGES.UNAUTHORIZED_NOTIF_UPDATE,
-      );
-    }
-  }
-
-  private async validateUserExists(id: string): Promise<void> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: { id: true },
-    });
-
-    if (!user) {
-      throw new NotFoundException(NOTIFICATION_MESSAGES.USER_NOT_FOUND);
-    }
-  }
-
-  private async validateNotificationExists(id: string): Promise<Notification> {
-    const notification = await this.prisma.notification.findUnique({
-      where: { id },
-    });
-
-    if (!notification) {
-      throw new NotFoundException(NOTIFICATION_MESSAGES.NOT_FOUND);
-    }
-
-    return notification;
-  }
+  constructor(
+    private prisma: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
 
   private buildNotificationData(
     dto: CreateNotificationDto,
@@ -71,6 +46,44 @@ export class NotificationService {
     };
   }
 
+  private getNotificationTitle(
+    type: NotificationType,
+    groupName?: string,
+    senderName?: string,
+  ): string {
+    switch (type) {
+      case NotificationType.FIXED:
+        return groupName
+          ? `Nova notificação em ${groupName}`
+          : 'Nova notificação';
+      case NotificationType.WARNING:
+        return 'Aviso importante';
+      case NotificationType.COMMENT:
+        return senderName ? `${senderName} comentou` : 'Novo comentário';
+      default:
+        return 'Nova notificação';
+    }
+  }
+
+  private async createAndSendNotification(
+    dto: CreateNotificationDto,
+    recipientId: string,
+  ): Promise<Notification> {
+    const notification = await this.prisma.notification.create({
+      data: this.buildNotificationData(dto, recipientId),
+    });
+
+    await this.sendPushNotification(
+      recipientId,
+      this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
+      dto.body,
+      dto.groupId ? { groupId: dto.groupId } : undefined,
+      dto.type,
+    );
+
+    return notification;
+  }
+
   async createNotification(
     dto: CreateNotificationDto,
   ): Promise<Notification | { count: number }> {
@@ -83,6 +96,12 @@ export class NotificationService {
       throw new NotFoundException(NOTIFICATION_MESSAGES.SENDER_NOT_FOUND);
     }
 
+    if (dto.recipientId && dto.recipientId === dto.senderId) {
+      throw new BadRequestException(
+        NOTIFICATION_MESSAGES.CANNOT_NOTIFY_YOURSELF,
+      );
+    }
+
     if (dto.type === NotificationType.WARNING && sender.sysRole !== 'ADMIN') {
       throw new ForbiddenException(
         NOTIFICATION_MESSAGES.UNAUTHORIZED_WARNING_CALL,
@@ -91,21 +110,8 @@ export class NotificationService {
 
     //FIXED pra 01 usuario
     if (dto.type === NotificationType.FIXED && dto.recipientId) {
-      await this.validateUserExists(dto.recipientId);
-
-      const notification = await this.prisma.notification.create({
-        data: this.buildNotificationData(dto, dto.recipientId),
-      });
-
-      await this.sendPushNotification(
-        dto.recipientId,
-        'Nova notificação',
-        dto.body,
-        dto.groupId ? { groupId: dto.groupId } : undefined,
-        dto.type,
-      );
-
-      return notification;
+      await this.validator.validateUserExists(dto.recipientId);
+      return this.createAndSendNotification(dto, dto.recipientId);
     }
 
     // FIXED para grupo
@@ -129,42 +135,32 @@ export class NotificationService {
 
       const result = await this.prisma.notification.createMany({ data });
 
-      for (const participant of participants) {
-        await this.sendPushNotification(
-          participant.userId,
-          'Nova notificação em ' + dto.groupName,
-          dto.body,
-          { groupId: dto.groupId },
-          dto.type,
-        );
-      }
+      await Promise.all(
+        participants.map((participant) =>
+          this.sendPushNotification(
+            participant.userId,
+            this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
+            dto.body,
+            { groupId: dto.groupId },
+            dto.type,
+          ),
+        ),
+      );
 
       return { count: result.count };
     }
 
     if (!dto.recipientId) {
-      throw new BadRequestException(NOTIFICATION_MESSAGES.RECIPIENT_EMPTY);
+      throw new BadRequestException(NOTIFICATION_MESSAGES.RECIPIENT_NOT_FOUND);
     }
 
-    await this.validateUserExists(dto.recipientId);
+    await this.validator.validateUserExists(dto.recipientId);
 
-    const notification = await this.prisma.notification.create({
-      data: this.buildNotificationData(dto, dto.recipientId),
-    });
-
-    await this.sendPushNotification(
-      dto.recipientId,
-      'Nova notificação',
-      dto.body,
-      dto.groupId,
-      dto.type,
-    );
-
-    return notification;
+    return this.createAndSendNotification(dto, dto.recipientId);
   }
 
   async getNotificationsForUser(userId: string): Promise<Notification[]> {
-    await this.validateUserExists(userId);
+    await this.validator.validateUserExists(userId);
 
     return this.prisma.notification.findMany({
       where: { recipientId: userId },
@@ -172,11 +168,15 @@ export class NotificationService {
     });
   }
 
+  @UseGuards(MatchUserIdGuard)
   async markAsRead(
     notificationId: string,
     userId: string,
   ): Promise<Notification> {
-    await this.validateTokenMatchUser(notificationId, userId);
+    await this.validator.ensureUserIsNotificationRecipient(
+      notificationId,
+      userId,
+    );
 
     return this.prisma.notification.update({
       where: { id: notificationId },
@@ -188,7 +188,10 @@ export class NotificationService {
     notificationId: string,
     userId: string,
   ): Promise<Notification> {
-    await this.validateTokenMatchUser(notificationId, userId);
+    await this.validator.ensureUserIsNotificationRecipient(
+      notificationId,
+      userId,
+    );
 
     return this.prisma.notification.delete({
       where: { id: notificationId },
@@ -198,7 +201,7 @@ export class NotificationService {
   async createGlobalNotification(
     dto: CreateNotificationDto,
   ): Promise<{ count: number }> {
-    await this.validateUserExists(dto.senderId);
+    await this.validator.validateUserExists(dto.senderId);
 
     const users = await this.prisma.user.findMany({
       where: { id: { not: dto.senderId } },
@@ -212,21 +215,23 @@ export class NotificationService {
 
     const result = await this.prisma.notification.createMany({ data });
 
-    for (const user of users) {
-      await this.sendPushNotification(
-        user.id,
-        dto.senderName ?? 'Notificação',
-        dto.body,
-        undefined,
-        dto.type,
-      );
-    }
+    await Promise.all(
+      users.map((user) =>
+        this.sendPushNotification(
+          user.id,
+          this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
+          dto.body,
+          undefined,
+          dto.type,
+        ),
+      ),
+    );
 
     return { count: result.count };
   }
 
   async deleteAllNotifications(userId: string): Promise<{ count: number }> {
-    await this.validateUserExists(userId);
+    await this.validator.validateUserExists(userId);
 
     const deletedNotifications = await this.prisma.notification.deleteMany({
       where: { recipientId: userId },
@@ -236,7 +241,7 @@ export class NotificationService {
   }
 
   async markAllAsRead(userId: string): Promise<{ count: number }> {
-    await this.validateUserExists(userId);
+    await this.validator.validateUserExists(userId);
 
     const updatedNotifications = await this.prisma.notification.updateMany({
       where: { recipientId: userId, isRead: false },
@@ -251,7 +256,7 @@ export class NotificationService {
     data: UpdateNotificationDto,
     userId: string,
   ): Promise<Notification> {
-    await this.validateTokenMatchUser(id, userId);
+    await this.validator.ensureUserIsNotificationSender(id, userId);
 
     const updateData = Object.fromEntries(
       Object.entries(data).filter(([_, value]) => value !== undefined),
@@ -266,13 +271,15 @@ export class NotificationService {
   async registerPushNotifToken(
     userId: string,
     pushNotifToken: string,
-  ): Promise<User> {
-    await this.validateUserExists(userId);
+  ): Promise<Omit<User, 'hash'>> {
+    await this.validator.validateUserExists(userId);
 
-    return this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: { pushNotifToken },
     });
+
+    return omitHash(updatedUser);
   }
 
   async getNotificationSettings(id: string): Promise<NotificationSettings> {
@@ -297,20 +304,22 @@ export class NotificationService {
 
   async updateNotificationSettings(
     id: string,
-    dto: UpdateNotificationDto,
-  ): Promise<User> {
+    dto: UpdateNotificationSettingsDto,
+  ): Promise<Omit<User, 'hash'>> {
     if (Object.keys(dto).length === 0) {
       throw new BadRequestException(
         NOTIFICATION_MESSAGES.NO_SETTINGS_TO_UPDATE,
       );
     }
 
-    await this.validateUserExists(id);
+    await this.validator.validateUserExists(id);
 
-    return this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id },
       data: dto,
     });
+
+    return omitHash(updatedUser);
   }
 
   async sendPushNotification(
@@ -321,10 +330,11 @@ export class NotificationService {
     type?: NotificationType,
   ): Promise<any | undefined> {
     try {
-      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      const user = await this.validator.validateUserExists(userId);
 
-      if (!user) {
-        throw new NotFoundException(NOTIFICATION_MESSAGES.USER_NOT_FOUND);
+      if (userId === user.id) {
+        // impede enviar notificação pra si mesmo
+        return { skipped: true };
       }
 
       if (!user.pushNotifToken) {
@@ -366,8 +376,6 @@ export class NotificationService {
       ];
 
       const tickets = await this.expo.sendPushNotificationsAsync(messages);
-
-      console.log('Tickets enviados:', tickets);
 
       return tickets;
     } catch (err) {

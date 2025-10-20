@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateMailDto } from './dto/create-mail.dto';
 import { MailService } from './mail.service';
@@ -11,7 +11,7 @@ export class MailController {
 
   @HttpCode(201)
   @Post()
-  sendMail(@Body() email: CreateMailDto) {
-    return this.mailService.sendMail(email);
+  sendMail(@Body() email: CreateMailDto, @Req() req) {
+    return this.mailService.sendMail(email, req.user.id);
   }
 }

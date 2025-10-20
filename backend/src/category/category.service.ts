@@ -4,19 +4,19 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Category } from '@prisma/client';
 import { CATEGORY_MESSAGES } from 'src/messages/category.messages';
+import { ValidatorService } from 'src/common/validators/validator.service';
 
 @Injectable()
 export class CategoryService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
+
+
 
   async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-    const groupExists = await this.prismaService.group.findUnique({
-      where: { id: createCategoryDto.groupId },
-    });
-
-    if (!groupExists) {
-      throw new NotFoundException(CATEGORY_MESSAGES.GROUP_NOT_FOUND);
-    }
+    await this.validator.validateGroupExists(createCategoryDto.groupId);
 
     return await this.prismaService.category.create({
       data: createCategoryDto,
@@ -65,6 +65,10 @@ export class CategoryService {
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
     await this.findOne(id);
+
+    if (updateCategoryDto.groupId) {
+      await this.validator.validateGroupExists(updateCategoryDto.groupId);
+    }
 
     return await this.prismaService.category.update({
       where: {

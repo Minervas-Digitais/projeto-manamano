@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -7,23 +8,24 @@ import { Transporter, createTransport } from 'nodemailer';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMailDto } from './dto/create-mail.dto';
 import { MAIL_MESSAGES } from 'src/messages/mail.messages';
+import { ValidatorService } from 'src/common/validators/validator.service';
 @Injectable()
 export class MailService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
 
-  async sendMail(email: CreateMailDto): Promise<{ message: string }> {
+  async sendMail(email: CreateMailDto, userId: string): Promise<{ message: string }> {
+    if (userId !== email.userId) {
+      throw new BadRequestException(
+        MAIL_MESSAGES.UNAUTHORIZED_ACCESS,
+      );
+    }
     const transporter = this.getTransporter();
 
-    const user = await this.prismaService.user.findUnique({
-      where: {
-        id: email.userId,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException(MAIL_MESSAGES.USER_NOT_FOUND);
-    }
-
+    const user = await this.validator.validateUserExists(email.userId)
+    
     const emailContent = `Nova mensagem da(o) usuária(o) ${user.fullName}:\n\n${email.text}`;
 
     try {
