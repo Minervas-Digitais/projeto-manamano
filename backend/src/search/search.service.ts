@@ -47,6 +47,19 @@ export class SearchService {
           ],
         },
         take: 5,
+
+        include: {
+          user: {
+            select: {
+              fullName: true,
+            },
+          },
+          _count: {
+            select: {
+              Comment: true,
+            },
+          },
+        }
       });
 
       result['users'] = users;
