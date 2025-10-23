@@ -2,7 +2,16 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import { TouchableOpacity, View, Text, ScrollView, Dimensions, Alert } from 'react-native';
+import {
+  TouchableOpacity,
+  View,
+  Text,
+  ScrollView,
+  Dimensions,
+  Alert,
+  ActivityIndicator,
+  FlatList,
+} from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import {
   Avatar,
@@ -39,6 +48,13 @@ interface Post {
   numComments: number;
   createdAt: string;
   originGroup: string;
+
+  user: {
+    fullName: string;
+  };
+  _count: {
+    Comment: number;
+  };
 }
 
 interface ResultSectionProps {
@@ -54,19 +70,30 @@ interface DataState {
   posts: Post[];
 }
 
+// chave pode ser uma das chaves de DataState ou uma string vazia
+type SectionKey = keyof DataState | '';
+
+const LIMIT = 20; // igual ao do backend
+
 export default function ResultSection({
   searchText,
   saveRecentUser,
   accessToken,
   admin,
 }: ResultSectionProps) {
-  const [selectedSection, setSelectedSection] = useState('');
+  const [selectedSection, setSelectedSection] = useState<SectionKey>('');
   const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });
   const [deleteModal, setDeleteModal] = useState({
     visible: false,
     type: '', // 'user', 'group', or 'post'
     id: '',
   });
+
+  // PAGINACAO
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const loggedId = storage.getString('loggedId');
   const screenWidth = Dimensions.get('window').width;
@@ -77,35 +104,65 @@ export default function ResultSection({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
-  const fetchData = async (url: string, sectionKey?: keyof DataState): Promise<void> => {
+
+  const fetchData = async (
+    section: SectionKey,
+    isLoadMore = false, // true se for carregar mais
+  ): Promise<void> => {
+    if (isLoading || (isLoadMore && !hasMore)) {
+      return;
+    }
+
     if (!accessToken) {
       console.error('No access token available.');
       return;
     }
 
+    setIsLoading(true);
+    const currentPage = isLoadMore ? page : 1;
+    const isPreview = section === ''; // estamos no modo preview?
+
     try {
-      const response = await api.post(
-        url,
-        { input: searchText },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+      const url = isPreview ? '/search' : `/search/filter/${section.toLowerCase()}`;
+      const params = isPreview
+        ? { input: searchText } // preview nao precisa de paginacao
+        : {
+            input: searchText,
+            page: currentPage,
+            limit: LIMIT,
+          };
+
+      const response = await api.post(url, params, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
-      );
+      });
 
       const json = response.data;
-      const parsedData = { users: [], groups: [], posts: [] };
 
-      if (sectionKey) {
-        parsedData[sectionKey] = json;
+      if (isPreview) {
+        setData(json);
       } else {
-        Object.assign(parsedData, json);
-      }
+        const newItems = json;
 
-      setData(parsedData);
+        if (isLoadMore) {
+          setData((prevData) => ({
+            ...prevData,
+            [section]: [...prevData[section], ...newItems],
+          }));
+        } else {
+          const freshData: DataState = { users: [], groups: [], posts: [] };
+          freshData[section] = newItems;
+          setData(freshData);
+        }
+
+        setPage(currentPage + 1);
+        setHasMore(newItems.length === LIMIT);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
   // Delete user
@@ -171,72 +228,33 @@ export default function ResultSection({
       );
     }
   };
+
   useEffect(() => {
-    if (searchText && !selectedSection) {
-      fetchData('/search');
+    if (searchText) {
+      // reseta a paginacao
+      setPage(1);
+      setHasMore(true);
+
+      // busca dados
+      fetchData(selectedSection, false);
+    } else {
+      // limpa tudo se a busca for limpa
+      setData({ users: [], groups: [], posts: [] });
     }
   }, [searchText, accessToken]);
 
-  useEffect(() => {
-    if (selectedSection) {
-      const url = `/search/filter/${selectedSection.toLowerCase()}`;
-      fetchData(url, selectedSection as keyof DataState);
-    }
-  }, [selectedSection, accessToken]);
-
-  const fetchUserName = async (userId: string): Promise<string> => {
-    if (!accessToken) {
-      console.error('No access token available.');
-      return 'Nome não encontrado';
-    }
-
-    try {
-      const response = await api.get(`/user/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const user = response.data;
-      const fullName = user.fullName.split(' ');
-      return `${fullName[0]} ${fullName[1] || ''}`;
-    } catch (error) {
-      console.error('Error fetching user name:', error);
-      return 'Nome não encontrado';
-    }
-  };
-
-  const fetchNumComments = async (postId: string): Promise<number> => {
-    if (!accessToken) {
-      console.error('No access token available.');
-      return 0;
-    }
-
-    try {
-      const response = await api.get(`/post/${postId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const postDetails = response.data;
-      return postDetails.Comment ? postDetails.Comment.length : 0;
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-      return 0;
-    }
-  };
-
-  const handleFilterPress = (section: string): void => {
+  const handleFilterPress = (section: keyof DataState): void => {
     const newSection = selectedSection === section ? '' : section;
-    setData({ users: [], groups: [], posts: [] });
-    setSelectedSection(newSection);
 
-    if (!newSection) {
-      fetchData('/search');
-    } else {
-      const url = `/search/filter/${newSection.toLowerCase()}`;
-      fetchData(url, newSection as keyof DataState);
+    // reseta o estado para a nova selecao
+    setSelectedSection(newSection);
+    setData({ users: [], groups: [], posts: [] });
+    setPage(1);
+    setHasMore(true);
+
+    // busca a primeira pagina do novo filtro (ou preview)
+    if (searchText) {
+      fetchData(newSection, false);
     }
   };
 
@@ -259,9 +277,142 @@ export default function ResultSection({
     setDeleteModal({ visible: false, type: '', id: '' });
   };
 
+  // funcao chamada pelo flatlist ao chegar no fim
+  const loadMore = () => {
+    if (selectedSection !== '' && !isLoading && hasMore) {
+      fetchData(selectedSection, true); // true = carregar mais
+    }
+  };
+
+  // Componente de rodape para o flatlist
+  // mostra o "Carregando..."
+  const renderFooter = () => {
+    if (!isLoading) return null;
+    return <ActivityIndicator size="large" color="#FFA8A6" style={{ marginVertical: 20 }} />;
+  };
+
   if (!fontsLoaded || !accessToken) {
     return null;
   }
+
+  // renderiza cada item no flatlist (modo filtrado)
+  const renderFilteredItem = ({ item }: { item: User | Group | Post }) => {
+    if (selectedSection === 'users') {
+      const person = item as User;
+      const fullName = person.fullName.split(' ');
+
+      return (
+        <Card key={person.id} style={{ marginBottom: 10 }} testID={`user-card-${person.id}`}>
+          <TouchableOpacity
+            testID={`user-touchable-${person.id}`}
+            onPress={() => {
+              saveRecentUser({
+                id: parseInt(person.id, 10),
+                name: person.fullName,
+                avatar: require('../../assets/duck.png'),
+              });
+              if (String(person.id) === String(loggedId)) {
+                navigation.navigate('Profile', { id: person.id });
+              } else {
+                navigation.navigate('VisitorProfile', { id: person.id });
+              }
+            }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
+              <Avatar source={avatar} />
+              <Name
+                testID={`user-name-${person.id}`}
+                fontFamily="inter-regular"
+                fontColor="#3F3D3D">
+                {`${fullName[0]} ${fullName[1] || ''}`}
+              </Name>
+            </View>
+          </TouchableOpacity>
+          {admin && (
+            <TouchableOpacity
+              testID={`user-delete-button-${person.id}`}
+              onPress={() => handleDeletePress('user', person.id)}>
+              <TrashCan />
+            </TouchableOpacity>
+          )}
+        </Card>
+      );
+    }
+
+    if (selectedSection === 'groups') {
+      const group = item as Group;
+      return (
+        <Card key={group.id} style={{ marginBottom: 10 }} testID={`group-card-${group.id}`}>
+          <TouchableOpacity
+            testID={`group-touchable-${group.id}`}
+            onPress={() => {
+              saveRecentUser({
+                id: parseInt(group.id, 10),
+                name: group.name,
+                avatar: require('../../assets/duck.png'),
+              });
+              navigation.navigate('GroupPage', { groupId: group.id });
+            }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Avatar source={avatar} testID={`group-avatar-${group.id}`} />
+              <Name
+                fontFamily="inter-regular"
+                fontColor="#3F3D3D"
+                testID={`group-name-${group.id}`}>
+                {group.name}
+              </Name>
+            </View>
+          </TouchableOpacity>
+          {admin && (
+            <TouchableOpacity
+              testID={`group-delete-button-${group.id}`}
+              onPress={() => handleDeletePress('group', group.id)}>
+              <TrashCan />
+            </TouchableOpacity>
+          )}
+        </Card>
+      );
+    }
+
+    if (selectedSection === 'posts') {
+      const post = item as Post;
+      const date = new Date(post.createdAt);
+
+      const formattedDate = `${String(date.getDate()).padStart(2, '0')}-${String(
+        date.getMonth() + 1,
+      ).padStart(2, '0')}-${date.getFullYear()}, ${String(date.getHours()).padStart(
+        2,
+        '0',
+      )}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+      const postWithData = {
+        ...post,
+        nameUser: post.user?.fullName || 'Usuario Desconhecido',
+        numComments: post._count?.Comment || 0,
+      };
+
+      return (
+        <Card key={post.id}>
+          <View style={{ flex: 1, paddingLeft: 15 }}>
+            <PostItem
+              post={postWithData}
+              formattedDate={formattedDate}
+              testID={`post-item-${post.id}`}
+            />
+          </View>
+          {admin && (
+            <TouchableOpacity
+              testID={`post-delete-button-$post.id`}
+              style={{ marginLeft: 10 }}
+              onPress={() => handleDeletePress('post', post.id)}>
+              <TrashCan />
+            </TouchableOpacity>
+          )}
+        </Card>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <>
