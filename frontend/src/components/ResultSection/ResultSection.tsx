@@ -426,7 +426,7 @@ export default function ResultSection({
               : 'Tem certeza que deseja excluir esta publicação?'
         }
         onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteModal({ visible: false, type: '', id: '' })}
+        onCancel={handleCancelDelete}
       />
       <Container>
         <View style={{ paddingLeft: 10, paddingRight: 10 }}>
@@ -447,7 +447,7 @@ export default function ResultSection({
               gap: 10,
             }}>
             <TouchableOpacity
-              testID='filtro-pessoas'
+              testID="filtro-pessoas"
               style={{
                 flex: 1,
                 backgroundColor: selectedSection === 'users' ? '#FFA8A6' : '#E0E0E0',
@@ -461,7 +461,7 @@ export default function ResultSection({
               <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Pessoas</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              testID='filtro-grupos'
+              testID="filtro-grupos"
               style={{
                 backgroundColor: selectedSection === 'groups' ? '#FFA8A6' : '#E0E0E0',
                 borderRadius: 30,
@@ -475,7 +475,7 @@ export default function ResultSection({
               <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Grupos</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              testID='filtro-publicacoes'
+              testID="filtro-publicacoes"
               style={{
                 backgroundColor: selectedSection === 'posts' ? '#FFA8A6' : '#E0E0E0',
                 borderRadius: 30,
@@ -490,10 +490,14 @@ export default function ResultSection({
             </TouchableOpacity>
           </View>
         </View>
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ height: '100%' }}>
-          {(selectedSection === 'users' || selectedSection === '') && (
-            <Section style={{ zIndex: 2 }}>
-              <SectionTitle
+
+        {selectedSection === '' ? (
+          // modo preview: usa scrollview pois sao poucos
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ height: '100%' }}>
+            {/* secao pessoas */}
+            {data.users.length > 0 && (
+              <Section style={{ zIndex: 2}}>
+                <SectionTitle
                 style={{
                   fontSize: 12,
                   fontWeight: 'bold',
@@ -506,7 +510,10 @@ export default function ResultSection({
               {data.users.map((person) => {
                 const fullName = person.fullName.split(' ');
                 return (
-                  <Card key={person.id} style={{ marginBottom: 10 }} testID={`user-card-${person.id}`}>
+                  <Card
+                    key={person.id}
+                    style={{ marginBottom: 10 }}
+                    testID={`user-card-${person.id}`}>
                     <TouchableOpacity
                       testID={`user-touchable-${person.id}`}
                       onPress={() => {
@@ -523,26 +530,28 @@ export default function ResultSection({
                       }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
                         <Avatar source={avatar} />
-                        <Name testID={`user-name-${person.id}`} fontFamily="inter-regular" fontColor="#3F3D3D">
+                        <Name
+                          testID={`user-name-${person.id}`}
+                          fontFamily="inter-regular"
+                          fontColor="#3F3D3D">
                           {`${fullName[0]} ${fullName[1] || ''}`}
                         </Name>
                       </View>
                     </TouchableOpacity>
                     {admin && (
-                      <TouchableOpacity testID={`user-delete-button-${person.id}`} onPress={() => handleDeletePress('user', person.id)}>
+                      <TouchableOpacity
+                        testID={`user-delete-button-${person.id}`}
+                        onPress={() => handleDeletePress('user', person.id)}>
                         <TrashCan />
                       </TouchableOpacity>
                     )}
                   </Card>
                 );
               })}
-              {selectedSection === '' && (
-                <View style={{ marginTop: 20 }}>
-                  <View
-                    style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
-                  />
+              <View style={{ marginTop: 20}}>
+                <View style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }} />
                   <StyledButton testID="ver-todos-pessoas" onPress={() => handleFilterPress('users')}>
-                    <Text
+                   <Text
                       style={{
                         fontSize: 12,
                         fontWeight: 'bold',
@@ -552,14 +561,14 @@ export default function ResultSection({
                       }}>
                       Ver todos os resultados de Pessoas
                     </Text>
-                  </StyledButton>
-                </View>
-              )}
-            </Section>
-          )}
+                    </StyledButton>
+              </View>
+              </Section>
+            )}
 
-          {(selectedSection === 'groups' || selectedSection === '') && (
-            <Section>
+            {/* secao grupos */}
+            {data.groups.length > 0 && (
+              <Section>
               <SectionTitle
                 style={{
                   fontSize: 12,
@@ -584,24 +593,30 @@ export default function ResultSection({
                     }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Avatar source={avatar} testID={`group-avatar-${group.id}`} />
-                      <Name fontFamily="inter-regular" fontColor="#3F3D3D" testID={`group-name-${group.id}`}>
+                      <Name
+                        fontFamily="inter-regular"
+                        fontColor="#3F3D3D"
+                        testID={`group-name-${group.id}`}>
                         {group.name}
                       </Name>
                     </View>
                   </TouchableOpacity>
                   {admin && (
-                    <TouchableOpacity testID={`group-delete-button-${group.id}`} onPress={() => handleDeletePress('group', group.id)}>
+                    <TouchableOpacity
+                      testID={`group-delete-button-${group.id}`}
+                      onPress={() => handleDeletePress('group', group.id)}>
                       <TrashCan />
                     </TouchableOpacity>
                   )}
                 </Card>
               ))}
-              {selectedSection === '' && (
-                <View style={{ marginTop: 20 }}>
+               <View style={{ marginTop: 20 }}>
                   <View
                     style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
                   />
-                  <StyledButton testID="ver-todos-grupos" onPress={() => handleFilterPress('groups')}>
+                  <StyledButton
+                    testID="ver-todos-grupos"
+                    onPress={() => handleFilterPress('groups')}>
                     <Text
                       style={{
                         fontSize: 12,
@@ -614,12 +629,12 @@ export default function ResultSection({
                     </Text>
                   </StyledButton>
                 </View>
-              )}
-            </Section>
-          )}
+              </Section>
+            )}
 
-          {(selectedSection === 'posts' || selectedSection === '') && (
-            <Section>
+            {/* secao posts */}
+            {data.posts.length > 0 && (
+               <Section>
               <SectionTitle
                 style={{
                   fontSize: 12,
@@ -632,21 +647,26 @@ export default function ResultSection({
               </SectionTitle>
 
               {data.posts.map((item) => {
-                const date = new Date(item.createdAt);
+                 const date = new Date(item.createdAt);
                 const formattedDate = `${String(date.getDate()).padStart(2, '0')}-${String(
                   date.getMonth() + 1,
                 ).padStart(2, '0')}-${date.getFullYear()}, ${String(date.getHours()).padStart(
                   2,
                   '0',
                 )}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+                const postWithData = {
+                  ...item,
+                  nameUser: item.user?.fullName || 'Usuário Desconhecido',
+                  numCommments: item._count?.Comment || 0,
+                };
+
                 return (
-                  <Card key={item.id}>
+                   <Card key={item.id}>
                     <View style={{ flex: 1, paddingLeft: 15 }}>
                       <PostItem
-                        post={item}
+                        post={postWithData}
                         formattedDate={formattedDate}
-                        fetchUserName={fetchUserName}
-                        fetchNumComments={fetchNumComments}
                         testID={`post-item-${item.id}`}
                       />
                     </View>
@@ -661,13 +681,13 @@ export default function ResultSection({
                   </Card>
                 );
               })}
-
-              {selectedSection === '' && (
-                <View style={{ marginTop: 20 }}>
+              <View style={{ marginTop: 20 }}>
                   <View
                     style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
                   />
-                  <StyledButton testID="ver-todos-publicacoes" onPress={() => handleFilterPress('posts')}>
+                  <StyledButton
+                    testID="ver-todos-publicacoes"
+                    onPress={() => handleFilterPress('posts')}>
                     <Text
                       style={{
                         fontSize: 12,
@@ -680,10 +700,21 @@ export default function ResultSection({
                     </Text>
                   </StyledButton>
                 </View>
+              </Section>
               )}
-            </Section>
-          )}
-        </ScrollView>
+          </ScrollView>
+        ) : (
+          // modo filtro
+          <FlatList
+          data={data[selectedSection]}
+          renderItem={renderFilteredItem}
+          keyExtractor={(item) => item.id}
+          onEndReached={loadMore} // chama a loadMore ao chegar no fim
+          onEndReachedThreshold={0.5} // distancia no fim pra chamar
+          ListFooterComponent={renderFooter} // mostra o ActivityIndicator
+          style={{ width: '100%' }}
+          />
+        )}
       </Container>
     </>
   );
