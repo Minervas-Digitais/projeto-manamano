@@ -47,6 +47,19 @@ export class SearchService {
           ],
         },
         take: 5,
+
+        include: {
+          user: {
+            select: {
+              fullName: true,
+            },
+          },
+          _count: {
+            select: {
+              Comment: true,
+            },
+          },
+        }
       });
 
       result['users'] = users;
@@ -60,6 +73,11 @@ export class SearchService {
 
   async searchByFilter(createSearchDto: CreateSearchDto, filter: string) {
     try {
+      const page = createSearchDto.page ? Number(createSearchDto.page) : 1;
+      const limit = createSearchDto.limit ? Number(createSearchDto.limit) : 20;
+      const skip = (page - 1) * limit;
+
+
       switch (filter) {
         case 'users':
           return await this.prismaService.user.findMany({
@@ -69,6 +87,8 @@ export class SearchService {
                 mode: 'insensitive',
               },
             },
+            skip: skip,
+            take: limit,
           });
         case 'groups':
           return await this.prismaService.group.findMany({
@@ -78,6 +98,8 @@ export class SearchService {
                 mode: 'insensitive',
               },
             },
+            skip: skip,
+            take: limit,
           });
         case 'posts':
           return await this.prismaService.post.findMany({
@@ -97,6 +119,22 @@ export class SearchService {
                 },
               ],
             },
+
+            skip: skip,
+            take: limit,
+
+            include: {
+              user: {
+                select: {
+                  fullName: true,
+                },
+              },
+              _count: {
+                select: {
+                  Comment: true,
+                },
+              }
+            }
           });
         default:
           throw new BadRequestException('Invalid filter');
