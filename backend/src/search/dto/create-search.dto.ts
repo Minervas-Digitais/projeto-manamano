@@ -4,4 +4,7 @@ export class CreateSearchDto {
   @IsString()
   @IsNotEmpty()
   input: string;
+
+  page?: number;
+  limit?: number;
 }
