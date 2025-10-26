@@ -88,10 +88,7 @@ export default function LessonsCard({ date, title, urlLive }: any) {
                 Entrar na aula
               </GroupDataText>
             </LessonsCardButtonContainer>
-            <LessonsCardButtonContainerRow
-              backgroundColor="none"
-              border
-              onPress={copyLink}>
+            <LessonsCardButtonContainerRow backgroundColor="none" border onPress={copyLink}>
               <LessonsCardLinkIcon>
                 <LinkIcon style={{ width: 20, height: 21 }} />
               </LessonsCardLinkIcon>
@@ -106,13 +103,9 @@ export default function LessonsCard({ date, title, urlLive }: any) {
         <LessonsCardInfoContainerSpaceBetween>
           <LessonsCardTitleContainer>
             <BookIcon />
-            <LessonsCardTitleText numberOfLines={1}>
-              {title}
-            </LessonsCardTitleText>
+            <LessonsCardTitleText numberOfLines={1}>{title}</LessonsCardTitleText>
           </LessonsCardTitleContainer>
-          <LessonsCardDateText>
-            {date}
-          </LessonsCardDateText>
+          <LessonsCardDateText>{date}</LessonsCardDateText>
         </LessonsCardInfoContainerSpaceBetween>
       )}
       <Toast config={toastConfig} />

@@ -64,8 +64,7 @@ export default function DeleteConfirmation({ text, display }: any) {
             onPress={() => {
               storage.delete('displayNotif');
               setShouldDisplay(false);
-            }}
-          >
+            }}>
             <ModalOptionsNotificationText font="inter-regular" color="#515151">
               Cancelar
             </ModalOptionsNotificationText>

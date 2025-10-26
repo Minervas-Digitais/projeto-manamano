@@ -146,7 +146,7 @@ export default function Notification({ navigation }: any) {
       navigation.navigate('NotificationPage');
     }
     if (type !== 'WARNING') {
-        console.log(idContent)
+      console.log(idContent);
       navigation.navigate('Post', { postId: idContent });
     }
   };
@@ -235,7 +235,9 @@ export default function Notification({ navigation }: any) {
           </NotificationInfoContainer>
 
           <ButtonCustom
-            onPress={() => {navigation.navigate('Home')}}
+            onPress={() => {
+              navigation.navigate('Home');
+            }}
             backColor="#EF4036"
             fontColor="#ffff"
             text="Retornar para a tela inicial"

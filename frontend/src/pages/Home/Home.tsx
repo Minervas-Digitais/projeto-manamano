@@ -53,7 +53,7 @@ export default function Home({ navigation }: any) {
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
-  
+
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');

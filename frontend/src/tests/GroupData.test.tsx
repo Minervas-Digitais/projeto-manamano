@@ -108,7 +108,7 @@ describe('GroupData', () => {
     // mock para a chamada DELETE, esperando que ela seja bem-sucedida
     mockedApi.delete.mockResolvedValue({ status: 204 });
 
-    const { findByText, getByTestId} = render(
+    const { findByText, getByTestId } = render(
       <NavigationContainer>
         <GroupData navigation={{ navigate: mockNavigate }} />
       </NavigationContainer>,

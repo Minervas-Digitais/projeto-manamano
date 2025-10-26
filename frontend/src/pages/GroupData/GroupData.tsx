@@ -169,7 +169,9 @@ export default function GroupData({ navigation }: any) {
             <GroupDataText color="#EF4036" font="inter-bold" size="20px">
               {groupInfo?.name || 'Erro'}
             </GroupDataText>
-            <TouchableOpacity testID="edit-group-button" onPress={() => navigation.navigate('EditGroup')}>
+            <TouchableOpacity
+              testID="edit-group-button"
+              onPress={() => navigation.navigate('EditGroup')}>
               <EditIcon />
             </TouchableOpacity>
           </View>

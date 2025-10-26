@@ -20,9 +20,7 @@ export class SearchController {
 
   @HttpCode(201)
   @Post()
-  search(
-    @Body() createSearchDto: CreateSearchDto,
-  ): Promise<{
+  search(@Body() createSearchDto: CreateSearchDto): Promise<{
     users: Omit<User, 'hash'>[];
     groups: Group[];
     posts: PostEntity[];

@@ -101,7 +101,7 @@ export default function Post() {
     if (!accessTokenState) return;
     const fetchPost = async () => {
       try {
-        console.log(postId)
+        console.log(postId);
         const response = await api.get(`post/${postId}`, {
           headers: { Authorization: `Bearer ${accessTokenState}` },
         });

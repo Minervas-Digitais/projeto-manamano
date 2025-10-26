@@ -16,7 +16,7 @@ export default function BigInputTextCustom({
   type,
   options,
   accessibilityLabel,
-  testID
+  testID,
 }: any) {
   return (
     <BigInputTextContainer>
