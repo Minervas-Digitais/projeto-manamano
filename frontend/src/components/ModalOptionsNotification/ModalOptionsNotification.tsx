@@ -51,7 +51,7 @@ export default function ModalOptionsNotification({
       api
         .patch(
           `notifications/user/${loggedId}`,
-          { isRead: true },
+          {},
           {
             headers: { Authorization: `Bearer ${accessToken}` },
           },
@@ -68,7 +68,7 @@ export default function ModalOptionsNotification({
       api
         .patch(
           `notifications/${id}`,
-          { isRead: true },
+          {},
           {
             headers: { Authorization: `Bearer ${accessToken}` },
           },

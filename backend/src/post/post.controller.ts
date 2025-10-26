@@ -119,7 +119,6 @@ export class PostController {
 
   @HttpCode(200)
   @Get(':id/posts')
-  @UseGuards(MatchUserIdGuard)
   async findUserPosts(@Param('id') id: string): Promise<SerializedPost[]> {
     return this.postService.getUserPosts(id);
   }

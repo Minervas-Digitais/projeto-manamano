@@ -37,10 +37,6 @@ export class CategoryService {
       },
     });
 
-    if (categories.length === 0) {
-      throw new NotFoundException(CATEGORY_MESSAGES.EMPTY_CATEGORY);
-    }
-
     return categories;
   }
 

@@ -49,6 +49,12 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
+  @HttpCode(200)
+  @Get('public/:id')
+  async findOnePublic(@Param('id') id: string): Promise<Partial<User>> {
+    return this.userService.findOnePublic(id);
+  }
+
   @HttpCode(201)
   @Patch(':id')
   @UseGuards(JwtAuthGuard, MatchUserIdGuard)

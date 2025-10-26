@@ -132,7 +132,7 @@ export default function Notification({ navigation }: any) {
     api
       .patch(
         `notifications/${id}`,
-        { isRead: true },
+        {},
         {
           headers: {
             Authorization: `Bearer ${accessTokenState}`,
@@ -146,6 +146,7 @@ export default function Notification({ navigation }: any) {
       navigation.navigate('NotificationPage');
     }
     if (type !== 'WARNING') {
+        console.log(idContent)
       navigation.navigate('Post', { postId: idContent });
     }
   };

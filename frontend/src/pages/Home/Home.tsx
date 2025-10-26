@@ -36,6 +36,7 @@ import { storage } from '../SignIn/SignIn';
 import api from '../../services/api';
 import MenuIcon from '../../assets/menuWhite-icon.svg';
 import LupaIcon from '../../assets/lupaWhite-icon.svg';
+import { AxiosError } from 'axios';
 
 export const storageHome = new MMKV();
 
@@ -52,7 +53,7 @@ export default function Home({ navigation }: any) {
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
-
+  
   useEffect(() => {
     const accessToken = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
@@ -100,6 +101,7 @@ export default function Home({ navigation }: any) {
           setProfileImage({ uri: imageUri });
         } catch (error) {
           console.error('Error fetching user data:', error);
+          setProfileImage(defaultAvatar);
         }
       };
 

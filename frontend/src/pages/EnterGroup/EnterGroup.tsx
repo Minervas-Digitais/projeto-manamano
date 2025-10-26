@@ -26,24 +26,10 @@ export default function EnterGroup({ navigation }: any) {
     }
 
     try {
-      const res = await api.get('/group', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const groupIdFind = res?.data.find((item: any) => item.inviteCode === data.inviteCode);
-
-      if (!groupIdFind) {
-        alert('Código de convite inválido.');
-        return;
-      }
-
       const participantData = {
         userId: loggedId,
-        role: 'MEMBER',
+        role: 'STUDENT',
         inviteCode: data.inviteCode,
-        groupId: groupIdFind.id,
       };
 
       const resp = await api.post('/participant', participantData, {

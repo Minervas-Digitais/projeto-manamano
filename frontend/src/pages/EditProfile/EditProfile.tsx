@@ -35,6 +35,7 @@ import api from '../../services/api';
 import Menu from '../../assets/menuw-icon.svg';
 import EditButton from '../../assets/edit-button.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
+import { AxiosError } from 'axios';
 
 export default function EditProfile() {
   const {
@@ -57,6 +58,7 @@ export default function EditProfile() {
     mode: 'onSubmit',
   });
   const { width, height } = Dimensions.get('window');
+  const defaultAvatar = require('../../assets/user-profile.png');
   const onSubmit = async (data: any) => {
     try {
       console.log('Form submitted with data:', data);
@@ -204,6 +206,7 @@ export default function EditProfile() {
           setProfileImage({ uri: imageUri });
         } catch (error) {
           console.error('Error fetching user data:', error);
+          setProfileImage(defaultAvatar);
         }
       };
 

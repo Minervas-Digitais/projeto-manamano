@@ -218,7 +218,7 @@ export default function ResultSection({
     }
 
     try {
-      const response = await api.get(`/user/${userId}`, {
+      const response = await api.get(`/user/public/${userId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -490,7 +490,7 @@ export default function ResultSection({
                         name: group.name,
                         avatar: defaultAvatar,
                       });
-                      navigation.navigate('GroupPage', { groupId: group.id });
+                      navigation.navigate('GroupPage', { groupId: group.id, groupName: group.name });
                     }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Avatar source={defaultAvatar} testID={`group-avatar-${group.id}`} />

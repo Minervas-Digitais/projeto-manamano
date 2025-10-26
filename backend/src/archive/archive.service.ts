@@ -93,10 +93,6 @@ export class ArchiveService {
       where: { groupId },
     });
 
-    if (archives.length === 0) {
-      throw new NotFoundException(ARCHIVE_MESSAGES.EMPTY_ARCHIVES);
-    }
-
     return archives.map(this.mapToResponseDto);
   }
 }

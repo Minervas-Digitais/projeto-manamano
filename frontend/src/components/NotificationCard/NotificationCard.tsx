@@ -91,7 +91,7 @@ export default function NotificationCard({
               </NotificationTextRed>
               no grupo{' '}
               <NotificationTextRed font="inter-semiBold">
-                {group.length > 20 ? `${group.substring(0, 20)}...` : group}
+                {(group || '').length > 20 ? `${(group || '').substring(0, 20)}...` : group || ''}
               </NotificationTextRed>{' '}
               comentou no seu post! Clique para visualizar!
             </NotificationTextGrey>

@@ -8,7 +8,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, Prisma, User } from '@prisma/client';
+import { NotificationType, PostType, Prisma, User } from '@prisma/client';
 import { POST_MESSAGES } from '../messages/post.messages';
 import { omitHash } from 'src/utils/user.util';
 import { ValidatorService } from 'src/common/validators/validator.service';
@@ -50,6 +50,9 @@ export interface SerializedPost {
   categoryName?: string;
   numComments?: number;
   Comment?: any[];
+  type: PostType;
+  schedule?: Date;
+  urlLive?: string;
 }
 
 @Injectable()
@@ -73,13 +76,17 @@ export class PostService {
   }
 
   private serializePost(post: any): SerializedPost {
-    const { user, category, Comment, ...rest } = post;
+    const { user, category, Comment, type, schedule, urlLive, ...rest } = post;
+
     return {
       ...rest,
       nameUser: user?.fullName,
       categoryName: category?.name,
       numComments: Comment?.length ?? 0,
       Comment,
+      type,
+      schedule,
+      urlLive,
     };
   }
 
@@ -235,29 +242,17 @@ export class PostService {
   async getGroupPosts(groupId: string): Promise<SerializedPost[]> {
     const posts = await this.findPosts({ groupId });
 
-    if (posts.length === 0) {
-      throw new NotFoundException(POST_MESSAGES.NO_POST_IN_GROUP);
-    }
-
     return posts.map(this.serializePost);
   }
 
   async getCategoryPosts(categoryId: string): Promise<SerializedPost[]> {
     const posts = await this.findPosts({ categoryId });
 
-    if (posts.length === 0) {
-      throw new NotFoundException(POST_MESSAGES.NO_POST_IN_CATEGORY);
-    }
-
     return posts.map(this.serializePost);
   }
 
   async getUserPosts(userId: string): Promise<SerializedPost[]> {
     const posts = await this.findPosts({ userId });
-
-    if (posts.length === 0) {
-      throw new NotFoundException(POST_MESSAGES.NO_POST_IN_USER);
-    }
 
     return posts.map(this.serializePost);
   }
@@ -273,8 +268,8 @@ export class PostService {
       select: { savedPost: true },
     });
 
-    if (!user || user.savedPost.length === 0) {
-      throw new NotFoundException(POST_MESSAGES.NO_SAVED_POSTS);
+    if (!user) {
+      throw new NotFoundException(POST_MESSAGES.USER_NOT_FOUND);
     }
 
     const postIds = all

@@ -74,6 +74,7 @@ export class NotificationService {
     });
 
     await this.sendPushNotification(
+      dto.senderId,
       recipientId,
       this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
       dto.body,
@@ -138,6 +139,7 @@ export class NotificationService {
       await Promise.all(
         participants.map((participant) =>
           this.sendPushNotification(
+            dto.senderId,
             participant.userId,
             this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
             dto.body,
@@ -218,6 +220,7 @@ export class NotificationService {
     await Promise.all(
       users.map((user) =>
         this.sendPushNotification(
+          dto.senderId,
           user.id,
           this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
           dto.body,
@@ -323,6 +326,7 @@ export class NotificationService {
   }
 
   async sendPushNotification(
+    senderId: string,
     userId: string,
     title: string,
     body: string,
@@ -332,7 +336,7 @@ export class NotificationService {
     try {
       const user = await this.validator.validateUserExists(userId);
 
-      if (userId === user.id) {
+      if (senderId === user.id) {
         // impede enviar notificação pra si mesmo
         return { skipped: true };
       }
@@ -344,7 +348,6 @@ export class NotificationService {
       if (!Expo.isExpoPushToken(user.pushNotifToken)) {
         throw new Error(NOTIFICATION_MESSAGES.INVALID_PUSH_TOKEN);
       }
-
       // Flags para desabilitar notificações
       // Desativar todas
       if (user.disablePopup) {
@@ -376,6 +379,7 @@ export class NotificationService {
       ];
 
       const tickets = await this.expo.sendPushNotificationsAsync(messages);
+      tickets.forEach((ticket) => console.log(ticket));
 
       return tickets;
     } catch (err) {

@@ -75,6 +75,22 @@ export class UserService {
     return omitHash(user);
   }
 
+  async findOnePublic(id: string): Promise<Partial<User>> {
+    const user = await this.validator.validateUserExists(id);
+
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      bio: user.bio,
+      enterprise: user.enterprise,
+      expertise: user.expertise,
+      neighborhood: user.neighborhood,
+      ethnicity: user.ethnicity,
+      birthday: user.birthday,
+      profilePictureId: user.profilePictureId,
+    };
+  }
+
   async update(
     id: string,
     updateUserDto: UpdateUserDto,
