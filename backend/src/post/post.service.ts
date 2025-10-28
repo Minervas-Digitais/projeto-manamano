@@ -271,8 +271,9 @@ export class PostService {
     }
   }
 
-  async getGroupPosts(groupId: string) {
+  async getGroupPosts(groupId: string, page: number = 1, limit: number = 10) {
     try {
+      const skip = (page - 1) * limit;
       const posts = await this.prismaService.post.findMany({
         where: { groupId },
         include: {
@@ -300,22 +301,46 @@ export class PostService {
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take: limit,
+      });
+
+      const total = await this.prismaService.post.count({
+        where: { groupId },
       });
 
       if (!posts || posts.length === 0) {
-        throw new NotFoundException(
-          'Nenhuma publicação encontrada neste grupo.',
-        );
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        };
       }
 
-      return posts.map(this.serializePost);
+      return {
+        data: posts.map(this.serializePost),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: skip + posts.length < total,
+        },
+      };
     } catch (error) {
       throw error;
     }
   }
 
-  async getCategoryPosts(categoryId: string) {
+async getCategoryPosts(categoryId: string, page: number = 1, limit: number = 10) {
     try {
+      const skip = (page - 1) * limit;
+
       const posts = await this.prismaService.post.findMany({
         where: { categoryId },
         include: {
@@ -343,22 +368,46 @@ export class PostService {
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take: limit,
+      });
+
+      const total = await this.prismaService.post.count({
+        where: { categoryId },
       });
 
       if (!posts || posts.length === 0) {
-        throw new NotFoundException(
-          'Nenhuma publicação encontrada nesta categoria.',
-        );
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        };
       }
 
-      return posts.map(this.serializePost);
+      return {
+        data: posts.map(this.serializePost),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: skip + posts.length < total,
+        },
+      };
     } catch (error) {
       throw error;
     }
   }
 
-  async getUserPosts(userId: string) {
+async getUserPosts(userId: string, page: number = 1, limit: number = 10) {
     try {
+      const skip = (page - 1) * limit;
+
       const posts = await this.prismaService.post.findMany({
         where: { userId },
         include: {
@@ -386,15 +435,37 @@ export class PostService {
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take: limit,
+      });
+
+      const total = await this.prismaService.post.count({
+        where: { userId },
       });
 
       if (!posts || posts.length === 0) {
-        throw new NotFoundException(
-          'Nenhuma publicação encontrada para este usuário.',
-        );
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        };
       }
 
-      return posts.map(this.serializePost);
+      return {
+        data: posts.map(this.serializePost),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: skip + posts.length < total,
+        },
+      };
     } catch (error) {
       throw error;
     }

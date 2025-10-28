@@ -4,7 +4,15 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useFonts } from 'expo-font';
-import { StyleSheet, View, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Dimensions,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute } from '@react-navigation/native';
 import { storage } from '../SignIn/SignIn';
@@ -51,27 +59,83 @@ export default function GroupPage({ navigation }: any) {
   const [archives, setArchives] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string>('');
 
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const POSTS_PER_PAGE = 10;
+
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
   });
 
-  const getGroupPosts = useCallback(async () => {
-    const token = storage.getString('accessToken');
-    if (!token || !groupId) {
-      console.error('Access token or Group ID is missing.');
-      return;
+  const getGroupPosts = useCallback(
+    async (pageNum: number, refresh = false) => {
+      if (loading || (!hasMore && !refresh)) return;
+
+      const token = storage.getString('accessToken');
+      if (!token || !groupId) return;
+
+      try {
+        setLoading(true);
+
+        const response = await api.get(`/post/group/${groupId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: {
+            page: pageNum,
+            limit: POSTS_PER_PAGE,
+          },
+        });
+
+        const newPosts = response.data.data;
+        const { hasMore: moreAvailable } = response.data.meta;
+
+        if (refresh) {
+          setPosts(newPosts);
+          setPage(1);
+          setHasMore(moreAvailable);
+        } else {
+          setPosts((prev) => [...prev, ...newPosts]);
+          setHasMore(moreAvailable);
+        }
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [groupId, loading, hasMore],
+  );
+
+  const loadMorePosts = () => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      getGroupPosts(nextPage);
     }
-    try {
-      const response = await api.get(`/post/group/${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setPosts(response.data);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setHasMore(true);
+    getGroupPosts(1, true);
+  }, [getGroupPosts]);
+
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 20;
+
+    const isCloseToBottom =
+      layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+
+    if (isCloseToBottom && !loading) {
+      loadMorePosts();
     }
-  }, [groupId]);
+  };
 
   const getGroupCategory = useCallback(async () => {
     const token = storage.getString('accessToken');
@@ -103,7 +167,6 @@ export default function GroupPage({ navigation }: any) {
       setArchives(response.data);
     } catch (error: any) {
       if (error.response?.status === 404) {
-        // Se o endpoint não existe ou não há arquivos, definir array vazio
         console.log('No archives found or endpoint not available for group:', groupId);
         setArchives([]);
       } else {
@@ -150,16 +213,16 @@ export default function GroupPage({ navigation }: any) {
       setUserRole(response.data.role || 'MEMBER');
     } catch (error) {
       console.error('Error fetching user role:', error);
-      setUserRole('MEMBER'); // Default para membro
+      setUserRole('MEMBER');
     }
   }, [groupId]);
 
   useEffect(() => {
-    getGroupPosts();
+    getGroupPosts(1, true);
     getGroupCategory();
     getGroupArchives();
     getUserRoleInGroup();
-  }, [getGroupPosts, getGroupCategory, getGroupArchives, getUserRoleInGroup]);
+  }, [getGroupCategory, getGroupArchives, getUserRoleInGroup]);
 
   if (!fontsLoaded) {
     return undefined;
@@ -171,7 +234,6 @@ export default function GroupPage({ navigation }: any) {
     { categoryName: 'Documentos' },
   ];
 
-  // Função para categorizar arquivos por tipo
   const getFileTypeFromMime = (mimeType: string) => {
     if (mimeType && mimeType.startsWith('image/')) return 'Fotos';
     if (
@@ -180,8 +242,7 @@ export default function GroupPage({ navigation }: any) {
     )
       return 'Documentos';
     if (mimeType && (mimeType.includes('link') || mimeType.includes('url'))) return 'Links';
-    // Se não tem mimeType ou não conseguiu categorizar, tentar pela extensão se disponível
-    return 'Documentos'; // Default para outros tipos
+    return 'Documentos';
   };
 
   function formatRelativeDate(postDate: string): string {
@@ -212,13 +273,14 @@ export default function GroupPage({ navigation }: any) {
     const date = new Date(createdAt);
 
     const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // mês começa em 0
-    const year = String(date.getFullYear()).slice(-2); // últimos 2 dígitos do ano
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
 
     return `${day}/${month}/${year} - ${hours}:${minutes}`;
   }
+
   const fixActions = async (id: string, isPinned: boolean) => {
     const token = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
@@ -253,7 +315,7 @@ export default function GroupPage({ navigation }: any) {
         );
       }
 
-      await getGroupPosts();
+      getGroupPosts(1, true);
     } catch (error) {
       console.error('Erro ao fixar/desfixar post:', error);
     }
@@ -263,6 +325,7 @@ export default function GroupPage({ navigation }: any) {
     storageHome.set('idPost', id);
     navigation.navigate('Post', { postId: id });
   }
+
   return (
     <GroupPageContainer>
       <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
@@ -314,7 +377,14 @@ export default function GroupPage({ navigation }: any) {
       </GroupPageTabs>
       <GroupPageContent>
         {muralSelect ? (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 120 }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 120 }}
+            onScroll={handleScroll}
+            scrollEventThrottle={400}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#EF4036']} />
+            }>
             <GroupPageListFixPost>
               {posts.length > 0 ? (
                 posts
@@ -402,6 +472,20 @@ export default function GroupPage({ navigation }: any) {
                 <View />
               )}
             </GroupPagePostList>
+
+            {loading && (
+              <View style={style.loadingContainer}>
+                <ActivityIndicator size="large" color="#EF4036" />
+              </View>
+            )}
+
+            {!hasMore && posts.length > 0 && (
+              <View style={style.endMessage}>
+                <GroupDataText color="#8F8F8F" size="14px" font="inter-regular">
+                  Não há mais publicações
+                </GroupDataText>
+              </View>
+            )}
           </ScrollView>
         ) : classesSelect ? (
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 120 }}>
@@ -513,5 +597,13 @@ const style = StyleSheet.create({
   imageSize: {
     width: Dimensions.get('window').width / 2,
     height: Dimensions.get('window').width / 2,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  endMessage: {
+    padding: 20,
+    alignItems: 'center',
   },
 });
