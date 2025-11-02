@@ -10,7 +10,6 @@ import {
   Query,
   Req,
   UseGuards,
-  Query
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -20,6 +19,17 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { RoleType } from '@prisma/client';
 import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+
+interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
 
 @Controller('post')
 @UseGuards(JwtAuthGuard)
@@ -104,16 +114,16 @@ export class PostController {
 
   @HttpCode(200)
   @Get('group/:groupId')
-async getGroupPosts(
-  @Param('groupId') groupId: string,
-  @Query('page') page?: string,
-  @Query('limit') limit?: string,
-): Promise<SerializedPost[]> {
-  const pageNum = parseInt(page) || 1;
-  const limitNum = parseInt(limit) || 10;
+  async getGroupPosts(
+    @Param('groupId') groupId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ): Promise<PaginatedResponse<SerializedPost>> {
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
 
-  return this.postService.getGroupPosts(groupId, pageNum, limitNum);
-}
+    return this.postService.getGroupPosts(groupId, pageNum, limitNum);
+  }
   
   @HttpCode(200)
   @Get('category/:categoryId')
@@ -121,7 +131,7 @@ async getGroupPosts(
     @Param('categoryId') categoryId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-  ): Promise<SerializedPost[]> {
+  ): Promise<PaginatedResponse<SerializedPost>> {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 10;
 
@@ -135,7 +145,7 @@ async getGroupPosts(
     @Param('id') id: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
-  ): Promise<SerializedPost[]> {
+  ): Promise<PaginatedResponse<SerializedPost>> {
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 10;
 
