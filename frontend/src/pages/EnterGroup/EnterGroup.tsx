@@ -40,9 +40,16 @@ export default function EnterGroup({ navigation }: any) {
 
       console.log('Participante adicionado com sucesso:', resp.data);
       alert('Você entrou no grupo com sucesso!');
-    } catch (error) {
+      navigation.navigate('Groups');
+    } catch (error: any) {
       console.error('Erro ao entrar no grupo:', error);
-      alert('Ocorreu um erro ao tentar entrar no grupo.');
+      if (error?.response?.status === 404) {
+        alert('Código de convite inválido.');
+      } else if (error?.response?.status === 409) {
+        alert('Você já está neste grupo.');
+      } else {
+        alert('Ocorreu um erro ao tentar entrar no grupo.');
+      }
     }
   };
 
