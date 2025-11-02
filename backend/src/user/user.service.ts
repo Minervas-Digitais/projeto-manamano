@@ -1,184 +1,207 @@
 import {
-    Injectable,
-    NotFoundException,
-    UnauthorizedException,
-    ConflictException,
-    BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  ConflictException,
 } from '@nestjs/common';
-import { RoleType } from '@prisma/client';
+import { Archive, RoleType, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
+import { USER_MESSAGES } from 'src/messages/user.messages';
+import { omitHash } from 'src/utils/user.util';
+import { ValidatorService } from 'src/common/validators/validator.service';
 export const roundsOfHashing = 10;
+
+interface ProfilePictureBuffer {
+  buffer: Buffer;
+  mimeType: string;
+  name: string;
+}
 
 @Injectable()
 export class UserService {
-    constructor(private prismaService: PrismaService) { }
+  constructor(
+    private prismaService: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
 
-    async create(createUserDto: CreateUserDto) {
-        try {
-            const existingUser = await this.prismaService.user.findFirst({
-                where: {
-                    OR: [
-                        { email: createUserDto.email },
-                        { phone: createUserDto.phone },
-                    ],
-                },
-            });
-            if (existingUser) {
-                throw new ConflictException('Email ou telefone já está em uso.');
-            }
+  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'hash'>> {
+    const existingUser = await this.prismaService.user.findFirst({
+      where: {
+        OR: [{ email: createUserDto.email }, { phone: createUserDto.phone }],
+      },
+    });
 
-            const hashedPassword = await bcrypt.hash(
-                createUserDto.hash,
-                roundsOfHashing,
-            );
-
-            createUserDto.hash = hashedPassword;
-            createUserDto.savedPost = [];
-
-            return await this.prismaService.user.create({
-                data: {
-                    ...createUserDto,
-                    hash: createUserDto.hash,
-                },
-            });
-        } catch (error) {
-            throw error;
-        }
+    if (existingUser) {
+      throw new ConflictException(USER_MESSAGES.EMAIL_OR_PHONE_IN_USE);
     }
 
-    async findAll() {
-        try {
-            const users = await this.prismaService.user.findMany();
-            if (users.length === 0) {
-                throw new NotFoundException('Não há usuários cadastrados.');
-            }
-            return users;
-        } catch (error) {
-            throw error;
-        }
+    const hashedPassword = await bcrypt.hash(
+      createUserDto.password,
+      roundsOfHashing,
+    );
+
+    const userData = {
+      fullName: createUserDto.fullName,
+      email: createUserDto.email,
+      phone: createUserDto.phone,
+      hash: hashedPassword,
+      savedPost: [],
+      birthday: createUserDto.birthday,
+      ethnicity: createUserDto.ethnicity,
+      neighborhood: createUserDto.neighborhood,
+      expertise: createUserDto.expertise,
+      enterprise: createUserDto.enterprise,
+      bio: createUserDto.bio,
+    };
+
+    const user = await this.prismaService.user.create({ data: userData });
+
+    return omitHash(user);
+  }
+
+  async findAll(): Promise<Omit<User, 'hash'>[]> {
+    const users = await this.prismaService.user.findMany();
+    if (users.length === 0) {
+      throw new NotFoundException(USER_MESSAGES.EMPTY_LIST);
+    }
+    return users.map(omitHash);
+  }
+
+  async findOne(id: string): Promise<Omit<User, 'hash'>> {
+    const user = await this.validator.validateUserExists(id);
+    return omitHash(user);
+  }
+
+  async findOnePublic(id: string): Promise<Partial<User>> {
+    const user = await this.validator.validateUserExists(id);
+
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      bio: user.bio,
+      enterprise: user.enterprise,
+      expertise: user.expertise,
+      neighborhood: user.neighborhood,
+      ethnicity: user.ethnicity,
+      birthday: user.birthday,
+      profilePictureId: user.profilePictureId,
+    };
+  }
+
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<Omit<User, 'hash'>> {
+    await this.validator.validateUserExists(id);
+    const updatedUser = await this.prismaService.user.update({
+      where: { id },
+      data: updateUserDto,
+    });
+    return omitHash(updatedUser);
+  }
+
+  async remove(id: string): Promise<{ message: string }> {
+    await this.validator.validateUserExists(id);
+    await this.prismaService.user.delete({
+      where: { id },
+    });
+    return { message: USER_MESSAGES.DELETE_SUCCESS };
+  }
+
+  async changePassword(
+    id: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<Omit<User, 'hash'>> {
+    const user = await this.validator.validateUserExists(id);
+
+    if (oldPassword === newPassword) {
+      throw new ConflictException(USER_MESSAGES.SAME_PASSWORD);
     }
 
-    async findOne(id: string) {
-        try {
-            const user = await this.prismaService.user.findUnique({
-                where: { id },
-            });
-            if (!user) {
-                throw new NotFoundException('Usuário não encontrado.');
-            }
-            return user;
-        } catch (error) {
-            throw error;
-        }
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.hash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException(USER_MESSAGES.INVALID_PASSWORD);
     }
 
-    async update(id: string, updateUserDto: UpdateUserDto) {
-        try {
-            await this.findOne(id);
-            return await this.prismaService.user.update({
-                where: { id },
-                data: updateUserDto,
-            });
-        } catch (error) {
-            throw error;
-        }
+    const hashedPassword = await bcrypt.hash(newPassword, roundsOfHashing);
+
+    const updatedUser = await this.prismaService.user.update({
+      where: { id: id },
+      data: { hash: hashedPassword },
+    });
+
+    return omitHash(updatedUser);
+  }
+
+  async updateUserRole(
+    id: string,
+    sysRole: RoleType,
+  ): Promise<Omit<User, 'hash'>> {
+    await this.findOne(id);
+
+    const updatedUser = await this.prismaService.user.update({
+      where: { id: id },
+      data: { sysRole: sysRole },
+    });
+
+    return omitHash(updatedUser);
+  }
+
+  async updateProfilePicture(
+    id: string,
+    file: Express.Multer.File,
+  ): Promise<Omit<User, 'hash'> & { profilePicture: Archive | null }> {
+    const user = await this.validator.validateUserExists(id);
+
+    if (user.profilePictureId) {
+      await this.prismaService.archive.delete({
+        where: { id: user.profilePictureId },
+      });
     }
 
-    async remove(id: string) {
-        try {
-            await this.findOne(id);
-            await this.prismaService.user.delete({
-                where: { id },
-            });
-            return 'Usuário deletado com sucesso.';
-        } catch (error) {
-            throw error;
-        }
+    const archive = await this.prismaService.archive.create({
+      data: {
+        name: file.originalname,
+        mimeType: file.mimetype,
+        contentBase64: file.buffer.toString('base64'),
+        userId: id,
+      },
+    });
+
+    const updatedUser = await this.prismaService.user.update({
+      where: { id: id },
+      data: {
+        profilePictureId: archive.id,
+      },
+      include: {
+        profilePicture: true,
+      },
+    });
+
+    return {
+      ...omitHash(updatedUser),
+      profilePicture: updatedUser.profilePicture,
+    };
+  }
+
+  async getProfilePictureBuffer(id: string): Promise<ProfilePictureBuffer> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: id },
+      include: { profilePicture: true },
+    });
+
+    if (!user || !user.profilePicture) {
+      throw new NotFoundException(USER_MESSAGES.PROFILE_PICTURE_NOT_FOUND);
     }
 
-    async changePassword(id: string, oldPassword: string, newPassword: string) {
-        try {
-            const user = await this.prismaService.user.findUnique({
-                where: { id },
-            });
-            if (!user) {
-                throw new NotFoundException('Usuário não encontrado.');
-            }
-
-            const isPasswordValid = await bcrypt.compare(oldPassword, user.hash);
-            if (!isPasswordValid) {
-                throw new UnauthorizedException('Senha inválida.');
-            }
-
-            const hashedPassword = await bcrypt.hash(newPassword, roundsOfHashing);
-
-            return await this.prismaService.user.update({
-                where: { id },
-                data: { hash: hashedPassword },
-            });
-        } catch (error) {
-            throw error;
-        }
-    }
-    async updateUserRole(userId: string, sysRole: RoleType) {
-        const user = await this.prismaService.user.findUnique({
-            where: { id: userId },
-        });
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
-        return this.prismaService.user.update({
-            where: { id: userId },
-            data: { sysRole },
-        });
-    }
-
-    async updateProfilePicture(userId: string, file: Express.Multer.File) {
-        const user = await this.prismaService.user.findUnique({ where: { id: userId } });
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
-
-        const archive = await this.prismaService.archive.create({
-            data: {
-                name: file.originalname,
-                mimeType: file.mimetype,
-                contentBase64: file.buffer.toString('base64'),
-                userId: userId,
-            },
-        });
-
-        const updatedUser = await this.prismaService.user.update({
-            where: { id: userId },
-            data: {
-                profilePictureId: archive.id,
-            },
-            include: {
-                profilePicture: true,
-            },
-        });
-
-        return updatedUser;
-    }
-
-    async getProfilePictureBuffer(userId: string) {
-        const user = await this.prismaService.user.findUnique({
-            where: { id: userId },
-            include: { profilePicture: true },
-        });
-
-        if (!user || !user.profilePicture) {
-            throw new NotFoundException('Foto de perfil não encontrada.');
-        }
-
-        return {
-            buffer: Buffer.from(user.profilePicture.contentBase64, 'base64'),
-            mimeType: user.profilePicture.mimeType,
-            name: user.profilePicture.name,
-        };
-    }
+    return {
+      buffer: Buffer.from(user.profilePicture.contentBase64, 'base64'),
+      mimeType: user.profilePicture.mimeType,
+      name: user.profilePicture.name,
+    };
+  }
 }

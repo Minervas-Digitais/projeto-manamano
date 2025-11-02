@@ -15,7 +15,6 @@ import api from '../../services/api';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 
 export default function GetInTouch() {
-  
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   useEffect(() => {

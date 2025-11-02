@@ -3,57 +3,119 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Notification, NotificationType } from '@prisma/client';
+import { Notification, NotificationType, RoleType, User } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Expo } from 'expo-server-sdk';
+import { NOTIFICATION_MESSAGES } from 'src/messages/notification.messages';
+import { omitHash } from 'src/utils/user.util';
+import { ValidatorService } from 'src/common/validators/validator.service';
+import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
+
+export interface NotificationSettings {
+  disablePopup: boolean;
+  muteSystem: boolean;
+  muteGroups: boolean;
+}
 
 @Injectable()
 export class NotificationService {
   private expo = new Expo();
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
+
+  private buildNotificationData(
+    dto: CreateNotificationDto,
+    recipientId: string,
+  ) {
+    return {
+      senderId: dto.senderId,
+      recipientId,
+      body: dto.body,
+      type: dto.type,
+      groupName: dto.groupName,
+      senderName: dto.senderName,
+      idContent: dto.idContent,
+    };
+  }
+
+  private getNotificationTitle(
+    type: NotificationType,
+    groupName?: string,
+    senderName?: string,
+  ): string {
+    switch (type) {
+      case NotificationType.FIXED:
+        return groupName
+          ? `Nova notificação em ${groupName}`
+          : 'Nova notificação';
+      case NotificationType.WARNING:
+        return 'Aviso importante';
+      case NotificationType.COMMENT:
+        return senderName ? `${senderName} comentou` : 'Novo comentário';
+      default:
+        return 'Nova notificação';
+    }
+  }
+
+  private async createAndSendNotification(
+    dto: CreateNotificationDto,
+    recipientId: string,
+  ): Promise<Notification> {
+    const notification = await this.prisma.notification.create({
+      data: this.buildNotificationData(dto, recipientId),
+    });
+
+    await this.sendPushNotification(
+      dto.senderId,
+      recipientId,
+      this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
+      dto.body,
+      dto.groupId ? { groupId: dto.groupId } : undefined,
+      dto.type,
+    );
+
+    return notification;
+  }
 
   async createNotification(
     dto: CreateNotificationDto,
-    userRole: string,
   ): Promise<Notification | { count: number }> {
-    if (dto.type === NotificationType.WARNING && userRole !== 'ADMIN') {
-      throw new ForbiddenException(
-        'Apenas ADMIN podem criar notificações do tipo WARNING',
+    const sender = await this.prisma.user.findUnique({
+      where: { id: dto.senderId },
+      select: { sysRole: true },
+    });
+
+    if (!sender) {
+      throw new NotFoundException(NOTIFICATION_MESSAGES.SENDER_NOT_FOUND);
+    }
+
+    if (dto.recipientId && dto.recipientId === dto.senderId) {
+      throw new BadRequestException(
+        NOTIFICATION_MESSAGES.CANNOT_NOTIFY_YOURSELF,
       );
     }
 
-    if (dto.type === NotificationType.FIXED && dto.recipientId) {
-      const notification = await this.prisma.notification.create({
-        data: {
-          senderId: dto.senderId,
-          recipientId: dto.recipientId,
-          body: dto.body,
-          type: dto.type,
-          groupName: dto.groupName || null,
-          senderName: dto.senderName || null,
-          idContent: dto.idContent || null,
-        },
-      });
-
-      try {
-        await this.sendPushNotification(
-          dto.recipientId,
-          'Nova notificação',
-          dto.body,
-          dto.groupId ? { groupId: dto.groupId } : undefined,
-          dto.type,
-        );
-      } catch (err) {
-        console.warn('Erro ao enviar push:', err.message);
-      }
-
-      return notification;
+    if (dto.type === NotificationType.WARNING && sender.sysRole !== 'ADMIN') {
+      throw new ForbiddenException(
+        NOTIFICATION_MESSAGES.UNAUTHORIZED_WARNING_CALL,
+      );
     }
 
+    //FIXED pra 01 usuario
+    if (dto.type === NotificationType.FIXED && dto.recipientId) {
+      await this.validator.validateUserExists(dto.recipientId);
+      return this.createAndSendNotification(dto, dto.recipientId);
+    }
+
+    // FIXED para grupo
     if (
       dto.type === NotificationType.FIXED &&
       !dto.recipientId &&
@@ -65,93 +127,42 @@ export class NotificationService {
       });
 
       if (participants.length === 0) {
-        throw new BadRequestException(
-          'Não há participantes neste grupo para notificar.',
-        );
+        throw new Error(NOTIFICATION_MESSAGES.NO_PARTICIPANTS);
       }
 
-      const notificationsData = participants.map((p) => ({
-        senderId: dto.senderId,
-        recipientId: p.userId,
-        body: dto.body,
-        type: dto.type,
-        groupName: dto.groupName || null,
-        senderName: dto.senderName || null,
-        idContent: dto.idContent || null,
-      }));
+      const data = participants.map((p) =>
+        this.buildNotificationData(dto, p.userId),
+      );
 
-      const result = await this.prisma.notification.createMany({
-        data: notificationsData,
-      });
+      const result = await this.prisma.notification.createMany({ data });
 
-      for (const participant of participants) {
-        try {
-          await this.sendPushNotification(
+      await Promise.all(
+        participants.map((participant) =>
+          this.sendPushNotification(
+            dto.senderId,
             participant.userId,
-            'Nova notificação em ' + (dto.groupName ?? 'grupo'),
+            this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
             dto.body,
-            dto.groupId ? { groupId: dto.groupId } : undefined,
+            { groupId: dto.groupId },
             dto.type,
-          );
-        } catch (err) {
-          console.warn(
-            `Erro ao enviar push para ${participant.userId}:`,
-            err.message,
-          );
-        }
-      }
+          ),
+        ),
+      );
 
       return { count: result.count };
     }
 
-    const senderExists = await this.prisma.user.findUnique({
-      where: { id: dto.senderId },
-    });
-    if (!senderExists) {
-      throw new NotFoundException('Remetente não encontrado');
+    if (!dto.recipientId) {
+      throw new BadRequestException(NOTIFICATION_MESSAGES.RECIPIENT_NOT_FOUND);
     }
 
-    const recipientExists = await this.prisma.user.findUnique({
-      where: { id: dto.recipientId },
-    });
-    if (!recipientExists) {
-      throw new NotFoundException('Destinatário não encontrado');
-    }
+    await this.validator.validateUserExists(dto.recipientId);
 
-    const notification = await this.prisma.notification.create({
-      data: {
-        senderId: dto.senderId,
-        recipientId: dto.recipientId,
-        body: dto.body,
-        type: dto.type,
-        groupName: dto.groupName || null,
-        senderName: dto.senderName || null,
-        idContent: dto.idContent || null,
-      },
-    });
-
-    try {
-      await this.sendPushNotification(
-        dto.recipientId,
-        'Nova notificação',
-        dto.body,
-        dto.groupId ? { groupId: dto.groupId } : undefined,
-        dto.type,
-      );
-    } catch (err) {
-      console.warn('Erro ao enviar push:', err.message);
-    }
-
-    return notification;
+    return this.createAndSendNotification(dto, dto.recipientId);
   }
 
   async getNotificationsForUser(userId: string): Promise<Notification[]> {
-    const userExists = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-    if (!userExists) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
+    await this.validator.validateUserExists(userId);
 
     return this.prisma.notification.findMany({
       where: { recipientId: userId },
@@ -159,13 +170,15 @@ export class NotificationService {
     });
   }
 
-  async markAsRead(notificationId: string): Promise<Notification> {
-    const notification = await this.prisma.notification.findUnique({
-      where: { id: notificationId },
-    });
-    if (!notification) {
-      throw new NotFoundException('Notificação não encontrada');
-    }
+  @UseGuards(MatchUserIdGuard)
+  async markAsRead(
+    notificationId: string,
+    userId: string,
+  ): Promise<Notification> {
+    await this.validator.ensureUserIsNotificationRecipient(
+      notificationId,
+      userId,
+    );
 
     return this.prisma.notification.update({
       where: { id: notificationId },
@@ -173,13 +186,14 @@ export class NotificationService {
     });
   }
 
-  async deleteNotification(notificationId: string): Promise<Notification> {
-    const notification = await this.prisma.notification.findUnique({
-      where: { id: notificationId },
-    });
-    if (!notification) {
-      throw new NotFoundException('Notificação não encontrada');
-    }
+  async deleteNotification(
+    notificationId: string,
+    userId: string,
+  ): Promise<Notification> {
+    await this.validator.ensureUserIsNotificationRecipient(
+      notificationId,
+      userId,
+    );
 
     return this.prisma.notification.delete({
       where: { id: notificationId },
@@ -189,51 +203,38 @@ export class NotificationService {
   async createGlobalNotification(
     dto: CreateNotificationDto,
   ): Promise<{ count: number }> {
+    await this.validator.validateUserExists(dto.senderId);
+
     const users = await this.prisma.user.findMany({
       where: { id: { not: dto.senderId } },
     });
 
     if (users.length === 0) {
-      throw new NotFoundException(
-        'Não há usuários destinatários para notificação global',
-      );
+      throw new NotFoundException(NOTIFICATION_MESSAGES.NO_RECIPIENTS_GLOBAL);
     }
 
-    const data = users.map((user) => ({
-      senderId: dto.senderId,
-      recipientId: user.id,
-      body: dto.body,
-      type: dto.type,
-      groupName: dto.groupName || null,
-      senderName: dto.senderName || null,
-    }));
+    const data = users.map((user) => this.buildNotificationData(dto, user.id));
 
     const result = await this.prisma.notification.createMany({ data });
 
-    for (const user of users) {
-      try {
-        await this.sendPushNotification(
+    await Promise.all(
+      users.map((user) =>
+        this.sendPushNotification(
+          dto.senderId,
           user.id,
-          dto.senderName ?? 'Notificação',
+          this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
           dto.body,
           undefined,
           dto.type,
-        );
-      } catch (err) {
-        console.warn(`Erro ao enviar push para ${user.id}:`, err.message);
-      }
-    }
+        ),
+      ),
+    );
 
     return { count: result.count };
   }
 
   async deleteAllNotifications(userId: string): Promise<{ count: number }> {
-    const userExists = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-    if (!userExists) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
+    await this.validator.validateUserExists(userId);
 
     const deletedNotifications = await this.prisma.notification.deleteMany({
       where: { recipientId: userId },
@@ -243,12 +244,7 @@ export class NotificationService {
   }
 
   async markAllAsRead(userId: string): Promise<{ count: number }> {
-    const userExists = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-    if (!userExists) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
+    await this.validator.validateUserExists(userId);
 
     const updatedNotifications = await this.prisma.notification.updateMany({
       where: { recipientId: userId, isRead: false },
@@ -258,14 +254,12 @@ export class NotificationService {
     return { count: updatedNotifications.count };
   }
 
-  async updateNotification(id: string, data: UpdateNotificationDto) {
-    const notification = await this.prisma.notification.findUnique({
-      where: { id },
-    });
-
-    if (!notification) {
-      throw new NotFoundException('Notificação não encontrada.');
-    }
+  async updateNotification(
+    id: string,
+    data: UpdateNotificationDto,
+    userId: string,
+  ): Promise<Notification> {
+    await this.validator.ensureUserIsNotificationSender(id, userId);
 
     const updateData = Object.fromEntries(
       Object.entries(data).filter(([_, value]) => value !== undefined),
@@ -277,87 +271,21 @@ export class NotificationService {
     });
   }
 
-  async registerPushNotifToken(userId: string, pushNotifToken: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  async registerPushNotifToken(
+    userId: string,
+    pushNotifToken: string,
+  ): Promise<Omit<User, 'hash'>> {
+    await this.validator.validateUserExists(userId);
 
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
-    return this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id: userId },
       data: { pushNotifToken },
     });
+
+    return omitHash(updatedUser);
   }
 
-  async sendPushNotification(
-    userId: string,
-    title: string,
-    body: string,
-    data?: any,
-    type?: NotificationType,
-  ) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
-    if (!user.pushNotifToken) {
-      throw new Error('Usuário não possui push token registrado');
-    }
-
-    if (!Expo.isExpoPushToken(user.pushNotifToken)) {
-      throw new Error('Push token inválido');
-    }
-
-    // Flags para desabilitar notificações
-    // Desativar todas
-    if (user.disablePopup) {
-      console.log(
-        `Notificação não enviada: usuário ${userId} desativou popups.`,
-      );
-      return { skipped: true };
-    }
-
-    // Desativar do "Sistema"
-    if (
-      (type === NotificationType.COMMENT ||
-        type === NotificationType.WARNING) &&
-      user.muteSystem
-    ) {
-      console.log(
-        `Notificação não enviada: usuário ${userId} silenciou notificações do sistema.`,
-      );
-      return { skipped: true };
-    }
-
-    // Desativar do "Grupo"
-    if (type === NotificationType.FIXED && data?.groupId && user.muteGroups) {
-      console.log(
-        `Notificação não enviada: usuário ${userId} silenciou notificações de grupos.`,
-      );
-      return { skipped: true };
-    }
-
-    const messages = [
-      {
-        to: user.pushNotifToken,
-        sound: 'default',
-        title,
-        body,
-        data,
-      },
-    ];
-
-    const tickets = await this.expo.sendPushNotificationsAsync(messages);
-
-    console.log('Tickets enviados:', tickets);
-
-    return tickets;
-  }
-
-  async getNotificationSettings(id: string) {
+  async getNotificationSettings(id: string): Promise<NotificationSettings> {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -366,8 +294,10 @@ export class NotificationService {
         muteGroups: true,
       },
     });
-    if (!user) throw new NotFoundException('Usuário não encontrado');
 
+    if (!user) {
+      throw new NotFoundException(NOTIFICATION_MESSAGES.USER_NOT_FOUND);
+    }
     return {
       disablePopup: user.disablePopup,
       muteSystem: user.muteSystem,
@@ -375,19 +305,85 @@ export class NotificationService {
     };
   }
 
-  async updateNotificationSettings(id: string, dto: UpdateNotificationDto) {
+  async updateNotificationSettings(
+    id: string,
+    dto: UpdateNotificationSettingsDto,
+  ): Promise<Omit<User, 'hash'>> {
     if (Object.keys(dto).length === 0) {
-      throw new BadRequestException('Nenhuma configuração para atualizar');
+      throw new BadRequestException(
+        NOTIFICATION_MESSAGES.NO_SETTINGS_TO_UPDATE,
+      );
     }
 
-    const userExists = await this.prisma.user.findUnique({ where: { id } });
-    if (!userExists) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
+    await this.validator.validateUserExists(id);
 
-    return this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { id },
       data: dto,
     });
+
+    return omitHash(updatedUser);
+  }
+
+  async sendPushNotification(
+    senderId: string,
+    userId: string,
+    title: string,
+    body: string,
+    data?: any,
+    type?: NotificationType,
+  ): Promise<any | undefined> {
+    try {
+      const user = await this.validator.validateUserExists(userId);
+
+      if (senderId === user.id) {
+        // impede enviar notificação pra si mesmo
+        return { skipped: true };
+      }
+
+      if (!user.pushNotifToken) {
+        throw new Error(NOTIFICATION_MESSAGES.NO_PUSH_TOKEN);
+      }
+
+      if (!Expo.isExpoPushToken(user.pushNotifToken)) {
+        throw new Error(NOTIFICATION_MESSAGES.INVALID_PUSH_TOKEN);
+      }
+      // Flags para desabilitar notificações
+      // Desativar todas
+      if (user.disablePopup) {
+        return { skipped: true };
+      }
+
+      // Desativar do "Sistema"
+      if (
+        (type === NotificationType.COMMENT ||
+          type === NotificationType.WARNING) &&
+        user.muteSystem
+      ) {
+        return { skipped: true };
+      }
+
+      // Desativar do "Grupo"
+      if (type === NotificationType.FIXED && data?.groupId && user.muteGroups) {
+        return { skipped: true };
+      }
+
+      const messages = [
+        {
+          to: user.pushNotifToken,
+          sound: 'default',
+          title,
+          body,
+          data,
+        },
+      ];
+
+      const tickets = await this.expo.sendPushNotificationsAsync(messages);
+      tickets.forEach((ticket) => console.log(ticket));
+
+      return tickets;
+    } catch (err) {
+      console.warn(`Erro ao enviar push para ${userId}:`, err.message);
+    }
   }
 }

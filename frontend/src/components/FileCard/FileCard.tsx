@@ -21,8 +21,7 @@ export default function FileCard({ info, type }: any) {
     <FileCardContainer
       onPress={() => {
         Linking.openURL(info);
-      }}
-    >
+      }}>
       <FileCardInfoContainer>
         {type === 'Links' ? (
           <FileCardImageContainer>

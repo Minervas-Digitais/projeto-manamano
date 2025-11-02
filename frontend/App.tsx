@@ -75,7 +75,7 @@ export default function App() {
 
   return (
     <NavigationContainer independent linking={linking}>
-      <Stack.Navigator initialRouteName="SingIn">
+      <Stack.Navigator initialRouteName="WelcomeScreen">
         <Stack.Screen
           name="WelcomeScreen"
           component={WelcomeScreen}

@@ -7,66 +7,90 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantDto } from './dto/update-participant.dto';
-import { ParticipantService } from './participant.service';
+import {
+  GroupWithDetails,
+  ParticipantService,
+  UserInGroup,
+} from './participant.service';
+import { Participant } from '@prisma/client';
+import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
 
 @Controller('participant')
+@UseGuards(JwtAuthGuard)
 export class ParticipantController {
   constructor(private readonly participantService: ParticipantService) {}
 
   @HttpCode(201)
   @Post()
-  @UseGuards(JwtAuthGuard)
-  joinGroup(@Body() createParticipantDto: CreateParticipantDto) {
+  @UseGuards(MatchUserIdGuard)
+  joinGroup(
+    @Body() createParticipantDto: CreateParticipantDto,
+  ): Promise<Participant> {
     return this.participantService.joinGroupWithInvite(createParticipantDto);
   }
 
   @HttpCode(200)
   @Get()
-  @UseGuards(JwtAuthGuard)
-  findAll() {
+  findAll(): Promise<Participant[]> {
     return this.participantService.findAll();
   }
 
   @HttpCode(200)
   @Get('group/:groupId')
-  @UseGuards(JwtAuthGuard)
-  findUsersInGroup(@Param('groupId') groupId: string) {
+  findUsersInGroup(@Param('groupId') groupId: string): Promise<UserInGroup[]> {
     return this.participantService.findUsersInGroup(groupId);
   }
 
   @HttpCode(200)
   @Get('groups/:id')
-  @UseGuards(JwtAuthGuard)
-  findUserGroups(@Param('id') id: string) {
+  @UseGuards(MatchUserIdGuard)
+  findUserGroups(@Param('id') id: string): Promise<GroupWithDetails[]> {
     return this.participantService.findUserGroups(id);
   }
 
   @HttpCode(200)
-  @Get(':id')
+  @Get('groups/:id/posts')
   @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
+  findUserGroupsPosts(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNumber = page ? parseInt(page, 10) : 1;
+    const limitNumber = limit ? parseInt(limit, 10) : 15;
+    return this.participantService.findUserGroupsPostsPaginated(
+      id,
+      pageNumber,
+      limitNumber,
+    );
+  }
+
+  @HttpCode(200)
+  @Get(':id')
+  findOne(@Param('id') id: string): Promise<Participant> {
     return this.participantService.findOne(id);
   }
 
   @HttpCode(201)
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(MatchUserIdGuard)
   update(
     @Param('id') id: string,
     @Body() updateParticipantDto: UpdateParticipantDto,
-  ) {
+  ): Promise<Participant> {
     return this.participantService.update(id, updateParticipantDto);
   }
 
   @HttpCode(200)
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  remove(@Param('id') id: string) {
+  @UseGuards(MatchUserIdGuard)
+  remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.participantService.remove(id);
   }
 }

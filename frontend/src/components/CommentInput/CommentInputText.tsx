@@ -15,6 +15,7 @@ import SendButton from '../../assets/submit-comment.svg';
 import LinkIcon from '../../assets/comment-link-icon.svg';
 import api from '../../services/api';
 import { storage } from '../../pages/SignIn/SignIn';
+import { AxiosError } from 'axios';
 
 export default function CommentInputTextCustom({
   onChangeText,

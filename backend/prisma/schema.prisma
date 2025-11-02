@@ -14,7 +14,6 @@ model User {
   email                 String         @unique
   phone                 String         @unique
   hash                  String
-  role                  UserRole?      @default(STUDENT)
   savedPost             String[]
   birthday              DateTime?
   ethnicity             String?
@@ -25,7 +24,7 @@ model User {
  
   profilePictureId      String?        @unique
   profilePicture        Archive?       @relation("UserProfilePicture", fields: [profilePictureId], references: [id], onDelete: SetNull)
-
+  
   disablePopup     Boolean @default(false)
   muteSystem       Boolean @default(false)
   muteGroups       Boolean @default(false)
@@ -59,7 +58,7 @@ model Group {
 model Participant {
   userId    String
   groupId   String
-  role      RoleType
+  role      UserRole
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)

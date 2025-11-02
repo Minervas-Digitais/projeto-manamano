@@ -12,11 +12,7 @@ import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
-import {
-  EditGroupContainer,
-  EditGroupForm,
-  EditGroupPage,
-} from './EditGroupStyle';
+import { EditGroupContainer, EditGroupForm, EditGroupPage } from './EditGroupStyle';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import InputTextCustom from '../../components/InputText/InputTextCustom';

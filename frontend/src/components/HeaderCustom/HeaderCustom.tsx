@@ -32,7 +32,9 @@ export default function HeaderCustom({
         <BackButton />
       )}
       <TouchableOpacity onPress={onPressTitle}>
-        <HeaderText font={font} {...(testID ? { testID } : {})}>{text}</HeaderText>
+        <HeaderText font={font} {...(testID ? { testID } : {})}>
+          {text}
+        </HeaderText>
       </TouchableOpacity>
       {icon ? <TouchableOpacity onPress={onPress}>{icon}</TouchableOpacity> : <NoIcon />}
     </HeaderContainer>

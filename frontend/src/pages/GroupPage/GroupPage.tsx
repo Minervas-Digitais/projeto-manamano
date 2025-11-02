@@ -41,6 +41,7 @@ import EventCard from '../../components/EventCard/EventCard';
 import GroupArchives from '../../components/GroupArchives/GroupArchives';
 import NotificationIcon from '../../assets/notification-icon.svg';
 import AddPostIcon from '../../assets/add-post-icon.svg';
+import { AxiosError } from 'axios';
 
 export default function GroupPage({ navigation }: any) {
   const route = useRoute();
@@ -199,7 +200,7 @@ export default function GroupPage({ navigation }: any) {
     }
   };
 
-  const getUserRoleInGroup = useCallback(async () => {
+   const getUserRoleInGroup = useCallback(async () => {
     const token = storage.getString('accessToken');
     const loggedId = storage.getString('loggedId');
     if (!token || !groupId || !loggedId) {
@@ -211,9 +212,20 @@ export default function GroupPage({ navigation }: any) {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUserRole(response.data.role || 'MEMBER');
-    } catch (error) {
-      console.error('Error fetching user role:', error);
-      setUserRole('MEMBER');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && (error as AxiosError).isAxiosError) {
+        const axiosError = error as AxiosError;
+        if (axiosError.response?.status === 404) {
+          console.log('Usuário não é participante do grupo');
+        } else {
+          console.error('Erro ao buscar role do usuário:', axiosError.message);
+          setUserRole('MEMBER');
+        }
+      } else {
+        console.error('Unexpected error fetching user role:', error);
+      }
+
+      setUserRole('MEMBER'); // Default para membro
     }
   }, [groupId]);
 
@@ -286,15 +298,8 @@ export default function GroupPage({ navigation }: any) {
     const loggedId = storage.getString('loggedId');
 
     try {
-      await api.patch(
-        `/post/${id}`,
-        { isPinned: !isPinned },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const url = isPinned ? `/post/unpin/${id}` : `/post/pin/${id}`;
+      await api.patch(url, {}, { headers: { Authorization: `Bearer ${token}` } });
 
       if (!isPinned) {
         await api.post(

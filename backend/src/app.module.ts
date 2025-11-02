@@ -11,7 +11,7 @@ import { PostModule } from './post/post.module';
 import { SearchModule } from './search/search.module';
 import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
-import { ArchiveModule } from './archive/archive.module'
+import { ArchiveModule } from './archive/archive.module';
 
 @Module({
   imports: [

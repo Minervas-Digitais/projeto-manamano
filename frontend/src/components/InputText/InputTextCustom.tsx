@@ -21,7 +21,7 @@ export default function InputTextCustom({
   type,
   options,
   innerRef,
-  testID
+  testID,
 }: any) {
   const [eyeIcon, setEyeIcon] = useState(true);
 

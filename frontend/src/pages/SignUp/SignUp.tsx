@@ -118,7 +118,7 @@ export default function SignUp({ navigation }: any) {
             {errors.phone && <ErrorWarning errorText="Campo obrigatório" />}
             <Controller
               control={control}
-              name="hash"
+              name="password"
               rules={{
                 required: true,
               }}
@@ -133,7 +133,7 @@ export default function SignUp({ navigation }: any) {
               )}
             />
             // o nome do erro precisa dar match com o nome especificado no Controller
-            {errors.hash && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
           </SignUpInputContainer>
         </View>
         <ButtonCustom
