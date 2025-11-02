@@ -239,22 +239,145 @@ export class PostService {
     return posts.map(this.serializePost);
   }
 
-  async getGroupPosts(groupId: string): Promise<SerializedPost[]> {
-    const posts = await this.findPosts({ groupId });
+  async getGroupPosts(groupId: string, page: number = 1, limit: number = 10) {
+    try {
+      const skip = (page - 1) * limit;
+      const posts = await this.prismaService.post.findMany({
+        where: { groupId },
+        include: postInclude,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      });
 
-    return posts.map(this.serializePost);
+      const total = await this.prismaService.post.count({
+        where: { groupId },
+      });
+
+      if (!posts || posts.length === 0) {
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        };
+      }
+
+      return {
+        data: posts.map(this.serializePost),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: skip + posts.length < total,
+        },
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async getCategoryPosts(categoryId: string): Promise<SerializedPost[]> {
-    const posts = await this.findPosts({ categoryId });
+  async getCategoryPosts(
+    categoryId: string,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    try {
+      const skip = (page - 1) * limit;
 
-    return posts.map(this.serializePost);
+      const posts = await this.prismaService.post.findMany({
+        where: { categoryId },
+        include: postInclude,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      });
+
+      const total = await this.prismaService.post.count({
+        where: { categoryId },
+      });
+
+      if (!posts || posts.length === 0) {
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        };
+      }
+
+      return {
+        data: posts.map(this.serializePost),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: skip + posts.length < total,
+        },
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async getUserPosts(userId: string): Promise<SerializedPost[]> {
-    const posts = await this.findPosts({ userId });
+  async getUserPosts(userId: string, page: number = 1, limit: number = 10) {
+    try {
+      const skip = (page - 1) * limit;
 
-    return posts.map(this.serializePost);
+      const posts = await this.prismaService.post.findMany({
+        where: { userId },
+        include: postInclude,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      });
+
+      const total = await this.prismaService.post.count({
+        where: { userId },
+      });
+
+      if (!posts || posts.length === 0) {
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        };
+      }
+
+      return {
+        data: posts.map(this.serializePost),
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasMore: skip + posts.length < total,
+        },
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getSavedPosts(
