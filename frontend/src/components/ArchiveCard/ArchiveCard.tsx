@@ -73,7 +73,7 @@ export default function ArchiveCard({
   name,
   mimeType,
   uri,
-  testID
+  testID,
 }: any) {
   const [fontsLoaded] = useFonts({
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),

@@ -5,7 +5,7 @@ import PostCard from '../PostCard/PostCard';
 import { RootStackParamList } from '../../navigation/types';
 
 interface PostItemProps {
-  post: any,//Post;
+  post: any; //Post;
   formattedDate: string;
   fetchUserName: (userId: string) => Promise<string>;
   fetchNumComments: (postId: string) => Promise<number>;

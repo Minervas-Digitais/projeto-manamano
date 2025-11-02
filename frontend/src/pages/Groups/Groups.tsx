@@ -106,7 +106,10 @@ export default function Groups() {
                 groupName={item.group.name}
                 onlineMembers={item.participantCount}
                 onPress={() => {
-                  navigation.navigate('GroupPage', item.groupId);
+                  navigation.navigate('GroupPage', {
+                    groupId: item.groupId,
+                    groupName: item.group.name,
+                  });
                 }}
                 showFilter={false}
                 containerStyle={{

@@ -8,35 +8,30 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { Body, Param, Request, UseGuards } from '@nestjs/common';
+import { Body, Param, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { RolesGuard } from 'src/auth/roles.guard';
+import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
 
 @Controller('notifications')
+@UseGuards(JwtAuthGuard)
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  async create(
-    @Body() createNotificationDto: CreateNotificationDto,
-    @Req() req,
-  ) {
-    const userRole = req.user.sysRole;
-    return this.notificationService.createNotification(
-      createNotificationDto,
-      userRole,
-    );
+  async create(@Body() createNotificationDto: CreateNotificationDto) {
+    return this.notificationService.createNotification(createNotificationDto);
   }
 
   @Post('/global')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  async createGlobal(@Body() dto: CreateNotificationDto, @Request() req) {
+  async createGlobal(@Body() dto: CreateNotificationDto, @Req() req) {
     return this.notificationService.createGlobalNotification({
       ...dto,
       senderId: req.user.id,
@@ -44,54 +39,46 @@ export class NotificationController {
   }
 
   @Get('user/:userId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(MatchUserIdGuard)
   async getUserNotifications(@Param('userId') userId: string) {
     return this.notificationService.getNotificationsForUser(userId);
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  async markAsRead(
-    @Param('id') id: string,
-    @Body() updateNotificationDto: UpdateNotificationDto,
-  ) {
-    const { isRead } = updateNotificationDto;
-    if (isRead) {
-      return this.notificationService.markAsRead(id);
-    }
+  async markAsRead(@Param('id') id: string, @Req() req) {
+    return this.notificationService.markAsRead(id, req.user.id);
   }
 
   @Patch('update/:id')
-  @UseGuards(JwtAuthGuard)
   async updateNotification(
     @Param('id') id: string,
     @Body() updateNotificationDto: UpdateNotificationDto,
+    @Req() req,
   ) {
     return this.notificationService.updateNotification(
       id,
       updateNotificationDto,
+      req.user.id,
     );
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async deleteNotification(@Param('id') id: string) {
-    return this.notificationService.deleteNotification(id);
+  async deleteNotification(@Param('id') id: string, @Req() req) {
+    return this.notificationService.deleteNotification(id, req.user.id);
   }
 
   @Delete('user/:userId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(MatchUserIdGuard)
   async deleteAllNotifications(@Param('userId') userId: string) {
     return this.notificationService.deleteAllNotifications(userId);
   }
 
   @Patch('user/:userId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(MatchUserIdGuard)
   async markAllAsRead(@Param('userId') userId: string) {
     return this.notificationService.markAllAsRead(userId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('register-token')
   async registerPushToken(
     @Req() req,
@@ -112,28 +99,17 @@ export class NotificationController {
   }
 
   @Get(':id/notification-settings')
-  @UseGuards(JwtAuthGuard)
-  async getNotificationSettings(@Param('id') id: string, @Req() req) {
-    if (req.user.id !== id) {
-      throw new UnauthorizedException(
-        'Você só pode acessar suas próprias configurações',
-      );
-    }
+  @UseGuards(MatchUserIdGuard)
+  async getNotificationSettings(@Param('id') id: string) {
     return this.notificationService.getNotificationSettings(id);
   }
 
   @Patch(':id/notification-settings')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(MatchUserIdGuard)
   async updateNotificationSettings(
     @Param('id') id: string,
-    @Body() dto: UpdateNotificationDto,
-    @Req() req,
+    @Body() dto: UpdateNotificationSettingsDto,
   ) {
-    if (req.user.id !== id) {
-      throw new UnauthorizedException(
-        'Você só pode modificar suas próprias configurações',
-      );
-    }
     return this.notificationService.updateNotificationSettings(id, dto);
   }
 }

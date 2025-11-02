@@ -125,7 +125,7 @@ export default function CreateGroup() {
       try {
         await api.post(
           '/participant',
-          { groupId, userId: loggedId, role: 'MODERATOR', inviteCode },
+          { userId: loggedId, role: 'INSTRUCTOR', inviteCode },
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,

@@ -2,82 +2,61 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
+import { Group } from '@prisma/client';
+import { GROUP_MESSAGES } from 'src/messages/group.messages';
+import { ValidatorService } from 'src/common/validators/validator.service';
 
 @Injectable()
 export class GroupService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
 
-  async create(createGroupDto: CreateGroupDto) {
-    try {
-      const inviteCode = await this.generateUniqueInviteCode();
-      const newGroup = await this.prismaService.group.create({
-        data: {
-          ...createGroupDto,
-          inviteCode,
-        },
-      });
+  async create(createGroupDto: CreateGroupDto): Promise<Group> {
+    const inviteCode = await this.generateUniqueInviteCode();
+    const newGroup = await this.prismaService.group.create({
+      data: {
+        ...createGroupDto,
+        inviteCode,
+      },
+    });
 
-      return newGroup;
-    } catch (error) {
-      throw error;
-    }
+    return newGroup;
   }
 
-  async findAll() {
-    try {
-      const groups = await this.prismaService.group.findMany();
-      if (groups.length === 0) {
-        throw new NotFoundException('Não há grupos cadastrados.');
-      }
-      return groups;
-    } catch (error) {
-      throw error;
+  async findAll(): Promise<Group[]> {
+    const groups = await this.prismaService.group.findMany();
+    if (groups.length === 0) {
+      throw new NotFoundException(GROUP_MESSAGES.EMPTY_GROUPS);
     }
+    return groups;
   }
 
-  async findOne(id: string) {
-    try {
-      const group = await this.prismaService.group.findUnique({
-        where: {
-          id,
-        },
-      });
-      if (!group) {
-        throw new NotFoundException('Grupo não encontrado.');
-      }
-      return group;
-    } catch (error) {
-      throw error;
-    }
+  async findOne(id: string): Promise<Group> {
+    const group = await this.validator.validateGroupExists(id);
+    return group;
   }
 
-  async update(id: string, updateGroupDto: UpdateGroupDto) {
-    try {
-      await this.findOne(id);
-      return await this.prismaService.group.update({
-        where: {
-          id,
-        },
-        data: updateGroupDto,
-      });
-    } catch (error) {
-      throw error;
-    }
+  async update(id: string, updateGroupDto: UpdateGroupDto): Promise<Group> {
+    await this.validator.validateGroupExists(id);
+    return await this.prismaService.group.update({
+      where: {
+        id,
+      },
+      data: updateGroupDto,
+    });
   }
 
-  async remove(id: string) {
-    try {
-      await this.findOne(id);
-     
-      await this.prismaService.group.delete({
-        where: {
-          id,
-        },
-      });
-      return 'Grupo deletado com sucesso.';
-    } catch (error) {
-      throw error;
-    }
+  async remove(id: string): Promise<{ message: string }> {
+    await this.validator.validateGroupExists(id);
+
+    await this.prismaService.group.delete({
+      where: {
+        id,
+      },
+    });
+    return { message: GROUP_MESSAGES.DELETE_SUCCESS };
   }
 
   /* Funções auxiliares */
@@ -93,29 +72,21 @@ export class GroupService {
   }
 
   private async isInviteCodeUnique(inviteCode: string) {
-    try {
-      const group = await this.prismaService.group.findUnique({
-        where: { inviteCode },
-      });
-      return !group;
-    } catch (error) {
-      throw error;
-    }
+    const group = await this.prismaService.group.findUnique({
+      where: { inviteCode },
+    });
+    return !group;
   }
 
   private async generateUniqueInviteCode(length: number = 8) {
-    try {
-      let inviteCode: string;
-      let isUnique = false;
+    let inviteCode: string;
+    let isUnique = false;
 
-      do {
-        inviteCode = this.generateInviteCode(length);
-        isUnique = await this.isInviteCodeUnique(inviteCode);
-      } while (!isUnique);
+    do {
+      inviteCode = this.generateInviteCode(length);
+      isUnique = await this.isInviteCodeUnique(inviteCode);
+    } while (!isUnique);
 
-      return inviteCode;
-    } catch (error) {
-      throw error;
-    }
+    return inviteCode;
   }
 }

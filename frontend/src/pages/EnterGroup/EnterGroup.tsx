@@ -28,7 +28,7 @@ export default function EnterGroup({ navigation }: any) {
     try {
       const participantData = {
         userId: loggedId,
-        role: 'MEMBER',
+        role: 'STUDENT',
         inviteCode: data.inviteCode,
       };
 

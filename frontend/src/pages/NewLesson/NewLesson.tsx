@@ -86,11 +86,11 @@ export default function NewLesson({ navigation }: any) {
     const selectedCategory = categories.find((category) => category.name === 'Aulas');
 
     if (!selectedCategory) {
-    Toast.show({
+      Toast.show({
         type: 'error',
         text1: 'Categoria "Aulas" não encontrada.',
-    });
-    return;
+      });
+      return;
     }
     try {
       const formattedDate = formatDate(data.date);
@@ -154,7 +154,6 @@ export default function NewLesson({ navigation }: any) {
     }
   };
 
-  
   const dateRef = useRef<InputRef | null>(null);
   const hourRef = useRef<InputRef | null>(null);
 
@@ -204,15 +203,15 @@ export default function NewLesson({ navigation }: any) {
       if (result.assets && result.assets.length > 0) {
         const newFiles = await Promise.all(
           result.assets.map(async (file) => {
-                const base64 = await FileSystem.readAsStringAsync(file.uri, {
-                  encoding: FileSystem.EncodingType.Base64,
-                });
-                return {
-                    id: Date.now() + Math.random(),
-                    name: file.name,
-                    uri: base64,
-                    mimeType: file.mimeType,
-                };
+            const base64 = await FileSystem.readAsStringAsync(file.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            return {
+              id: Date.now() + Math.random(),
+              name: file.name,
+              uri: base64,
+              mimeType: file.mimeType,
+            };
           }),
         );
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
@@ -290,7 +289,7 @@ export default function NewLesson({ navigation }: any) {
                   imageIcon={<CalendarIcon />}
                   type="datetime"
                   options={{ format: 'DD/MM/YYYY' }}
-                  innerRef={(value:any) => (dateRef.current = value)}
+                  innerRef={(value: any) => (dateRef.current = value)}
                 />
               )}
             />
@@ -389,10 +388,7 @@ export default function NewLesson({ navigation }: any) {
                 onPress={() => handleClick(item.id)}
               />
             ))}
-            <ArchiveCard 
-                testID="btn-add-file"
-                onClick={pickFile} 
-            />
+            <ArchiveCard testID="btn-add-file" onClick={pickFile} />
           </ScrollView>
           <Toast config={toastConfig} />
           <ButtonCustom

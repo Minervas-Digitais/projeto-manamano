@@ -25,16 +25,4 @@ export class UpdateNotificationDto {
   @IsOptional()
   @IsEnum(NotificationType)
   type?: NotificationType;
-
-  @IsOptional()
-  @IsBoolean()
-  disablePopup?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  muteSystem?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  muteGroups?: boolean;
 }
