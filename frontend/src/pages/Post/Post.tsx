@@ -31,6 +31,7 @@ import api from '../../services/api';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
+import { AxiosError } from 'axios';
 
 const { width } = Dimensions.get('window');
 const defaultAvatar = require('../../assets/user-profile.png');
@@ -100,6 +101,7 @@ export default function Post() {
     if (!accessTokenState) return;
     const fetchPost = async () => {
       try {
+        console.log(postId);
         const response = await api.get(`post/${postId}`, {
           headers: { Authorization: `Bearer ${accessTokenState}` },
         });
@@ -122,7 +124,7 @@ export default function Post() {
 
     const fetchUserAndImage = async () => {
       try {
-        const responseUser = await api.get(`user/${post.userId}`, {
+        const responseUser = await api.get(`user/public/${post.userId}`, {
           headers: { Authorization: `Bearer ${accessTokenState}` },
         });
         const userData: User = responseUser.data;
@@ -165,7 +167,7 @@ export default function Post() {
         const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
         const usersData = await Promise.all(
           uniqueUserIds.map(async (userId) => {
-            const response = await api.get(`user/${userId}`, {
+            const response = await api.get(`user/public/${userId}`, {
               headers: {
                 Authorization: `Bearer ${accessTokenState}`,
               },

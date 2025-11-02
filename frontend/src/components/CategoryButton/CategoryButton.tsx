@@ -20,8 +20,7 @@ export default function CategoryButton({ filter, categoryName, onPress }: any) {
       <GroupDataText
         font="inter-semiBold"
         color={filter === categoryName ? '#EF4036' : '#757474'}
-        size="14px"
-      >
+        size="14px">
         {categoryName}
       </GroupDataText>
     </CategoryButtonContainer>

@@ -31,6 +31,7 @@ import MenuIcon from '../../assets/menuWhite-icon.svg';
 import Pen from '../../assets/pen-icon.svg';
 import Business from '../../assets/business-icon.svg';
 import api from '../../services/api';
+import { AxiosError } from 'axios';
 
 export default function Profile({ navigation, route }: any) {
   const [profileId, setProfileId] = useState(1);
@@ -70,87 +71,89 @@ export default function Profile({ navigation, route }: any) {
       setFilterPosts('savedPosts');
     }
   }, [route?.params?.initialTab]);
-    
-  useFocusEffect(() => {
-    const token = storage.getString('accessToken');
 
-    if (token) {
-      const fetchUserData = async () => {
-        try {
-          const userId = storage.getString('loggedId');
+  useFocusEffect(
+    React.useCallback(() => {
+      const token = storage.getString('accessToken');
 
-          const { data } = await api.get(`/user/${userId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+      if (token) {
+        const fetchUserData = async () => {
+          try {
+            const userId = storage.getString('loggedId');
 
-          setFullName(data.fullName);
-          setNeighborhood(data.neighborhood);
-          setEnterprise(data.enterprise);
-          setBio(data.bio);
+            const { data } = await api.get(`/user/${userId}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
 
-          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            responseType: 'arraybuffer',
-          });
+            setFullName(data.fullName);
+            setNeighborhood(data.neighborhood);
+            setEnterprise(data.enterprise);
+            setBio(data.bio);
 
-          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
-          const imageUri = `data:image/jpeg;base64,${imageStr}`;
-          setProfileImage({ uri: imageUri });
-
-          const fetchUserPosts = async () => {
             try {
-              const { data: postData } = await api.get(`/post/${userId}/posts`, {
+              const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
-              });
-              setUserPosts(postData);
-            } catch (error) {
-              console.error('Error fetching posts:', error);
-            }
-          };
-
-          const fetchSavedPosts = async () => {
-            try {
-              const { data } = await api.get(`/user/${userId}`, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
+                responseType: 'arraybuffer',
               });
 
-              const postIds = data.savedPost;
-
-              const postRequests = postIds.map((postId: any) =>
-                api
-                  .get(`/post/${postId}`, {
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                    },
-                  })
-                  .then((res) => res.data),
-              );
-
-              const postsData = await Promise.all(postRequests);
-              setSavedPosts(postsData);
+              const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+              const imageUri = `data:image/jpeg;base64,${imageStr}`;
+              setProfileImage({ uri: imageUri });
             } catch (error) {
-              console.error('Error fetching saved posts:', error);
+              setProfileImage(defaultAvatar);
             }
-          };
 
-          fetchUserPosts();
-          fetchSavedPosts();
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        }
-      };
+            const fetchUserPosts = async () => {
+              try {
+                const { data: postData } = await api.get(`/post/${userId}/posts`, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+                setUserPosts(postData);
+              } catch (error) {
+                console.error('Error fetching posts:', error);
+              }
+            };
 
-      fetchUserData();
-    }
-  });
+            const fetchSavedPosts = async () => {
+              try {
+                const { data } = await api.get(`/post/saved/${userId}?all=true`, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+                setSavedPosts(data);
+              } catch (error) {
+                console.error('Error fetching saved posts:', error);
+              }
+            };
+
+            fetchUserPosts();
+            fetchSavedPosts();
+          } catch (error) {
+            if (error instanceof AxiosError) {
+              if (error.response?.status === 404) {
+                console.log('Sem imagem de perfil, usando padrão');
+                setProfileImage(require('../../assets/user-profile.png'));
+              } else {
+                console.error('Erro ao buscar imagem de perfil:', error);
+              }
+            } else {
+              console.error('Erro desconhecido:', error);
+            }
+          }
+        };
+
+        fetchUserData();
+      }
+    }, []),
+  );
+
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -184,6 +187,7 @@ export default function Profile({ navigation, route }: any) {
       const imageUri = `data:image/jpeg;base64,${imageStr}`;
       return { uri: imageUri };
     } catch (error) {
+      console.error('Erro ao buscar imagem de perfil:', error);
       return defaultAvatar;
     }
   };
@@ -230,7 +234,7 @@ export default function Profile({ navigation, route }: any) {
         </ProfileContainerData>
       </ProfileContainerInfo>
       <HomePageWhite style={{ gap: 0 }}>
-       <ProfileTextContainer style={{ paddingVertical: 25, paddingHorizontal: 0 }}>
+        <ProfileTextContainer style={{ paddingVertical: 25, paddingHorizontal: 0 }}>
           <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
             {bio}
           </GroupDataText>

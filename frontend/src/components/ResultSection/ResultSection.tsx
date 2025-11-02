@@ -218,7 +218,7 @@ export default function ResultSection({
     }
 
     try {
-      const response = await api.get(`/user/${userId}`, {
+      const response = await api.get(`/user/public/${userId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -412,7 +412,10 @@ export default function ResultSection({
               {data.users.map((person) => {
                 const fullNameParts = person.fullName.split(' ');
                 return (
-                  <Card key={person.id} style={{ marginBottom: 10 }} testID={`user-card-${person.id}`}>
+                  <Card
+                    key={person.id}
+                    style={{ marginBottom: 10 }}
+                    testID={`user-card-${person.id}`}>
                     <TouchableOpacity
                       testID={`user-touchable-${person.id}`}
                       onPress={() => {
@@ -432,14 +435,15 @@ export default function ResultSection({
                         <Name
                           testID={`user-name-${person.id}`}
                           fontFamily="inter-regular"
-                          fontColor="#3F3D3D"
-                        >
+                          fontColor="#3F3D3D">
                           {`${fullNameParts[0]} ${fullNameParts[1] || ''}`}
                         </Name>
                       </View>
                     </TouchableOpacity>
                     {admin && (
-                      <TouchableOpacity testID={`user-delete-button-${person.id}`} onPress={() => handleDeletePress('user', person.id)}>
+                      <TouchableOpacity
+                        testID={`user-delete-button-${person.id}`}
+                        onPress={() => handleDeletePress('user', person.id)}>
                         <TrashCan />
                       </TouchableOpacity>
                     )}
@@ -451,7 +455,9 @@ export default function ResultSection({
                   <View
                     style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
                   />
-                  <StyledButton testID="ver-todos-pessoas" onPress={() => handleFilterPress('users')}>
+                  <StyledButton
+                    testID="ver-todos-pessoas"
+                    onPress={() => handleFilterPress('users')}>
                     <Text
                       style={{
                         fontSize: 12,
@@ -490,17 +496,25 @@ export default function ResultSection({
                         name: group.name,
                         avatar: defaultAvatar,
                       });
-                      navigation.navigate('GroupPage', { groupId: group.id });
+                      navigation.navigate('GroupPage', {
+                        groupId: group.id,
+                        groupName: group.name,
+                      });
                     }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <Avatar source={defaultAvatar} testID={`group-avatar-${group.id}`} />
-                      <Name fontFamily="inter-regular" fontColor="#3F3D3D" testID={`group-name-${group.id}`}>
+                      <Name
+                        fontFamily="inter-regular"
+                        fontColor="#3F3D3D"
+                        testID={`group-name-${group.id}`}>
                         {group.name}
                       </Name>
                     </View>
                   </TouchableOpacity>
                   {admin && (
-                    <TouchableOpacity testID={`group-delete-button-${group.id}`} onPress={() => handleDeletePress('group', group.id)}>
+                    <TouchableOpacity
+                      testID={`group-delete-button-${group.id}`}
+                      onPress={() => handleDeletePress('group', group.id)}>
                       <TrashCan />
                     </TouchableOpacity>
                   )}
@@ -511,7 +525,9 @@ export default function ResultSection({
                   <View
                     style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
                   />
-                  <StyledButton testID="ver-todos-grupos" onPress={() => handleFilterPress('groups')}>
+                  <StyledButton
+                    testID="ver-todos-grupos"
+                    onPress={() => handleFilterPress('groups')}>
                     <Text
                       style={{
                         fontSize: 12,
@@ -577,7 +593,9 @@ export default function ResultSection({
                   <View
                     style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
                   />
-                  <StyledButton testID="ver-todos-publicacoes" onPress={() => handleFilterPress('posts')}>
+                  <StyledButton
+                    testID="ver-todos-publicacoes"
+                    onPress={() => handleFilterPress('posts')}>
                     <Text
                       style={{
                         fontSize: 12,

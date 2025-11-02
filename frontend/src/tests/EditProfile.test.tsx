@@ -27,42 +27,45 @@ jest.mock('expo-document-picker', () => ({
 
 jest.mock('../components/BigInputText/BigInputText', () =>
   jest.fn(({ label, value, onChangeText, ...rest }) => {
-  const { TextInput } = require('react-native');
-  return (
+    const { TextInput } = require('react-native');
+    return (
       <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={label}
-      accessibilityLabel={label}
-      {...rest}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={label}
+        accessibilityLabel={label}
+        {...rest}
       />
-  );
-}));
+    );
+  }),
+);
 
 jest.mock('../components/InputText/InputTextCustom', () =>
   jest.fn(({ label, value, onChangeText, type, innerRef, ...rest }) => {
-  const { TextInput } = require('react-native');
-  const props = {
-    value,
-    onChangeText,
-    placeholder: label,
-    accessibilityLabel: label,
-    ...rest,
-  };
+    const { TextInput } = require('react-native');
+    const props = {
+      value,
+      onChangeText,
+      placeholder: label,
+      accessibilityLabel: label,
+      ...rest,
+    };
 
-  if (type === 'cel-phone' && innerRef) {
-    const ref = { getRawValue: () => value.replace(/\D/g, '') };
-    innerRef(ref);
-  }
+    if (type === 'cel-phone' && innerRef) {
+      const ref = { getRawValue: () => value.replace(/\D/g, '') };
+      innerRef(ref);
+    }
 
-  return <TextInput {...props} />;
-}));
+    return <TextInput {...props} />;
+  }),
+);
 
 jest.mock('../components/DropdownButton/DropdownCustom', () =>
   jest.fn(({ label, value, onChange }) => {
-  const { Button } = require('react-native');
-  return <Button title={`${label}: ${value}`} onPress={() => onChange('mock-selection')} />;
-}));
+    const { Button } = require('react-native');
+    return <Button title={`${label}: ${value}`} onPress={() => onChange('mock-selection')} />;
+  }),
+);
 
 jest.mock('../components/SideMenu/SideMenu', () => 'SideMenu');
 

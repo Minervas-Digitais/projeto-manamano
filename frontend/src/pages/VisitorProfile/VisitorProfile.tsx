@@ -34,6 +34,7 @@ import MenuIcon from '../../assets/menuWhite-icon.svg';
 import BusinessIcon from '../../assets/business-icon.svg';
 import WhatsappIcon from '../../assets/whatsapp-icon.svg';
 import EmailIcon from '../../assets/email-icon.svg';
+import { AxiosError } from 'axios';
 
 export default function VisitorProfile({ navigation }: any) {
   const route = useRoute();
@@ -89,7 +90,7 @@ export default function VisitorProfile({ navigation }: any) {
       try {
         const token = storage.getString('accessToken');
         setLoading(true);
-        const userResponse = await api.get(`/user/${userId}`, {
+        const userResponse = await api.get(`/user/public/${userId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setUser(userResponse.data);
@@ -97,15 +98,20 @@ export default function VisitorProfile({ navigation }: any) {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setPosts(userPostsResponse.data);
-        const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          responseType: 'arraybuffer',
-        });
-        const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
-        const imageUri = `data:image/jpeg;base64,${imageStr}`;
-        setProfileImage({ uri: imageUri });
+        try {
+          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            responseType: 'arraybuffer',
+          });
+          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+          const imageUri = `data:image/jpeg;base64,${imageStr}`;
+          setProfileImage({ uri: imageUri });
+        } catch (error) {
+          console.error('Erro ao buscar imagem de perfil:', error);
+          setProfileImage(defaultAvatar);
+        }
       } catch (error) {
         console.error('Failed to fetch visitor profile data:', error);
       } finally {
@@ -138,7 +144,12 @@ export default function VisitorProfile({ navigation }: any) {
             </TouchableOpacity>
           </ProfileContainerButtons>
           <ProfileContainerData>
-            <ProfileImage radius height="78px" width="78px" source={profileImage || defaultAvatar} />
+            <ProfileImage
+              radius
+              height="78px"
+              width="78px"
+              source={profileImage || defaultAvatar}
+            />
             <View style={{ gap: '4px' }}>
               <ProfileContainerData gap={10} center>
                 <GroupDataText color="white" size="20px" font="inter-bold">
@@ -218,10 +229,13 @@ export default function VisitorProfile({ navigation }: any) {
               </GroupDataText>
             </ProfileContainerData>
             <View style={style.viewStyleInfo}>
-              <TouchableOpacity onPress={() => copyToClipboard(user?.phone, 'Número de telefone copiado!')}>
+              <TouchableOpacity
+                onPress={() => copyToClipboard(user?.phone, 'Número de telefone copiado!')}>
                 <WhatsappIcon height="22px" width="22px" />
               </TouchableOpacity>
-              <TouchableOpacity testID="email-button" onPress={() => copyToClipboard(user?.email, 'Email copiado!')}>
+              <TouchableOpacity
+                testID="email-button"
+                onPress={() => copyToClipboard(user?.email, 'Email copiado!')}>
                 <EmailIcon height="22px" width="22px" />
               </TouchableOpacity>
             </View>

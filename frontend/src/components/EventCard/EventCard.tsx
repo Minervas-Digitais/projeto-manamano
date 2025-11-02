@@ -29,30 +29,28 @@ export default function EventCard({ date, title, description }: any) {
 
   return (
     <LessonsCardContainer onPress={() => {}} selected>
+      <LessonsCardInfoContainer>
+        <Image source={calendar} />
 
-          <LessonsCardInfoContainer>
-            <Image source={calendar} />
-
-            <GroupDataText font="inter-bold" size="12px" color="#160E47">
-              {' '}
-              {date}
-              <GroupDataText font="inter-bold" size="12px" color="#160E47" />
-            </GroupDataText>
-            <GroupDataText font="inter-bold" size="12px" color="#160E47" />
-          </LessonsCardInfoContainer>
-          <LessonsCardInfoContainer>
-            <GroupDataText font="inter-bold" size="16px" color="#4E4E4E" numberOfLines={1}>
-              {title}
-            </GroupDataText>
-          </LessonsCardInfoContainer>
-           <LessonsCardInfoContainer>
-            <GroupDataText font="inter-bold" size="12px" color="#4E4E4E" numberOfLines={1}>
-              {description}
-            </GroupDataText>
-           </LessonsCardInfoContainer>
+        <GroupDataText font="inter-bold" size="12px" color="#160E47">
+          {' '}
+          {date}
+          <GroupDataText font="inter-bold" size="12px" color="#160E47" />
+        </GroupDataText>
+        <GroupDataText font="inter-bold" size="12px" color="#160E47" />
+      </LessonsCardInfoContainer>
+      <LessonsCardInfoContainer>
+        <GroupDataText font="inter-bold" size="16px" color="#4E4E4E" numberOfLines={1}>
+          {title}
+        </GroupDataText>
+      </LessonsCardInfoContainer>
+      <LessonsCardInfoContainer>
+        <GroupDataText font="inter-bold" size="12px" color="#4E4E4E" numberOfLines={1}>
+          {description}
+        </GroupDataText>
+      </LessonsCardInfoContainer>
 
       <Toast config={toastConfig} />
-
     </LessonsCardContainer>
   );
 }

@@ -16,8 +16,8 @@ export type RootStackParamList = {
   ConfigNotification: undefined;
   About: undefined;
   VisitorProfile: { id: string };
-  GroupPage: { groupId: string };
+  GroupPage: { groupId: string; groupName: string };
   CreateGroup: undefined;
-  NewLesson: { groupId: string }
+  NewLesson: { groupId: string };
   EntrarGrupo: undefined;
 };
