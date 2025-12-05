@@ -12,6 +12,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { USER_MESSAGES } from 'src/messages/user.messages';
 import { omitHash } from 'src/utils/user.util';
 import { ValidatorService } from 'src/common/validators/validator.service';
+import { UserPrivateFields, UserPublicFields } from './user.types';
 export const roundsOfHashing = 10;
 
 interface ProfilePictureBuffer {
@@ -62,21 +63,15 @@ export class UserService {
     return omitHash(user);
   }
 
-  async findAll(): Promise<Omit<User, 'hash'>[]> {
-    const users = await this.prismaService.user.findMany();
-    if (users.length === 0) {
-      throw new NotFoundException(USER_MESSAGES.EMPTY_LIST);
+  async findOne(
+    paramId: string,
+    tokenId: string,
+  ): Promise<UserPublicFields | UserPrivateFields> {
+    const user = await this.validator.validateUserExists(paramId);
+
+    if (tokenId === paramId) {
+      return omitHash(user);
     }
-    return users.map(omitHash);
-  }
-
-  async findOne(id: string): Promise<Omit<User, 'hash'>> {
-    const user = await this.validator.validateUserExists(id);
-    return omitHash(user);
-  }
-
-  async findOnePublic(id: string): Promise<Partial<User>> {
-    const user = await this.validator.validateUserExists(id);
 
     return {
       id: user.id,
@@ -89,6 +84,14 @@ export class UserService {
       birthday: user.birthday,
       profilePictureId: user.profilePictureId,
     };
+  }
+
+  async findAll(): Promise<Omit<User, 'hash'>[]> {
+    const users = await this.prismaService.user.findMany();
+    if (users.length === 0) {
+      throw new NotFoundException(USER_MESSAGES.EMPTY_LIST);
+    }
+    return users.map(omitHash);
   }
 
   async update(
@@ -141,7 +144,7 @@ export class UserService {
     id: string,
     sysRole: RoleType,
   ): Promise<Omit<User, 'hash'>> {
-    await this.findOne(id);
+    await this.findById(id);
 
     const updatedUser = await this.prismaService.user.update({
       where: { id: id },
@@ -203,5 +206,10 @@ export class UserService {
       mimeType: user.profilePicture.mimeType,
       name: user.profilePicture.name,
     };
+  }
+
+  async findById(id: string): Promise<Omit<User, 'hash'>> {
+    const user = await this.validator.validateUserExists(id);
+    return user;
   }
 }

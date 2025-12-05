@@ -22,7 +22,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import express from 'express';
 import { Res } from '@nestjs/common';
 import { Archive, RoleType, User } from '@prisma/client';
-import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+import { User as UserDecorator } from './user.decorator';
+import { UserPrivateFields, UserPublicFields } from './user.types';
 
 @Controller('user')
 export class UserController {
@@ -44,22 +45,30 @@ export class UserController {
 
   @HttpCode(200)
   @Get(':id')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
-  findOne(@Param('id') id: string): Promise<Omit<User, 'hash'>> {
-    return this.userService.findOne(id);
-  }
-
-  @HttpCode(200)
-  @Get('public/:id')
-  async findOnePublic(@Param('id') id: string): Promise<Partial<User>> {
-    return this.userService.findOnePublic(id);
+  @UseGuards(JwtAuthGuard)
+  findOne(
+    @Param('id') paramId: string,
+    @UserDecorator('id') tokenId: string,
+  ): Promise<UserPublicFields | UserPrivateFields> {
+    return this.userService.findOne(paramId, tokenId);
   }
 
   @HttpCode(201)
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
+  @Patch('/change-password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(
+    @UserDecorator('id') id: string,
+    @Body('oldPassword') oldPassword: string,
+    @Body('newPassword') newPassword: string,
+  ): Promise<Omit<User, 'hash'>> {
+    return this.userService.changePassword(id, oldPassword, newPassword);
+  }
+
+  @HttpCode(201)
+  @Patch()
+  @UseGuards(JwtAuthGuard)
   update(
-    @Param('id') id: string,
+    @UserDecorator('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<Omit<User, 'hash'>> {
     return this.userService.update(id, updateUserDto);
@@ -73,17 +82,6 @@ export class UserController {
     return this.userService.remove(id);
   }
 
-  @HttpCode(201)
-  @Patch(':id/change-password')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
-  changePassword(
-    @Param('id') id: string,
-    @Body('oldPassword') oldPassword: string,
-    @Body('newPassword') newPassword: string,
-  ): Promise<Omit<User, 'hash'>> {
-    return this.userService.changePassword(id, oldPassword, newPassword);
-  }
-
   @Patch(':id/role')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleType.ADMIN)
@@ -95,11 +93,11 @@ export class UserController {
     return this.userService.updateUserRole(id, sysRole);
   }
 
-  @Patch(':id/profile-picture')
-  @UseGuards(JwtAuthGuard, MatchUserIdGuard)
+  @Patch('/profile-picture')
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async updateProfilePicture(
-    @Param('id') id: string,
+    @UserDecorator('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<Omit<User, 'hash'> & { profilePicture: Archive | null }> {
     if (!file) {
