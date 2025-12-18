@@ -20,12 +20,9 @@ export class MailService {
     email: CreateMailDto,
     userId: string,
   ): Promise<{ message: string }> {
-    if (userId !== email.userId) {
-      throw new BadRequestException(MAIL_MESSAGES.UNAUTHORIZED_ACCESS);
-    }
+    const user = await this.validator.validateUserExists(userId);
+  
     const transporter = this.getTransporter();
-
-    const user = await this.validator.validateUserExists(email.userId);
 
     const emailContent = `Nova mensagem da(o) usuária(o) ${user.fullName}:\n\n${email.text}`;
 

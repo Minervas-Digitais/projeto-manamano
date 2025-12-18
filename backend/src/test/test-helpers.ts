@@ -197,7 +197,7 @@ export async function createPostDto(
   overrides: Partial<CreatePostDto> = {},
 ): Promise<CreatePostDto> {
   const groupId = await createTestGroup(prisma);
-  const userId = overrides.userId || (await createTestUser(prisma));
+
   const categoryId =
     overrides.categoryId || (await createTestCategory(prisma, groupId));
 
@@ -205,7 +205,6 @@ export async function createPostDto(
     title: 'Post Teste',
     input: 'Teste',
     type: PostType.NORMAL,
-    userId,
     groupId,
     categoryId,
     isPinned: false,
@@ -223,7 +222,7 @@ export async function createTestPost(
   overrides: Partial<CreatePostDto> = {},
 ) {
   const post: CreatePostDto = await createPostDto(prisma, overrides);
-
+  const userId = await createTestUser(prisma);
   const existingPost = await prisma.post.findFirst({
     where: { title: post.title },
   });
@@ -232,7 +231,7 @@ export async function createTestPost(
     return existingPost.id;
   }
   const newPost = await prisma.post.create({
-    data: post,
+    data: { ...post, userId },
   });
 
   return newPost.id;
@@ -326,15 +325,6 @@ export async function deleteAllTestArchives(prisma: PrismaService) {
 export async function createParticipantDto(prisma: PrismaService) {
   const groupId = await createTestGroup(prisma);
 
-  const number = Array.from({ length: 10 }, () =>
-    Math.floor(Math.random() * 10),
-  ).join('');
-  const userId = await createTestUser(
-    prisma,
-    number,
-    String(number) + '@gmail.com',
-  );
-
   const fullGroup = await prisma.group.findUnique({
     where: { id: groupId },
   });
@@ -342,7 +332,6 @@ export async function createParticipantDto(prisma: PrismaService) {
   const dto: CreateParticipantDto = {
     role: UserRole.STUDENT,
     groupId: groupId,
-    userId: userId,
     inviteCode: fullGroup.inviteCode,
   };
 
@@ -352,11 +341,20 @@ export async function createParticipantDto(prisma: PrismaService) {
 export async function createTestParticipant(prisma: PrismaService) {
   const dto = await createParticipantDto(prisma);
 
+  const number = Array.from({ length: 10 }, () =>
+    Math.floor(Math.random() * 10),
+  ).join('');
+  const userId = await createTestUser(
+    prisma,
+    number,
+    String(number) + '@gmail.com',
+  );
+
   const participant = await prisma.participant.create({
     data: {
       role: dto.role,
       groupId: dto.groupId,
-      userId: dto.userId,
+      userId,
     },
   });
   return participant;
@@ -425,7 +423,6 @@ export async function getNotificationId(
   }
 
   const notificationDTO: CreateNotificationDto = {
-    senderId: senderUser.id,
     body: 'bodyTeste',
     recipientId: recipientUser.id,
     type: NotificationType.COMMENT,

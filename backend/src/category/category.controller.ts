@@ -41,23 +41,23 @@ export class CategoryController {
   }
 
   @HttpCode(200)
-  @Get(':id')
-  findOne(@Param('id') id: string): Promise<Category> {
-    return this.categoryService.findOne(id);
+  @Get(':categoryId')
+  findOne(@Param('categoryId') categoryId: string): Promise<Category> {
+    return this.categoryService.findOne(categoryId);
   }
 
   @HttpCode(201)
-  @Patch(':id')
+  @Patch(':categoryId')
   update(
-    @Param('id') id: string,
+    @Param('categoryId') categoryId: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
-    return this.categoryService.update(id, updateCategoryDto);
+    return this.categoryService.update(categoryId, updateCategoryDto);
   }
 
   @HttpCode(200)
-  @Delete(':id')
-  remove(@Param('id') id: string): Promise<Category> {
-    return this.categoryService.remove(id);
+  @Delete(':categoryId')
+  remove(@Param('categoryId') categoryId: string): Promise<Category> {
+    return this.categoryService.remove(categoryId);
   }
 }

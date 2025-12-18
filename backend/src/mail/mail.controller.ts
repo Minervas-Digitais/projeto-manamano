@@ -9,16 +9,17 @@ import {
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateMailDto } from './dto/create-mail.dto';
 import { MailService } from './mail.service';
-import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+
+import { User } from 'src/user/user.decorator';
 
 @Controller('mail')
-@UseGuards(JwtAuthGuard, MatchUserIdGuard)
+@UseGuards(JwtAuthGuard)
 export class MailController {
   constructor(private readonly mailService: MailService) {}
 
   @HttpCode(201)
   @Post()
-  sendMail(@Body() email: CreateMailDto, @Req() req) {
-    return this.mailService.sendMail(email, req.user.id);
+  sendMail(@Body() email: CreateMailDto, @User('id') userId: string) {
+    return this.mailService.sendMail(email, userId);
   }
 }

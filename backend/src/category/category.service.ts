@@ -40,10 +40,10 @@ export class CategoryService {
     return categories;
   }
 
-  async findOne(id: string): Promise<Category> {
+  async findOne(categoryId: string): Promise<Category> {
     const category = await this.prismaService.category.findUnique({
       where: {
-        id,
+        id: categoryId,
       },
     });
 

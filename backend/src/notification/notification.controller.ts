@@ -17,6 +17,7 @@ import { Roles } from 'src/auth/roles.decorator';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
 import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
+import { User } from 'src/user/user.decorator';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
@@ -24,68 +25,75 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post()
-  async create(@Body() createNotificationDto: CreateNotificationDto) {
-    return this.notificationService.createNotification(createNotificationDto);
-  }
-
-  @Post('/global')
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
-  async createGlobal(@Body() dto: CreateNotificationDto, @Req() req) {
-    return this.notificationService.createGlobalNotification({
-      ...dto,
-      senderId: req.user.id,
-    });
-  }
-
-  @Get('user/:userId')
-  @UseGuards(MatchUserIdGuard)
-  async getUserNotifications(@Param('userId') userId: string) {
-    return this.notificationService.getNotificationsForUser(userId);
-  }
-
-  @Patch(':id')
-  async markAsRead(@Param('id') id: string, @Req() req) {
-    return this.notificationService.markAsRead(id, req.user.id);
-  }
-
-  @Patch('update/:id')
-  async updateNotification(
-    @Param('id') id: string,
-    @Body() updateNotificationDto: UpdateNotificationDto,
-    @Req() req,
+  async create(
+    @Body() createNotificationDto: CreateNotificationDto,
+    @User('id') senderId: string,
   ) {
-    return this.notificationService.updateNotification(
-      id,
-      updateNotificationDto,
-      req.user.id,
+    return this.notificationService.createNotification(
+      createNotificationDto,
+      senderId,
     );
   }
 
-  @Delete(':id')
-  async deleteNotification(@Param('id') id: string, @Req() req) {
-    return this.notificationService.deleteNotification(id, req.user.id);
+  @Post('global')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  async createGlobal(
+    @Body() dto: CreateNotificationDto,
+    @User('id') senderId: string,
+  ) {
+    return this.notificationService.createGlobalNotification(dto, senderId);
   }
 
-  @Delete('user/:userId')
-  @UseGuards(MatchUserIdGuard)
-  async deleteAllNotifications(@Param('userId') userId: string) {
+  @Get('user')
+  async getUserNotifications(@User('id') userId: string) {
+    return this.notificationService.getNotificationsForUser(userId);
+  }
+
+  @Patch(':notificationId')
+  async markAsRead(
+    @Param('notificationId') notificationId: string,
+    @User('id') userId: string,
+  ) {
+    return this.notificationService.markAsRead(notificationId, userId);
+  }
+
+  @Patch('update/:notificationId')
+  async updateNotification(
+    @Param('notificationId') notificationId: string,
+    @Body() updateNotificationDto: UpdateNotificationDto,
+    @User('id') userId: string,
+  ) {
+    return this.notificationService.updateNotification(
+      notificationId,
+      updateNotificationDto,
+      userId,
+    );
+  }
+
+  @Delete(':notificationId')
+  async deleteNotification(
+    @Param('notificationId') notificationId: string,
+    @User('id') userId: string,
+  ) {
+    return this.notificationService.deleteNotification(notificationId, userId);
+  }
+
+  @Delete('user')
+  async deleteAllNotifications(@User('id') userId: string) {
     return this.notificationService.deleteAllNotifications(userId);
   }
 
-  @Patch('user/:userId')
-  @UseGuards(MatchUserIdGuard)
-  async markAllAsRead(@Param('userId') userId: string) {
+  @Patch('user')
+  async markAllAsRead(@User('id') userId: string) {
     return this.notificationService.markAllAsRead(userId);
   }
 
   @Post('register-token')
   async registerPushToken(
-    @Req() req,
+    @User('id') userId: string,
     @Body() body: { pushNotifToken: string },
   ) {
-    const userId = req.user.id;
-
     if (!body.pushNotifToken) {
       throw new BadRequestException('Push token é obrigatório');
     }
@@ -98,18 +106,16 @@ export class NotificationController {
     return { success: true };
   }
 
-  @Get(':id/notification-settings')
-  @UseGuards(MatchUserIdGuard)
-  async getNotificationSettings(@Param('id') id: string) {
-    return this.notificationService.getNotificationSettings(id);
+  @Get('notification-settings')
+  async getNotificationSettings(@User('id') userId: string) {
+    return this.notificationService.getNotificationSettings(userId);
   }
 
-  @Patch(':id/notification-settings')
-  @UseGuards(MatchUserIdGuard)
+  @Patch('notification-settings')
   async updateNotificationSettings(
-    @Param('id') id: string,
+    @User('id') userId: string,
     @Body() dto: UpdateNotificationSettingsDto,
   ) {
-    return this.notificationService.updateNotificationSettings(id, dto);
+    return this.notificationService.updateNotificationSettings(userId, dto);
   }
 }

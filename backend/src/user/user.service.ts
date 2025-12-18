@@ -64,12 +64,12 @@ export class UserService {
   }
 
   async findOne(
-    paramId: string,
-    tokenId: string,
+    targetUserId: string,
+    requesterUserId: string,
   ): Promise<UserPublicFields | UserPrivateFields> {
-    const user = await this.validator.validateUserExists(paramId);
+    const user = await this.validator.validateUserExists(targetUserId);
 
-    if (tokenId === paramId) {
+    if (requesterUserId === targetUserId) {
       return omitHash(user);
     }
 
@@ -144,7 +144,7 @@ export class UserService {
     id: string,
     sysRole: RoleType,
   ): Promise<Omit<User, 'hash'>> {
-    await this.findById(id);
+    await this.validator.validateUserExists(id);
 
     const updatedUser = await this.prismaService.user.update({
       where: { id: id },

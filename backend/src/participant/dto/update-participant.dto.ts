@@ -2,5 +2,5 @@ import { PartialType, OmitType } from '@nestjs/mapped-types';
 import { CreateParticipantDto } from './create-participant.dto';
 
 export class UpdateParticipantDto extends PartialType(
-  OmitType(CreateParticipantDto, ['userId', 'groupId'] as const),
+  OmitType(CreateParticipantDto, ['groupId'] as const),
 ) {}

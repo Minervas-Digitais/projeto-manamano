@@ -19,6 +19,7 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { RoleType } from '@prisma/client';
 import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+import { User } from 'src/user/user.decorator';
 
 interface PaginatedResponse<T> {
   data: T[];
@@ -40,9 +41,9 @@ export class PostController {
   @Post()
   create(
     @Body() createPostDto: CreatePostDto,
-    @Req() req,
+    @User('id') userId: string,
   ): Promise<SerializedPost> {
-    return this.postService.create(createPostDto, req.user.id);
+    return this.postService.create(createPostDto, userId);
   }
 
   @HttpCode(200)
@@ -79,17 +80,21 @@ export class PostController {
   }
 
   @HttpCode(201)
-  @Patch('save/:ids')
-  @UseGuards(MatchUserIdGuard)
-  async savePost(@Param('ids') ids: string): Promise<any> {
-    return this.postService.savePost(ids);
+  @Patch('save/:postId')
+  async savePost(
+    @Param('postId') postId: string,
+    @User('id') userId: string,
+  ): Promise<any> {
+    return this.postService.savePost(userId, postId);
   }
 
   @HttpCode(201)
-  @Patch('unsave/:ids')
-  @UseGuards(MatchUserIdGuard)
-  async removeSavedPost(@Param('ids') ids: string): Promise<any> {
-    return this.postService.removeSavedPost(ids);
+  @Patch('unsave/:postId')
+  async removeSavedPost(
+    @Param('postId') postId: string,
+    @User('id') userId: string,
+  ): Promise<any> {
+    return this.postService.removeSavedPost(userId, postId);
   }
 
   @HttpCode(201)
@@ -124,7 +129,7 @@ export class PostController {
 
     return this.postService.getGroupPosts(groupId, pageNum, limitNum);
   }
-  
+
   @HttpCode(200)
   @Get('category/:categoryId')
   async getCategoryPosts(
@@ -137,7 +142,6 @@ export class PostController {
 
     return this.postService.getCategoryPosts(categoryId, pageNum, limitNum);
   }
-
 
   @HttpCode(200)
   @Get(':id/posts')
@@ -152,10 +156,9 @@ export class PostController {
     return this.postService.getUserPosts(id, pageNum, limitNum);
   }
 
-  @Get('saved/:userId')
-  @UseGuards(MatchUserIdGuard)
+  @Get('saved')
   async getSavedPosts(
-    @Param('userId') userId: string,
+    @User('id') userId: string,
     @Query('page') page = '1',
     @Query('limit') limit = '10',
     @Query('all') all = 'false',
