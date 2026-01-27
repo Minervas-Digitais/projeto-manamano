@@ -162,7 +162,6 @@ export default function NewPost({ navigation }: any) {
           '/post',
           {
             type: 'NORMAL',
-            userId: loggedIdState,
             input: data.input,
             categoryId,
             groupId,
@@ -180,7 +179,6 @@ export default function NewPost({ navigation }: any) {
               '/archives',
               {
                 name: file.name,
-                userId: loggedIdState,
                 mimeType: file.mimeType,
                 groupId,
                 contentBase64: file.uri,
@@ -219,7 +217,6 @@ export default function NewPost({ navigation }: any) {
           '/post',
           {
             type: 'EVENT',
-            userId: loggedIdState,
             input: data.input,
             categoryId,
             groupId,

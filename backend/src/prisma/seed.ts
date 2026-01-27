@@ -1,6 +1,5 @@
 import { PrismaClient, PostType, UserRole } from '@prisma/client';
 import { faker } from '@faker-js/faker';
-import { writeFileSync } from 'fs';
 
 const prisma = new PrismaClient();
 
@@ -113,7 +112,7 @@ async function main() {
   );
   console.log('✅ Posts criados');
 
-  const comments = await Promise.all(
+  await Promise.all(
     posts.flatMap((post) =>
       Array.from({ length: 2 }).map(() => {
         const randomUser = faker.helpers.arrayElement(users);
@@ -129,7 +128,7 @@ async function main() {
   );
   console.log('✅ Comentários criados');
 
-  const archives = await Promise.all(
+  await Promise.all(
     posts.flatMap((post, postIndex) =>
       Array.from({ length: faker.number.int({ min: 2, max: 4 }) }).map(
         async (_, fileIndex) => {

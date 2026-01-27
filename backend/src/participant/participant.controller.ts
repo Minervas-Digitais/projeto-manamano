@@ -35,7 +35,7 @@ export class ParticipantController {
   ): Promise<Participant> {
     return this.participantService.joinGroupWithInvite(
       createParticipantDto,
-      userId
+      userId,
     );
   }
 

@@ -10,7 +10,6 @@ import { UpdateParticipantDto } from './dto/update-participant.dto';
 import { Participant, UserRole } from '@prisma/client';
 import { PARTICIPANT_MESSAGES } from 'src/messages/participant.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
-import { use } from 'passport';
 
 export interface PostWithCommentsCount {
   id: string;
@@ -63,7 +62,7 @@ export class ParticipantService {
 
   async joinGroupWithInvite(
     createParticipantDto: CreateParticipantDto,
-    userId: string
+    userId: string,
   ): Promise<Participant> {
     const group = await this.prismaService.group.findUnique({
       where: {
@@ -349,7 +348,7 @@ export class ParticipantService {
     await this.findOne(userId, groupId);
     await this.prismaService.participant.delete({
       where: {
-        userId_groupId: {userId, groupId},
+        userId_groupId: { userId, groupId },
       },
     });
     return { message: PARTICIPANT_MESSAGES.DELETE_SUCCESS };

@@ -80,7 +80,7 @@ export default function EditProfile() {
       }
 
       console.log('Sending request to API...');
-      const response = await api.patch(`/user/${userId}`, data, {
+      const response = await api.patch('/user/', data, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -148,7 +148,7 @@ export default function EditProfile() {
         const formData = new FormData();
         formData.append('file', image as any);
 
-        const response = await api.patch(`/user/${userId}/profile-picture`, formData, {
+        const response = await api.patch('/user/profile-picture', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${token}`,

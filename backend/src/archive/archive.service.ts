@@ -14,15 +14,17 @@ export class ArchiveService {
     private readonly validator: ValidatorService,
   ) {}
 
-  async createArchive(data: CreateArchiveDto, userId: string): Promise<ResponseArchiveDto> {
+  async createArchive(
+    data: CreateArchiveDto,
+    userId: string,
+  ): Promise<ResponseArchiveDto> {
     let group = null;
     let sender = null;
 
     if (data.postId) await this.validator.validatePostExists(data.postId);
     if (data.groupId)
       group = await this.validator.validateGroupExists(data.groupId);
-    if (userId)
-      sender = await this.validator.validateUserExists(userId);
+    if (userId) sender = await this.validator.validateUserExists(userId);
 
     const createdArchive = await this.prisma.archive.create({
       data: {
@@ -37,15 +39,18 @@ export class ArchiveService {
 
     const notificationBody = `Novo arquivo enviado no grupo ${group.name}`;
 
-    await this.notificationService.createNotification({
-      recipientId: undefined,
-      groupId: data.groupId,
-      body: notificationBody,
-      type: NotificationType.FIXED,
-      groupName: group.name,
-      senderName: sender.fullName,
-      idContent: createdArchive.id,
-    }, userId);
+    await this.notificationService.createNotification(
+      {
+        recipientId: undefined,
+        groupId: data.groupId,
+        body: notificationBody,
+        type: NotificationType.FIXED,
+        groupName: group.name,
+        senderName: sender.fullName,
+        idContent: createdArchive.id,
+      },
+      userId,
+    );
 
     return this.mapToResponseDto(createdArchive);
   }

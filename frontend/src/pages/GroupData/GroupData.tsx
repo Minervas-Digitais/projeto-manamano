@@ -131,7 +131,7 @@ export default function GroupData({ navigation }: any) {
 
   const handleDeleteParticipant = async (participantUserId: string) => {
     try {
-      await api.delete(`/participant/${participantUserId},${groupId}`, {
+      await api.delete(`/participant/group/${groupId}`, {
         headers: {
           Authorization: `Bearer ${accessTokenState}`,
         },

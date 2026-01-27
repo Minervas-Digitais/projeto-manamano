@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Transporter, createTransport } from 'nodemailer';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMailDto } from './dto/create-mail.dto';
@@ -21,7 +16,7 @@ export class MailService {
     userId: string,
   ): Promise<{ message: string }> {
     const user = await this.validator.validateUserExists(userId);
-  
+
     const transporter = this.getTransporter();
 
     const emailContent = `Nova mensagem da(o) usuária(o) ${user.fullName}:\n\n${email.text}`;

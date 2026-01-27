@@ -227,7 +227,6 @@ export default function Post() {
       const response = await api.post(
         '/comment',
         {
-          userId: loggedIdState,
           content: data.input,
           postId,
         },
@@ -246,7 +245,6 @@ export default function Post() {
       if (post && post.userId !== loggedIdState) {
         const groupNameFromApi = groupResponse.data.name;
         console.log({
-          senderId: loggedIdState,
           senderName: userName,
           recipientId,
           groupName: groupNameFromApi,
@@ -256,7 +254,6 @@ export default function Post() {
         await api.post(
           '/notifications',
           {
-            senderId: loggedIdState,
             senderName: userName,
             recipientId,
             groupName: groupNameFromApi,

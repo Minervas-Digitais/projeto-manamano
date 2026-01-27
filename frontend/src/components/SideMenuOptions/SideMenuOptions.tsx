@@ -44,7 +44,7 @@ export default function SideMenuOptions({
     if (!loggedId || !accessToken) return;
 
     try {
-      const res = await api.get<Notification[]>(`notifications/user/${loggedId}`, {
+      const res = await api.get<Notification[]>('notifications/user/', {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const hasUnreadNotifications = res.data.some((n) => !n.isRead);

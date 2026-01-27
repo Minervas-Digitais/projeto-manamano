@@ -4,8 +4,6 @@ import {
   Post,
   Patch,
   Delete,
-  Req,
-  UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
 import { Body, Param, UseGuards } from '@nestjs/common';
@@ -15,7 +13,6 @@ import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { RolesGuard } from 'src/auth/roles.guard';
-import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
 import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
 import { User } from 'src/user/user.decorator';
 

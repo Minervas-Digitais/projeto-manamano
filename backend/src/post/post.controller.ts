@@ -8,7 +8,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -18,7 +17,6 @@ import { PostService, SerializedPost } from './post.service';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { RoleType } from '@prisma/client';
-import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
 import { User } from 'src/user/user.decorator';
 
 interface PaginatedResponse<T> {

@@ -9,7 +9,6 @@ import { NotificationService } from 'src/notification/notification.service';
 import { NotificationType } from '@prisma/client';
 import { COMMENT_MESSAGES } from 'src/messages/comment.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
-import { use } from 'passport';
 
 @Injectable()
 export class CommentService {

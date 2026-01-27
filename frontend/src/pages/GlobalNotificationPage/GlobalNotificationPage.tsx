@@ -34,7 +34,7 @@ export default function GlobalNotificationPage({ navigation }: any) {
       setLoggedIdState(loggedId);
       if (body) {
         api
-          .get(`/notifications/user/${loggedId}`, {
+          .get('/notifications/user', {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -80,7 +80,6 @@ export default function GlobalNotificationPage({ navigation }: any) {
           '/notifications/global',
           {
             type: 'WARNING',
-            senderId: loggedIdState,
             body: data.input,
           },
           {

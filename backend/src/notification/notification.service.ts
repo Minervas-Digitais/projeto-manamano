@@ -3,19 +3,17 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
-  UseGuards,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Notification, NotificationType, RoleType, User } from '@prisma/client';
+import { Notification, NotificationType, User } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Expo } from 'expo-server-sdk';
 import { NOTIFICATION_MESSAGES } from 'src/messages/notification.messages';
 import { omitHash } from 'src/utils/user.util';
 import { ValidatorService } from 'src/common/validators/validator.service';
-import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+
 import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
-import { send } from 'process';
 
 export interface NotificationSettings {
   disablePopup: boolean;
@@ -35,7 +33,7 @@ export class NotificationService {
   private buildNotificationData(
     dto: CreateNotificationDto,
     recipientId: string,
-    senderId: string
+    senderId: string,
   ) {
     return {
       senderId: senderId,
@@ -70,7 +68,7 @@ export class NotificationService {
   private async createAndSendNotification(
     dto: CreateNotificationDto,
     recipientId: string,
-    senderId: string
+    senderId: string,
   ): Promise<Notification> {
     const notification = await this.prisma.notification.create({
       data: this.buildNotificationData(dto, recipientId, senderId),
@@ -89,7 +87,8 @@ export class NotificationService {
   }
 
   async createNotification(
-    dto: CreateNotificationDto, senderId: string
+    dto: CreateNotificationDto,
+    senderId: string,
   ): Promise<Notification | { count: number }> {
     const sender = await this.prisma.user.findUnique({
       where: { id: senderId },
@@ -203,7 +202,8 @@ export class NotificationService {
   }
 
   async createGlobalNotification(
-    dto: CreateNotificationDto, senderId: string
+    dto: CreateNotificationDto,
+    senderId: string,
   ): Promise<{ count: number }> {
     await this.validator.validateUserExists(senderId);
 
@@ -215,7 +215,9 @@ export class NotificationService {
       throw new NotFoundException(NOTIFICATION_MESSAGES.NO_RECIPIENTS_GLOBAL);
     }
 
-    const data = users.map((user) => this.buildNotificationData(dto, user.id, senderId));
+    const data = users.map((user) =>
+      this.buildNotificationData(dto, user.id, senderId),
+    );
 
     const result = await this.prisma.notification.createMany({ data });
 
