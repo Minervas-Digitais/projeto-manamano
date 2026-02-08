@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Transporter, createTransport } from 'nodemailer';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMailDto } from './dto/create-mail.dto';
@@ -20,12 +15,9 @@ export class MailService {
     email: CreateMailDto,
     userId: string,
   ): Promise<{ message: string }> {
-    if (userId !== email.userId) {
-      throw new BadRequestException(MAIL_MESSAGES.UNAUTHORIZED_ACCESS);
-    }
-    const transporter = this.getTransporter();
+    const user = await this.validator.validateUserExists(userId);
 
-    const user = await this.validator.validateUserExists(email.userId);
+    const transporter = this.getTransporter();
 
     const emailContent = `Nova mensagem da(o) usuária(o) ${user.fullName}:\n\n${email.text}`;
 

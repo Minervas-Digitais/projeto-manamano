@@ -30,7 +30,7 @@ export default function DeleteConfirmation({ text, display }: any) {
     const loggedId = await secureStorage.getItem('loggedId');
     console.log('todas notificações excluídas');
     api
-      .delete(`/notifications/user/${loggedId}`, {
+      .delete('/notifications/user/', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

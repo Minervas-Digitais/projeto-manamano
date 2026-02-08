@@ -102,7 +102,6 @@ export default function NewLesson({ navigation }: any) {
         '/post',
         {
           type: 'CLASS',
-          userId: loggedIdState,
           input: data.input,
           categoryId: selectedCategory.id,
           groupId,
@@ -124,7 +123,6 @@ export default function NewLesson({ navigation }: any) {
             '/archives',
             {
               name: file.name,
-              userId: loggedIdState,
               mimeType: file.mimeType,
               groupId,
               contentBase64: file.uri,

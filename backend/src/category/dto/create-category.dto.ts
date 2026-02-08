@@ -6,7 +6,6 @@ export class CreateCategoryDto {
   @IsNotEmpty()
   name: string;
 
-  @IsString()
   @IsNotEmpty()
   @IsEnum(PostType)
   type: PostType;

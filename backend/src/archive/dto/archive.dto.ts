@@ -1,21 +1,21 @@
-import { IsString, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class CreateArchiveDto {
   @IsString()
+  @IsNotEmpty()
   name: string;
 
   @IsString()
+  @IsNotEmpty()
   mimeType: string;
 
   @IsString()
+  @IsNotEmpty()
   contentBase64: string;
 
   @IsString()
+  @IsNotEmpty()
   type: string;
-
-  @IsOptional()
-  @IsString()
-  userId?: string;
 
   @IsOptional()
   @IsString()

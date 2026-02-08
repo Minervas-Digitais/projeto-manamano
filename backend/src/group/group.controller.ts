@@ -37,27 +37,27 @@ export class GroupController {
   }
 
   @HttpCode(200)
-  @Get(':id')
-  findOne(@Param('id') id: string): Promise<Group> {
-    return this.groupService.findOne(id);
+  @Get(':groupId')
+  findOne(@Param('groupId') groupId: string): Promise<Group> {
+    return this.groupService.findOne(groupId);
   }
 
   @HttpCode(201)
-  @Patch(':id')
+  @Patch(':groupId')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
   update(
-    @Param('id') id: string,
+    @Param('groupId') groupId: string,
     @Body() updateGroupDto: UpdateGroupDto,
   ): Promise<Group> {
-    return this.groupService.update(id, updateGroupDto);
+    return this.groupService.update(groupId, updateGroupDto);
   }
 
   @HttpCode(200)
-  @Delete(':id')
+  @Delete(':groupId')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  remove(@Param('id') id: string): Promise<{ message: string }> {
-    return this.groupService.remove(id);
+  remove(@Param('groupId') groupId: string): Promise<{ message: string }> {
+    return this.groupService.remove(groupId);
   }
 }

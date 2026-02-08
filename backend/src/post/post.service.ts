@@ -92,20 +92,19 @@ export class PostService {
 
   async create(
     createPostDto: CreatePostDto,
-    userIdFromToken: string,
+    userId: string,
   ): Promise<SerializedPost> {
-    if (createPostDto.userId !== userIdFromToken) {
-      throw new ForbiddenException(POST_MESSAGES.UNAUTHORIZED_ACCESS);
-    }
-
     const group = await this.validator.validateGroupExists(
       createPostDto.groupId,
     );
 
-    await this.validator.validateUserExists(createPostDto.userId);
+    await this.validator.validateUserExists(userId);
 
     const post = await this.prismaService.post.create({
-      data: createPostDto,
+      data: {
+        ...createPostDto,
+        userId,
+      },
       include: {
         user: true,
       },
@@ -113,16 +112,18 @@ export class PostService {
 
     const notificationBody = `Novo post em ${group.name}`;
 
-    await this.notificationService.createNotification({
-      senderId: createPostDto.userId,
-      recipientId: undefined,
-      groupId: createPostDto.groupId,
-      body: notificationBody,
-      type: NotificationType.FIXED,
-      groupName: group.name,
-      senderName: post.user.fullName,
-      idContent: post.id,
-    });
+    await this.notificationService.createNotification(
+      {
+        recipientId: undefined,
+        groupId: createPostDto.groupId,
+        body: notificationBody,
+        type: NotificationType.FIXED,
+        groupName: group.name,
+        senderName: post.user.fullName,
+        idContent: post.id,
+      },
+      userId,
+    );
 
     return this.serializePost(post);
   }
@@ -172,9 +173,7 @@ export class PostService {
     return this.serializePost(deleted);
   }
 
-  async savePost(ids: string): Promise<Omit<User, 'hash'>> {
-    const [postId, userId] = ids.split(',');
-
+  async savePost(userId: string, postId: string): Promise<Omit<User, 'hash'>> {
     const user = await this.validator.validateUserExists(userId);
     const post = await this.validator.validatePostExists(postId);
 
@@ -198,9 +197,10 @@ export class PostService {
     return omitHash(updatedUser);
   }
 
-  async removeSavedPost(ids: string): Promise<Omit<User, 'hash'>> {
-    const [postId, userId] = ids.split(',');
-
+  async removeSavedPost(
+    userId: string,
+    postId: string,
+  ): Promise<Omit<User, 'hash'>> {
     const user = await this.validator.validateUserExists(userId);
     await this.validator.validatePostExists(postId);
 
@@ -240,48 +240,44 @@ export class PostService {
   }
 
   async getGroupPosts(groupId: string, page: number = 1, limit: number = 10) {
-    try {
-      const skip = (page - 1) * limit;
-      const posts = await this.prismaService.post.findMany({
-        where: { groupId },
-        include: postInclude,
-        orderBy: {
-          createdAt: 'desc',
-        },
-        skip,
-        take: limit,
-      });
+    const skip = (page - 1) * limit;
+    const posts = await this.prismaService.post.findMany({
+      where: { groupId },
+      include: postInclude,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take: limit,
+    });
 
-      const total = await this.prismaService.post.count({
-        where: { groupId },
-      });
+    const total = await this.prismaService.post.count({
+      where: { groupId },
+    });
 
-      if (!posts || posts.length === 0) {
-        return {
-          data: [],
-          meta: {
-            page,
-            limit,
-            total: 0,
-            totalPages: 0,
-            hasMore: false,
-          },
-        };
-      }
-
+    if (!posts || posts.length === 0) {
       return {
-        data: posts.map(this.serializePost),
+        data: [],
         meta: {
           page,
           limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-          hasMore: skip + posts.length < total,
+          total: 0,
+          totalPages: 0,
+          hasMore: false,
         },
       };
-    } catch (error) {
-      throw error;
     }
+
+    return {
+      data: posts.map(this.serializePost),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: skip + posts.length < total,
+      },
+    };
   }
 
   async getCategoryPosts(
@@ -289,95 +285,87 @@ export class PostService {
     page: number = 1,
     limit: number = 10,
   ) {
-    try {
-      const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-      const posts = await this.prismaService.post.findMany({
-        where: { categoryId },
-        include: postInclude,
-        orderBy: {
-          createdAt: 'desc',
-        },
-        skip,
-        take: limit,
-      });
+    const posts = await this.prismaService.post.findMany({
+      where: { categoryId },
+      include: postInclude,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take: limit,
+    });
 
-      const total = await this.prismaService.post.count({
-        where: { categoryId },
-      });
+    const total = await this.prismaService.post.count({
+      where: { categoryId },
+    });
 
-      if (!posts || posts.length === 0) {
-        return {
-          data: [],
-          meta: {
-            page,
-            limit,
-            total: 0,
-            totalPages: 0,
-            hasMore: false,
-          },
-        };
-      }
-
+    if (!posts || posts.length === 0) {
       return {
-        data: posts.map(this.serializePost),
+        data: [],
         meta: {
           page,
           limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-          hasMore: skip + posts.length < total,
+          total: 0,
+          totalPages: 0,
+          hasMore: false,
         },
       };
-    } catch (error) {
-      throw error;
     }
+
+    return {
+      data: posts.map(this.serializePost),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: skip + posts.length < total,
+      },
+    };
   }
 
   async getUserPosts(userId: string, page: number = 1, limit: number = 10) {
-    try {
-      const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-      const posts = await this.prismaService.post.findMany({
-        where: { userId },
-        include: postInclude,
-        orderBy: {
-          createdAt: 'desc',
-        },
-        skip,
-        take: limit,
-      });
+    const posts = await this.prismaService.post.findMany({
+      where: { userId },
+      include: postInclude,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take: limit,
+    });
 
-      const total = await this.prismaService.post.count({
-        where: { userId },
-      });
+    const total = await this.prismaService.post.count({
+      where: { userId },
+    });
 
-      if (!posts || posts.length === 0) {
-        return {
-          data: [],
-          meta: {
-            page,
-            limit,
-            total: 0,
-            totalPages: 0,
-            hasMore: false,
-          },
-        };
-      }
-
+    if (!posts || posts.length === 0) {
       return {
-        data: posts.map(this.serializePost),
+        data: [],
         meta: {
           page,
           limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-          hasMore: skip + posts.length < total,
+          total: 0,
+          totalPages: 0,
+          hasMore: false,
         },
       };
-    } catch (error) {
-      throw error;
     }
+
+    return {
+      data: posts.map(this.serializePost),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: skip + posts.length < total,
+      },
+    };
   }
 
   async getSavedPosts(

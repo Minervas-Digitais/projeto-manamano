@@ -20,6 +20,7 @@ import {
 } from './participant.service';
 import { Participant } from '@prisma/client';
 import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+import { User } from 'src/user/user.decorator';
 
 @Controller('participant')
 @UseGuards(JwtAuthGuard)
@@ -28,11 +29,14 @@ export class ParticipantController {
 
   @HttpCode(201)
   @Post()
-  @UseGuards(MatchUserIdGuard)
   joinGroup(
     @Body() createParticipantDto: CreateParticipantDto,
+    @User('id') userId: string,
   ): Promise<Participant> {
-    return this.participantService.joinGroupWithInvite(createParticipantDto);
+    return this.participantService.joinGroupWithInvite(
+      createParticipantDto,
+      userId,
+    );
   }
 
   @HttpCode(200)
@@ -48,49 +52,58 @@ export class ParticipantController {
   }
 
   @HttpCode(200)
-  @Get('groups/:id')
+  @Get('groups/')
   @UseGuards(MatchUserIdGuard)
-  findUserGroups(@Param('id') id: string): Promise<GroupWithDetails[]> {
-    return this.participantService.findUserGroups(id);
+  findUserGroups(@User('id') userId: string): Promise<GroupWithDetails[]> {
+    return this.participantService.findUserGroups(userId);
   }
 
   @HttpCode(200)
-  @Get('groups/:id/posts')
+  @Get('groups/posts')
   @UseGuards(JwtAuthGuard)
   findUserGroupsPosts(
-    @Param('id') id: string,
+    @User('id') userId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     const pageNumber = page ? parseInt(page, 10) : 1;
     const limitNumber = limit ? parseInt(limit, 10) : 15;
     return this.participantService.findUserGroupsPostsPaginated(
-      id,
+      userId,
       pageNumber,
       limitNumber,
     );
   }
 
   @HttpCode(200)
-  @Get(':id')
-  findOne(@Param('id') id: string): Promise<Participant> {
-    return this.participantService.findOne(id);
+  @Get('group/:groupId')
+  findOne(
+    @User('id') userId: string,
+    @Param('groupId') groupId: string,
+  ): Promise<Participant> {
+    return this.participantService.findOne(userId, groupId);
   }
 
   @HttpCode(201)
-  @Patch(':id')
-  @UseGuards(MatchUserIdGuard)
+  @Patch('group/:groupId')
   update(
-    @Param('id') id: string,
+    @User('id') userId: string,
+    @Param('groupId') groupId: string,
     @Body() updateParticipantDto: UpdateParticipantDto,
   ): Promise<Participant> {
-    return this.participantService.update(id, updateParticipantDto);
+    return this.participantService.update(
+      userId,
+      groupId,
+      updateParticipantDto,
+    );
   }
 
   @HttpCode(200)
-  @Delete(':id')
-  @UseGuards(MatchUserIdGuard)
-  remove(@Param('id') id: string): Promise<{ message: string }> {
-    return this.participantService.remove(id);
+  @Delete('group/:groupId')
+  remove(
+    @User('id') userId: string,
+    @Param('groupId') groupId: string,
+  ): Promise<{ message: string }> {
+    return this.participantService.remove(userId, groupId);
   }
 }

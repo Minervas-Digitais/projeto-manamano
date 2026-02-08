@@ -44,7 +44,6 @@ export default function GetInTouch() {
       const response = await api.post(
         '/mail',
         {
-          userId: loggedIdState,
           subject: data.subject,
           text: data.getintouch,
         },

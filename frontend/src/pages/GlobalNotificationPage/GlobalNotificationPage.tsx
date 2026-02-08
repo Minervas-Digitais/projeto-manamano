@@ -27,36 +27,27 @@ export default function GlobalNotificationPage({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-
-      if (loggedId && accessToken) {
-        setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
-        if (body) {
-          api
-            .get(`/notifications/user/${loggedId}`, {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            })
-            .then((response) => {
-              const notification = response.data.find((notif: any) => notif.id === id);
-              if (notification) {
-                setExistingNotification(notification);
-                setValue('input', notification.body);
-              }
-            });
-        }
-
-        api.get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+    const accessToken = await secureStorage.getItem('accessToken');
+    const loggedId = await secureStorage.getItem('loggedId');
+    if (loggedId && accessToken) {
+      setAccessTokenState(accessToken);
+      setLoggedIdState(loggedId);
+      if (body) {
+        api
+          .get('/notifications/user', {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .then((response) => {
+            const notification = response.data.find((notif: any) => notif.id === id);
+            if (notification) {
+              setExistingNotification(notification);
+              setValue('input', notification.body);
+            }
+          });
       }
     };
-
     fetchData();
   }, []);
   const onSubmit = async (data: any) => {
@@ -84,7 +75,6 @@ export default function GlobalNotificationPage({ navigation }: any) {
           '/notifications/global',
           {
             type: 'WARNING',
-            senderId: loggedIdState,
             body: data.input,
           },
           {

@@ -46,9 +46,8 @@ export default function ChangePassword() {
   const onSubmit = async (data: any) => {
     try {
       const response = await api.patch(
-        `/user/${loggedIdState}/change-password`,
+        '/user/change-password/',
         {
-          id: loggedIdState,
           oldPassword: data.oldpassword,
           newPassword: data.newpassword,
         },

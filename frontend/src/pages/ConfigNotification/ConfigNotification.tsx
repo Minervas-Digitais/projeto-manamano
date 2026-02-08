@@ -48,7 +48,7 @@ export default function ConfigNotification() {
     console.log('User ID:', loggedIdState);
     const fetchPostUser = async () => {
       try {
-        const response = await api.get(`notifications/${loggedIdState}/notification-settings`, {
+        const response = await api.get('notifications/notification-settings', {
           headers: {
             Authorization: `Bearer ${accessTokenState}`,
           },
@@ -74,7 +74,7 @@ export default function ConfigNotification() {
     setSettings(newSettings);
 
     try {
-      await api.patch(`/notifications/${loggedIdState}/notification-settings`, newSettings, {
+      await api.patch('/notifications/notification-settings', newSettings, {
         headers: { Authorization: `Bearer ${accessTokenState}` },
       });
     } catch (error) {

@@ -51,7 +51,7 @@ export default function ModalOptionsNotification({
     if (type === 'header' && loggedId && !admin) {
       api
         .patch(
-          `notifications/user/${loggedId}`,
+          'notifications/user/',
           {},
           {
             headers: { Authorization: `Bearer ${accessToken}` },

@@ -89,7 +89,7 @@ export default function VisitorProfile({ navigation }: any) {
 
       try {
         setLoading(true);
-        const userResponse = await api.get(`/user/public/${userId}`, {
+        const userResponse = await api.get(`/user/${userId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setUser(userResponse.data);

@@ -62,6 +62,7 @@ export class ParticipantService {
 
   async joinGroupWithInvite(
     createParticipantDto: CreateParticipantDto,
+    userId: string,
   ): Promise<Participant> {
     const group = await this.prismaService.group.findUnique({
       where: {
@@ -73,12 +74,12 @@ export class ParticipantService {
       throw new NotFoundException(PARTICIPANT_MESSAGES.INVALID_INVITE_CODE);
     }
 
-    await this.validator.validateUserExists(createParticipantDto.userId);
+    await this.validator.validateUserExists(userId);
 
     const participant = await this.prismaService.participant.findUnique({
       where: {
         userId_groupId: {
-          userId: createParticipantDto.userId,
+          userId: userId,
           groupId: group.id,
         },
       },
@@ -88,12 +89,10 @@ export class ParticipantService {
       throw new ConflictException(PARTICIPANT_MESSAGES.ALREADY_IN_GROUP);
     }
 
-    const { userId, role } = createParticipantDto;
-
     const participantBody = {
       groupId: group.id,
       userId,
-      role: role ?? UserRole.STUDENT,
+      role: createParticipantDto.role ?? UserRole.STUDENT,
     };
 
     return await this.prismaService.participant.create({
@@ -191,7 +190,7 @@ export class ParticipantService {
 
     return groupsWithCounts;
   }
-  
+
   async findUserGroupsPostsPaginated(
     userId: string,
     page: number = 1,
@@ -297,7 +296,7 @@ export class ParticipantService {
       throw error;
     }
   }
-  
+
   async findUsersInGroup(groupId: string): Promise<UserInGroup[]> {
     const users = await this.prismaService.participant.findMany({
       where: {
@@ -319,10 +318,10 @@ export class ParticipantService {
     return users;
   }
 
-  async findOne(id: string): Promise<Participant> {
+  async findOne(userId: string, groupId: string): Promise<Participant> {
     const participant = await this.prismaService.participant.findUnique({
       where: {
-        userId_groupId: this.parseId(id),
+        userId_groupId: { userId, groupId },
       },
     });
     if (!participant) {
@@ -332,23 +331,24 @@ export class ParticipantService {
   }
 
   async update(
-    id: string,
+    userId: string,
+    groupId: string,
     updateParticipantDto: UpdateParticipantDto,
   ): Promise<Participant> {
-    await this.findOne(id);
+    await this.findOne(userId, groupId);
     return await this.prismaService.participant.update({
       where: {
-        userId_groupId: this.parseId(id),
+        userId_groupId: { userId, groupId },
       },
       data: updateParticipantDto,
     });
   }
 
-  async remove(id: string): Promise<{ message: string }> {
-    await this.findOne(id);
+  async remove(userId: string, groupId: string): Promise<{ message: string }> {
+    await this.findOne(userId, groupId);
     await this.prismaService.participant.delete({
       where: {
-        userId_groupId: this.parseId(id),
+        userId_groupId: { userId, groupId },
       },
     });
     return { message: PARTICIPANT_MESSAGES.DELETE_SUCCESS };

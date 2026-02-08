@@ -3,17 +3,16 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
-  UseGuards,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Notification, NotificationType, RoleType, User } from '@prisma/client';
+import { Notification, NotificationType, User } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Expo } from 'expo-server-sdk';
 import { NOTIFICATION_MESSAGES } from 'src/messages/notification.messages';
 import { omitHash } from 'src/utils/user.util';
 import { ValidatorService } from 'src/common/validators/validator.service';
-import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
+
 import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
 
 export interface NotificationSettings {
@@ -34,9 +33,10 @@ export class NotificationService {
   private buildNotificationData(
     dto: CreateNotificationDto,
     recipientId: string,
+    senderId: string,
   ) {
     return {
-      senderId: dto.senderId,
+      senderId: senderId,
       recipientId,
       body: dto.body,
       type: dto.type,
@@ -68,13 +68,14 @@ export class NotificationService {
   private async createAndSendNotification(
     dto: CreateNotificationDto,
     recipientId: string,
+    senderId: string,
   ): Promise<Notification> {
     const notification = await this.prisma.notification.create({
-      data: this.buildNotificationData(dto, recipientId),
+      data: this.buildNotificationData(dto, recipientId, senderId),
     });
 
     await this.sendPushNotification(
-      dto.senderId,
+      senderId,
       recipientId,
       this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
       dto.body,
@@ -87,9 +88,10 @@ export class NotificationService {
 
   async createNotification(
     dto: CreateNotificationDto,
+    senderId: string,
   ): Promise<Notification | { count: number }> {
     const sender = await this.prisma.user.findUnique({
-      where: { id: dto.senderId },
+      where: { id: senderId },
       select: { sysRole: true },
     });
 
@@ -97,7 +99,7 @@ export class NotificationService {
       throw new NotFoundException(NOTIFICATION_MESSAGES.SENDER_NOT_FOUND);
     }
 
-    if (dto.recipientId && dto.recipientId === dto.senderId) {
+    if (dto.recipientId && dto.recipientId === senderId) {
       throw new BadRequestException(
         NOTIFICATION_MESSAGES.CANNOT_NOTIFY_YOURSELF,
       );
@@ -112,7 +114,7 @@ export class NotificationService {
     //FIXED pra 01 usuario
     if (dto.type === NotificationType.FIXED && dto.recipientId) {
       await this.validator.validateUserExists(dto.recipientId);
-      return this.createAndSendNotification(dto, dto.recipientId);
+      return this.createAndSendNotification(dto, dto.recipientId, senderId);
     }
 
     // FIXED para grupo
@@ -131,7 +133,7 @@ export class NotificationService {
       }
 
       const data = participants.map((p) =>
-        this.buildNotificationData(dto, p.userId),
+        this.buildNotificationData(dto, p.userId, senderId),
       );
 
       const result = await this.prisma.notification.createMany({ data });
@@ -139,7 +141,7 @@ export class NotificationService {
       await Promise.all(
         participants.map((participant) =>
           this.sendPushNotification(
-            dto.senderId,
+            senderId,
             participant.userId,
             this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
             dto.body,
@@ -158,7 +160,7 @@ export class NotificationService {
 
     await this.validator.validateUserExists(dto.recipientId);
 
-    return this.createAndSendNotification(dto, dto.recipientId);
+    return this.createAndSendNotification(dto, dto.recipientId, senderId);
   }
 
   async getNotificationsForUser(userId: string): Promise<Notification[]> {
@@ -170,7 +172,6 @@ export class NotificationService {
     });
   }
 
-  @UseGuards(MatchUserIdGuard)
   async markAsRead(
     notificationId: string,
     userId: string,
@@ -202,25 +203,28 @@ export class NotificationService {
 
   async createGlobalNotification(
     dto: CreateNotificationDto,
+    senderId: string,
   ): Promise<{ count: number }> {
-    await this.validator.validateUserExists(dto.senderId);
+    await this.validator.validateUserExists(senderId);
 
     const users = await this.prisma.user.findMany({
-      where: { id: { not: dto.senderId } },
+      where: { id: { not: senderId } },
     });
 
     if (users.length === 0) {
       throw new NotFoundException(NOTIFICATION_MESSAGES.NO_RECIPIENTS_GLOBAL);
     }
 
-    const data = users.map((user) => this.buildNotificationData(dto, user.id));
+    const data = users.map((user) =>
+      this.buildNotificationData(dto, user.id, senderId),
+    );
 
     const result = await this.prisma.notification.createMany({ data });
 
     await Promise.all(
       users.map((user) =>
         this.sendPushNotification(
-          dto.senderId,
+          senderId,
           user.id,
           this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
           dto.body,

@@ -5,12 +5,12 @@ import {
   HttpCode,
   Param,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { User } from 'src/user/user.decorator';
 
 @Controller('comment')
 @UseGuards(JwtAuthGuard)
@@ -19,13 +19,16 @@ export class CommentController {
 
   @HttpCode(201)
   @Post()
-  create(@Body() createCommentDto: CreateCommentDto, @Req() req: any) {
-    return this.commentService.create(createCommentDto, req.user.id);
+  create(
+    @Body() createCommentDto: CreateCommentDto,
+    @User('id') userId: string,
+  ) {
+    return this.commentService.create(createCommentDto, userId);
   }
 
   @HttpCode(200)
-  @Delete(':id')
-  remove(@Param('id') id: string, @Req() req: any) {
-    return this.commentService.remove(id, req.user.id);
+  @Delete(':commentId')
+  remove(@Param('commentId') commentId: string, @User('id') userId: string) {
+    return this.commentService.remove(commentId, userId);
   }
 }

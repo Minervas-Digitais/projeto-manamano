@@ -70,7 +70,7 @@ export default function Notification({ navigation }: any) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
       api
-        .get(`notifications/user/${loggedId}`, {
+        .get('notifications/user/', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

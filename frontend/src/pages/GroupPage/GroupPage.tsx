@@ -305,7 +305,6 @@ export default function GroupPage({ navigation }: any) {
         await api.post(
           '/notifications',
           {
-            senderId: loggedId,
             groupId,
             groupName,
             type: 'FIXED',

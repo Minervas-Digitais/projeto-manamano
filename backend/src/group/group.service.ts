@@ -33,27 +33,30 @@ export class GroupService {
     return groups;
   }
 
-  async findOne(id: string): Promise<Group> {
-    const group = await this.validator.validateGroupExists(id);
+  async findOne(groupId: string): Promise<Group> {
+    const group = await this.validator.validateGroupExists(groupId);
     return group;
   }
 
-  async update(id: string, updateGroupDto: UpdateGroupDto): Promise<Group> {
-    await this.validator.validateGroupExists(id);
+  async update(
+    groupId: string,
+    updateGroupDto: UpdateGroupDto,
+  ): Promise<Group> {
+    await this.validator.validateGroupExists(groupId);
     return await this.prismaService.group.update({
       where: {
-        id,
+        id: groupId,
       },
       data: updateGroupDto,
     });
   }
 
-  async remove(id: string): Promise<{ message: string }> {
-    await this.validator.validateGroupExists(id);
+  async remove(groupId: string): Promise<{ message: string }> {
+    await this.validator.validateGroupExists(groupId);
 
     await this.prismaService.group.delete({
       where: {
-        id,
+        id: groupId,
       },
     });
     return { message: GROUP_MESSAGES.DELETE_SUCCESS };

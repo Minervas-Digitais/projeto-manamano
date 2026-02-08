@@ -226,7 +226,7 @@ export default function ResultSection({
     }
 
     try {
-      const response = await api.get(`/user/public/${userId}`, {
+      const response = await api.get(`/user/${userId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
