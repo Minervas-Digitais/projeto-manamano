@@ -17,7 +17,7 @@ import {
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import GroupMembers from '../../components/GroupMembers/GroupMembers';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import NotificationIcon from '../../assets/notification-icon.svg';
 import EditIcon from '../../assets/edit-icon.svg';
@@ -60,52 +60,56 @@ export default function GroupData({ navigation }: any) {
   };
 
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
+    const fetchData = async () => {
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
 
-    if (groupId && accessToken && loggedId) {
-      setLoggedIdState(loggedId);
-      setAccessTokenState(accessToken);
+      if (groupId && accessToken && loggedId) {
+        setLoggedIdState(loggedId);
+        setAccessTokenState(accessToken);
 
-      api
-        .get(`/group/${groupId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
-          setGroupInfo(res.data);
-        });
+        api
+          .get(`/group/${groupId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .then((res) => {
+            setGroupInfo(res.data);
+          });
 
-      api
-        .get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
-          setUserRole(res.data.sysRole);
-        })
-        .catch((err) => {
-          console.error('Erro ao buscar dados do usuário:', err);
-        });
+        api
+          .get(`/user/${loggedId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .then((res) => {
+            setUserRole(res.data.sysRole);
+          })
+          .catch((err) => {
+            console.error('Erro ao buscar dados do usuário:', err);
+          });
 
-      api
-        .get(`/participant/group/${groupId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
-          setGroupParticipant(res.data);
-          const loggedUserParticipant = res.data.find(
-            (participant: any) => participant.user.id === loggedId,
-          );
-          if (loggedUserParticipant) {
-            setLoggedUserParticipantRole(loggedUserParticipant.role);
-          }
-        });
-    }
+        api
+          .get(`/participant/group/${groupId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .then((res) => {
+            setGroupParticipant(res.data);
+            const loggedUserParticipant = res.data.find(
+              (participant: any) => participant.user.id === loggedId,
+            );
+            if (loggedUserParticipant) {
+              setLoggedUserParticipantRole(loggedUserParticipant.role);
+            }
+          });
+      }
+    };
+
+    fetchData();
   }, []);
 
   const [fontsLoaded] = useFonts({

@@ -25,7 +25,8 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import api from '../../services/api';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
+import localStorage from '../../services/localStorage';
 import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import ArrowIcon from '../../assets/arrow-icon.svg';
@@ -102,8 +103,8 @@ export default function NewPost({ navigation }: any) {
   }, [filterPosts, categories]);
   useEffect(() => {
     const loadUserData = async () => {
-      const accessToken = storage.getString('accessToken');
-      const loggedId = storage.getString('loggedId');
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
       if (loggedId && accessToken) {
         setAccessTokenState(accessToken);
         setLoggedIdState(loggedId);

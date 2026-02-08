@@ -2,13 +2,14 @@ import React from 'react';
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
+import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import api from '../../services/api';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 
 export default function EnterGroup({ navigation }: any) {
   const {
@@ -17,8 +18,8 @@ export default function EnterGroup({ navigation }: any) {
     formState: { errors },
   } = useForm({});
   const onSubmit = async (data: any) => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
+    const accessToken = await secureStorage.getItem('accessToken');
+    const loggedId = await secureStorage.getItem('loggedId');
 
     if (!accessToken || !loggedId) {
       console.error('Token ou ID do usuário não encontrado.');
@@ -38,16 +39,32 @@ export default function EnterGroup({ navigation }: any) {
       });
 
       console.log('Participante adicionado com sucesso:', resp.data);
-      alert('Você entrou no grupo com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso',
+        text2: 'Você entrou no grupo com sucesso!',
+      });
       navigation.navigate('Groups');
     } catch (error: any) {
       console.error('Erro ao entrar no grupo:', error);
       if (error?.response?.status === 404) {
-        alert('Código de convite inválido.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Código de convite inválido.',
+        });
       } else if (error?.response?.status === 409) {
-        alert('Você já está neste grupo.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Você já está neste grupo.',
+        });
       } else {
-        alert('Ocorreu um erro ao tentar entrar no grupo.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Ocorreu um erro ao tentar entrar no grupo.',
+        });
       }
     }
   };

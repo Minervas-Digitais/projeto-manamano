@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useFonts } from 'expo-font';
-import { Image, StatusBar, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { MMKV } from 'react-native-mmkv';
+import { StatusBar, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import Toast from 'react-native-toast-message';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { SignInContainer, SignInForm, SignInInputContainer } from './SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
@@ -16,11 +15,9 @@ import IconEmail from '../../assets/e-mail-icon.svg';
 import IconPassword from '../../assets/lock-icon.svg';
 import ManaManoLogo from '../../assets/logo-boas-vindas.svg';
 import { registerForPushNotificationsAsync } from '../../hooks/useNotification';
-
-export const storage = new MMKV();
+import secureStorage from '../../services/secureStorage';
 
 export default function SignIn({ navigation }: any) {
-  storage.clearAll();
   const {
     control,
     handleSubmit,
@@ -31,10 +28,8 @@ export default function SignIn({ navigation }: any) {
       .post('/auth/login', data)
       .then(async (res) => {
         if (res.data.accessToken) {
-          alert(res.data.accessToken);
-          alert(res.data.loggedId);
-          storage.set('accessToken', res?.data.accessToken);
-          storage.set('loggedId', res?.data.loggedId);
+          await secureStorage.setItem('accessToken', res.data.accessToken);
+          await secureStorage.setItem('loggedId', res.data.loggedId);
 
           const pushToken = await registerForPushNotificationsAsync();
 
@@ -56,12 +51,20 @@ export default function SignIn({ navigation }: any) {
 
           navigation.navigate('Home');
         } else {
-          alert('E-mail ou senha incorretos');
+          Toast.show({
+            type: 'error',
+            text1: 'Erro ao entrar',
+            text2: 'E-mail ou senha incorretos',
+          });
         }
       })
       .catch((error) => {
         console.error('Erro ao fazer login:', error);
-        alert('Erro ao conectar com o servidor. Verifique sua conexão e tente novamente.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro de conexão',
+          text2: 'Verifique sua conexão e tente novamente.',
+        });
       });
   };
 

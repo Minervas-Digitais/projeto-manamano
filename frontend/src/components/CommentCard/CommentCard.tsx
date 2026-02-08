@@ -2,11 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
+import { Buffer } from 'buffer';
 import { PostDate, PostUpperPart, ProfileImage, ProfileName } from '../../pages/Post/PostStyle';
 import { CommentText, CommentTextContainer } from './CommentCardStyle';
 import api from '../../services/api';
-import { storage } from '../../pages/SignIn/SignIn';
-import { Buffer } from 'buffer';
+import secureStorage from '../../services/secureStorage';
 
 const defaultAvatar = require('../../assets/user-profile.png');
 
@@ -33,7 +33,7 @@ export default function CommentCard({ fullName, createdAt, input, userId }: Comm
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const fetchProfileImage = async () => {
-      const token = storage.getString('accessToken');
+      const token = await secureStorage.getItem('accessToken');
       if (!token || !userId) return;
 
       try {

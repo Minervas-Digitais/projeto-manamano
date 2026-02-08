@@ -26,7 +26,8 @@ import CommentCard from '../../components/CommentCard/CommentCard';
 import CommentInputTextCustom from '../../components/CommentInput/CommentInputText';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
+import localStorage from '../../services/localStorage';
 import api from '../../services/api';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
@@ -80,9 +81,10 @@ export default function Post() {
   const [modalOptions, setModalOptions] = useState(false);
 
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
+    const fetchData = async () => {
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
+      if (loggedId && accessToken) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
       api

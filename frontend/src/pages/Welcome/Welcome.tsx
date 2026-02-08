@@ -12,15 +12,18 @@ import {
   WelcomeContainer,
 } from './WelcomeStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import { storage } from '../SignIn/SignIn';
+import { secureStorage } from '../../services/secureStorage';
 
 export default function WelcomeScreen({ navigation }: any) {
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      navigation.navigate('Home');
-    }
+    const checkAuth = async () => {
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
+      if (loggedId && accessToken) {
+        navigation.navigate('Home');
+      }
+    };
+    checkAuth();
   }, []);
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),

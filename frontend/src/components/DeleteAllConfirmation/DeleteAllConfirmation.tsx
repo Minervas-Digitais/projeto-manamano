@@ -11,7 +11,8 @@ import {
   DeleteConfirmationContainer,
 } from './DeleteAllConfirmationStyle';
 import { ModalOptionsNotificationText } from '../ModalOptionsNotification/ModalOptionsNotificationStyle';
-import { storage } from '../../pages/SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
+import localStorage from '../../services/localStorage';
 import api from '../../services/api';
 
 export default function DeleteConfirmation({ text, display }: any) {
@@ -24,9 +25,9 @@ export default function DeleteConfirmation({ text, display }: any) {
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
-  const optionsDelete = () => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
+  const optionsDelete = async () => {
+    const accessToken = await secureStorage.getItem('accessToken');
+    const loggedId = await secureStorage.getItem('loggedId');
     console.log('todas notificações excluídas');
     api
       .delete('/notifications/user/', {
@@ -35,8 +36,8 @@ export default function DeleteConfirmation({ text, display }: any) {
         },
       })
       .then(() => {
-        storage.delete('displayNotif');
-        storage.delete('header');
+        localStorage.delete('displayNotif');
+        localStorage.delete('header');
         setShouldDisplay(false);
         console.log('Todas as notificações foram excluídas.');
       })

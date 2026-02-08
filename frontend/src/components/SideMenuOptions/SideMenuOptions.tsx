@@ -6,7 +6,7 @@ import {
   SideMenuOptionsButtonsContainer,
   SideMenuOptionsButtonsText,
 } from './SideMenuOptionsStyle';
-import { storage } from '../../pages/SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 
 interface Notification {
@@ -38,8 +38,8 @@ export default function SideMenuOptions({
   const loadNotifications = useCallback(async () => {
     if (type !== 'notification') return;
 
-    const loggedId = storage.getString('loggedId');
-    const accessToken = storage.getString('accessToken');
+    const loggedId = await secureStorage.getItem('loggedId');
+    const accessToken = await secureStorage.getItem('accessToken');
 
     if (!loggedId || !accessToken) return;
 

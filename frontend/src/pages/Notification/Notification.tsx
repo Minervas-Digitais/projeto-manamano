@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Image, Alert } from 'react-native';
+import { Alert } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -11,7 +11,8 @@ import {
 } from './NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import NotificationCard from '../../components/NotificationCard/NotificationCard';
-import { storage } from '../SignIn/SignIn';
+import storage from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import ModalOptionsNotification from '../../components/ModalOptionsNotification/ModalOptionsNotification';
 import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
@@ -62,9 +63,9 @@ export default function Notification({ navigation }: any) {
     notifId: '',
   });
 
-  const fetchNotifications = useCallback(() => {
-    const loggedId = storage.getString('loggedId');
-    const accessToken = storage.getString('accessToken');
+  const fetchNotifications = useCallback(async () => {
+    const loggedId = await secureStorage.getItem('loggedId');
+    const accessToken = await secureStorage.getItem('accessToken');
     if (loggedId && accessToken) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);

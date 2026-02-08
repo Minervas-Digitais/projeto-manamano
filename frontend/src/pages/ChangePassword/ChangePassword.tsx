@@ -6,12 +6,13 @@ import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
+import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import IconPassword from '../../assets/lock-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
@@ -21,17 +22,20 @@ export default function ChangePassword() {
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      api.get(`/user/${loggedId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-    }
+    const fetchData = async () => {
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
+      if (loggedId && accessToken) {
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+        api.get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+      }
+    };
+    fetchData();
   }, []);
   const {
     control,
@@ -53,11 +57,19 @@ export default function ChangePassword() {
           },
         },
       );
-      alert('Senha atualizada com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso',
+        text2: 'Senha atualizada com sucesso!',
+      });
       navigation.navigate('Config');
     } catch (error) {
       console.error('Erro ao mudar senha:', error);
-      alert('Erro ao mudar senha. Tente novamente mais tarde.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Erro ao mudar senha. Tente novamente mais tarde.',
+      });
     }
   };
   const [fontsLoaded] = useFonts({

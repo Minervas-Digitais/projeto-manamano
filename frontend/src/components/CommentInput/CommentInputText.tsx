@@ -14,7 +14,7 @@ import {
 import SendButton from '../../assets/submit-comment.svg';
 import LinkIcon from '../../assets/comment-link-icon.svg';
 import api from '../../services/api';
-import { storage } from '../../pages/SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import { AxiosError } from 'axios';
 
 export default function CommentInputTextCustom({
@@ -30,8 +30,8 @@ export default function CommentInputTextCustom({
 
   useEffect(() => {
     const fetchProfileImage = async () => {
-      const userId = storage.getString('loggedId');
-      const token = storage.getString('accessToken');
+      const userId = await secureStorage.getItem('loggedId');
+      const token = await secureStorage.getItem('accessToken');
 
       if (!userId || !token) {
         setProfileImage(defaultAvatar);

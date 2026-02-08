@@ -11,7 +11,9 @@ import Toast from 'react-native-toast-message';
 import { StatusBar } from 'expo-status-bar';
 import { TextInputMask } from 'react-native-masked-text';
 import { useFocusEffect } from '@react-navigation/native';
-import { storage } from '../SignIn/SignIn';
+import { AxiosError } from 'axios';
+import secureStorage from '../../services/secureStorage';
+import localStorage from '../../services/localStorage';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import {
@@ -35,7 +37,6 @@ import api from '../../services/api';
 import Menu from '../../assets/menuw-icon.svg';
 import EditButton from '../../assets/edit-button.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
-import { AxiosError } from 'axios';
 
 export default function EditProfile() {
   const {
@@ -70,8 +71,8 @@ export default function EditProfile() {
         data.birthday = formattedBirthday;
       }
 
-      const token = storage.getString('accessToken');
-      const userId = storage.getString('loggedId');
+      const token = await secureStorage.getItem('accessToken');
+      const userId = await secureStorage.getItem('loggedId');
 
       if (!token || !userId) {
         console.log('Missing token or user ID.');
@@ -134,8 +135,8 @@ export default function EditProfile() {
           type: file.mimeType || 'image/jpeg',
         };
 
-        const token = storage.getString('accessToken');
-        const userId = storage.getString('loggedId');
+        const token = await secureStorage.getItem('accessToken');
+        const userId = await secureStorage.getItem('loggedId');
 
         if (!token || !userId) {
           Toast.show({
@@ -187,12 +188,12 @@ export default function EditProfile() {
   };
 
   useFocusEffect(() => {
-    const token = storage.getString('accessToken');
+    const fetchUserData = async () => {
+      const token = await secureStorage.getItem('accessToken');
 
-    if (token) {
-      const fetchUserData = async () => {
+      if (token) {
         try {
-          const userId = storage.getString('loggedId');
+          const userId = await secureStorage.getItem('loggedId');
 
           const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
             headers: {
@@ -208,18 +209,18 @@ export default function EditProfile() {
           console.error('Error fetching user data:', error);
           setProfileImage(defaultAvatar);
         }
-      };
+      }
+    };
 
-      fetchUserData();
-    }
+    fetchUserData();
   });
 
   useEffect(() => {
-    const token = storage.getString('accessToken');
-    const userId = storage.getString('loggedId');
+    const fetchUser = async () => {
+      const token = await secureStorage.getItem('accessToken');
+      const userId = await secureStorage.getItem('loggedId');
 
-    if (token && userId) {
-      const fetchUser = async () => {
+      if (token && userId) {
         try {
           const response = await api.get(`/user/${userId}`, {
             headers: {
