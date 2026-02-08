@@ -1,8 +1,9 @@
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, Text, View, ScrollView, Alert } from 'react-native';
+import { TouchableOpacity, Text, View, ScrollView } from 'react-native';
 import { useFonts } from 'expo-font';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import {
   Container,
   Input,
@@ -12,7 +13,7 @@ import {
   AddCategoryButton,
   ContentContainer,
 } from './CreateGroupStyle';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -32,8 +33,11 @@ export default function CreateGroup() {
   const [groupDescription, setGroupDescription] = useState('');
 
   useEffect(() => {
-    const token = storage.getString('accessToken');
-    if (token) setAccessToken(token);
+    const fetchToken = async () => {
+      const token = await secureStorage.getItem('accessToken');
+      if (token) setAccessToken(token);
+    };
+    fetchToken();
   }, []);
 
   const handleAddCategory = () => {
@@ -74,14 +78,22 @@ export default function CreateGroup() {
   };
 
   const handleCreateGroup = async () => {
-    const loggedId = storage.getString('loggedId');
+    const loggedId = await secureStorage.getItem('loggedId');
     if (!groupName.trim() || !groupDescription.trim()) {
-      Alert.alert('Error', 'Preencha corretamente os campos.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Preencha corretamente os campos.',
+      });
       return;
     }
 
     if (!accessToken) {
-      Alert.alert('Error', 'Access token is missing.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Token de acesso não encontrado.',
+      });
       return;
     }
 
@@ -103,7 +115,11 @@ export default function CreateGroup() {
       const groupId = groupData.id;
       const { inviteCode } = groupData;
 
-      Alert.alert('Successo', `Grupo criado com sucesso! ID: ${groupId}`);
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso',
+        text2: `Grupo criado com sucesso! ID: ${groupId}`,
+      });
 
       const defaultCategories = [
         { name: 'Geral', type: 'NORMAL' },
@@ -136,13 +152,25 @@ export default function CreateGroup() {
         navigation.navigate('Home');
       } catch (participantError: any) {
         if (participantError.response) {
-          Alert.alert('Error', 'Falha ao adicionar usuário como moderador');
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Falha ao adicionar usuário como moderador',
+          });
         } else {
-          Alert.alert('Error', 'Falha desconhecida');
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Falha desconhecida',
+          });
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Falha ao criar grupo ou categoria');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Falha ao criar grupo ou categoria',
+      });
     }
   };
 

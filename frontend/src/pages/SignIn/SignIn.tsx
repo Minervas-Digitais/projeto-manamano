@@ -4,7 +4,6 @@ import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useFonts } from 'expo-font';
 import { StatusBar, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { MMKV } from 'react-native-mmkv';
 import Toast from 'react-native-toast-message';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { SignInContainer, SignInForm, SignInInputContainer } from './SignInStyle';
@@ -16,7 +15,7 @@ import IconEmail from '../../assets/e-mail-icon.svg';
 import IconPassword from '../../assets/lock-icon.svg';
 import ManaManoLogo from '../../assets/logo-boas-vindas.svg';
 import { registerForPushNotificationsAsync } from '../../hooks/useNotification';
-import { secureStorage } from '../../services/secureStorage';
+import secureStorage from '../../services/secureStorage';
 
 export default function SignIn({ navigation }: any) {
   const {

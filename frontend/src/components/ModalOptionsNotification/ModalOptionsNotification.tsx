@@ -12,7 +12,8 @@ import {
   ModalOptionsNotificationText,
 } from './ModalOptionsNotificationStyle';
 import api from '../../services/api';
-import { storage } from '../../pages/SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
+import localStorage from '../../services/localStorage';
 import DeleteConfirmation from '../DeleteAllConfirmation/DeleteAllConfirmation';
 import CheckRead from '../../assets/check-read-icon.svg';
 import Trash from '../../assets/trash-red-icon.svg';
@@ -41,9 +42,9 @@ export default function ModalOptionsNotification({
 
   if (!fontsLoaded) return null;
 
-  const optionsMarkAsRead = () => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
+  const optionsMarkAsRead = async () => {
+    const accessToken = await secureStorage.getItem('accessToken');
+    const loggedId = await secureStorage.getItem('loggedId');
 
     if (!accessToken) return;
 

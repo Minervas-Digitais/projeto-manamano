@@ -1,10 +1,12 @@
+/* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Alert } from 'react-native';
+import { View } from 'react-native';
+import { useFonts } from 'expo-font';
+import Toast from 'react-native-toast-message';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import NotificationButton from '../../components/NotificationButton/NotificationButton';
 import api from '../../services/api';
-import { useFonts } from 'expo-font';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 
 export default function ConfigNotification() {
   const [fontsLoaded] = useFonts({
@@ -22,19 +24,22 @@ export default function ConfigNotification() {
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      api
-        .get(`/notifications/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => setUserName(res.data.fullName));
-    }
+    const fetchData = async () => {
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
+      if (loggedId && accessToken) {
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+        api
+          .get(`/notifications/${loggedId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .then((res) => setUserName(res.data.fullName));
+      }
+    };
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -53,7 +58,11 @@ export default function ConfigNotification() {
         setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar configurações', error);
-        Alert.alert('Erro', 'Não foi possível carregar as configurações.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Não foi possível carregar as configurações.',
+        });
         setLoading(false);
       }
     };
@@ -69,7 +78,11 @@ export default function ConfigNotification() {
         headers: { Authorization: `Bearer ${accessTokenState}` },
       });
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar a configuração.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível salvar a configuração.',
+      });
       setSettings(settings);
     }
   };

@@ -10,12 +10,12 @@ import {
   NotificationTextGreyWarning,
   NotificationTextRed,
 } from '../../components/NotificationCard/NotificationCardStyle';
-import { storage } from '../SignIn/SignIn';
+import localStorage from '../../services/localStorage';
 import MegaPhone from '../../assets/megaphone-icon.svg';
 
 export default function NotificationPage() {
   useEffect(() => {
-    const content = storage.getString('body');
+    const content = localStorage.getString('body');
     if (content) {
       setBody(content);
     }

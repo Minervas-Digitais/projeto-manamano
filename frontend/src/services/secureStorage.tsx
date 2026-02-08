@@ -1,6 +1,11 @@
 import * as SecureStore from 'expo-secure-store';
 
-export const secureStorage = {
+/**
+ * Secure storage utility using Expo SecureStore
+ * Uses iOS Keychain and Android Keystore for encrypted storage
+ */
+
+const secureStorage = {
   async setItem(key: string, value: string): Promise<void> {
     try {
       await SecureStore.setItemAsync(key, value);
@@ -27,15 +32,15 @@ export const secureStorage = {
       throw error;
     }
   },
-  
+
   async clearAuth(): Promise<void> {
     try {
       await SecureStore.deleteItemAsync('accessToken');
-    } catch {
-    }
+    } catch {}
     try {
       await SecureStore.deleteItemAsync('loggedId');
-    } catch {
-    }
+    } catch {}
   },
 };
+
+export default secureStorage;
