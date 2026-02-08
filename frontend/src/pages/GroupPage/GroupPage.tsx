@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute } from '@react-navigation/native';
-import { storage } from '../SignIn/SignIn';
+import { AxiosError } from 'axios';
 import {
   GroupPageAddPostButton,
   GroupPageArchivesContainer,
@@ -41,7 +41,7 @@ import EventCard from '../../components/EventCard/EventCard';
 import GroupArchives from '../../components/GroupArchives/GroupArchives';
 import NotificationIcon from '../../assets/notification-icon.svg';
 import AddPostIcon from '../../assets/add-post-icon.svg';
-import { AxiosError } from 'axios';
+import secureStorage from '../../services/secureStorage';
 
 export default function GroupPage({ navigation }: any) {
   const route = useRoute();
@@ -77,7 +77,7 @@ export default function GroupPage({ navigation }: any) {
     async (pageNum: number, refresh = false) => {
       if (loading || (!hasMore && !refresh)) return;
 
-      const token = storage.getString('accessToken');
+      const token = await secureStorage.getItem('accessToken');
       if (!token || !groupId) return;
 
       try {
@@ -139,7 +139,7 @@ export default function GroupPage({ navigation }: any) {
   };
 
   const getGroupCategory = useCallback(async () => {
-    const token = storage.getString('accessToken');
+    const token = await secureStorage.getItem('accessToken');
     if (!token || !groupId) {
       console.error('Access token or Group ID is missing.');
       return;
@@ -156,7 +156,7 @@ export default function GroupPage({ navigation }: any) {
   }, [groupId]);
 
   const getGroupArchives = useCallback(async () => {
-    const token = storage.getString('accessToken');
+    const token = await secureStorage.getItem('accessToken');
     if (!token || !groupId) {
       console.error('Access token or Group ID is missing.');
       return;
@@ -178,7 +178,7 @@ export default function GroupPage({ navigation }: any) {
   }, [groupId]);
 
   const getUserProfileImage = async (userId: string) => {
-    const token = storage.getString('accessToken');
+    const token = await secureStorage.getItem('accessToken');
 
     if (!token) {
       return defaultAvatar;
@@ -201,8 +201,8 @@ export default function GroupPage({ navigation }: any) {
   };
 
    const getUserRoleInGroup = useCallback(async () => {
-    const token = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
+    const token = await secureStorage.getItem('accessToken');
+    const loggedId = await secureStorage.getItem('loggedId');
     if (!token || !groupId || !loggedId) {
       console.error('Access token, Group ID or User ID is missing.');
       return;
@@ -294,8 +294,8 @@ export default function GroupPage({ navigation }: any) {
   }
 
   const fixActions = async (id: string, isPinned: boolean) => {
-    const token = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
+    const token = await secureStorage.getItem('accessToken');
+    const loggedId = await secureStorage.getItem('loggedId');
 
     try {
       const url = isPinned ? `/post/unpin/${id}` : `/post/pin/${id}`;

@@ -10,7 +10,7 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { RedText, SemiBoldRedText } from './GetInTouchStyle';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 
@@ -18,17 +18,21 @@ export default function GetInTouch() {
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      api.get(`/user/${loggedId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-    }
+    const fetchData = async () => {
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
+      if (loggedId && accessToken) {
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+        api.get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+      }
+    };
+
+    fetchData();
   }, []);
   const {
     control,

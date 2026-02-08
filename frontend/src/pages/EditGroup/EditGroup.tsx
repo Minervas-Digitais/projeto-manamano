@@ -18,7 +18,7 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 
 export default function EditGroup({ navigation }: any) {
@@ -29,26 +29,29 @@ export default function EditGroup({ navigation }: any) {
   const [descriptionGroup, setDescriptionGroup] = useState('');
 
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    const groupIdAux = storage.getString('groupId');
+    const fetchData = async () => {
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
+      const groupIdAux = await secureStorage.getItem('groupId');
 
-    if (loggedId && accessToken && groupIdAux) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      setGroupId(groupIdAux);
+      if (loggedId && accessToken && groupIdAux) {
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+        setGroupId(groupIdAux);
 
-      api
-        .get(`/group/${groupIdAux}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
-          setGroupName(res.data.name);
-          setDescriptionGroup(res.data.description);
-        });
-    }
+        api
+          .get(`/group/${groupIdAux}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .then((res) => {
+            setGroupName(res.data.name);
+            setDescriptionGroup(res.data.description);
+          });
+      }
+    };
+    fetchData();
   }, []);
 
   const {

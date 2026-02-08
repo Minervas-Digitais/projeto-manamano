@@ -9,7 +9,8 @@ import { useFonts } from 'expo-font';
 import { Image, TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
-import { storage } from '../SignIn/SignIn';
+import { AxiosError } from 'axios';
+import { secureStorage } from '../../services/secureStorage';
 import { district } from './ProfileData'; // Adjust the path based on your folder structure
 import {
   ProfileContainerButtons,
@@ -31,7 +32,6 @@ import MenuIcon from '../../assets/menuWhite-icon.svg';
 import Pen from '../../assets/pen-icon.svg';
 import Business from '../../assets/business-icon.svg';
 import api from '../../services/api';
-import { AxiosError } from 'axios';
 
 export default function Profile({ navigation, route }: any) {
   const [profileId, setProfileId] = useState(1);
@@ -74,12 +74,12 @@ export default function Profile({ navigation, route }: any) {
 
   useFocusEffect(
     React.useCallback(() => {
-      const token = storage.getString('accessToken');
+      const fetchUserData = async () => {
+        const token = await secureStorage.getItem('accessToken');
 
-      if (token) {
-        const fetchUserData = async () => {
+        if (token) {
           try {
-            const userId = storage.getString('loggedId');
+            const userId = await secureStorage.getItem('loggedId');
 
             const { data } = await api.get(`/user/${userId}`, {
               headers: {
@@ -147,10 +147,10 @@ export default function Profile({ navigation, route }: any) {
               console.error('Erro desconhecido:', error);
             }
           }
-        };
+        }
+      };
 
-        fetchUserData();
-      }
+      fetchUserData();
     }, []),
   );
 
@@ -169,7 +169,7 @@ export default function Profile({ navigation, route }: any) {
     district.find((item) => item.value === String(neighborhood))?.label || 'Unknown';
 
   const getUserProfileImage = async (userId: string) => {
-    const token = storage.getString('accessToken');
+    const token = await secureStorage.getItem('accessToken');
 
     if (!token) {
       return defaultAvatar;

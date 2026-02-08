@@ -31,7 +31,8 @@ import {
 } from '../../components/PostCard/PostCardStyle';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import PostCard from '../../components/PostCard/PostCard';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
+import localStorage from '../../services/localStorage';
 import api from '../../services/api';
 import MenuIcon from '../../assets/menuWhite-icon.svg';
 import LupaIcon from '../../assets/lupaWhite-icon.svg';
@@ -63,9 +64,10 @@ export default function Home({ navigation }: any) {
   });
 
   useEffect(() => {
-    const accessToken = storage.getString('accessToken');
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && accessToken) {
+    const fetchData = async () => {
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
+      if (loggedId && accessToken) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
 
@@ -197,12 +199,12 @@ export default function Home({ navigation }: any) {
   }, [loading, hasMore, page, accessTokenState, loggedIdState, loadPosts]);
 
   useFocusEffect(() => {
-    const token = storage.getString('accessToken');
+    const fetchUserData = async () => {
+      const token = await secureStorage.getItem('accessToken');
 
-    if (token) {
-      const fetchUserData = async () => {
+      if (token) {
         try {
-          const userId = storage.getString('loggedId');
+          const userId = await secureStorage.getItem('loggedId');
 
           const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
             headers: {
@@ -218,14 +220,15 @@ export default function Home({ navigation }: any) {
           console.error('Error fetching user data:', error);
           setProfileImage(defaultAvatar);
         }
-      };
+      }
+    };
 
-      fetchUserData();
+    fetchUserData();
     }
   });
 
   const getUserProfileImage = async (userId: string) => {
-    const token = storage.getString('accessToken');
+    const token = await secureStorage.getItem('accessToken');
 
     if (!token) {
       return defaultAvatar;

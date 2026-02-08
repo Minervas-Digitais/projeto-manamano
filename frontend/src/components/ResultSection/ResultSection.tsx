@@ -17,7 +17,7 @@ import PostItem from '../PostItem/PostItem';
 import api from '../../services/api';
 import TrashCan from '../../assets/trash-can.svg';
 import DeleteOneConfirmation from '../DeleteOneConfirmation/DeleteOneConfirmation';
-import { storage } from '../../pages/SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import { RootStackParamList } from '../../navigation/types';
 
 interface User {
@@ -68,7 +68,7 @@ export default function ResultSection({
     id: '',
   });
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const loggedId = storage.getString('loggedId');
+  const [loggedId, setLoggedId] = useState<string | null>(null);
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
   const defaultAvatar = require('../../assets/user-profile.png');
@@ -80,8 +80,16 @@ export default function ResultSection({
 
   const [userAvatars, setUserAvatars] = useState<Record<string, any>>({});
 
+  useEffect(() => {
+    const loadLoggedId = async () => {
+      const id = await secureStorage.getItem('loggedId');
+      setLoggedId(id);
+    };
+    loadLoggedId();
+  }, []);
+
   const getUserProfileImage = async (userId: string) => {
-    const token = storage.getString('accessToken');
+    const token = await secureStorage.getItem('accessToken');
     if (!token) {
       return defaultAvatar;
     }

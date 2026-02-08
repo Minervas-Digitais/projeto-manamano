@@ -10,9 +10,8 @@ import {
   DeleteConfirmationCardContainer,
   DeleteConfirmationContainer,
 } from './DeleteOneConfirmationStyle';
+import localStorage from '../../services/localStorage';
 import { ModalOptionsNotificationText } from '../ModalOptionsNotification/ModalOptionsNotificationStyle';
-import { storage } from '../../pages/SignIn/SignIn';
-import api from '../../services/api';
 
 export default function DeleteOneConfirmation({
   visible,

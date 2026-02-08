@@ -6,7 +6,7 @@ import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
 import AddButton from '../../components/AddButton/AddButton';
-import { storage } from '../SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
 import ShowPopup from '../../components/GroupPopup/GroupPopup';
 import api from '../../services/api';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -25,29 +25,27 @@ export default function Groups() {
   const [groups, setGroups] = useState([]);
 
   useEffect(() => {
-    // Retrieve the access token from storage
-    const token = storage.getString('accessToken');
-    if (token) setAccessToken(token);
-    const loggedId = storage.getString('loggedId');
-    if (loggedId && token) {
-      api
-        .get(`participant/groups/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        .then((res: any) => {
-          setGroups(res.data);
-        });
-    }
+    const fetchData = async () => {
+      // Retrieve the access token from storage
+      const token = await secureStorage.getItem('accessToken');
+      if (token) setAccessToken(token);
+      const loggedId = await secureStorage.getItem('loggedId');
+      if (loggedId && token) {
+        api
+          .get(`participant/groups/${loggedId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+          .then((res: any) => {
+            setGroups(res.data);
+          });
+      }
 
-    // Fetch user information to check the "tipo"
-    const fetchUserTipo = async () => {
-      const token = storage.getString('accessToken');
-
+      // Fetch user information to check the "tipo"
       if (token) {
         try {
-          const userId = storage.getString('loggedId');
+          const userId = await secureStorage.getItem('loggedId');
 
           const { data: fetchedUserData } = await api.get(`/user/${userId}`, {
             headers: {
@@ -61,7 +59,7 @@ export default function Groups() {
       }
     };
 
-    fetchUserTipo();
+    fetchData();
   }, []);
 
   if (!fontsLoaded) {

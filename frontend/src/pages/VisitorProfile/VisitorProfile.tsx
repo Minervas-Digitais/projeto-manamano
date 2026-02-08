@@ -12,6 +12,7 @@ import { useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
 import Toast from 'react-native-toast-message';
+import { AxiosError } from 'axios';
 import {
   ProfileContainerButtons,
   ProfileContainerInfo,
@@ -26,7 +27,7 @@ import { GroupPageTabs } from '../GroupPage/GroupPageStyle';
 import PostCard from '../../components/PostCard/PostCard';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import api from '../../services/api';
-import { storage } from '../SignIn/SignIn';
+import { secureStorage } from '../../services/secureStorage';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import LocationIcon from '../../assets/location-icon.svg';
 import ShareWhiteIcon from '../../assets/share-white-icon.svg';
@@ -34,7 +35,6 @@ import MenuIcon from '../../assets/menuWhite-icon.svg';
 import BusinessIcon from '../../assets/business-icon.svg';
 import WhatsappIcon from '../../assets/whatsapp-icon.svg';
 import EmailIcon from '../../assets/email-icon.svg';
-import { AxiosError } from 'axios';
 
 export default function VisitorProfile({ navigation }: any) {
   const route = useRoute();
@@ -81,14 +81,13 @@ export default function VisitorProfile({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = storage.getString('accessToken');
+      const accessToken = await secureStorage.getItem('accessToken');
       if (!accessToken || !userId) {
         setLoading(false);
         return;
       }
 
       try {
-        const token = storage.getString('accessToken');
         setLoading(true);
         const userResponse = await api.get(`/user/public/${userId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -101,7 +100,7 @@ export default function VisitorProfile({ navigation }: any) {
         try {
           const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
             responseType: 'arraybuffer',
           });
@@ -171,7 +170,7 @@ export default function VisitorProfile({ navigation }: any) {
   }
 
   const getUserProfileImage = async () => {
-    const token = storage.getString('accessToken');
+    const token = await secureStorage.getItem('accessToken');
 
     if (!token) {
       return defaultAvatar;

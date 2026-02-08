@@ -12,6 +12,7 @@ import {
 import { Buffer } from 'buffer';
 import { useFonts } from 'expo-font';
 import { MMKV } from 'react-native-mmkv';
+import { AxiosError } from 'axios';
 import {
   PageContainer,
   SearchInputWrapper,
@@ -23,9 +24,9 @@ import ResultSection from '../../components/ResultSection/ResultSection';
 import Lupa from '../../assets/lupa-search.svg';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import api from '../../services/api';
-import { AxiosError } from 'axios';
+import secureStorage from '../../services/secureStorage';
 
-const storage = new MMKV();
+const storage = new MMKV(); // Only for recentUsers cache
 
 interface User {
   id: string;
@@ -50,7 +51,7 @@ export default function Search() {
   const avatar = require('../../assets/user-profile.png');
 
   const getUserProfileImage = async (userId: string) => {
-    const token = storage.getString('accessToken');
+    const token = await secureStorage.getItem('accessToken');
 
     if (!token) {
       return avatar;
@@ -81,8 +82,8 @@ export default function Search() {
   }, []);
   useEffect(() => {
     const fetchUserRole = async () => {
-      const accessToken = storage.getString('accessToken');
-      const loggedId = storage.getString('loggedId');
+      const accessToken = await secureStorage.getItem('accessToken');
+      const loggedId = await secureStorage.getItem('loggedId');
 
       if (accessToken && loggedId) {
         setAccessTokenState(accessToken);

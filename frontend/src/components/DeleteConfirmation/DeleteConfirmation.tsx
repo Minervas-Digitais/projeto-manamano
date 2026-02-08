@@ -11,20 +11,21 @@ import {
   DeleteConfirmationContainer,
 } from './DeleteConfirmationStyle';
 import { ModalOptionsNotificationText } from '../ModalOptionsNotification/ModalOptionsNotificationStyle';
-import { storage } from '../../pages/SignIn/SignIn';
+import secureStorage from '../../services/secureStorage';
+import localStorage from '../../services/localStorage';
 import api from '../../services/api';
 
 export default function DeleteConfirmation({ text }: any) {
-  const current = storage.getString('displayNotif');
+  const current = localStorage.getString('displayNotif');
 
   const [shouldDisplay, setShouldDisplay] = useState(current);
 
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
-  const optionsDelete = () => {
-    const id = storage.getString('idNotif');
-    const accessToken = storage.getString('accessToken');
+  const optionsDelete = async () => {
+    const id = localStorage.getString('idNotif');
+    const accessToken = await secureStorage.getItem('accessToken');
 
     api
       .delete(`notifications/${id}`, {
@@ -33,7 +34,7 @@ export default function DeleteConfirmation({ text }: any) {
         },
       })
       .then(() => {
-        storage.delete('displayNotif');
+        localStorage.delete('displayNotif');
         setShouldDisplay(false);
       })
       .catch((err) => console.log('Erro ao deletar a notificação:', err));
