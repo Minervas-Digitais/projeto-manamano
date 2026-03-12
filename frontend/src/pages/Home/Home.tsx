@@ -68,42 +68,44 @@ export default function Home({ navigation }: any) {
       const accessToken = await secureStorage.getItem('accessToken');
       const loggedId = await secureStorage.getItem('loggedId');
       if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
 
-      // Buscar informações do usuário
-      api
-        .get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => setFullName(res.data.fullName))
-        .catch(() => setFullName('Usuário'));
-
-      // Buscar grupos (sem posts)
-      api
-        .get(`participant/groups/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
-          // Remover posts dos grupos pois vamos buscá-los separadamente
-          const groupsWithoutPosts = (res.data || []).map((group: any) => ({
-            ...group,
-            group: {
-              ...group.group,
-              Post: [],
+        // Buscar informações do usuário
+        api
+          .get(`/user/${loggedId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
             },
-          }));
-          setGroups(groupsWithoutPosts);
-        })
-        .catch(() => setGroups([]));
+          })
+          .then((res) => setFullName(res.data.fullName))
+          .catch(() => setFullName('Usuário'));
 
-      // Carregar primeira página de posts
-      loadPosts(1, accessToken, loggedId, true);
-    }
+        // Buscar grupos (sem posts)
+        api
+          .get(`participant/groups/${loggedId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .then((res) => {
+            // Remover posts dos grupos pois vamos buscá-los separadamente
+            const groupsWithoutPosts = (res.data || []).map((group: any) => ({
+              ...group,
+              group: {
+                ...group.group,
+                Post: [],
+              },
+            }));
+            setGroups(groupsWithoutPosts);
+          })
+          .catch(() => setGroups([]));
+
+        // Carregar primeira página de posts
+        loadPosts(1, accessToken, loggedId, true);
+      }
+    };
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -198,34 +200,33 @@ export default function Home({ navigation }: any) {
     }
   }, [loading, hasMore, page, accessTokenState, loggedIdState, loadPosts]);
 
-  useFocusEffect(() => {
-    const fetchUserData = async () => {
-      const token = await secureStorage.getItem('accessToken');
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserData = async () => {
+        const token = await secureStorage.getItem('accessToken');
 
-      if (token) {
-        try {
-          const userId = await secureStorage.getItem('loggedId');
+        if (token) {
+          try {
+            const userId = await secureStorage.getItem('loggedId');
 
-          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            responseType: 'arraybuffer',
-          });
-
-          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
-          const imageUri = `data:image/jpeg;base64,${imageStr}`;
-          setProfileImage({ uri: imageUri });
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-          setProfileImage(defaultAvatar);
+            const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              responseType: 'arraybuffer',
+            });
+            const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+            const imageUri = `data:image/jpeg;base64,${imageStr}`;
+            setProfileImage({ uri: imageUri });
+          } catch (error) {
+            console.error('Error fetching user data (profile image not found):', error);
+            setProfileImage(defaultAvatar);
+          }
         }
-      }
-    };
-
-    fetchUserData();
-    }
-  });
+      };
+      fetchUserData();
+    }, []),
+  );
 
   const getUserProfileImage = async (userId: string) => {
     const token = await secureStorage.getItem('accessToken');

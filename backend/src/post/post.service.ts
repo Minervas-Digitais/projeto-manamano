@@ -387,6 +387,10 @@ export class PostService {
       ? user.savedPost
       : user.savedPost.slice((page - 1) * pageSize, page * pageSize);
 
+    if (postIds.length === 0) {
+      return [];
+    }
+
     const posts = await this.prismaService.post.findMany({
       where: { id: { in: postIds } },
       include: postInclude,

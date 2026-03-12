@@ -19,7 +19,6 @@ import {
   UserInGroup,
 } from './participant.service';
 import { Participant } from '@prisma/client';
-import { MatchUserIdGuard } from 'src/auth/match-user-id.guard';
 import { User } from 'src/user/user.decorator';
 
 @Controller('participant')
@@ -53,7 +52,6 @@ export class ParticipantController {
 
   @HttpCode(200)
   @Get('groups/')
-  @UseGuards(MatchUserIdGuard)
   findUserGroups(@User('id') userId: string): Promise<GroupWithDetails[]> {
     return this.participantService.findUserGroups(userId);
   }

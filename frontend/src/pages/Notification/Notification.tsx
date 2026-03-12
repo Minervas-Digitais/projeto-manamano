@@ -115,8 +115,8 @@ export default function Notification({ navigation }: any) {
   useFocusEffect(
     useCallback(() => {
       fetchNotifications();
-      storage.delete('body');
-      storage.delete('displayNotif');
+      secureStorage.removeItem('body').catch(console.error);
+      secureStorage.removeItem('displayNotif').catch(console.error);
     }, [fetchNotifications]),
   );
 
@@ -126,7 +126,7 @@ export default function Notification({ navigation }: any) {
   if (!fontsLoaded) return null;
 
   const onPressActions = (body: string, id: string, type: string, idContent?: string) => {
-    storage.set('body', body);
+    secureStorage.setItem('body', body).catch(console.error);
     setNotification((prev) =>
       prev?.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
     );

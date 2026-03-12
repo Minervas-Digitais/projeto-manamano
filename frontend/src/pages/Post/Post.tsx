@@ -85,18 +85,20 @@ export default function Post() {
       const accessToken = await secureStorage.getItem('accessToken');
       const loggedId = await secureStorage.getItem('loggedId');
       if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      api
-        .get(`/user/${loggedId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-        .then((res) => setUserName(res.data.fullName))
-        .catch((err) => {
-          console.error('Erro ao buscar nome do usuário logado:', err);
-          setUserName('Usuário');
-        });
-    }
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
+        api
+          .get(`/user/${loggedId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
+          .then((res) => setUserName(res.data.fullName))
+          .catch((err) => {
+            console.error('Erro ao buscar nome do usuário logado:', err);
+            setUserName('Usuário');
+          });
+      }
+    };
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -169,7 +171,7 @@ export default function Post() {
         const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
         const usersData = await Promise.all(
           uniqueUserIds.map(async (userId) => {
-            const response = await api.get(`user/public/${userId}`, {
+            const response = await api.get(`user/${userId}`, {
               headers: {
                 Authorization: `Bearer ${accessTokenState}`,
               },
