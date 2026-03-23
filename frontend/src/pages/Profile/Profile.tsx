@@ -122,10 +122,9 @@ export default function Profile({ navigation, route }: any) {
 
             const fetchSavedPosts = async () => {
               try {
-                const { data } = await api.get('/post/saved/?all=true', {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
+                const { data } = await api.get('/post/saved', {
+                  headers: { Authorization: `Bearer ${token}` },
+                  params: { all: true },
                 });
                 setSavedPosts(data);
               } catch (error) {

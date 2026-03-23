@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { Share, TouchableOpacity, View } from 'react-native';
-import { de, ptBR } from 'date-fns/locale';
+import { ptBR } from 'date-fns/locale';
 import { format, isValid } from 'date-fns';
 import {
   PostCardContainer,
@@ -19,6 +19,7 @@ import SavedIcon from '../../assets/saved-icon.svg';
 import CommentIcon from '../../assets/comment-icon.svg';
 import FixIcon from '../../assets/fix-icon.svg';
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
+import { useSavedPosts } from '../../context/SavedPostsContext';
 
 const defaultAvatar = require('../../assets/user-profile.png');
 
@@ -31,8 +32,6 @@ export default function PostCard({
   date,
   originGroup,
   share,
-  save,
-  saved,
   dotsMenu,
   tag,
   fix,
@@ -41,6 +40,7 @@ export default function PostCard({
   onPressFix,
 }: any) {
   const createDeepLink = () => `manamano://post/${postId}`;
+
   const onShare = async () => {
     const deepLink = createDeepLink();
     try {
@@ -51,8 +51,17 @@ export default function PostCard({
       console.error('Erro ao compartilhar:', error);
     }
   };
+
   const [modalOptions, setModalOptions] = useState(false);
   const [userProfile, setUserProfile] = useState(defaultAvatar);
+
+  const { savedPostIds, savePost, unsavePost } = useSavedPosts();
+  const isSaved = savedPostIds.has(postId);
+
+  const handleSavePress = () => {
+    if (isSaved) unsavePost(postId);
+    else savePost(postId);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -76,20 +85,34 @@ export default function PostCard({
   }, [userId, getUserProfileImage]);
 
   const postDate = date ? new Date(date) : null;
+
   const formattedDate =
     postDate && isValid(postDate)
       ? format(postDate, "dd 'de' MMM'.', HH:mm", { locale: ptBR })
       : '';
+
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
+
   if (!fontsLoaded) {
     return undefined;
   }
+
   return (
     <PostCardContainer shadowColor={fix} onPress={onPressPost}>
-      {modalOptions ? <ModalOptions onShare={onShare} onPressFix={onPressFix} fixed={fix} /> : ''}
+      {modalOptions ? (
+        <ModalOptions
+          onShare={onShare}
+          onPressFix={onPressFix}
+          handleSavePress={handleSavePress}
+          fixed={fix}
+          postId={postId}
+        />
+      ) : (
+        ''
+      )}
       <PostCardSpaceBetween style={{ position: 'relative' }}>
         {tag ? (
           <PostCardTag>
@@ -118,20 +141,13 @@ export default function PostCard({
           ) : (
             <View />
           )}
-          {save ? (
-            <TouchableOpacity>
-              <SaveIcon width="20px" height="20px" />
-            </TouchableOpacity>
-          ) : (
-            <View />
-          )}
-          {saved ? (
-            <TouchableOpacity>
+          <TouchableOpacity onPress={handleSavePress}>
+            {isSaved ? (
               <SavedIcon width="20px" height="20px" />
-            </TouchableOpacity>
-          ) : (
-            <View />
-          )}
+            ) : (
+              <SaveIcon width="20px" height="20px" />
+            )}
+          </TouchableOpacity>
           {dotsMenu ? (
             <TouchableOpacity onPress={() => setModalOptions(!modalOptions)}>
               <DotsMenuIcon width="20px" height="20px" />

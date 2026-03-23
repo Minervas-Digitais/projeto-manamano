@@ -59,6 +59,7 @@ export default function GroupPage({ navigation }: any) {
   const [posts, setPosts] = useState<any[]>([]);
   const [archives, setArchives] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string>('');
+  const [savedPosts, setSavedPosts] = useState<string[]>([]);
 
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -111,6 +112,22 @@ export default function GroupPage({ navigation }: any) {
     },
     [groupId, loading, hasMore],
   );
+
+  const getSavedPosts = useCallback(async () => {
+    const token = await secureStorage.getItem('accessToken');
+    if (!token) return;
+
+    try {
+      const response = await api.get('/post/saved', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log(response.data);
+      setSavedPosts(response.data.map((post: any) => post.id));
+    } catch (err) {
+      console.error('Erro ao buscar posts salvos:', err);
+    }
+  }, []);
 
   const loadMorePosts = () => {
     if (!loading && hasMore) {
@@ -200,7 +217,7 @@ export default function GroupPage({ navigation }: any) {
     }
   };
 
-   const getUserRoleInGroup = useCallback(async () => {
+  const getUserRoleInGroup = useCallback(async () => {
     const token = await secureStorage.getItem('accessToken');
     const loggedId = await secureStorage.getItem('loggedId');
     if (!token || !groupId || !loggedId) {
@@ -234,7 +251,8 @@ export default function GroupPage({ navigation }: any) {
     getGroupCategory();
     getGroupArchives();
     getUserRoleInGroup();
-  }, [getGroupCategory, getGroupArchives, getUserRoleInGroup]);
+    getSavedPosts();
+  }, [getGroupCategory, getGroupArchives, getUserRoleInGroup, getSavedPosts]);
 
   if (!fontsLoaded) {
     return undefined;
@@ -249,6 +267,7 @@ export default function GroupPage({ navigation }: any) {
   const getFileTypeFromMime = (mimeType: string) => {
     if (mimeType && mimeType.startsWith('image/')) return 'Fotos';
     if (
+      // eslint-disable-next-line operator-linebreak
       mimeType &&
       (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('text/'))
     )
@@ -324,7 +343,7 @@ export default function GroupPage({ navigation }: any) {
       console.error('Erro ao fixar/desfixar post:', error);
     }
   };
-  
+
   function onPressPostAction(id: string) {
     storageHome.set('idPost', id);
     navigation.navigate('Post', { postId: id });
@@ -409,6 +428,7 @@ export default function GroupPage({ navigation }: any) {
                           onPressPost={() => onPressPostAction(item.id)}
                           dotsMenu
                           fix
+                          isSaved={savedPosts.includes(item.id)}
                           postId={item.id}
                         />
                       );
@@ -456,6 +476,7 @@ export default function GroupPage({ navigation }: any) {
                         onPressFix={() => fixActions(item.id, item.isPinned)}
                         onPressPost={() => onPressPostAction(item.id)}
                         dotsMenu
+                        isSaved={savedPosts.includes(item.id)}
                         postId={item.id}
                       />
                     );
