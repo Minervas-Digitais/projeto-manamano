@@ -52,6 +52,22 @@ export class PostController {
     return this.postService.findAll();
   }
 
+  @Get('saved')
+  async getSavedPosts(
+    @User('id') userId: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+    @Query('all') all = 'false',
+  ): Promise<SerializedPost[]> {
+    const isAll = all === 'true';
+    return this.postService.getSavedPosts(
+      userId,
+      isAll ? undefined : Number(page),
+      isAll ? undefined : Number(limit),
+      isAll,
+    );
+  }
+
   @HttpCode(200)
   @Get(':id')
   findOne(@Param('id') id: string): Promise<SerializedPost> {
@@ -67,14 +83,6 @@ export class PostController {
     @Body() updatePostDto: UpdatePostDto,
   ): Promise<SerializedPost> {
     return this.postService.update(id, updatePostDto);
-  }
-
-  @HttpCode(200)
-  @Delete(':id')
-  @UseGuards(RolesGuard)
-  @Roles(RoleType.ADMIN)
-  remove(@Param('id') id: string): Promise<SerializedPost> {
-    return this.postService.remove(id);
   }
 
   @HttpCode(201)
@@ -93,6 +101,14 @@ export class PostController {
     @User('id') userId: string,
   ): Promise<any> {
     return this.postService.removeSavedPost(userId, postId);
+  }
+
+  @HttpCode(200)
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.ADMIN)
+  remove(@Param('id') id: string): Promise<SerializedPost> {
+    return this.postService.remove(id);
   }
 
   @HttpCode(201)
@@ -152,21 +168,5 @@ export class PostController {
     const limitNum = parseInt(limit) || 10;
 
     return this.postService.getUserPosts(id, pageNum, limitNum);
-  }
-
-  @Get('saved')
-  async getSavedPosts(
-    @User('id') userId: string,
-    @Query('page') page = '1',
-    @Query('limit') limit = '10',
-    @Query('all') all = 'false',
-  ): Promise<SerializedPost[]> {
-    const isAll = all === 'true';
-    return this.postService.getSavedPosts(
-      userId,
-      isAll ? undefined : Number(page),
-      isAll ? undefined : Number(limit),
-      isAll,
-    );
   }
 }
