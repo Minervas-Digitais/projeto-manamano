@@ -26,11 +26,9 @@ import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import api from '../../services/api';
 import secureStorage from '../../services/secureStorage';
-import localStorage from '../../services/localStorage';
 import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import ArrowIcon from '../../assets/arrow-icon.svg';
-import linkIcon from '../../assets/comment-link-icon.svg';
 import AttachmentIcon from '../../assets/add-attachment-icon.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
 
@@ -69,7 +67,7 @@ export const validateHourInternal = (
 };
 
 export default function NewPost({ navigation }: any) {
-  const { width, height } = Dimensions.get('window');
+  const { width } = Dimensions.get('window');
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
   const [files, setFiles] = useState<
@@ -108,12 +106,6 @@ export default function NewPost({ navigation }: any) {
       if (loggedId && accessToken) {
         setAccessTokenState(accessToken);
         setLoggedIdState(loggedId);
-        const response = await api.get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        // .then((res) => console.log(JSON.stringify(res.data)));
       }
     };
     loadUserData();
@@ -122,7 +114,7 @@ export default function NewPost({ navigation }: any) {
     if (!accessTokenState) return;
     const fetchCategories = async () => {
       try {
-        const response = await api.get(`category/group/${groupId}`, {
+        const response = await api.get(`/category/group/${groupId}`, {
           headers: {
             Authorization: `Bearer ${accessTokenState}`,
           },
@@ -214,7 +206,7 @@ export default function NewPost({ navigation }: any) {
       const formattedDate = formatDate(data.date);
       const datetimeISO = `${formattedDate}T${data.hour}:00.000Z`;
       try {
-        const response = await api.post(
+        await api.post(
           '/post',
           {
             type: 'EVENT',

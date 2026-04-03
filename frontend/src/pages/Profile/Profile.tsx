@@ -10,7 +10,7 @@ import { Image, TouchableOpacity, View, StyleSheet, Share, Text } from 'react-na
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import { AxiosError } from 'axios';
-import { secureStorage } from '../../services/secureStorage';
+import secureStorage from '../../services/secureStorage';
 import { district } from './ProfileData'; // Adjust the path based on your folder structure
 import {
   ProfileContainerButtons,
@@ -114,7 +114,15 @@ export default function Profile({ navigation, route }: any) {
                     Authorization: `Bearer ${token}`,
                   },
                 });
-                setUserPosts(postData);
+
+                // Backend agora retorna formato paginado: { data, meta }
+                if (Array.isArray(postData?.data)) {
+                  setUserPosts(postData.data);
+                } else if (Array.isArray(postData)) {
+                  setUserPosts(postData);
+                } else {
+                  setUserPosts([]);
+                }
               } catch (error) {
                 console.error('Error fetching posts:', error);
               }
@@ -122,12 +130,12 @@ export default function Profile({ navigation, route }: any) {
 
             const fetchSavedPosts = async () => {
               try {
-                const { data } = await api.get('/post/saved/?all=true', {
+                const { data: savedPostsData } = await api.get('/post/saved?all=true', {
                   headers: {
                     Authorization: `Bearer ${token}`,
                   },
                 });
-                setSavedPosts(data);
+                setSavedPosts(savedPostsData);
               } catch (error) {
                 console.error('Error fetching saved posts:', error);
               }

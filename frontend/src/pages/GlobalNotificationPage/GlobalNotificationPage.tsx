@@ -21,41 +21,39 @@ export default function GlobalNotificationPage({ navigation }: any) {
     formState: { errors },
     setValue,
   } = useForm({});
-  const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [existingNotification, setExistingNotification] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-    const accessToken = await secureStorage.getItem('accessToken');
-    const loggedId = await secureStorage.getItem('loggedId');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      if (body) {
-        api
-          .get('/notifications/user', {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-          .then((response) => {
-            const notification = response.data.find((notif: any) => notif.id === id);
-            if (notification) {
-              setExistingNotification(notification);
-              setValue('input', notification.body);
-            }
-          });
+      const accessToken = await secureStorage.getItem('accessToken');
+      if (accessToken) {
+        setAccessTokenState(accessToken);
+
+        if (body) {
+          api
+            .get('/notifications/user', {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            })
+            .then((response) => {
+              const notification = response.data.find((notif: any) => notif.id === id);
+              if (notification) {
+                setExistingNotification(notification);
+                setValue('input', notification.body);
+              }
+            });
+        }
       }
     };
     fetchData();
-  }, []);
+  }, [body, id, setValue]);
+
   const onSubmit = async (data: any) => {
     try {
-      let response;
-
       if (body && existingNotification) {
-        response = await api.patch(
+        await api.patch(
           `/notifications/update/${id}`,
           {
             body: data.input,
@@ -71,7 +69,7 @@ export default function GlobalNotificationPage({ navigation }: any) {
           text1: 'Comunicado atualizado com sucesso!',
         });
       } else {
-        response = await api.post(
+        await api.post(
           '/notifications/global',
           {
             type: 'WARNING',

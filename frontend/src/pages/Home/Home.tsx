@@ -68,54 +68,57 @@ export default function Home({ navigation }: any) {
       const accessToken = await secureStorage.getItem('accessToken');
       const loggedId = await secureStorage.getItem('loggedId');
       if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
+        setAccessTokenState(accessToken);
+        setLoggedIdState(loggedId);
 
-      // Buscar informações do usuário
-      api
-        .get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => setFullName(res.data.fullName))
-        .catch(() => setFullName('Usuário'));
-
-      // Buscar grupos (sem posts)
-      api
-        .get(`participant/groups/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => {
-          // Remover posts dos grupos pois vamos buscá-los separadamente
-          const groupsWithoutPosts = (res.data || []).map((group: any) => ({
-            ...group,
-            group: {
-              ...group.group,
-              Post: [],
+        // Buscar informações do usuário
+        api
+          .get(`/user/${loggedId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
             },
-          }));
-          setGroups(groupsWithoutPosts);
-        })
-        .catch(() => setGroups([]));
+          })
+          .then((res) => setFullName(res.data.fullName))
+          .catch(() => setFullName('Usuário'));
 
-      // Carregar primeira página de posts
-      loadPosts(1, accessToken, loggedId, true);
-    }
+        // Buscar grupos (sem posts)
+        api
+          .get(`participant/groups/`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .then((res) => {
+            // Remover posts dos grupos pois vamos buscá-los separadamente
+            const groupsWithoutPosts = (res.data || []).map((group: any) => ({
+              ...group,
+              group: {
+                ...group.group,
+                Post: [],
+              },
+            }));
+            setGroups(groupsWithoutPosts);
+          })
+          .catch(() => setGroups([]));
+
+        // Carregar primeira página de posts
+        loadPosts(1, accessToken, true);
+      }
+    };
+
+    fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadPosts = useCallback(
-    async (pageNumber: number, token: string, userId: string, isInitial: boolean = false) => {
+    async (pageNumber: number, token: string, isInitial: boolean = false) => {
       if (loading) return;
 
       setLoading(true);
       if (isInitial) setInitialLoading(true);
 
       try {
-        const response = await api.get(`participant/groups/${userId}/posts`, {
+        const response = await api.get(`participant/groups/posts`, {
           params: {
             page: pageNumber,
             limit: POSTS_PER_PAGE,
@@ -134,7 +137,7 @@ export default function Home({ navigation }: any) {
         // Fallback: Se a rota não existir (404), usar a rota antiga
         if (error?.response?.status === 404) {
           try {
-            const fallbackResponse = await api.get(`participant/groups/${userId}`, {
+            const fallbackResponse = await api.get('participant/groups/', {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -145,8 +148,9 @@ export default function Home({ navigation }: any) {
             const allPosts: any[] = [];
 
             allGroups.forEach((group: any) => {
-              if (group.group?.Post) {
-                group.group.Post.forEach((post: any) => {
+              const groupPosts = group.group?.posts || group.group?.Post || [];
+              if (groupPosts.length > 0) {
+                groupPosts.forEach((post: any) => {
                   allPosts.push({
                     ...post,
                     groupId: group.groupId,
@@ -194,7 +198,7 @@ export default function Home({ navigation }: any) {
 
   const handleLoadMore = useCallback(() => {
     if (!loading && hasMore && accessTokenState && loggedIdState) {
-      loadPosts(page + 1, accessTokenState, loggedIdState);
+      loadPosts(page + 1, accessTokenState);
     }
   }, [loading, hasMore, page, accessTokenState, loggedIdState, loadPosts]);
 
@@ -224,7 +228,6 @@ export default function Home({ navigation }: any) {
     };
 
     fetchUserData();
-    }
   });
 
   const getUserProfileImage = async (userId: string) => {
@@ -363,7 +366,7 @@ export default function Home({ navigation }: any) {
                         groupId: item.groupId,
                         groupName: item.group.name,
                       });
-                      storage.set('groupId', item.groupId);
+                      storageHome.set('groupId', item.groupId);
                       console.log(`groupId home: ${item.groupId}`);
                     }}
                     groupId={item.groupId}

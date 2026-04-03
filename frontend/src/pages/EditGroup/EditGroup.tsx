@@ -19,10 +19,10 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import secureStorage from '../../services/secureStorage';
+import localStorage from '../../services/localStorage';
 import api from '../../services/api';
 
 export default function EditGroup({ navigation }: any) {
-  const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [groupId, setGroupId] = useState('');
   const [groupName, setGroupName] = useState('');
@@ -31,12 +31,10 @@ export default function EditGroup({ navigation }: any) {
   useEffect(() => {
     const fetchData = async () => {
       const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-      const groupIdAux = await secureStorage.getItem('groupId');
+      const groupIdAux = localStorage.getString('groupId');
 
-      if (loggedId && accessToken && groupIdAux) {
+      if (accessToken && groupIdAux) {
         setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
         setGroupId(groupIdAux);
 
         api
@@ -73,8 +71,10 @@ export default function EditGroup({ navigation }: any) {
     description: descriptionGroup,
   };
 
-  setValue('name', EditGroupData.name);
-  setValue('description', EditGroupData.description);
+  useEffect(() => {
+    setValue('name', EditGroupData.name);
+    setValue('description', EditGroupData.description);
+  }, [EditGroupData.name, EditGroupData.description, setValue]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -84,8 +84,7 @@ export default function EditGroup({ navigation }: any) {
   }
 
   const onSubmit = (data: any) => {
-    const type = 'NORMAL';
-    if (accessTokenState && loggedIdState) {
+    if (accessTokenState && groupId) {
       api.patch(
         `/group/${groupId}`,
         { name: data.name, description: data.description },

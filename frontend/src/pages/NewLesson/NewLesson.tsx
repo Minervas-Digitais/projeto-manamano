@@ -30,7 +30,6 @@ interface InputRef {
 export default function NewLesson({ navigation }: any) {
   const route = useRoute();
   const { groupId } = route.params as { groupId: string };
-  const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [files, setFiles] = useState<
@@ -49,7 +48,7 @@ export default function NewLesson({ navigation }: any) {
     if (!accessTokenState) return;
     const fetchCategories = async () => {
       try {
-        const response = await api.get(`category/group/${groupId}`, {
+        const response = await api.get(`/category/group/${groupId}`, {
           headers: {
             Authorization: `Bearer ${accessTokenState}`,
           },
@@ -68,15 +67,8 @@ export default function NewLesson({ navigation }: any) {
   useEffect(() => {
     const loadAuthData = async () => {
       const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-      if (loggedId && accessToken) {
+      if (accessToken) {
         setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
-        api.get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
       }
     };
     loadAuthData();

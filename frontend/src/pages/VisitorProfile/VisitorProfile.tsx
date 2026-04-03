@@ -27,7 +27,7 @@ import { GroupPageTabs } from '../GroupPage/GroupPageStyle';
 import PostCard from '../../components/PostCard/PostCard';
 import SideMenu from '../../components/SideMenu/SideMenu';
 import api from '../../services/api';
-import { secureStorage } from '../../services/secureStorage';
+import secureStorage from '../../services/secureStorage';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import LocationIcon from '../../assets/location-icon.svg';
 import ShareWhiteIcon from '../../assets/share-white-icon.svg';
@@ -35,6 +35,8 @@ import MenuIcon from '../../assets/menuWhite-icon.svg';
 import BusinessIcon from '../../assets/business-icon.svg';
 import WhatsappIcon from '../../assets/whatsapp-icon.svg';
 import EmailIcon from '../../assets/email-icon.svg';
+
+const defaultAvatar = require('../../assets/user-profile.png');
 
 export default function VisitorProfile({ navigation }: any) {
   const route = useRoute();
@@ -45,8 +47,6 @@ export default function VisitorProfile({ navigation }: any) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<any>(null);
-
-  const defaultAvatar = require('../../assets/user-profile.png');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -96,7 +96,8 @@ export default function VisitorProfile({ navigation }: any) {
         const userPostsResponse = await api.get(`/post/${userId}/posts`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-        setPosts(userPostsResponse.data);
+        const postsResponse = userPostsResponse.data;
+        setPosts(Array.isArray(postsResponse) ? postsResponse : postsResponse?.data || []);
         try {
           const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
             headers: {

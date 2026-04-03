@@ -78,7 +78,6 @@ export default function CreateGroup() {
   };
 
   const handleCreateGroup = async () => {
-    const loggedId = await secureStorage.getItem('loggedId');
     if (!groupName.trim() || !groupDescription.trim()) {
       Toast.show({
         type: 'error',
@@ -141,7 +140,7 @@ export default function CreateGroup() {
       try {
         await api.post(
           '/participant',
-          { userId: loggedId, role: 'INSTRUCTOR', inviteCode },
+          { role: 'INSTRUCTOR', inviteCode },
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
