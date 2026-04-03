@@ -10,7 +10,7 @@ import { Image, TouchableOpacity, View, StyleSheet, Share, Text } from 'react-na
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import { AxiosError } from 'axios';
-import { secureStorage } from '../../services/secureStorage';
+import secureStorage from '../../services/secureStorage';
 import { district } from './ProfileData'; // Adjust the path based on your folder structure
 import {
   ProfileContainerButtons,
@@ -114,7 +114,7 @@ export default function Profile({ navigation, route }: any) {
                     Authorization: `Bearer ${token}`,
                   },
                 });
-                setUserPosts(postData);
+                setUserPosts(postData.data);
               } catch (error) {
                 console.error('Error fetching posts:', error);
               }
@@ -163,8 +163,7 @@ export default function Profile({ navigation, route }: any) {
   }
   // Split the fullName to display the first two names
   const fullNameSplit = fullName.split(' ');
-  const displayName =
-    fullNameSplit.length > 1 ? `${fullNameSplit[0]} ${fullNameSplit[1]}` : fullName;
+  const displayName = fullNameSplit.length > 1 ? `${fullNameSplit[0]} ${fullNameSplit[1]}` : fullName;
   const districtLabel =
     district.find((item) => item.value === String(neighborhood))?.label || 'Unknown';
 

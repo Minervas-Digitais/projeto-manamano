@@ -32,7 +32,7 @@ export default function Groups() {
       const loggedId = await secureStorage.getItem('loggedId');
       if (loggedId && token) {
         api
-          .get(`participant/groups/${loggedId}`, {
+          .get('participant/groups/', {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -41,6 +41,7 @@ export default function Groups() {
             setGroups(res.data);
           });
       }
+      console.log(groups);
 
       // Fetch user information to check the "tipo"
       if (token) {

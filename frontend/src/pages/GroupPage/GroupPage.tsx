@@ -324,7 +324,7 @@ export default function GroupPage({ navigation }: any) {
       console.error('Erro ao fixar/desfixar post:', error);
     }
   };
-
+  
   function onPressPostAction(id: string) {
     storageHome.set('idPost', id);
     navigation.navigate('Post', { postId: id });

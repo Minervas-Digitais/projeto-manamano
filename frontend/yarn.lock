@@ -6946,12 +6946,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-secure-store@npm:^15.0.7":
-  version: 15.0.7
-  resolution: "expo-secure-store@npm:15.0.7"
+"expo-secure-store@npm:~14.0.1":
+  version: 14.0.1
+  resolution: "expo-secure-store@npm:14.0.1"
   peerDependencies:
     expo: "*"
-  checksum: 10c0/8273f937c3ee289782beb7dcfc293e3b45d230d46f839fda987029dc130bb00c428a23dffb9f009e11f6a2e963f06e32d60c888e9ccfbf7002c15ea0de93e056
+  checksum: 10c0/c2ad36f7ae8aea5b95ebc117f302974de6ad403f0b98b259f9dfcadc441f5c40c2170472e4e95832ad6cf8bcd37614dfb3757a4de1f7631ea9493c61cb7b2ab3
   languageName: node
   linkType: hard
 
@@ -7411,7 +7411,7 @@ __metadata:
     expo-linking: "npm:~7.0.5"
     expo-media-library: "npm:~17.0.6"
     expo-notifications: "npm:~0.29.14"
-    expo-secure-store: "npm:^15.0.7"
+    expo-secure-store: "npm:~14.0.1"
     expo-sharing: "npm:~13.0.1"
     expo-status-bar: "npm:~2.0.1"
     jest: "npm:^30.0.0"
