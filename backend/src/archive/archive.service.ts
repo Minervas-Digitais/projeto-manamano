@@ -34,6 +34,7 @@ export class ArchiveService {
         userId: userId,
         groupId: data.groupId,
         postId: data.postId,
+        type: data.type,
       },
     });
 

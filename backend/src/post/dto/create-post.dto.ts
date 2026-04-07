@@ -19,6 +19,14 @@ export class CreatePostDto {
   input: string;
 
   @IsString()
+  @IsNotEmpty()
+  categoryId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  groupId: string;
+
+  @IsString()
   @IsOptional()
   title: string;
 
@@ -37,12 +45,4 @@ export class CreatePostDto {
   @IsBoolean()
   @IsOptional()
   isPinned: boolean;
-
-  @IsString()
-  @IsNotEmpty()
-  categoryId: string;
-
-  @IsString()
-  @IsNotEmpty()
-  groupId: string;
 }
