@@ -98,10 +98,20 @@ export class ParticipantController {
 
   @HttpCode(200)
   @Delete('group/:groupId')
-  remove(
+  removeSelf(
     @User('id') userId: string,
     @Param('groupId') groupId: string,
   ): Promise<{ message: string }> {
-    return this.participantService.remove(userId, groupId);
+    return this.participantService.removeSelf(userId, groupId);
+  }
+
+  @HttpCode(200)
+  @Delete('group/:groupId/user/:userId')
+  removeUser(
+    @User('id') callerId: string,
+    @Param('groupId') groupId: string,
+    @Param('userId') targetId: string,
+  ): Promise<{ message: string }> {
+    return this.participantService.removeUser(callerId, targetId, groupId);
   }
 }
