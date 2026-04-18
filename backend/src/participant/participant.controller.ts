@@ -12,14 +12,16 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateParticipantDto } from './dto/create-participant.dto';
-import { UpdateParticipantDto } from './dto/update-participant.dto';
+import { UpdateParticipantRoleDto } from './dto/update-participant.dto';
 import {
   GroupWithDetails,
   ParticipantService,
   UserInGroup,
 } from './participant.service';
-import { Participant } from '@prisma/client';
+import { Participant, RoleType } from '@prisma/client';
 import { User } from 'src/user/user.decorator';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/roles.decorator';
 
 @Controller('participant')
 @UseGuards(JwtAuthGuard)
@@ -39,15 +41,20 @@ export class ParticipantController {
   }
 
   @HttpCode(200)
+  @UseGuards(RolesGuard)
+  @Roles(RoleType.ADMIN)
   @Get()
   findAll(): Promise<Participant[]> {
     return this.participantService.findAll();
   }
 
   @HttpCode(200)
-  @Get('group/:groupId')
-  findUsersInGroup(@Param('groupId') groupId: string): Promise<UserInGroup[]> {
-    return this.participantService.findUsersInGroup(groupId);
+  @Get('group/:groupId/users')
+  findUsersInGroup(
+    @Param('groupId') groupId: string,
+    @User('id') callerId: string,
+  ): Promise<UserInGroup[]> {
+    return this.participantService.findUsersInGroup(groupId, callerId);
   }
 
   @HttpCode(200)
@@ -74,7 +81,7 @@ export class ParticipantController {
   }
 
   @HttpCode(200)
-  @Get('group/:groupId')
+  @Get('group/:groupId/me')
   findOne(
     @User('id') userId: string,
     @Param('groupId') groupId: string,
@@ -82,15 +89,18 @@ export class ParticipantController {
     return this.participantService.findOne(userId, groupId);
   }
 
-  @HttpCode(201)
-  @Patch('group/:groupId')
-  update(
-    @User('id') userId: string,
+  @HttpCode(200)
+  @Patch('/group/:groupId/user/:targetUserId/role')
+  updateUserRole(
+    @User('id') callerId: string,
     @Param('groupId') groupId: string,
-    @Body() updateParticipantDto: UpdateParticipantDto,
+    @Param('targetUserId') targetUserId: string,
+    @Body()
+    updateParticipantDto: UpdateParticipantRoleDto,
   ): Promise<Participant> {
     return this.participantService.update(
-      userId,
+      callerId,
+      targetUserId,
       groupId,
       updateParticipantDto,
     );

@@ -16,6 +16,7 @@ import { GroupService } from './group.service';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Group } from '@prisma/client';
+import { User } from 'src/user/user.decorator';
 
 @Controller('group')
 @UseGuards(JwtAuthGuard)
@@ -24,8 +25,11 @@ export class GroupController {
 
   @HttpCode(201)
   @Post()
-  create(@Body() createGroupDto: CreateGroupDto): Promise<Group> {
-    return this.groupService.create(createGroupDto);
+  create(
+    @User('id') callerId: string,
+    @Body() createGroupDto: CreateGroupDto,
+  ): Promise<Group> {
+    return this.groupService.create(createGroupDto, callerId);
   }
 
   @HttpCode(200)

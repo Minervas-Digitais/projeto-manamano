@@ -330,17 +330,16 @@ export async function createParticipantDto(prisma: PrismaService) {
   });
 
   const dto: CreateParticipantDto = {
-    role: UserRole.STUDENT,
-    groupId: groupId,
     inviteCode: fullGroup.inviteCode,
   };
 
-  return dto;
+  return [dto, groupId];
 }
 
 export async function createTestParticipant(prisma: PrismaService) {
-  const dto = await createParticipantDto(prisma);
-
+  const dtoRes = await createParticipantDto(prisma);
+  const dto = dtoRes[0];
+  const groupId: string = String(dtoRes[1]);
   const number = Array.from({ length: 10 }, () =>
     Math.floor(Math.random() * 10),
   ).join('');
@@ -352,8 +351,8 @@ export async function createTestParticipant(prisma: PrismaService) {
 
   const participant = await prisma.participant.create({
     data: {
-      role: dto.role,
-      groupId: dto.groupId,
+      role: UserRole.STUDENT,
+      groupId: groupId,
       userId,
     },
   });
