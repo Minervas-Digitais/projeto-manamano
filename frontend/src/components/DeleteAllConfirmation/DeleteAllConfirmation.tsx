@@ -2,7 +2,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   DeleteConfirmationButton,
@@ -25,23 +25,37 @@ export default function DeleteConfirmation({ text, display }: any) {
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
+
   const optionsDelete = async () => {
     const accessToken = await secureStorage.getItem('accessToken');
-    const loggedId = await secureStorage.getItem('loggedId');
-    console.log('todas notificações excluídas');
-    api
-      .delete('/notifications/user/', {
+
+    if (!accessToken) {
+      console.log('Erro ao deletar todas as notificações: token ausente');
+      return;
+    }
+
+    try {
+      await api.delete('/notifications/user', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      })
-      .then(() => {
-        localStorage.delete('displayNotif');
-        localStorage.delete('header');
-        setShouldDisplay(false);
-        console.log('Todas as notificações foram excluídas.');
-      })
-      .catch((err) => console.log('Erro ao deletar todas as notificações:', err));
+      });
+      localStorage.delete('displayNotif');
+      localStorage.delete('header');
+      setShouldDisplay(false);
+      console.log('Todas as notificações foram excluídas.');
+    } catch (err) {
+      console.log('Erro ao deletar todas as notificações:', {
+        status: (err as any)?.response?.status,
+        url: (err as any)?.config?.url,
+        responseData: (err as any)?.response?.data,
+      });
+    }
+  };
+
+  const handleCancel = () => {
+    localStorage.delete('displayNotif');
+    setShouldDisplay(false);
   };
 
   if (!fontsLoaded) return null;
@@ -61,11 +75,7 @@ export default function DeleteConfirmation({ text, display }: any) {
               Excluir
             </ModalOptionsNotificationText>
           </DeleteConfirmationButton>
-          <DeleteConfirmationButton
-            onPress={() => {
-              storage.delete('displayNotif');
-              setShouldDisplay(false);
-            }}>
+          <DeleteConfirmationButton onPress={handleCancel}>
             <ModalOptionsNotificationText font="inter-regular" color="#515151">
               Cancelar
             </ModalOptionsNotificationText>

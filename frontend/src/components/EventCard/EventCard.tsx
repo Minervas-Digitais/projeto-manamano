@@ -1,24 +1,16 @@
-/* eslint-disable prettier/prettier */
-/* eslint-disable react/jsx-indent */
 /* eslint-disable global-require */
-import React, { useState } from 'react';
+import React from 'react';
 import { useFonts } from 'expo-font';
-import { Alert, Image, Linking } from 'react-native';
-import Clipboard from '@react-native-clipboard/clipboard';
-import Toast from 'react-native-toast-message';
-import { toastConfig } from '../../pages/GlobalNotificationPage/GlobalNotificationPageStyle';
-
 import {
-  LessonsCardButtonContainer,
-  LessonsCardContainer,
-  LessonsCardInfoContainer,
-} from '../LessonsCard/LessonsCardStyle';
+  EventCardContainer,
+  EventCardDateRow,
+  EventCardHeader,
+  EventCardTitle,
+} from './EventCardStyle';
 import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
+import CalendarIcon from '../../assets/calendar-icon.svg';
 
 export default function EventCard({ date, title, description }: any) {
-  const calendar = require('../../assets/calendar-icon.svg');
-  const link = require('../../assets/link-icon.svg');
-
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -28,29 +20,24 @@ export default function EventCard({ date, title, description }: any) {
   }
 
   return (
-    <LessonsCardContainer onPress={() => {}} selected>
-      <LessonsCardInfoContainer>
-        <Image source={calendar} />
+    <EventCardContainer activeOpacity={0.9}>
+      <EventCardHeader>
+        <GroupDataText font="inter-regular" color="#7A7A7A" size="11px">
+          Evento
+        </GroupDataText>
+        <EventCardDateRow>
+          <CalendarIcon width="14px" height="14px" />
+          <GroupDataText font="inter-bold" size="11px" color="#160E47">
+            {date}
+          </GroupDataText>
+        </EventCardDateRow>
+      </EventCardHeader>
 
-        <GroupDataText font="inter-bold" size="12px" color="#160E47">
-          {' '}
-          {date}
-          <GroupDataText font="inter-bold" size="12px" color="#160E47" />
-        </GroupDataText>
-        <GroupDataText font="inter-bold" size="12px" color="#160E47" />
-      </LessonsCardInfoContainer>
-      <LessonsCardInfoContainer>
-        <GroupDataText font="inter-bold" size="16px" color="#4E4E4E" numberOfLines={1}>
-          {title}
-        </GroupDataText>
-      </LessonsCardInfoContainer>
-      <LessonsCardInfoContainer>
-        <GroupDataText font="inter-bold" size="12px" color="#4E4E4E" numberOfLines={1}>
-          {description}
-        </GroupDataText>
-      </LessonsCardInfoContainer>
+      <EventCardTitle numberOfLines={2}>{title}</EventCardTitle>
 
-      <Toast config={toastConfig} />
-    </LessonsCardContainer>
+      <GroupDataText numberOfLines={4} font="inter-regular" size="12px" color="#515151">
+        {description}
+      </GroupDataText>
+    </EventCardContainer>
   );
 }

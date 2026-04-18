@@ -114,7 +114,15 @@ export default function Profile({ navigation, route }: any) {
                     Authorization: `Bearer ${token}`,
                   },
                 });
-                setUserPosts(postData.data);
+
+                // Backend agora retorna formato paginado: { data, meta }
+                if (Array.isArray(postData?.data)) {
+                  setUserPosts(postData.data);
+                } else if (Array.isArray(postData)) {
+                  setUserPosts(postData);
+                } else {
+                  setUserPosts([]);
+                }
               } catch (error) {
                 console.error('Error fetching posts:', error);
               }
@@ -126,7 +134,7 @@ export default function Profile({ navigation, route }: any) {
                   headers: { Authorization: `Bearer ${token}` },
                   params: { all: true },
                 });
-                setSavedPosts(data);
+                setSavedPosts(savedPostsData);
               } catch (error) {
                 console.error('Error fetching saved posts:', error);
               }

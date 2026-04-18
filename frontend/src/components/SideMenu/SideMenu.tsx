@@ -1,9 +1,10 @@
 /* eslint-disable global-require */
 import React from 'react';
-import { Dimensions, Image, TouchableOpacity } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import {
+  SideMenuBottomOptionsContainer,
   SideMenuContainer,
   SideMenuLogoContainer,
   SideMenuPage,
@@ -27,7 +28,6 @@ import { RootStackParamList } from '../../navigation/types';
 
 export default function SideMenu({ display, onPress }: any) {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { width, height } = Dimensions.get('window');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -87,7 +87,7 @@ export default function SideMenu({ display, onPress }: any) {
         <SideMenuLineContainer>
           <SideMenuLine />
         </SideMenuLineContainer>
-        <SideMenuOptionsContainer style={{ height: height * 0.2 }}>
+        <SideMenuBottomOptionsContainer>
           <SideMenuOptions
             icon={<ConfigIcon width={24} height={24} />}
             text="Configurações"
@@ -101,7 +101,7 @@ export default function SideMenu({ display, onPress }: any) {
             onPress={() => navigation.navigate('WelcomeScreen')}
             color="#EF4036"
           />
-        </SideMenuOptionsContainer>
+        </SideMenuBottomOptionsContainer>
       </SideMenuContainer>
       <TouchableOpacity activeOpacity={0} onPress={onPress}>
         <SideMenuContainerShadow />

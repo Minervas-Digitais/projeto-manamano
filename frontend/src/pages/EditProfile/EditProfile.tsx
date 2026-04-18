@@ -81,7 +81,7 @@ export default function EditProfile() {
       }
 
       console.log('Sending request to API...');
-      const response = await api.patch('/user/', data, {
+      const response = await api.patch('/user', data, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -257,10 +257,10 @@ export default function EditProfile() {
         } catch (error) {
           console.error('Erro ao buscar os dados do usuário:', error);
         }
-      };
+      }
+    };
 
-      fetchUser();
-    }
+    fetchUser();
   }, [profileImageData, setValue]);
 
   const [fontsLoaded] = useFonts({

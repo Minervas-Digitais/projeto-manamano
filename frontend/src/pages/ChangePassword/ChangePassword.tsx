@@ -28,11 +28,6 @@ export default function ChangePassword() {
       if (loggedId && accessToken) {
         setAccessTokenState(accessToken);
         setLoggedIdState(loggedId);
-        api.get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
       }
     };
     fetchData();
@@ -45,8 +40,8 @@ export default function ChangePassword() {
   } = useForm({});
   const onSubmit = async (data: any) => {
     try {
-      const response = await api.patch(
-        '/user/change-password/',
+      await api.patch(
+        '/user/change-password',
         {
           oldPassword: data.oldpassword,
           newPassword: data.newpassword,

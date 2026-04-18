@@ -129,7 +129,7 @@ export default function Post() {
 
     const fetchUserAndImage = async () => {
       try {
-        const responseUser = await api.get(`user/public/${post.userId}`, {
+        const responseUser = await api.get(`/user/${post.userId}`, {
           headers: { Authorization: `Bearer ${accessTokenState}` },
         });
         const userData: User = responseUser.data;
@@ -172,7 +172,7 @@ export default function Post() {
         const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
         const usersData = await Promise.all(
           uniqueUserIds.map(async (userId) => {
-            const response = await api.get(`user/${userId}`, {
+            const response = await api.get(`/user/${userId}`, {
               headers: {
                 Authorization: `Bearer ${accessTokenState}`,
               },

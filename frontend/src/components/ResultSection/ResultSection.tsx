@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
-import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, View, Text, ScrollView, Dimensions, Alert, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { TouchableOpacity, View, Text, ScrollView, Dimensions, Alert } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Buffer } from 'buffer';
@@ -111,42 +111,45 @@ export default function ResultSection({
   };
 
   // Função para buscar dados do servidor
-  const fetchData = async (url: string, sectionKey?: keyof DataState): Promise<void> => {
-    if (!accessToken) {
-      console.error('No access token available.');
-      return;
-    }
-
-    try {
-      const response = await api.post(
-        url,
-        { input: searchText },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
-
-      const json = response.data;
-      const parsedData = { users: [], groups: [], posts: [] };
-
-      if (sectionKey) {
-        parsedData[sectionKey] = json;
-      } else {
-        Object.assign(parsedData, json);
+  const fetchData = useCallback(
+    async (url: string, sectionKey?: keyof DataState): Promise<void> => {
+      if (!accessToken) {
+        console.error('No access token available.');
+        return;
       }
 
-      setData(parsedData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  };
+      try {
+        const response = await api.post(
+          url,
+          { input: searchText },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        );
+
+        const json = response.data;
+        const parsedData = { users: [], groups: [], posts: [] };
+
+        if (sectionKey) {
+          parsedData[sectionKey] = json;
+        } else {
+          Object.assign(parsedData, json);
+        }
+
+        setData(parsedData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    },
+    [accessToken, searchText],
+  );
 
   // Delete user
   const onPressUser = async (userId: string) => {
     try {
-      const response = await api.delete(`/user/${userId}`, {
+      await api.delete(`/user/${userId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -166,7 +169,7 @@ export default function ResultSection({
   // Delete group
   const onPressGroup = async (groupId: string) => {
     try {
-      const response = await api.delete(`/group/${groupId}`, {
+      await api.delete(`/group/${groupId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -186,7 +189,7 @@ export default function ResultSection({
   // Delete post
   const onPressPost = async (postId: string) => {
     try {
-      const response = await api.delete(`/post/${postId}`, {
+      await api.delete(`/post/${postId}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -210,14 +213,14 @@ export default function ResultSection({
     if (searchText && !selectedSection) {
       fetchData('/search');
     }
-  }, [searchText, accessToken]);
+  }, [searchText, selectedSection, fetchData]);
 
   useEffect(() => {
     if (selectedSection) {
       const url = `/search/filter/${selectedSection.toLowerCase()}`;
       fetchData(url, selectedSection as keyof DataState);
     }
-  }, [selectedSection, accessToken]);
+  }, [selectedSection, fetchData]);
 
   const fetchUserName = async (userId: string): Promise<string> => {
     if (!accessToken) {
@@ -264,12 +267,17 @@ export default function ResultSection({
 
   useEffect(() => {
     const loadUserAvatars = async () => {
-      const newUserAvatars: Record<string, any> = {};
+      const avatars = await Promise.all(
+        data.users.map(async (user) => ({
+          id: user.id,
+          image: await getUserProfileImage(user.id),
+        })),
+      );
 
-      for (const user of data.users) {
-        const image = await getUserProfileImage(user.id);
-        newUserAvatars[user.id] = image;
-      }
+      const newUserAvatars: Record<string, any> = {};
+      avatars.forEach(({ id, image }) => {
+        newUserAvatars[id] = image;
+      });
 
       setUserAvatars(newUserAvatars);
     };
@@ -279,30 +287,10 @@ export default function ResultSection({
     }
   }, [data.users]);
 
-  useEffect(() => {
-    if (searchText && !selectedSection) {
-      fetchData('/search');
-    }
-  }, [searchText, accessToken]);
-
-  useEffect(() => {
-    if (selectedSection) {
-      const url = `/search/filter/${selectedSection.toLowerCase()}`;
-      fetchData(url, selectedSection as keyof DataState);
-    }
-  }, [selectedSection, accessToken]);
-
   const handleFilterPress = (section: string): void => {
     const newSection = selectedSection === section ? '' : section;
     setData({ users: [], groups: [], posts: [] });
     setSelectedSection(newSection);
-
-    if (!newSection) {
-      fetchData('/search');
-    } else {
-      const url = `/search/filter/${newSection.toLowerCase()}`;
-      fetchData(url, newSection as keyof DataState);
-    }
   };
 
   const handleDeletePress = (type: 'user' | 'group' | 'post', id: string) => {
@@ -317,10 +305,6 @@ export default function ResultSection({
     } else if (deleteModal.type === 'post') {
       await onPressPost(deleteModal.id);
     }
-    setDeleteModal({ visible: false, type: '', id: '' });
-  };
-
-  const handleCancelDelete = () => {
     setDeleteModal({ visible: false, type: '', id: '' });
   };
 

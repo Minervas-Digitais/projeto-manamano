@@ -4,6 +4,7 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useFonts } from 'expo-font';
+import { Buffer } from 'buffer';
 import {
   StyleSheet,
   View,
@@ -225,10 +226,15 @@ export default function GroupPage({ navigation }: any) {
       return;
     }
     try {
-      const response = await api.get(`/participant/${loggedId},${groupId}`, {
+      const response = await api.get(`/participant/group/${groupId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUserRole(response.data.role || 'MEMBER');
+
+      const currentUserParticipant = Array.isArray(response.data)
+        ? response.data.find((participant: any) => participant.userId === loggedId)
+        : null;
+
+      setUserRole(currentUserParticipant?.role || 'MEMBER');
     } catch (error: unknown) {
       if (error && typeof error === 'object' && (error as AxiosError).isAxiosError) {
         const axiosError = error as AxiosError;

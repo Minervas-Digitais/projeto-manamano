@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, Dimensions } from 'react-native';
 import { useRoute } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import {
   GroupDataPage,
   GroupDataText,
@@ -100,7 +101,7 @@ export default function GroupData({ navigation }: any) {
           .then((res) => {
             setGroupParticipant(res.data);
             const loggedUserParticipant = res.data.find(
-              (participant: any) => participant.user.id === loggedId,
+              (participant: any) => participant.userId === loggedId,
             );
             if (loggedUserParticipant) {
               setLoggedUserParticipantRole(loggedUserParticipant.role);
@@ -123,7 +124,7 @@ export default function GroupData({ navigation }: any) {
 
   function handleRemoveParticipant() {
     api
-      .delete(`/participant/${loggedIdState},${groupId}`, {
+      .delete(`/participant/group/${groupId}`, {
         headers: {
           Authorization: `Bearer ${accessTokenState}`,
         },
@@ -134,6 +135,15 @@ export default function GroupData({ navigation }: any) {
   }
 
   const handleDeleteParticipant = async (participantUserId: string) => {
+    if (participantUserId !== loggedIdState) {
+      Toast.show({
+        type: 'error',
+        text1: 'Ação indisponível',
+        text2: 'O backend atual não possui rota para remover outros participantes.',
+      });
+      return;
+    }
+
     try {
       await api.delete(`/participant/group/${groupId}`, {
         headers: {
@@ -202,7 +212,7 @@ export default function GroupData({ navigation }: any) {
                 if (item.role !== 'MEMBER') {
                   return (
                     <View
-                      key={item.user.id}
+                      key={item.userId}
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',
@@ -243,7 +253,7 @@ export default function GroupData({ navigation }: any) {
                 if (item.role === 'MEMBER') {
                   return (
                     <View
-                      key={item.user.id}
+                      key={item.userId}
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',

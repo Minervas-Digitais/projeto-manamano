@@ -24,11 +24,6 @@ export default function GetInTouch() {
       if (loggedId && accessToken) {
         setAccessTokenState(accessToken);
         setLoggedIdState(loggedId);
-        api.get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
       }
     };
 
