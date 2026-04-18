@@ -418,7 +418,8 @@ export default function GroupPage({ navigation }: any) {
               {posts.length > 0 ? (
                 posts
                   .filter((item: any) => item.isPinned)
-                  .toReversed()
+                  .slice()
+                  .reverse()
                   .map((item: any) => {
                     if (item.type === 'NORMAL') {
                       return (

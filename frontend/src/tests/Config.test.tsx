@@ -65,3 +65,6 @@ describe('Config Page', () => {
     expect(mockedNavigate).toHaveBeenCalledWith('ChangePassword');
   });
 });
+
+
+

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import Toast from 'react-native-toast-message';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
 import NewPost from '../pages/NewPost/NewPost';
 
 const originalGetDocumentAsync = require('expo-document-picker').getDocumentAsync;
@@ -26,9 +26,10 @@ jest.mock('../services/api', () => ({
   post: jest.fn(() => Promise.resolve({ data: { id: 'post-1' } })),
 }));
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
   },
 }));
 
@@ -75,16 +76,48 @@ jest.mock('../pages/NewPost/NewPost', () => {
 });
 
 describe('NewPost Page', () => {
+  const originalConsoleError = console.error;
+  const originalConsoleWarn = console.warn;
+
+  beforeAll(() => {
+    jest.spyOn(console, 'error').mockImplementation((...args: any[]) => {
+      const message = args[0];
+      if (
+        typeof message === 'string' &&
+        (message.includes('Erro ao enviar publicação:') ||
+          message.includes('Erro ao selecionar os arquivos:'))
+      ) {
+        return;
+      }
+      originalConsoleError(...args);
+    });
+
+    jest.spyOn(console, 'warn').mockImplementation((...args: any[]) => {
+      const message = args[0];
+      if (
+        typeof message === 'string' &&
+        message.includes('[styled-components/native] The value "fit-content"')
+      ) {
+        return;
+      }
+      originalConsoleWarn(...args);
+    });
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
-    const mockedStorage = storage as jest.Mocked<typeof storage>;
-    mockedStorage.getString.mockImplementation((key: string) => {
+    const mockedStorage = storage as any;
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'loggedId') return 'admin-123';
       if (key === 'accessToken') return 'fake-token';
-      return undefined;
+      return null;
     });
     (api.get as jest.Mock).mockImplementation((url: string) => {
-      if (url.startsWith('category/group/')) {
+      if (url.includes('/category/group/')) {
         return Promise.resolve({
           data: [
             { id: 'cat-1', name: 'Geral', type: 'NORMAL' },
@@ -97,17 +130,18 @@ describe('NewPost Page', () => {
   });
 
   it('should render NewPost page and categories', async () => {
-    const { getByText, findByText } = render(<NewPost />);
-    expect(getByText('Categoria')).toBeTruthy();
-    expect(getByText('Publicar')).toBeTruthy();
-    expect(getByText('Publicação')).toBeTruthy();
+    const { getByText, getByLabelText, findByText } = render(<NewPost />);
     expect(await findByText('Geral')).toBeTruthy();
     expect(await findByText('Evento')).toBeTruthy();
+    expect(getByText('Categoria')).toBeTruthy();
+    expect(getByLabelText('Publicar')).toBeTruthy();
+    expect(getByText('Publicação')).toBeTruthy();
   });
 
   it('should show error if trying to submit without input', async () => {
-    const { getByText, findByText } = render(<NewPost />);
-    fireEvent.press(getByText('Publicar'));
+    const { getByLabelText, findByText } = render(<NewPost />);
+    await findByText('Geral');
+    fireEvent.press(getByLabelText('Publicar'));
     expect(await findByText('Campo obrigatório')).toBeTruthy();
     expect(api.post).not.toHaveBeenCalled();
   });
@@ -123,7 +157,6 @@ describe('NewPost Page', () => {
         '/post',
         expect.objectContaining({
           type: 'NORMAL',
-          userId: 'admin-123',
           input: 'Conteúdo do post',
           groupId: 'group-123',
         }),
@@ -286,3 +319,8 @@ describe('NewPost Page', () => {
     expect(await findByText('Data inválida')).toBeTruthy();
   });
 });
+
+
+
+
+

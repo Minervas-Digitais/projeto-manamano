@@ -1,13 +1,16 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import Toast from 'react-native-toast-message';
 import Notification from '../pages/Notification/Notification';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
-import { Alert } from 'react-native';
-import Toast from 'react-native-toast-message';
+import storage from '../services/secureStorage';
+import localStorage from '../services/localStorage';
 
 jest.mock('react-native-toast-message', () => ({
-  show: jest.fn(),
+  __esModule: true,
+  default: {
+    show: jest.fn(),
+  },
 }));
 
 jest.mock('expo-font', () => ({
@@ -27,10 +30,19 @@ jest.mock('../../assets/dotsMenuBig.svg', () => 'DotsMenuIcon');
 jest.mock('../../assets/no-notification-icon.svg', () => 'NoNotificationIcon');
 
 jest.mock('../services/api');
-jest.mock('../pages/SignIn/SignIn');
+jest.mock('../services/secureStorage');
+jest.mock('../services/localStorage', () => ({
+  __esModule: true,
+  default: {
+    getString: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
 
 const mockedApi = api as jest.Mocked<typeof api>;
-const mockedStorage = storage as jest.Mocked<typeof storage>;
+const mockedStorage = storage as any;
+const mockedLocalStorage = localStorage as any;
 
 interface NotificationType {
   id: string;
@@ -97,15 +109,21 @@ describe('Notification', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockedStorage.getString.mockImplementation((key: string) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'loggedId') return 'user-123';
+      if (key === 'accessToken') return 'fake-token';
+      return null;
+    });
+    mockedStorage.removeItem.mockResolvedValue(undefined);
+    mockedStorage.setItem.mockResolvedValue(undefined);
+    mockedLocalStorage.getString.mockImplementation((key: string) => {
       if (key === 'accessToken') return 'fake-token';
       return undefined;
     });
 
     // mockando apenas para user
     mockedApi.get.mockImplementation((url: string) => {
-      if (url.includes('notifications/user/')) {
+      if (url.includes('notifications/user')) {
         return Promise.resolve({ data: mockNotifications });
       }
       if (url.includes('/user/')) {
@@ -119,7 +137,7 @@ describe('Notification', () => {
 
   it('Deve renderizar a mensagem de sem notificacoes quando nao ha notificacoes', async () => {
     mockedApi.get.mockImplementation(async (url: string) => {
-      if (url.includes('notifications/user/')) {
+      if (url.includes('notifications/user')) {
         return { data: [] };
       }
       if (url.includes('/user/')) {
@@ -140,7 +158,7 @@ describe('Notification', () => {
 
   it('Deve renderizar a lista de notificacoes para um usuario comum', async () => {
     mockedApi.get.mockImplementation((url: string) => {
-      if (url.includes('notifications/user/')) {
+      if (url.includes('notifications/user')) {
         return Promise.resolve({ data: mockNotifications });
       }
 
@@ -165,8 +183,8 @@ describe('Notification', () => {
 
     await waitFor(() => {
       expect(mockedApi.patch).toHaveBeenCalledWith(
-        'notifications/notif-1',
-        { isRead: true },
+        '/notifications/notif-1',
+        {},
         expect.any(Object),
       );
     });
@@ -182,8 +200,8 @@ describe('Notification', () => {
 
     await waitFor(() => {
       expect(mockedApi.patch).toHaveBeenCalledWith(
-        'notifications/notif-4',
-        { isRead: true },
+        '/notifications/notif-4',
+        {},
         expect.any(Object),
       );
     });
@@ -199,8 +217,8 @@ describe('Notification', () => {
 
     await waitFor(() => {
       expect(mockedApi.patch).toHaveBeenCalledWith(
-        'notifications/notif-2',
-        { isRead: true },
+        '/notifications/notif-2',
+        {},
         expect.any(Object),
       );
     });
@@ -209,14 +227,14 @@ describe('Notification', () => {
   });
 
   it('Deve renderizar a tela especifica para ADMIN', async () => {
-    mockedStorage.getString.mockImplementation((key: string) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'loggedId') return 'admin-123';
       if (key === 'accessToken') return 'admin-fake-token';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
-      if (url.includes('notifications/user/')) {
+      if (url.includes('notifications/user')) {
         return Promise.resolve({ data: mockNotifications });
       }
 
@@ -260,7 +278,7 @@ describe('Notification', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     mockedApi.get.mockImplementation(async (url: string) => {
-      if (url.includes('notifications/user/')) {
+      if (url.includes('notifications/user')) {
       }
       if (url.includes('/user/')) {
         return Promise.reject(new Error('Falha ao buscar usuário'));
@@ -281,20 +299,21 @@ describe('Notification', () => {
   });
 
   it('Deve excluir uma notificação após a confirmação do admin', async () => {
-    jest.useFakeTimers();
-
-    let currentNotifications = [...mockNotifications];
     const notifToDelete = mockNotifications[1];
 
-    mockedStorage.getString.mockImplementation((key: string) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'loggedId') return 'admin-123';
+      if (key === 'accessToken') return 'admin-fake-token';
+      return null;
+    });
+    mockedLocalStorage.getString.mockImplementation((key: string) => {
       if (key === 'accessToken') return 'admin-fake-token';
       return undefined;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
-      if (url.includes('notifications/user/')) {
-        return Promise.resolve({ data: currentNotifications });
+      if (url.includes('notifications/user')) {
+        return Promise.resolve({ data: mockNotifications });
       }
       if (url.includes('/user/')) {
         return Promise.resolve({ data: mockAdmin });
@@ -302,13 +321,9 @@ describe('Notification', () => {
       return Promise.reject(new Error(`API URL not mocked: ${url}`));
     });
 
-    mockedApi.delete.mockImplementation(async (url) => {
-      const idToDelete = url.split('/')[1];
-      currentNotifications = currentNotifications.filter((n) => n.id !== idToDelete);
-      return Promise.resolve({});
-    });
+    mockedApi.delete.mockResolvedValue({});
 
-    const { findByTestId, queryByText } = render(
+    const { findByTestId } = render(
       <Notification navigation={{ navigate: mockedNavigate }} />,
     );
 
@@ -321,26 +336,35 @@ describe('Notification', () => {
       fireEvent.press(deleteButton);
     });
 
-    await act(async () => {
-      jest.runOnlyPendingTimers();
+    await waitFor(() => {
+      expect(mockedApi.delete).toHaveBeenCalledWith(`notifications/${notifToDelete.id}`, {
+        headers: { Authorization: 'Bearer admin-fake-token' },
+      });
     });
 
     await waitFor(() => {
-      expect(queryByText(notifToDelete.body)).toBeNull();
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'success',
+          text1: 'Notificação excluída com sucesso!',
+        }),
+      );
     });
-
-    jest.useRealTimers();
   });
 
   it('deve exibir um alerta de erro se a deleção da notificação falhar', async () => {
-    mockedStorage.getString.mockImplementation((key: string) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'loggedId') return 'admin-123';
+      if (key === 'accessToken') return 'admin-fake-token';
+      return null;
+    });
+    mockedLocalStorage.getString.mockImplementation((key: string) => {
       if (key === 'accessToken') return 'admin-fake-token';
       return undefined;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
-      if (url.includes('notifications/user/')) {
+      if (url.includes('notifications/user')) {
         return Promise.resolve({ data: mockNotifications });
       }
       if (url.includes('/user/')) {
@@ -378,3 +402,7 @@ describe('Notification', () => {
     expect(mockedNavigate).toHaveBeenCalledWith('Home');
   });
 });
+
+
+
+

@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
 import React, { useRef, useState, useEffect } from 'react';
-import { TouchableOpacity, View, Dimensions } from 'react-native';
+import { TouchableOpacity, View, Dimensions, Alert } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { format, set } from 'date-fns';
 import { Buffer } from 'buffer';
@@ -76,7 +76,7 @@ export default function EditProfile() {
 
       if (!token || !userId) {
         console.log('Missing token or user ID.');
-        alert('No access token or user ID found. Please sign in again.');
+        Alert.alert('No access token or user ID found. Please sign in again.');
         return;
       }
 
@@ -88,14 +88,14 @@ export default function EditProfile() {
       });
 
       console.log('API response:', response.data);
-      alert('Changes saved successfully!');
+      Alert.alert('Changes saved successfully!');
     } catch (error: any) {
       console.error('Error saving user data:', error);
       if (error.response && error.response.data) {
         console.error('Error response from API:', error.response.data);
-        alert('Failed to save data: ' + (error.response.data.message || 'Unknown error'));
+        Alert.alert('Failed to save data: ' + (error.response.data.message || 'Unknown error'));
       } else {
-        alert('There was an error saving your changes. Please try again.');
+        Alert.alert('There was an error saving your changes. Please try again.');
       }
     }
   };
@@ -467,9 +467,9 @@ export default function EditProfile() {
                     .join('\n');
 
                   if (errorMessages) {
-                    alert(`Erros:\n${errorMessages}`);
+                    Alert.alert(`Erros:\n${errorMessages}`);
                   } else {
-                    alert('A submissão falhou por erros desconhecidos.');
+                    Alert.alert('A submissão falhou por erros desconhecidos.');
                   }
 
                   console.log('Form submission failed due to validation errors:', errors);

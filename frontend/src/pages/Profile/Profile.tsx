@@ -134,7 +134,13 @@ export default function Profile({ navigation, route }: any) {
                   headers: { Authorization: `Bearer ${token}` },
                   params: { all: true },
                 });
-                setSavedPosts(savedPostsData);
+                if (Array.isArray(data?.data)) {
+                  setSavedPosts(data.data);
+                } else if (Array.isArray(data)) {
+                  setSavedPosts(data);
+                } else {
+                  setSavedPosts([]);
+                }
               } catch (error) {
                 console.error('Error fetching saved posts:', error);
               }

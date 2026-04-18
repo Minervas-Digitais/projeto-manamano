@@ -1,19 +1,20 @@
 import React from 'react';
-import GroupData from '../pages/GroupData/GroupData';
-import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
-import { mocked } from 'jest-mock';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { mocked } from 'jest-mock';
+import GroupData from '../pages/GroupData/GroupData';
+import api from '../services/api';
+import storage from '../services/secureStorage';
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true], // Simula que as fontes já foram carregadas
 }));
 
 jest.mock('../services/api');
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
   },
 }));
 
@@ -56,15 +57,18 @@ describe('GroupData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockedStorage.getString.mockImplementation((key: string) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'user-logged-id';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockImplementation((url: string): Promise<any> => {
       if (url === `/group/${mockRoute.params.groupId}`) {
         return Promise.resolve({ data: mockGroupInfo });
+      }
+      if (url === '/user/user-logged-id') {
+        return Promise.resolve({ data: { sysRole: 'ADMIN' } });
       }
       if (url === `/participant/group/${mockRoute.params.groupId}`) {
         return Promise.resolve({ data: mockGroupParticipants });
@@ -126,7 +130,7 @@ describe('GroupData', () => {
 
     await waitFor(() => {
       expect(mockedApi.delete).toHaveBeenCalledWith(
-        `/participant/user-logged-id,${mockRoute.params.groupId}`,
+        `/participant/group/${mockRoute.params.groupId}`,
         {
           headers: {
             Authorization: 'Bearer fake-token',
@@ -141,6 +145,9 @@ describe('GroupData', () => {
     mockedApi.get.mockImplementation((url: string): Promise<any> => {
       if (url === `/group/${mockRoute.params.groupId}`) {
         return Promise.resolve({ data: mockGroupInfo });
+      }
+      if (url === '/user/user-logged-id') {
+        return Promise.resolve({ data: { sysRole: 'ADMIN' } });
       }
       if (url === `/participant/group/${mockRoute.params.groupId}`) {
         return Promise.resolve({ data: [] }); // Retorna array vazio
@@ -159,7 +166,7 @@ describe('GroupData', () => {
   });
 
   it('deve renderizar os erros corretamente quando a API nao conseguir carregar os dados', () => {
-    mockedApi.get.mockReturnValue(new Promise(() => {}));
+    mockedApi.get.mockResolvedValue(new Promise(() => {}));
 
     const { getByText, getAllByText } = render(
       <NavigationContainer>
@@ -176,3 +183,9 @@ describe('GroupData', () => {
     expect(emptyMessages.length).toBe(2);
   });
 });
+
+
+
+
+
+

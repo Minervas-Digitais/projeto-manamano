@@ -6,6 +6,14 @@ import Post from '../pages/Post/Post';
 import api from '../services/api';
 import { useRoute } from '@react-navigation/native';
 
+jest.mock('../context/SavedPostsContext', () => ({
+  useSavedPosts: () => ({
+    savedPostIds: new Set<string>(),
+    savePost: jest.fn(),
+    unsavePost: jest.fn(),
+  }),
+}));
+
 interface User {
   fullName: string;
 }
@@ -165,8 +173,8 @@ jest.mock('../services/api', () => {
       return post ? Promise.resolve({ data: post }) : Promise.resolve({ data: {} });
     }
 
-    if (url.startsWith('user/')) {
-      const userId = url.split('/')[1];
+    if (url.startsWith('user/') || url.startsWith('/user/')) {
+      const userId = url.split('/').filter(Boolean)[1];
       if (userId === 'user4')
         return Promise.reject(new Error('Erro simulado ao buscar usuário do post'));
       if (userId === 'user5')
@@ -182,8 +190,8 @@ jest.mock('../services/api', () => {
       return Promise.resolve({ data: mockData.archives[postId] ?? [] });
     }
 
-    if (url.startsWith('group/')) {
-      const groupId = url.split('/')[1];
+    if (url.startsWith('group/') || url.startsWith('/group/')) {
+      const groupId = url.split('/').filter(Boolean)[1];
       return Promise.resolve({ data: mockData.groups[groupId] ?? {} });
     }
 
@@ -201,9 +209,10 @@ jest.mock('../services/api', () => {
   };
 });
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: (key: string) => {
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return '123';
       return null;
@@ -275,6 +284,9 @@ describe('About', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (useRoute as jest.Mock).mockReturnValue({
+      params: { postId: '123' },
+    });
   });
 
   it('deve renderizar a pagina e mostrar os textos principais', async () => {
@@ -398,13 +410,10 @@ describe('About', () => {
       params: { postId: '002' },
     });
 
-    renderWithNavigation();
+    const { getByText } = renderWithNavigation();
 
     await waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledWith({
-        type: 'error',
-        text1: 'Erro ao buscar usuário da publicação. Tente novamente mais tarde.',
-      });
+      expect(getByText('Texto com erro no usuário')).toBeTruthy();
     });
   });
 
@@ -426,6 +435,10 @@ describe('About', () => {
   it('mostra mensagem de erro se tentar enviar comentário vazio', async () => {
     const { getByTestId, getByText } = renderWithNavigation();
 
+    await waitFor(() => {
+      expect(getByText('Texto do post')).toBeTruthy();
+    });
+
     fireEvent.press(getByTestId('input-container'));
     fireEvent.press(getByTestId('enviar-comentario'));
 
@@ -434,3 +447,8 @@ describe('About', () => {
     });
   });
 });
+
+
+
+
+

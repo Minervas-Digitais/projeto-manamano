@@ -24,6 +24,8 @@ const config: Config = {
   ],
 
   moduleDirectories: ['node_modules', 'src'],
+
+  setupFilesAfterEnv: ['<rootDir>/setupTests.ts'],
 };
 
 export default config;

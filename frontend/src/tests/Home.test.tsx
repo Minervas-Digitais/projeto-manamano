@@ -2,7 +2,8 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import Home from '../pages/Home/Home';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
+import { View } from 'react-native';
 
 // Mocks
 const mockedNavigate = jest.fn();
@@ -12,18 +13,26 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     navigate: mockedNavigate,
   }),
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    callback();
+  },
 }));
 
 jest.mock('../services/api');
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
-    set: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
   },
 }));
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
+}));
+
+jest.mock('expo-linear-gradient', () => ({
+  LinearGradient: ({ children }: any) => <View>{children}</View>,
 }));
 
 // Mock do SideMenu para evitar complexidade no teste da Home
@@ -32,26 +41,30 @@ jest.mock('../components/SideMenu/SideMenu', () => {
   return MockSideMenu;
 });
 
+jest.mock('../components/PostCard/PostCard', () => {
+  const React = require('react');
+  const { TouchableOpacity, Text } = require('react-native');
+
+  return function MockPostCard({ postContent, onPressPost, postId }: any) {
+    return (
+      <TouchableOpacity onPress={onPressPost} testID={`post-card-${postId || 'unknown'}`}>
+        <Text>{postContent}</Text>
+      </TouchableOpacity>
+    );
+  };
+});
+
 describe('Home Page', () => {
   const apiGetMock = api.get as jest.Mock;
-  const storageGetMock = storage.getString as jest.Mock;
+  const storageGetMock = storage.getItem as jest.Mock;
 
   const mockUser = { fullName: 'Usuário Teste' };
-  const mockGroupsWithPosts = [
+  const mockGroups = [
     {
       groupId: 'group-1',
       participantCount: 5,
       group: {
         name: 'Grupo de Teste 1',
-        Post: [
-          {
-            id: 'post-1',
-            input: 'Conteúdo do primeiro post.',
-            commentsCount: 2,
-            createdAt: new Date().toISOString(),
-            user: { fullName: 'Autor 1' },
-          },
-        ],
       },
     },
     {
@@ -59,7 +72,51 @@ describe('Home Page', () => {
       participantCount: 10,
       group: {
         name: 'Grupo de Teste 2',
-        Post: [], // Grupo sem posts para testar a renderização mista
+      },
+    },
+  ];
+
+  const mockPosts = [
+    {
+      id: 'post-1',
+      input: 'Conteúdo do primeiro post.',
+      commentsCount: 2,
+      createdAt: new Date().toISOString(),
+      groupId: 'group-1',
+      group: {
+        name: 'Grupo de Teste 1',
+      },
+      user: {
+        id: 'author-1',
+        fullName: 'Autor 1',
+      },
+    },
+  ];
+
+  const mockPostsResponse = {
+    data: {
+      posts: mockPosts,
+      pagination: {
+        hasMore: false,
+      },
+    },
+  };
+
+  const emptyPostsResponse = {
+    data: {
+      posts: [],
+      pagination: {
+        hasMore: false,
+      },
+    },
+  };
+
+  const groupWithoutPosts = [
+    {
+      groupId: 'group-1',
+      participantCount: 5,
+      group: {
+        name: 'Grupo Sem Posts',
       },
     },
   ];
@@ -73,11 +130,17 @@ describe('Home Page', () => {
       return null;
     });
     apiGetMock.mockImplementation((url: string) => {
+      if (url.includes('/user/') && url.includes('/profile-picture')) {
+        return Promise.reject(new Error('No profile picture'));
+      }
       if (url.includes('/user/')) {
         return Promise.resolve({ data: mockUser });
       }
+      if (url.includes('participant/groups/posts')) {
+        return Promise.resolve(mockPostsResponse);
+      }
       if (url.includes('participant/groups/')) {
-        return Promise.resolve({ data: mockGroupsWithPosts });
+        return Promise.resolve({ data: mockGroups });
       }
       return Promise.reject(new Error(`Unhandled API call: ${url}`));
     });
@@ -102,7 +165,21 @@ describe('Home Page', () => {
   });
 
   it('should display a message if there are no groups', async () => {
-    apiGetMock.mockResolvedValueOnce({ data: mockUser }).mockResolvedValueOnce({ data: [] });
+    apiGetMock.mockImplementation((url: string) => {
+      if (url.includes('/user/') && url.includes('/profile-picture')) {
+        return Promise.reject(new Error('No profile picture'));
+      }
+      if (url.includes('/user/')) {
+        return Promise.resolve({ data: mockUser });
+      }
+      if (url.includes('participant/groups/posts')) {
+        return Promise.resolve(emptyPostsResponse);
+      }
+      if (url.includes('participant/groups/')) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.reject(new Error(`Unhandled API call: ${url}`));
+    });
 
     const { findByText } = render(<Home navigation={{ navigate: mockedNavigate }} />);
 
@@ -110,16 +187,21 @@ describe('Home Page', () => {
   });
 
   it('should display a message if there are no posts', async () => {
-    const groupsWithoutPosts = [
-      {
-        groupId: 'group-1',
-        participantCount: 5,
-        group: { name: 'Grupo Sem Posts', Post: [] },
-      },
-    ];
-    apiGetMock
-      .mockResolvedValueOnce({ data: mockUser })
-      .mockResolvedValueOnce({ data: groupsWithoutPosts });
+    apiGetMock.mockImplementation((url: string) => {
+      if (url.includes('/user/') && url.includes('/profile-picture')) {
+        return Promise.reject(new Error('No profile picture'));
+      }
+      if (url.includes('/user/')) {
+        return Promise.resolve({ data: mockUser });
+      }
+      if (url.includes('participant/groups/posts')) {
+        return Promise.resolve(emptyPostsResponse);
+      }
+      if (url.includes('participant/groups/')) {
+        return Promise.resolve({ data: groupWithoutPosts });
+      }
+      return Promise.reject(new Error(`Unhandled API call: ${url}`));
+    });
 
     const { findByText } = render(<Home navigation={{ navigate: mockedNavigate }} />);
 
@@ -188,3 +270,8 @@ describe('Home Page', () => {
     expect(await findByText('Conteúdo do primeiro post.')).toBeTruthy();
   });
 });
+
+
+
+
+

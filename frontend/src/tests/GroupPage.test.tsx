@@ -3,7 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { TouchableOpacity, Text, View } from 'react-native';
 import GroupPage from '../pages/GroupPage/GroupPage';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
 
 const mockedNavigate = jest.fn();
 const mockedRoute = {
@@ -22,16 +22,17 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('../services/api');
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
-    set: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
   },
 }));
 
 jest.mock('../pages/Home/Home', () => ({
   storageHome: {
-    getString: jest.fn(),
+    get: jest.fn(),
     set: jest.fn(),
   },
 }));
@@ -99,10 +100,10 @@ jest.mock('../components/LessonsCard/LessonsCard', () => {
 });
 
 jest.mock('../components/GroupArchives/GroupArchives', () => {
-  function MockGroupArchives({ archiveName }: any) {
+  function MockGroupArchives({ archive }: any) {
     return (
-      <View testID={`archive-${archiveName}`}>
-        <Text>{archiveName}</Text>
+      <View testID={`archive-${archive?.name || 'unknown'}`}>
+        <Text>{archive?.name || 'Unknown archive'}</Text>
       </View>
     );
   }
@@ -110,10 +111,12 @@ jest.mock('../components/GroupArchives/GroupArchives', () => {
 });
 
 jest.mock('../components/CategoryButton/CategoryButton', () => {
-  function MockCategoryButton({ category, selected, onPress }: any) {
+  function MockCategoryButton({ categoryName, filter, onPress }: any) {
     return (
-      <TouchableOpacity onPress={onPress} testID={`category-${category || 'unknown'}`}>
-        <Text style={{ color: selected ? '#EF4036' : '#8F8F8F' }}>{category || 'Unknown'}</Text>
+      <TouchableOpacity onPress={onPress} testID={`category-${categoryName || 'unknown'}`}>
+        <Text style={{ color: filter === categoryName ? '#EF4036' : '#8F8F8F' }}>
+          {categoryName || 'Unknown'}
+        </Text>
       </TouchableOpacity>
     );
   }
@@ -124,7 +127,15 @@ describe('GroupPage', () => {
   const apiGetMock = api.get as jest.Mock;
   const apiPatchMock = api.patch as jest.Mock;
   const apiPostMock = api.post as jest.Mock;
-  const storageGetMock = storage.getString as jest.Mock;
+  const storageGetMock = storage.getItem as jest.Mock;
+  const buildPostsResponse = (items: any[], hasMore = false) => ({
+    data: {
+      data: items,
+      meta: {
+        hasMore,
+      },
+    },
+  });
 
   // Supressão de console durante os testes
   const originalConsoleError = console.error; // eslint-disable-line no-console
@@ -190,7 +201,7 @@ describe('GroupPage', () => {
     // Setup padrão dos mocks de API
     apiGetMock.mockImplementation((url: string) => {
       if (url.includes('/post/group/')) {
-        return Promise.resolve({ data: mockPosts });
+        return Promise.resolve(buildPostsResponse(mockPosts));
       }
       if (url.includes('/category/group/')) {
         return Promise.resolve({ data: mockCategories });
@@ -199,7 +210,10 @@ describe('GroupPage', () => {
         return Promise.resolve({ data: mockArchives });
       }
       if (url.includes('/participant/')) {
-        return Promise.resolve({ data: { role: 'MEMBER' } });
+        return Promise.resolve({ data: [{ userId: 'user-123', role: 'MEMBER' }] });
+      }
+      if (url.includes('/post/saved')) {
+        return Promise.resolve({ data: [] });
       }
       return Promise.reject(new Error('Unknown endpoint'));
     });
@@ -260,6 +274,10 @@ describe('GroupPage', () => {
 
       expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
         headers: { Authorization: 'Bearer fake-token' },
+        params: {
+          page: 1,
+          limit: 10,
+        },
       });
     });
 
@@ -338,7 +356,7 @@ describe('GroupPage', () => {
     it('should handle empty posts list', async () => {
       apiGetMock.mockImplementation((url: string) => {
         if (url.includes('/post/group/')) {
-          return Promise.resolve({ data: [] });
+          return Promise.resolve(buildPostsResponse([]));
         }
         if (url.includes('/category/group/')) {
           return Promise.resolve({ data: mockCategories });
@@ -389,7 +407,7 @@ describe('GroupPage', () => {
           return Promise.reject(new Error('User not found'));
         }
         if (url.includes('/post/group/')) {
-          return Promise.resolve({ data: mockPosts });
+          return Promise.resolve(buildPostsResponse(mockPosts));
         }
         return Promise.resolve({ data: [] });
       });
@@ -407,6 +425,10 @@ describe('GroupPage', () => {
       // Verifica que o usuário pode navegar normalmente (comportamento de MEMBER)
       expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
         headers: { Authorization: 'Bearer fake-token' },
+        params: {
+          page: 1,
+          limit: 10,
+        },
       });
     });
   });
@@ -424,8 +446,8 @@ describe('GroupPage', () => {
       });
 
       await waitFor(() => {
-        const unknownElements = getAllByText('Unknown');
-        expect(unknownElements.length).toBeGreaterThan(0);
+        const categoryElements = getAllByText(/Geral|Eventos/);
+        expect(categoryElements.length).toBeGreaterThan(0);
       });
     });
 
@@ -502,6 +524,10 @@ describe('GroupPage', () => {
 
       expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
         headers: { Authorization: 'Bearer fake-token' },
+        params: {
+          page: 1,
+          limit: 10,
+        },
       });
     });
 
@@ -527,6 +553,10 @@ describe('GroupPage', () => {
       // Verifica que todas as APIs foram chamadas
       expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
         headers: { Authorization: 'Bearer fake-token' },
+        params: {
+          page: 1,
+          limit: 10,
+        },
       });
 
       expect(apiGetMock).toHaveBeenCalledWith('/category/group/group-123', {
@@ -571,7 +601,7 @@ describe('GroupPage', () => {
       });
 
       // Resolve o loading
-      resolvePromise!({ data: mockPosts });
+      resolvePromise!(buildPostsResponse(mockPosts));
 
       await waitFor(() => {
         expect(getByText('João Silva')).toBeTruthy();
@@ -585,7 +615,7 @@ describe('GroupPage', () => {
       // Mock API para retornar posts vazios
       apiGetMock.mockImplementation((url: string) => {
         if (url.includes('/post/group/')) {
-          return Promise.resolve({ data: [] });
+          return Promise.resolve(buildPostsResponse([]));
         }
         if (url.includes('/category/group/')) {
           return Promise.resolve({ data: mockCategories });
@@ -605,38 +635,45 @@ describe('GroupPage', () => {
       apiGetMock.mockImplementation((url: string) => {
         if (url.includes('/post/group/')) {
           return Promise.resolve({
-            data: [
-              {
-                id: 'normal-post',
-                nameUser: 'Normal User',
-                input: 'Normal post content',
-                type: 'NORMAL',
-                isPinned: true,
-                numComments: 1,
-                createdAt: new Date().toISOString(),
+            data: {
+              data: [
+                {
+                  id: 'normal-post',
+                  nameUser: 'Normal User',
+                  input: 'Normal post content',
+                  type: 'NORMAL',
+                  isPinned: true,
+                  categoryName: 'Geral',
+                  numComments: 1,
+                  createdAt: new Date().toISOString(),
+                },
+                {
+                  id: 'other-post',
+                  nameUser: 'Other User',
+                  input: 'Other post content',
+                  type: 'OTHER',
+                  isPinned: true,
+                  categoryName: 'Geral',
+                  numComments: 2,
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+              meta: {
+                hasMore: false,
               },
-              {
-                id: 'other-post',
-                nameUser: 'Other User',
-                input: 'Other post content',
-                type: 'OTHER',
-                isPinned: true,
-                numComments: 2,
-                createdAt: new Date().toISOString(),
-              },
-            ],
+            },
           });
         }
         return Promise.resolve({ data: [] });
       });
 
-      const { getByText, queryByText } = render(
+      const { getAllByText, queryByText } = render(
         <GroupPage navigation={{ navigate: mockedNavigate }} />,
       );
 
       await waitFor(() => {
         // Deve mostrar post do tipo NORMAL
-        expect(getByText('Normal User')).toBeTruthy();
+        expect(getAllByText('Normal User').length).toBeGreaterThan(0);
         // NÃO deve mostrar post do tipo OTHER (retorna null)
         expect(queryByText('Other User')).toBeNull();
       });
@@ -719,10 +756,10 @@ describe('GroupPage', () => {
       // Mock usuário como ADMIN para ver o botão na aba aulas
       apiGetMock.mockImplementation((url: string) => {
         if (url.includes('/participant/')) {
-          return Promise.resolve({ data: { role: 'ADMIN' } });
+          return Promise.resolve({ data: [{ userId: 'user-123', role: 'ADMIN' }] });
         }
         if (url.includes('/post/group/')) {
-          return Promise.resolve({ data: mockPosts });
+          return Promise.resolve(buildPostsResponse(mockPosts));
         }
         if (url.includes('/category/group/')) {
           return Promise.resolve({ data: mockCategories });
@@ -771,8 +808,8 @@ describe('GroupPage', () => {
       await waitFor(() => {
         // Deve chamar PATCH para atualizar post
         expect(apiPatchMock).toHaveBeenCalledWith(
-          '/post/post-1',
-          { isPinned: true }, // !isPinned (false) = true
+          '/post/pin/post-1',
+          {},
           {
             headers: {
               Authorization: 'Bearer fake-token',
@@ -784,7 +821,6 @@ describe('GroupPage', () => {
         expect(apiPostMock).toHaveBeenCalledWith(
           '/notifications',
           {
-            senderId: 'user-123',
             groupId: 'group-123',
             groupName: 'Grupo de Teste',
             type: 'FIXED',
@@ -801,6 +837,10 @@ describe('GroupPage', () => {
         // Deve atualizar os posts
         expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
           headers: { Authorization: 'Bearer fake-token' },
+          params: {
+            page: 1,
+            limit: 10,
+          },
         });
       });
     });
@@ -809,8 +849,8 @@ describe('GroupPage', () => {
       // Mock um post fixado
       apiGetMock.mockImplementation((url: string) => {
         if (url.includes('/post/group/')) {
-          return Promise.resolve({
-            data: [
+          return Promise.resolve(
+            buildPostsResponse([
               {
                 id: 'pinned-post-1',
                 nameUser: 'João Silva',
@@ -819,10 +859,10 @@ describe('GroupPage', () => {
                 createdAt: new Date().toISOString(),
                 categoryName: 'Geral',
                 type: 'NORMAL',
-                isPinned: true, // Este post já está fixado
+                isPinned: true,
               },
-            ],
-          });
+            ]),
+          );
         }
         if (url.includes('/category/group/')) {
           return Promise.resolve({ data: mockCategories });
@@ -845,8 +885,8 @@ describe('GroupPage', () => {
       await waitFor(() => {
         // Deve chamar PATCH para atualizar post
         expect(apiPatchMock).toHaveBeenCalledWith(
-          '/post/pinned-post-1',
-          { isPinned: false }, // !isPinned (true) = false
+          '/post/unpin/pinned-post-1',
+          {},
           {
             headers: {
               Authorization: 'Bearer fake-token',
@@ -908,8 +948,8 @@ describe('GroupPage', () => {
       await waitFor(() => {
         // Deve chamar PATCH com token null
         expect(apiPatchMock).toHaveBeenCalledWith(
-          '/post/post-1',
-          { isPinned: true },
+          '/post/pin/post-1',
+          {},
           {
             headers: {
               Authorization: 'Bearer null',
@@ -920,3 +960,8 @@ describe('GroupPage', () => {
     });
   });
 });
+
+
+
+
+

@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { useEffect, useRef } from 'react';
 import { Subscription } from 'expo-media-library';
+import { Alert } from 'react-native';
 
 export function useNotifications() {
   const notificationListener = useRef<Subscription | null>(null);
@@ -29,7 +30,7 @@ export function useNotifications() {
 
 export async function registerForPushNotificationsAsync() {
   if (!Device.isDevice) {
-    alert('Você precisa usar um dispositivo físico para receber notificações');
+    Alert.alert('Você precisa usar um dispositivo físico para receber notificações');
     return null;
   }
 
@@ -42,7 +43,7 @@ export async function registerForPushNotificationsAsync() {
   }
 
   if (finalStatus !== 'granted') {
-    alert('Permissão para notificações não foi concedida');
+    Alert.alert('Permissão para notificações não foi concedida');
     return null;
   }
 

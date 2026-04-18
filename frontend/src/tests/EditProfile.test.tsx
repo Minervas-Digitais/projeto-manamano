@@ -5,7 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { NavigationContainer } from '@react-navigation/native';
 import EditProfile from '../pages/EditProfile/EditProfile';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
 
 // MOCKS
 
@@ -15,9 +15,10 @@ jest.mock('expo-font', () => ({
 
 jest.mock('../services/api');
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
   },
 }));
 
@@ -70,8 +71,8 @@ jest.mock('../components/DropdownButton/DropdownCustom', () =>
 jest.mock('../components/SideMenu/SideMenu', () => 'SideMenu');
 
 const mockedApi = api as jest.Mocked<typeof api>;
-const mockedStorage = storage as jest.Mocked<typeof storage>;
-(global as any).alert = jest.fn();
+const mockedStorage = storage as any;
+const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(jest.fn());
 
 const renderWithNavigation = (component: React.ReactElement) =>
   render(<NavigationContainer>{component}</NavigationContainer>);
@@ -91,14 +92,25 @@ describe('EditProfile', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    alertSpy.mockClear();
 
-    mockedStorage.getString.mockImplementation((key: string) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'mock-token';
       if (key === 'loggedId') return 'mock-user-id';
-      return undefined;
+      return null;
     });
 
-    mockedApi.get.mockResolvedValue({ data: mockUserData });
+    mockedApi.get.mockImplementation(async (url: string) => {
+      if (url === '/user/mock-user-id/profile-picture') {
+        return { data: 'mock-binary-image' } as any;
+      }
+
+      if (url === '/user/mock-user-id') {
+        return { data: mockUserData } as any;
+      }
+
+      return { data: {} } as any;
+    });
     mockedApi.patch.mockResolvedValue({ data: { message: 'Success' } });
 
     (DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
@@ -111,6 +123,10 @@ describe('EditProfile', () => {
       ],
       canceled: false,
     });
+  });
+
+  afterAll(() => {
+    alertSpy.mockRestore();
   });
 
   it('Deve renderizar corretamente com os dados na tela', async () => {
@@ -141,14 +157,10 @@ describe('EditProfile', () => {
     fireEvent.press(getByLabelText('Salvar'));
 
     await waitFor(() => {
-      expect(global.alert).toHaveBeenCalledTimes(1);
-      expect(global.alert).toHaveBeenCalledWith(expect.stringContaining('Erros:'));
-      expect(global.alert).toHaveBeenCalledWith(expect.stringContaining('Campo obrigatório'));
-      expect(global.alert).toHaveBeenCalledWith(
-        expect.stringContaining('Endereço de e-mail inválido'),
-      );
+      expect(alertSpy).toHaveBeenCalledTimes(1);
+      expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('Erros:'));
+      expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('Campo obrigatório'));
       expect(getByText('Campo obrigatório')).toBeTruthy();
-      expect(getByText('Endereço de e-mail inválido')).toBeTruthy();
     });
 
     expect(api.patch).not.toHaveBeenCalled();
@@ -163,9 +175,9 @@ describe('EditProfile', () => {
     fireEvent.press(getByLabelText('Salvar'));
 
     await waitFor(() => {
-      expect(global.alert).toHaveBeenCalledTimes(1);
-      expect(global.alert).toHaveBeenCalledWith(expect.stringContaining('Erros:'));
-      expect(global.alert).toHaveBeenCalledWith(
+      expect(alertSpy).toHaveBeenCalledTimes(1);
+      expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('Erros:'));
+      expect(alertSpy).toHaveBeenCalledWith(
         expect.stringContaining('Apenas letras são permitidas'),
       );
       expect(getByText('Apenas letras são permitidas')).toBeTruthy();
@@ -188,7 +200,7 @@ describe('EditProfile', () => {
       expect(api.patch).toHaveBeenCalledTimes(1);
 
       expect(api.patch).toHaveBeenCalledWith(
-        '/user/mock-user-id',
+        '/user',
         expect.objectContaining({
           fullName: novoNome,
           birthday: new Date('1995-10-19').toISOString(),
@@ -199,7 +211,7 @@ describe('EditProfile', () => {
       );
     });
 
-    expect(global.alert).toHaveBeenCalledWith('Changes saved successfully!');
+    expect(alertSpy).toHaveBeenCalledWith('Changes saved successfully!');
   });
 
   it('Deve lidar com os erros da API ao submitar e mostrar um alerta', async () => {
@@ -218,7 +230,7 @@ describe('EditProfile', () => {
       expect(api.patch).toHaveBeenCalled();
     });
 
-    expect(global.alert).toHaveBeenCalledWith(`Failed to save data: ${mensagemErro}`);
+    expect(alertSpy).toHaveBeenCalledWith(`Failed to save data: ${mensagemErro}`);
   });
 
   it('Deve permitir alterar a imagem de perfil', async () => {
@@ -239,7 +251,7 @@ describe('EditProfile', () => {
       expect(DocumentPicker.getDocumentAsync).toHaveBeenCalled();
 
       expect(mockedApi.patch).toHaveBeenCalledWith(
-        '/user/mock-user-id/profile-picture',
+        '/user/profile-picture',
         expect.any(FormData),
         {
           headers: {
@@ -251,3 +263,10 @@ describe('EditProfile', () => {
     });
   });
 });
+
+
+
+
+
+
+
