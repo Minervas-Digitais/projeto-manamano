@@ -42,6 +42,7 @@ export default function Groups() {
             setGroups([]);
           });
       }
+      console.log(groups);
 
       // Fetch user information to check the "tipo"
       if (token) {

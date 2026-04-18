@@ -202,27 +202,28 @@ export default function Home({ navigation }: any) {
     }
   }, [loading, hasMore, page, accessTokenState, loggedIdState, loadPosts]);
 
-  useFocusEffect(() => {
-    const fetchUserData = async () => {
-      const token = await secureStorage.getItem('accessToken');
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUserData = async () => {
+        const token = await secureStorage.getItem('accessToken');
 
-      if (token) {
-        try {
-          const userId = await secureStorage.getItem('loggedId');
+        if (token) {
+          try {
+            const userId = await secureStorage.getItem('loggedId');
 
-          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            responseType: 'arraybuffer',
-          });
-
-          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
-          const imageUri = `data:image/jpeg;base64,${imageStr}`;
-          setProfileImage({ uri: imageUri });
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-          setProfileImage(defaultAvatar);
+            const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              responseType: 'arraybuffer',
+            });
+            const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+            const imageUri = `data:image/jpeg;base64,${imageStr}`;
+            setProfileImage({ uri: imageUri });
+          } catch (error) {
+            console.error('Error fetching user data (profile image not found):', error);
+            setProfileImage(defaultAvatar);
+          }
         }
       }
     };

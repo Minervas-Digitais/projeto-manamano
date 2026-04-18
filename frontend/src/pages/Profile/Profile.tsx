@@ -130,10 +130,9 @@ export default function Profile({ navigation, route }: any) {
 
             const fetchSavedPosts = async () => {
               try {
-                const { data: savedPostsData } = await api.get('/post/saved?all=true', {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
+                const { data } = await api.get('/post/saved', {
+                  headers: { Authorization: `Bearer ${token}` },
+                  params: { all: true },
                 });
                 setSavedPosts(savedPostsData);
               } catch (error) {
@@ -171,8 +170,7 @@ export default function Profile({ navigation, route }: any) {
   }
   // Split the fullName to display the first two names
   const fullNameSplit = fullName.split(' ');
-  const displayName =
-    fullNameSplit.length > 1 ? `${fullNameSplit[0]} ${fullNameSplit[1]}` : fullName;
+  const displayName = fullNameSplit.length > 1 ? `${fullNameSplit[0]} ${fullNameSplit[1]}` : fullName;
   const districtLabel =
     district.find((item) => item.value === String(neighborhood))?.label || 'Unknown';
 

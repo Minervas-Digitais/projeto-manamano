@@ -27,12 +27,13 @@ import CommentInputTextCustom from '../../components/CommentInput/CommentInputTe
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
 import secureStorage from '../../services/secureStorage';
-import localStorage from '../../services/localStorage';
 import api from '../../services/api';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
-import { AxiosError } from 'axios';
+import { useSavedPosts } from '../../context/SavedPostsContext';
+import SaveIcon from '../../assets/save-icon.svg';
+import SavedIcon from '../../assets/saved-icon.svg';
 
 const { width } = Dimensions.get('window');
 const defaultAvatar = require('../../assets/user-profile.png');
@@ -286,23 +287,32 @@ export default function Post() {
       });
     }
   };
+
   const handleBlur = () => {
     const comment = getValues('input');
     if (comment === '') {
       setIsFocused(false);
     }
   };
+
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
   });
 
+  const { savedPostIds, savePost, unsavePost } = useSavedPosts();
+  const isSaved = savedPostIds.has(postId);
+
+  const handleSavePress = async () => {
+    if (isSaved) await unsavePost(postId);
+    else await savePost(postId);
+  };
+
   const createDeepLink = () => `manamano://post/${postId}`;
 
   const onShare = async () => {
     const deepLink = createDeepLink();
-
     try {
       await Share.share({
         message: `Confira este post: ${deepLink}`,
@@ -329,7 +339,17 @@ export default function Post() {
         icon={<DotsMenuIcon width="30px" height="30px" />}
         onPress={() => setModalOptions(!modalOptions)}
       />
-      {modalOptions ? <ModalOptions onShare={onShare} postId={postId} /> : ''}
+      {modalOptions ? (
+        <ModalOptions
+          postId={postId}
+          fixed={false}
+          handleSavePress={handleSavePress}
+          onShare={onShare}
+          onPressFix={() => {}}
+        />
+      ) : (
+        ''
+      )}
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={{ backgroundColor: '#f2f6fa', flex: 1 }}>

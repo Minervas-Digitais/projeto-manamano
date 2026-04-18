@@ -47,6 +47,7 @@ export default function GlobalNotificationPage({ navigation }: any) {
         }
       }
     };
+
     fetchData();
   }, [body, id, setValue]);
 
