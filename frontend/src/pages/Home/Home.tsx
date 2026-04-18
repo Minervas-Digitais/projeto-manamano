@@ -221,15 +221,14 @@ export default function Home({ navigation }: any) {
             const imageUri = `data:image/jpeg;base64,${imageStr}`;
             setProfileImage({ uri: imageUri });
           } catch (error) {
-            console.error('Error fetching user data (profile image not found):', error);
             setProfileImage(defaultAvatar);
           }
         }
-      }
-    };
+      };
 
-    fetchUserData();
-  });
+      fetchUserData();
+    }, []),
+  );
 
   const getUserProfileImage = async (userId: string) => {
     const token = await secureStorage.getItem('accessToken');

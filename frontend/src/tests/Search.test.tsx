@@ -4,6 +4,25 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Search from '../pages/Search/Search';
 
+jest.mock('../context/SavedPostsContext', () => ({
+  useSavedPosts: () => ({
+    savedPostIds: new Set<string>(),
+    savePost: jest.fn(),
+    unsavePost: jest.fn(),
+  }),
+}));
+
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(async (key: string) => {
+      if (key === 'accessToken') return 'fake-token';
+      if (key === 'loggedId') return '1';
+      return null;
+    }),
+  },
+}));
+
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));

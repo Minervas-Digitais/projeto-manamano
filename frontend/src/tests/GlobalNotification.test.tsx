@@ -1,6 +1,6 @@
 import React from 'react';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import GlobalNotificationPage from '../pages/GlobalNotificationPage/GlobalNotificationPage';
 import Toast from 'react-native-toast-message';
@@ -28,9 +28,10 @@ jest.mock('../services/api', () => ({
   post: jest.fn(() => Promise.resolve({ data: {} })),
 }));
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
   },
 }));
 
@@ -46,17 +47,17 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-const mockedStorage = storage as jest.Mocked<typeof storage>;
+const mockedStorage = storage as any;
 const mockedApi = api as jest.Mocked<typeof api>;
 
 describe('GlobalNotification', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockedStorage.getString.mockImplementation((key: string) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'loggedId') return 'admin-123';
       if (key === 'accessToken') return 'fake-token';
-      return undefined;
+      return null;
     });
   });
 
@@ -89,6 +90,10 @@ describe('GlobalNotification', () => {
       <GlobalNotificationPage navigation={{ goBack: mockGoBack }} />,
     );
 
+    await waitFor(() => {
+      expect(mockedStorage.getItem).toHaveBeenCalledWith('accessToken');
+    });
+
     const inputText = 'Este é um comunicado de teste.';
     const prompt = getByLabelText('Criar Comunicado');
     fireEvent.changeText(prompt, inputText);
@@ -101,7 +106,6 @@ describe('GlobalNotification', () => {
         '/notifications/global',
         {
           type: 'WARNING',
-          senderId: 'admin-123',
           body: inputText,
         },
         {
@@ -141,7 +145,8 @@ describe('GlobalNotification', () => {
     await waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith({
         type: 'error',
-        text1: 'Erro ao enviar comunicado. Tente novamente mais tarde.',
+        text1: 'Erro ao enviar comunicado.',
+        text2: 'Tente novamente mais tarde.',
       });
     });
 
@@ -149,3 +154,8 @@ describe('GlobalNotification', () => {
     expect(mockGoBack).not.toHaveBeenCalled();
   });
 });
+
+
+
+
+

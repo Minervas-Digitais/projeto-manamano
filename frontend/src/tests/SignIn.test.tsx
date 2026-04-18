@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import api from '../services/api';
 import SignIn from '../pages/SignIn/SignIn';
+import Toast from 'react-native-toast-message';
 
 const mockedNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
@@ -13,6 +14,17 @@ jest.mock('@react-navigation/native', () => ({
 }));
 (global as any).alert = jest.fn();
 jest.mock('../services/api');
+
+jest.mock('../hooks/useNotification', () => ({
+  registerForPushNotificationsAsync: jest.fn(async () => null),
+}));
+
+jest.mock('react-native-toast-message', () => ({
+  __esModule: true,
+  default: {
+    show: jest.fn(),
+  },
+}));
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
@@ -87,8 +99,16 @@ describe('SignIn', () => {
         password: 'senhaerrada',
       });
 
-      expect(global.alert).toHaveBeenCalledWith('E-mail ou senha incorretos');
+      expect(Toast.show).toHaveBeenCalledWith({
+        type: 'error',
+        text1: 'Erro ao entrar',
+        text2: 'E-mail ou senha incorretos',
+      });
       expect(mockedNavigate).not.toHaveBeenCalled();
     });
   });
 });
+
+
+
+

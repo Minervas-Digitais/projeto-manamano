@@ -2,7 +2,8 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import EditGroup from '../pages/EditGroup/EditGroup';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
+import localStorage from '../services/localStorage';
 
 const mockedNavigate = jest.fn();
 
@@ -19,8 +20,15 @@ jest.mock('expo-font', () => ({
 }));
 
 jest.mock('../services/api');
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
+  },
+}));
+jest.mock('../services/localStorage', () => ({
+  __esModule: true,
+  default: {
     getString: jest.fn(),
   },
 }));
@@ -39,16 +47,20 @@ jest.mock('../components/HeaderCustom/HeaderCustom', () => {
 
 describe('EditGroup', () => {
   const mockedApi = api as jest.Mocked<typeof api>;
-  const mockedStorage = storage as jest.Mocked<typeof storage>;
+  const mockedStorage = storage as any;
+  const mockedLocalStorage = localStorage as any;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockedStorage.getString.mockImplementation((key: string): string | undefined => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'mock-access-token';
-      if (key === 'loggedId') return 'mock-user-id';
+      return null;
+    });
+
+    mockedLocalStorage.getString.mockImplementation((key: string) => {
       if (key === 'groupId') return 'mock-group-id';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockResolvedValue({
@@ -79,9 +91,8 @@ describe('EditGroup', () => {
     render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
 
     await waitFor(() => {
-      expect(mockedStorage.getString).toHaveBeenCalledWith('accessToken');
-      expect(mockedStorage.getString).toHaveBeenCalledWith('loggedId');
-      expect(mockedStorage.getString).toHaveBeenCalledWith('groupId');
+      expect(mockedStorage.getItem).toHaveBeenCalledWith('accessToken');
+      expect(mockedLocalStorage.getString).toHaveBeenCalledWith('groupId');
       expect(mockedApi.get).toHaveBeenCalledWith('/group/mock-group-id', {
         headers: {
           Authorization: 'Bearer mock-access-token',
@@ -94,10 +105,16 @@ describe('EditGroup', () => {
     const { getByLabelText } = render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
 
     await waitFor(() => {
-      const nameInput = getByLabelText('Nome do Grupo');
-      const descriptionInput = getByLabelText('Descrição do Grupo');
+      expect(mockedApi.get).toHaveBeenCalled();
+    });
 
+    await waitFor(() => {
+      const nameInput = getByLabelText('Nome do Grupo');
       expect(nameInput.props.value).toBe('Grupo de Teste');
+    });
+
+    await waitFor(() => {
+      const descriptionInput = getByLabelText('Descrição do Grupo');
       expect(descriptionInput.props.value).toBe('Descrição do grupo de teste');
     });
   });
@@ -166,15 +183,22 @@ describe('EditGroup', () => {
     );
 
     await waitFor(() => {
-      const nameInput = getByLabelText('Nome do Grupo');
-      const descriptionInput = getByLabelText('Descrição do Grupo');
-
-      fireEvent.changeText(nameInput, 'Grupo Editado');
-      fireEvent.changeText(descriptionInput, 'Descrição editada');
-
-      const submitButton = getByText('Salvar alterações');
-      fireEvent.press(submitButton);
+      expect(mockedApi.get).toHaveBeenCalled();
     });
+
+    const nameInput = getByLabelText('Nome do Grupo');
+    const descriptionInput = getByLabelText('Descrição do Grupo');
+
+    fireEvent.changeText(nameInput, 'Grupo Editado');
+    fireEvent.changeText(descriptionInput, 'Descrição editada');
+
+    await waitFor(() => {
+      expect(nameInput.props.value).toBe('Grupo Editado');
+      expect(descriptionInput.props.value).toBe('Descrição editada');
+    });
+
+    const submitButton = getByText('Salvar alterações');
+    fireEvent.press(submitButton);
 
     await waitFor(() => {
       expect(mockedApi.patch).toHaveBeenCalledWith(
@@ -193,23 +217,30 @@ describe('EditGroup', () => {
   });
 
   it('deve navegar para GroupPage após submissão bem-sucedida', async () => {
-    const { getByText } = render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
+    const { getByText, getByLabelText } = render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
 
     await waitFor(() => {
-      const submitButton = getByText('Salvar alterações');
-      fireEvent.press(submitButton);
+      expect(mockedApi.get).toHaveBeenCalled();
     });
+
+    await waitFor(() => {
+      expect(getByLabelText('Nome do Grupo').props.value).toBe('Grupo de Teste');
+    });
+
+    const submitButton = getByText('Salvar alterações');
+    fireEvent.press(submitButton);
 
     await waitFor(() => {
       expect(mockedNavigate).toHaveBeenCalledWith('GroupPage', {
         groupId: 'mock-group-id',
-        groupName: '',
+        groupName: 'Grupo de Teste',
       });
     });
   });
 
   it('não deve carregar dados quando não há token de acesso', async () => {
-    mockedStorage.getString.mockReturnValue(undefined);
+    mockedStorage.getItem.mockResolvedValue(undefined);
+    mockedLocalStorage.getString.mockReturnValue('mock-group-id');
 
     render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
 
@@ -219,7 +250,8 @@ describe('EditGroup', () => {
   });
 
   it('não deve submeter quando não há dados de autenticação', async () => {
-    mockedStorage.getString.mockReturnValue(undefined);
+    mockedStorage.getItem.mockResolvedValue(undefined);
+    mockedLocalStorage.getString.mockReturnValue('mock-group-id');
 
     const { getByText } = render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
 
@@ -231,3 +263,9 @@ describe('EditGroup', () => {
     });
   });
 });
+
+
+
+
+
+

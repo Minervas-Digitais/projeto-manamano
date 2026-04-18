@@ -1,6 +1,6 @@
 import React from 'react';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import Groups from '../pages/Groups/Groups';
 import { NavigationContainer } from '@react-navigation/native';
@@ -33,10 +33,11 @@ jest.mock('expo-linear-gradient', () => {
 
 jest.mock('../services/api');
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
-    set: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
   },
 }));
 
@@ -48,7 +49,7 @@ jest.mock('../assets/add-icon.svg', () => 'AddIcon');
 
 describe('Groups', () => {
   const mockedApi = api as jest.Mocked<typeof api>;
-  const mockedStorage = storage as jest.Mocked<typeof storage>;
+  const mockedStorage = storage as any;
 
   const mockGroupsData = [
     {
@@ -63,7 +64,7 @@ describe('Groups', () => {
     },
   ];
 
-  const mockModerator = { id: 'moderator-user', role: 'MODERATOR' };
+  const mockModerator = { id: 'moderator-user', sysRole: 'MODERATOR' };
   const mockRegularUser = { id: 'regular-user', role: 'USER' };
 
   beforeEach(() => {
@@ -71,10 +72,10 @@ describe('Groups', () => {
   });
 
   it('Deve renderizar o cabecalho e a lista de grupos corretamente', async () => {
-    mockedStorage.getString.mockImplementation((key) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'regular-user';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
@@ -103,10 +104,10 @@ describe('Groups', () => {
   });
 
   it('deve mostrar uma tela vazia se o usuário não tiver grupos', async () => {
-    mockedStorage.getString.mockImplementation((key) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'regular-user';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
@@ -135,10 +136,10 @@ describe('Groups', () => {
   });
 
   it('deve navegar para "EntrarGrupo" quando um usuário comum clica no botão de adicionar', async () => {
-    mockedStorage.getString.mockImplementation((key) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'regular-user';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
@@ -170,10 +171,10 @@ describe('Groups', () => {
   });
 
   it('deve mostrar um popup quando um moderador clica no botão de adicionar', async () => {
-    mockedStorage.getString.mockImplementation((key) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'moderator-user';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
@@ -194,6 +195,12 @@ describe('Groups', () => {
         <Groups />
       </NavigationContainer>,
     );
+
+    await waitFor(() => {
+      expect(mockedApi.get).toHaveBeenCalledWith('/user/moderator-user', {
+        headers: { Authorization: 'Bearer fake-token' },
+      });
+    });
 
     expect(queryByText('Criar Grupo')).toBeNull();
 
@@ -205,10 +212,10 @@ describe('Groups', () => {
   });
 
   it('deve navegar para "CreateGroup" quando um moderador seleciona a opção no popup', async () => {
-    mockedStorage.getString.mockImplementation((key) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'moderator-user';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
@@ -229,6 +236,12 @@ describe('Groups', () => {
         <Groups />
       </NavigationContainer>,
     );
+
+    await waitFor(() => {
+      expect(mockedApi.get).toHaveBeenCalledWith('/user/moderator-user', {
+        headers: { Authorization: 'Bearer fake-token' },
+      });
+    });
 
     const addButton = await findByTestId('add-button');
 
@@ -245,10 +258,10 @@ describe('Groups', () => {
   });
 
   it('deve navegar para "EntrarGrupo" quando um moderador seleciona a opção no popup', async () => {
-    mockedStorage.getString.mockImplementation((key) => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'moderator-user';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
@@ -270,6 +283,12 @@ describe('Groups', () => {
       </NavigationContainer>,
     );
 
+    await waitFor(() => {
+      expect(mockedApi.get).toHaveBeenCalledWith('/user/moderator-user', {
+        headers: { Authorization: 'Bearer fake-token' },
+      });
+    });
+
     const addButton = await findByTestId('add-button');
 
     fireEvent.press(addButton);
@@ -281,6 +300,12 @@ describe('Groups', () => {
       expect(mockNavigate).toHaveBeenCalledWith('EntrarGrupo');
     });
 
-    expect(queryByText('Entrar Grupo')).toBeNull();
+    expect(queryByText('Entrar em Grupo')).toBeNull();
   });
 });
+
+
+
+
+
+

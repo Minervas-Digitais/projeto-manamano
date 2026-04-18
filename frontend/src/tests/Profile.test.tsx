@@ -3,16 +3,17 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import Profile from '../pages/Profile/Profile';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));
 
 jest.mock('../services/api');
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
   },
 }));
 jest.mock('../assets/duck.png', () => 'duckImage');
@@ -38,7 +39,7 @@ jest.mock('../components/PostCard/PostCard', () => {
 
 describe('Profile', () => {
   const mockedApi = api as jest.Mocked<typeof api>;
-  const mockedStorage = storage as jest.Mocked<typeof storage>;
+  const mockedStorage = storage as any;
 
   function renderWithNavigation(ui: React.ReactElement) {
     return render(<NavigationContainer>{ui}</NavigationContainer>);
@@ -47,10 +48,10 @@ describe('Profile', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockedStorage.getString.mockImplementation((key: string): string | undefined => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'mock-token';
       if (key === 'loggedId') return 'mock-user-id';
-      return undefined;
+      return null;
     });
 
     mockedApi.get.mockImplementation((url: string) => {
@@ -92,6 +93,20 @@ describe('Profile', () => {
         });
       }
 
+      if (url === '/post/saved') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 101,
+              nameUser: 'João',
+              input: 'Post salvo pelo João',
+              numComments: 1,
+              createdAt: '2025-01-02',
+            },
+          ],
+        });
+      }
+
       return Promise.reject(new Error('Not found'));
     });
   });
@@ -126,6 +141,10 @@ describe('Profile', () => {
         return Promise.resolve({ data: [] });
       }
 
+      if (url === '/post/saved') {
+        return Promise.resolve({ data: [] });
+      }
+
       return Promise.reject(new Error('Not found'));
     });
 
@@ -142,3 +161,9 @@ describe('Profile', () => {
     });
   });
 });
+
+
+
+
+
+

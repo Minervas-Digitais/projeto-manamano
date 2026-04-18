@@ -6,5 +6,13 @@
     "esModuleInterop": true,
     "lib": ["ES2020"]
   },
-  "include": ["src", "**/*.ts", "**/*.tsx", ".eslintrc.js", "__mocks__/react-native-gesture-handler.js"]
+  "include": [
+    "src",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.d.ts",
+    "declaration.d.ts",
+    ".eslintrc.js",
+    "__mocks__/react-native-gesture-handler.js"
+  ]
 }
