@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import SignUp from '../pages/SignUp/SignUp';
 import api from '../services/api';
 
@@ -65,14 +66,20 @@ describe('SignUp', () => {
       fullName: 'Guilherme Teste',
       email: 'guilherme@teste.com',
       phone: '2198887777',
-      hash: 'senhamuitoforte123',
+      password: 'senhamuitoforte123',
     });
 
     expect(mockedNavigate).toHaveBeenLastCalledWith('SignIn');
   });
 
   it('Deve exibir um alerta de erro se o email ou celular ja estiver em uso', async () => {
-    apiPostMock.mockResolvedValue({ data: { code: 'P2002' } });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    apiPostMock.mockRejectedValue({
+      response: {
+        status: 409,
+      },
+      isAxiosError: true,
+    });
     const { getByText, getByLabelText } = render(
       <SignUp navigation={{ navigate: mockedNavigate }} />,
     );
@@ -88,11 +95,11 @@ describe('SignUp', () => {
       expect(apiPostMock).toHaveBeenCalledTimes(1);
     });
 
-    expect(global.alert).toHaveBeenCalledWith(
-      'Não foi possível criar uma conta. O e-mail ou o celular já está associado a outra conta!',
-    );
+    expect(alertSpy).toHaveBeenCalledWith('E-mail ou celular já está associado a outra conta!');
 
     expect(mockedNavigate).not.toHaveBeenCalled();
+
+    alertSpy.mockRestore();
   });
 
   it('Deve exibir mensagens de erro para campos obrigatórios vazios', async () => {
@@ -109,3 +116,7 @@ describe('SignUp', () => {
     expect(mockedNavigate).not.toHaveBeenCalled();
   });
 });
+
+
+
+

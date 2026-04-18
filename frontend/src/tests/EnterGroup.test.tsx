@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import api from '../services/api';
@@ -11,26 +12,27 @@ jest.mock('expo-font', () => ({
 }));
 
 jest.mock('../services/api');
-const mockGet = api.get as jest.Mock;
 const mockPost = api.post as jest.Mock;
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: (key: string) => {
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return '123';
       return null;
     },
   },
 }));
-global.alert = jest.fn();
-
 const Stack = createStackNavigator();
+const GroupsScreen = () => <Text>Groups Screen</Text>;
+
 const renderWithNavigation = () =>
   render(
     <NavigationContainer>
       <Stack.Navigator>
         <Stack.Screen name="EnterGroup" component={EnterGroup} />
+        <Stack.Screen name="Groups" component={GroupsScreen} />
       </Stack.Navigator>
     </NavigationContainer>,
   );
@@ -55,37 +57,27 @@ describe('EnterGroup', () => {
   });
 
   it('deve submeter e navegar após sucesso', async () => {
-    mockGet.mockResolvedValueOnce({
-      data: [{ id: '1', inviteCode: 'ABC123' }],
-    });
     mockPost.mockResolvedValueOnce({ data: {} });
 
-    const { getByLabelText, getByText } = renderWithNavigation();
+    const { getByLabelText, getByText, findByText } = renderWithNavigation();
 
     fireEvent.changeText(getByLabelText('Código de Convite'), 'ABC123');
     fireEvent.press(getByText('Entrar'));
 
     await waitFor(() => {
-      expect(mockGet).toHaveBeenCalledWith(
-        '/group',
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer fake-token' },
-        }),
-      );
-
       expect(mockPost).toHaveBeenCalledWith(
         '/participant',
         expect.objectContaining({
-          userId: '123',
-          role: 'MEMBER',
+          role: 'STUDENT',
           inviteCode: 'ABC123',
-          groupId: '1',
         }),
         expect.objectContaining({
           headers: { Authorization: 'Bearer fake-token' },
         }),
       );
     });
+
+    expect(await findByText('Groups Screen')).toBeTruthy();
   });
 
   it('deve mostrar erro ao submeter sem preencher o código', async () => {
@@ -94,8 +86,14 @@ describe('EnterGroup', () => {
     fireEvent.press(getByText('Entrar'));
 
     await waitFor(() => {
-      expect(mockGet).not.toHaveBeenCalled();
+      expect(mockPost).not.toHaveBeenCalled();
       expect(queryByText('Campo obrigatório')).toBeTruthy();
     });
   });
 });
+
+
+
+
+
+

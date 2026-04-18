@@ -83,7 +83,7 @@ export default function Home({ navigation }: any) {
 
         // Buscar grupos (sem posts)
         api
-          .get(`participant/groups/${loggedId}`, {
+          .get(`participant/groups/`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -102,22 +102,23 @@ export default function Home({ navigation }: any) {
           .catch(() => setGroups([]));
 
         // Carregar primeira página de posts
-        loadPosts(1, accessToken, loggedId, true);
+        loadPosts(1, accessToken, true);
       }
     };
+
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadPosts = useCallback(
-    async (pageNumber: number, token: string, userId: string, isInitial: boolean = false) => {
+    async (pageNumber: number, token: string, isInitial: boolean = false) => {
       if (loading) return;
 
       setLoading(true);
       if (isInitial) setInitialLoading(true);
 
       try {
-        const response = await api.get(`participant/groups/${userId}/posts`, {
+        const response = await api.get(`participant/groups/posts`, {
           params: {
             page: pageNumber,
             limit: POSTS_PER_PAGE,
@@ -136,7 +137,7 @@ export default function Home({ navigation }: any) {
         // Fallback: Se a rota não existir (404), usar a rota antiga
         if (error?.response?.status === 404) {
           try {
-            const fallbackResponse = await api.get(`participant/groups/${userId}`, {
+            const fallbackResponse = await api.get('participant/groups/', {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -147,8 +148,9 @@ export default function Home({ navigation }: any) {
             const allPosts: any[] = [];
 
             allGroups.forEach((group: any) => {
-              if (group.group?.Post) {
-                group.group.Post.forEach((post: any) => {
+              const groupPosts = group.group?.posts || group.group?.Post || [];
+              if (groupPosts.length > 0) {
+                groupPosts.forEach((post: any) => {
                   allPosts.push({
                     ...post,
                     groupId: group.groupId,
@@ -196,7 +198,7 @@ export default function Home({ navigation }: any) {
 
   const handleLoadMore = useCallback(() => {
     if (!loading && hasMore && accessTokenState && loggedIdState) {
-      loadPosts(page + 1, accessTokenState, loggedIdState);
+      loadPosts(page + 1, accessTokenState);
     }
   }, [loading, hasMore, page, accessTokenState, loggedIdState, loadPosts]);
 
@@ -219,11 +221,11 @@ export default function Home({ navigation }: any) {
             const imageUri = `data:image/jpeg;base64,${imageStr}`;
             setProfileImage({ uri: imageUri });
           } catch (error) {
-            console.error('Error fetching user data (profile image not found):', error);
             setProfileImage(defaultAvatar);
           }
         }
       };
+
       fetchUserData();
     }, []),
   );
@@ -364,7 +366,7 @@ export default function Home({ navigation }: any) {
                         groupId: item.groupId,
                         groupName: item.group.name,
                       });
-                      storage.set('groupId', item.groupId);
+                      storageHome.set('groupId', item.groupId);
                       console.log(`groupId home: ${item.groupId}`);
                     }}
                     groupId={item.groupId}

@@ -81,13 +81,13 @@ export default function ModalOptionsNotification({
   };
   const optionsActions = () => {
     if (type !== 'header' && !admin) {
-      storage.set('idNotif', id);
-      storage.set('displayNotif', true);
+      localStorage.set('idNotif', id);
+      localStorage.set('displayNotif', true);
       setDisplayConfirm(false);
     }
 
     if (type !== 'header' && admin) {
-      const accessToken = storage.getString('accessToken');
+      const accessToken = localStorage.getString('accessToken');
       if (!accessToken) return;
 
       api
@@ -116,20 +116,21 @@ export default function ModalOptionsNotification({
     }
   };
 
+  const modalContainerProps = {
+    display: displayConfirm,
+    height,
+    style,
+    type,
+    admin,
+  };
+
   return (
     <>
       <DeleteConfirmation
         text="Tem certeza que deseja excluir todas as notificações?"
         display={displayDelete}
-        id={id}
-        onPress={() => {}}
       />
-      <ModalOptionsNotificationContainer
-        display={displayConfirm}
-        height={height}
-        style={style}
-        type={type}
-        admin={admin}>
+      <ModalOptionsNotificationContainer {...modalContainerProps}>
         {!(admin && type === 'header') && (
           <ModalOptionsNotificationInfo onPress={optionsActions} testID={`delete-button-${id}`}>
             <Trash />

@@ -12,7 +12,7 @@ import {
   WelcomeContainer,
 } from './WelcomeStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import { secureStorage } from '../../services/secureStorage';
+import secureStorage from '../../services/secureStorage';
 
 export default function WelcomeScreen({ navigation }: any) {
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function WelcomeScreen({ navigation }: any) {
       }
     };
     checkAuth();
-  }, []);
+  }, [navigation]);
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),

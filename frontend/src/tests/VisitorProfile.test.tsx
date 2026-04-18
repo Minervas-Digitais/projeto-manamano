@@ -55,15 +55,17 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => mockRoute,
 }));
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn().mockReturnValue('fake-access-token'),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn().mockResolvedValue('fake-access-token'),
   },
 }));
 
 describe('VisitorProfile', () => {
   const mockApi = api as jest.Mocked<typeof api>;
   const mockClipboard = Clipboard as jest.Mocked<typeof Clipboard>;
+  const mockImageBinary = Buffer.from('mock-image-binary');
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -94,6 +96,9 @@ describe('VisitorProfile', () => {
     ];
 
     mockApi.get.mockImplementation((url) => {
+      if (url.includes(`/user/${mockRoute.params.id}/profile-picture`)) {
+        return Promise.resolve({ data: mockImageBinary });
+      }
       if (url.includes(`/user/${mockRoute.params.id}`)) {
         return Promise.resolve({ data: mockUser });
       }
@@ -132,6 +137,9 @@ describe('VisitorProfile', () => {
 
     // usuário encontrado, mas a API de posts retorna um array vazio
     mockApi.get.mockImplementation((url) => {
+      if (url.includes(`/user/${mockRoute.params.id}/profile-picture`)) {
+        return Promise.resolve({ data: mockImageBinary });
+      }
       if (url.includes(`/user/${mockRoute.params.id}`)) {
         return Promise.resolve({ data: mockUser });
       }
@@ -152,7 +160,18 @@ describe('VisitorProfile', () => {
   });
 
   it('Deve abrir/fechar o menu lateral ao apertar o botao', async () => {
-    mockApi.get.mockResolvedValue({ data: { id: '123', fullName: 'Test User' } });
+    mockApi.get.mockImplementation((url) => {
+      if (url.includes(`/user/${mockRoute.params.id}/profile-picture`)) {
+        return Promise.resolve({ data: mockImageBinary });
+      }
+      if (url.includes(`/user/${mockRoute.params.id}`)) {
+        return Promise.resolve({ data: { id: '123', fullName: 'Test User' } });
+      }
+      if (url.includes(`/post/${mockRoute.params.id}/posts`)) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.reject(new Error(`URL não mockada: ${url}`));
+    });
 
     const { getByTestId, findByTestId } = render(
       <VisitorProfile navigation={{ navigate: mockNavigation }} />,
@@ -183,6 +202,9 @@ describe('VisitorProfile', () => {
     };
 
     mockApi.get.mockImplementation((url) => {
+      if (url.includes(`/user/${mockRoute.params.id}/profile-picture`)) {
+        return Promise.resolve({ data: mockImageBinary });
+      }
       if (url.includes(`/user/${mockRoute.params.id}`)) {
         return Promise.resolve({ data: mockUser });
       }
@@ -211,7 +233,18 @@ describe('VisitorProfile', () => {
   });
 
   it('deve chamar a função de compartilhar ao clicar no botão de compartilhar', async () => {
-    mockApi.get.mockResolvedValue({ data: { fullName: 'Test User' } });
+    mockApi.get.mockImplementation((url) => {
+      if (url.includes(`/user/${mockRoute.params.id}/profile-picture`)) {
+        return Promise.resolve({ data: mockImageBinary });
+      }
+      if (url.includes(`/user/${mockRoute.params.id}`)) {
+        return Promise.resolve({ data: { fullName: 'Test User' } });
+      }
+      if (url.includes(`/post/${mockRoute.params.id}/posts`)) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.reject(new Error(`URL não mockada: ${url}`));
+    });
 
     const { findByTestId } = render(<VisitorProfile navigation={{ navigate: mockNavigation }} />);
 
@@ -225,3 +258,9 @@ describe('VisitorProfile', () => {
     });
   });
 });
+
+
+
+
+
+

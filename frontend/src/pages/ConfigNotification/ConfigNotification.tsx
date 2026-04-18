@@ -13,7 +13,6 @@ export default function ConfigNotification() {
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
 
-  const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
@@ -21,31 +20,19 @@ export default function ConfigNotification() {
     muteSystem: false,
     muteGroups: false,
   });
-  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-      if (loggedId && accessToken) {
+      if (accessToken) {
         setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
-        api
-          .get(`/notifications/${loggedId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-          .then((res) => setUserName(res.data.fullName));
       }
     };
     fetchData();
   }, []);
 
   useEffect(() => {
-    if (!accessTokenState || !loggedIdState) return;
-    console.log('Token:', accessTokenState);
-    console.log('User ID:', loggedIdState);
+    if (!accessTokenState) return;
     const fetchPostUser = async () => {
       try {
         const response = await api.get('notifications/notification-settings', {
@@ -67,7 +54,7 @@ export default function ConfigNotification() {
       }
     };
     fetchPostUser();
-  }, [accessTokenState, loggedIdState]);
+  }, [accessTokenState]);
 
   const handleToggle = async (key: keyof typeof settings) => {
     const newSettings = { ...settings, [key]: !settings[key] };

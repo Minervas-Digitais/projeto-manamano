@@ -7,11 +7,5 @@ declare module '*.svg' {
 }
 
 declare global {
-  namespace NodeJS {
-    interface Global {
-      alert: jest.Mock;
-    }
-  }
+  var alert: jest.Mock;
 }
-
-export {};

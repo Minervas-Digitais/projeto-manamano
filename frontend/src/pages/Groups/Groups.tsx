@@ -19,7 +19,6 @@ export default function Groups() {
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
 
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [groups, setGroups] = useState([]);
@@ -28,7 +27,6 @@ export default function Groups() {
     const fetchData = async () => {
       // Retrieve the access token from storage
       const token = await secureStorage.getItem('accessToken');
-      if (token) setAccessToken(token);
       const loggedId = await secureStorage.getItem('loggedId');
       if (loggedId && token) {
         api
@@ -39,6 +37,9 @@ export default function Groups() {
           })
           .then((res: any) => {
             setGroups(res.data);
+          })
+          .catch(() => {
+            setGroups([]);
           });
       }
       console.log(groups);
@@ -99,7 +100,7 @@ export default function Groups() {
       <GroupsBody>
         <GroupsList>
           {groups?.length > 0 ? (
-            groups.map((item: any, index: number) => (
+            groups.map((item: any) => (
               <GroupButton
                 key={item.groupId}
                 groupName={item.group.name}

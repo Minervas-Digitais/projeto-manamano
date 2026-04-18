@@ -19,10 +19,9 @@ export default function EnterGroup({ navigation }: any) {
   } = useForm({});
   const onSubmit = async (data: any) => {
     const accessToken = await secureStorage.getItem('accessToken');
-    const loggedId = await secureStorage.getItem('loggedId');
 
-    if (!accessToken || !loggedId) {
-      console.error('Token ou ID do usuário não encontrado.');
+    if (!accessToken) {
+      console.error('Token do usuário não encontrado.');
       return;
     }
 

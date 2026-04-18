@@ -381,13 +381,51 @@ export class ParticipantService {
     });
   }
 
-  async remove(userId: string, groupId: string): Promise<{ message: string }> {
+  async removeSelf(
+    userId: string,
+    groupId: string,
+  ): Promise<{ message: string }> {
     await this.findOne(userId, groupId);
     await this.prismaService.participant.delete({
       where: {
         userId_groupId: { userId, groupId },
       },
     });
+    return { message: PARTICIPANT_MESSAGES.DELETE_SUCCESS };
+  }
+
+  async removeUser(callerId: string, targetId: string, groupId: string) {
+    await this.findOne(targetId, groupId);
+
+    const callerUser = await this.prismaService.user.findUnique({
+      where: { id: callerId },
+    });
+
+    if (!callerUser) {
+      throw new NotFoundException(PARTICIPANT_MESSAGES.USER_NOT_FOUND);
+    }
+
+    const callerParticipant = await this.prismaService.participant.findUnique({
+      where: { userId_groupId: { userId: callerUser.id, groupId } },
+    });
+
+    if (!callerParticipant) {
+      throw new NotFoundException(PARTICIPANT_MESSAGES.NOT_FOUND);
+    }
+
+    if (
+      callerUser.sysRole != RoleType.ADMIN &&
+      callerParticipant.role != UserRole.INSTRUCTOR
+    ) {
+      throw new ForbiddenException(PARTICIPANT_MESSAGES.UNAUTHORIZED_ACCESS);
+    }
+
+    await this.prismaService.participant.delete({
+      where: {
+        userId_groupId: { userId: targetId, groupId },
+      },
+    });
+
     return { message: PARTICIPANT_MESSAGES.DELETE_SUCCESS };
   }
 }

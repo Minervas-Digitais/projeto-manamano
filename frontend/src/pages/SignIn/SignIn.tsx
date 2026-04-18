@@ -31,22 +31,27 @@ export default function SignIn({ navigation }: any) {
           await secureStorage.setItem('accessToken', res.data.accessToken);
           await secureStorage.setItem('loggedId', res.data.loggedId);
 
-          const pushToken = await registerForPushNotificationsAsync();
+          // Tentar registrar notificações push (não bloqueia o login se falhar)
+          try {
+            const pushToken = await registerForPushNotificationsAsync();
 
-          if (pushToken) {
-            try {
-              await api.post(
-                '/notifications/register-token',
-                { pushNotifToken: pushToken },
-                {
-                  headers: {
-                    Authorization: `Bearer ${res.data.accessToken}`,
+            if (pushToken) {
+              try {
+                await api.post(
+                  '/notifications/register-token',
+                  { pushNotifToken: pushToken },
+                  {
+                    headers: {
+                      Authorization: `Bearer ${res.data.accessToken}`,
+                    },
                   },
-                },
-              );
-            } catch (error) {
-              console.error('Erro ao enviar push token para o backend:', error);
+                );
+              } catch (error) {
+                console.error('Erro ao enviar push token para o backend:', error);
+              }
             }
+          } catch (error) {
+            console.error('Erro ao registrar notificações push:', error);
           }
 
           navigation.navigate('Home');

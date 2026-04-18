@@ -78,7 +78,6 @@ export default function CreateGroup() {
   };
 
   const handleCreateGroup = async () => {
-    const loggedId = await secureStorage.getItem('loggedId');
     if (!groupName.trim() || !groupDescription.trim()) {
       Toast.show({
         type: 'error',

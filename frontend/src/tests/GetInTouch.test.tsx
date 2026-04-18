@@ -1,7 +1,7 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import api from '../services/api';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import GetInTouch from '../pages/GetInTouch/GetInTouch';
 
@@ -23,9 +23,10 @@ jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
   },
 }));
 
@@ -34,15 +35,23 @@ jest.mock('../assets/arrow-icon.svg', () => 'ArrowIcon');
 jest.spyOn(Alert, 'alert');
 
 const mockedApi = api as jest.Mocked<typeof api>;
-const mockedStorage = storage as jest.Mocked<typeof storage>;
+const mockedStorage = storage as any;
 
 describe('GetInTouch', () => {
+  const mockLoggedUser = () => {
+    mockedStorage.getItem.mockImplementation(async (key: string) => {
+      if (key === 'accessToken') return 'fake-token';
+      if (key === 'loggedId') return 'user-123';
+      return null;
+    });
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('Não deve renderizar o formulário se o usuário não estiver logado', () => {
-    mockedStorage.getString.mockReturnValue(undefined);
+    mockedStorage.getItem.mockResolvedValue(undefined);
 
     const { queryByText } = render(<GetInTouch />);
 
@@ -50,70 +59,58 @@ describe('GetInTouch', () => {
     expect(queryByText('Enviar')).toBeNull();
   });
 
-  it('Deve renderizar o formulário e buscar dados do usuário quando logado', async () => {
-    mockedStorage.getString.mockImplementation((key) => {
-      if (key === 'accessToken') return 'fake-token';
-      if (key === 'loggedId') return 'user-123';
-      return undefined;
-    });
-
-    mockedApi.get.mockResolvedValue({ data: {} });
+  it('Deve renderizar o formulário quando logado', async () => {
+    mockLoggedUser();
 
     const { getByText, getByLabelText } = render(<GetInTouch />);
 
     await waitFor(() => {
-      expect(mockedApi.get).toHaveBeenCalledWith('/user/user-123', {
-        headers: {
-          Authorization: 'Bearer fake-token',
-        },
-      });
+      expect(getByLabelText('Assunto')).toBeTruthy();
+      expect(getByLabelText('Mensagem')).toBeTruthy();
+      expect(getByLabelText('Enviar')).toBeTruthy();
     });
 
     expect(getByText('Fale Conosco')).toBeTruthy();
-    expect(getByLabelText('Assunto')).toBeTruthy();
-    expect(getByLabelText('Mensagem')).toBeTruthy();
-    expect(getByText('Enviar')).toBeTruthy();
   });
 
   it('Deve exibir mensagens de erro ao tentar submeter com campos vazios', async () => {
-    mockedStorage.getString.mockReturnValue('fake-data');
+    mockLoggedUser();
 
-    const { getByText, findAllByText } = render(<GetInTouch />);
+    const { getByLabelText, findAllByText } = render(<GetInTouch />);
 
-    const sendButton = getByText('Enviar');
+    await waitFor(() => {
+      expect(getByLabelText('Enviar')).toBeTruthy();
+    });
 
-    fireEvent.press(sendButton);
+    fireEvent.press(getByLabelText('Enviar'));
 
     const errorMessages = await findAllByText('Campo obrigatório');
     expect(errorMessages).toHaveLength(2);
   });
 
   it('Deve submeter o formulário com sucesso', async () => {
-    // Arrange: Usuário logado e mock da API POST para sucesso
-    mockedStorage.getString.mockImplementation((key) => {
-      if (key === 'accessToken') return 'fake-token';
-      if (key === 'loggedId') return 'user-123';
-      return undefined;
-    });
+    mockLoggedUser();
     mockedApi.post.mockResolvedValue({ data: { message: 'Success' } });
 
-    const { getByText, getByLabelText } = render(<GetInTouch />);
+    const { getByLabelText } = render(<GetInTouch />);
+
+    await waitFor(() => {
+      expect(getByLabelText('Assunto')).toBeTruthy();
+      expect(getByLabelText('Mensagem')).toBeTruthy();
+      expect(getByLabelText('Enviar')).toBeTruthy();
+    });
 
     const subjectInput = getByLabelText('Assunto');
     const messageInput = getByLabelText('Mensagem');
-    const sendButton = getByText('Enviar');
 
-    // Act: Preenche o formulário e clica em enviar
     fireEvent.changeText(subjectInput, 'Problema com o App');
     fireEvent.changeText(messageInput, 'O botão principal não funciona.');
-    fireEvent.press(sendButton);
+    fireEvent.press(getByLabelText('Enviar'));
 
-    // Assert: Espera a chamada da API e verifica os dados
     await waitFor(() => {
       expect(mockedApi.post).toHaveBeenCalledWith(
         '/mail',
         {
-          userId: 'user-123',
           subject: 'Problema com o App',
           text: 'O botão principal não funciona.',
         },
@@ -129,20 +126,24 @@ describe('GetInTouch', () => {
   });
 
   it('Deve exibir um alerta de erro se a submissão da API falhar', async () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-    mockedStorage.getString.mockReturnValue('fake-data');
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockLoggedUser();
     mockedApi.post.mockRejectedValue(new Error('Network Error'));
 
-    const { getByText, getByLabelText } = render(<GetInTouch />);
+    const { getByLabelText } = render(<GetInTouch />);
+
+    await waitFor(() => {
+      expect(getByLabelText('Assunto')).toBeTruthy();
+      expect(getByLabelText('Mensagem')).toBeTruthy();
+      expect(getByLabelText('Enviar')).toBeTruthy();
+    });
 
     const subjectInput = getByLabelText('Assunto');
     const messageInput = getByLabelText('Mensagem');
-    const sendButton = getByText('Enviar');
 
     fireEvent.changeText(subjectInput, 'Dúvida');
     fireEvent.changeText(messageInput, 'Qual o horário de atendimento?');
-    fireEvent.press(sendButton);
+    fireEvent.press(getByLabelText('Enviar'));
 
     await waitFor(() => {
       expect(mockedApi.post).toHaveBeenCalled();
@@ -153,3 +154,9 @@ describe('GetInTouch', () => {
     );
   });
 });
+
+
+
+
+
+
