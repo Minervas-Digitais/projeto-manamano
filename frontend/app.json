@@ -2,7 +2,7 @@
   "expo": {
     "scheme": "manamano",
     "name": "frontend",
-    "slug": "frontend",
+    "slug": "manamanoapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -26,6 +26,12 @@
     "plugins": [
       "expo-font",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bc157627-f7ac-4034-8e10-04bb7dd02292"
+      }
+    },
+    "owner": "manamano"
   }
 }
