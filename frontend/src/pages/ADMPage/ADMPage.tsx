@@ -15,7 +15,7 @@ import { GroupDataText } from '../GroupData/GroupDataStyle';
 import GroupIcon from '../../assets/white-group.svg';
 import MegaphoneIcon from '../../assets/white-megaphone.svg';
 import GearIcon from '../../assets/white-gear.svg';
-import SearchIcon from '../../assets/white-MG.svg';
+import SearchIcon from '../../assets/white-mg.svg';
 import { RootStackParamList } from '../../navigation/types';
 
 export default function ADMPage() {

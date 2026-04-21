@@ -19,7 +19,7 @@ import { PostCardTag } from '../PostCard/PostCardStyle';
 import ModalOptionsNotification from '../ModalOptionsNotification/ModalOptionsNotification';
 import MegaPhone from '../../assets/megaphone-icon.svg';
 import Fixed from '../../assets/fixed-icon.svg';
-import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
+import DotsMenuIcon from '../../assets/dots-menu-big.svg';
 
 export default function NotificationCard({
   user,
