@@ -78,6 +78,23 @@ Possuindo o Docker CLI instalado em sua máquina, basta executar o seguinte coma
 ``` bash
 docker compose up -d --build
 ```
+
+### Modo do Docker (dev ou prod)
+
+O ambiente Docker agora pode ser alternado por variáveis no arquivo `.env` da raiz do projeto:
+
+- `APP_ENV=development` com `DOCKER_TARGET=runtime-dev` para desenvolvimento
+- `APP_ENV=production` com `DOCKER_TARGET=runtime-prod` para produção
+
+Exemplo para produção:
+
+``` bash
+APP_ENV=production
+DOCKER_TARGET=runtime-prod
+```
+
+No modo de produção, o container do backend inicia com `start:prod` e aplica migrations com `prisma migrate deploy`.
+
 Já para a aplicação do front-end, será necessário instalar as suas tecnologias correspondentes, subindo a aplicação com os seguintes comandos: 
 
 ``` bash

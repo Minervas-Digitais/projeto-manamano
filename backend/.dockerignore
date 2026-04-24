@@ -2,4 +2,12 @@ node_modules
 README.md
 Dockerfile
 .gitignore
-npm-debug.log  
+npm-debug.log
+.env
+.env.*
+dist
+coverage
+.git
+.github
+.vscode
+*.log
