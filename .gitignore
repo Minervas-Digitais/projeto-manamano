@@ -2,4 +2,3 @@ backend/.env
 .env
 database/
 backend/node_modules/
-frontend/eas.json

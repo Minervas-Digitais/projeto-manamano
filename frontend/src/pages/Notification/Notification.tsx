@@ -16,7 +16,7 @@ import storage from '../../services/localStorage';
 import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import ModalOptionsNotification from '../../components/ModalOptionsNotification/ModalOptionsNotification';
-import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
+import DotsMenuIcon from '../../assets/dots-menu-big.svg';
 import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAllConfirmation';
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';

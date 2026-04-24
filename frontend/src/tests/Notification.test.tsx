@@ -26,7 +26,7 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-jest.mock('../../assets/dotsMenuBig.svg', () => 'DotsMenuIcon');
+jest.mock('../../assets/dots-menu-big.svg', () => 'DotsMenuIcon');
 jest.mock('../../assets/no-notification-icon.svg', () => 'NoNotificationIcon');
 
 jest.mock('../services/api');

@@ -29,7 +29,7 @@ import ModalOptions from '../../components/ModalOptions/ModalOptions';
 import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
-import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
+import DotsMenuIcon from '../../assets/dots-menu-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import { useSavedPosts } from '../../context/SavedPostsContext';
 import SaveIcon from '../../assets/save-icon.svg';

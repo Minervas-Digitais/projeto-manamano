@@ -31,7 +31,7 @@ import secureStorage from '../../services/secureStorage';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import LocationIcon from '../../assets/location-icon.svg';
 import ShareWhiteIcon from '../../assets/share-white-icon.svg';
-import MenuIcon from '../../assets/menuWhite-icon.svg';
+import MenuIcon from '../../assets/menu-white-icon.svg';
 import BusinessIcon from '../../assets/business-icon.svg';
 import WhatsappIcon from '../../assets/whatsapp-icon.svg';
 import EmailIcon from '../../assets/email-icon.svg';

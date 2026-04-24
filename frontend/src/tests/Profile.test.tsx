@@ -20,7 +20,7 @@ jest.mock('../assets/duck.png', () => 'duckImage');
 jest.mock('../components/SideMenu/SideMenu', () => 'SideMenu');
 jest.mock('../assets/location-icon.svg', () => 'Location');
 jest.mock('../assets/share-white-icon.svg', () => 'ShareWhite');
-jest.mock('../assets/menuWhite-icon.svg', () => 'MenuIcon');
+jest.mock('../assets/menu-white-icon.svg', () => 'MenuIcon');
 jest.mock('../assets/pen-icon.svg', () => 'Pen');
 jest.mock('../assets/business-icon.svg', () => 'Business');
 
