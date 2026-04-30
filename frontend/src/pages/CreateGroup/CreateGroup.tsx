@@ -142,6 +142,7 @@ export default function CreateGroup() {
         text2: 'Falha ao criar grupo ou categoria',
       });
     }
+    navigation.goBack();
   };
 
   if (!fontsLoaded) {

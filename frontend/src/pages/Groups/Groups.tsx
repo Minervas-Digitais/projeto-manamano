@@ -100,7 +100,9 @@ export default function Groups() {
     <GroupsContainer>
       <HeaderCustom icon menu text="Grupos" font="inter-bold" />
       <GroupsBody>
-        <GroupsList>
+        <GroupsList
+          contentContainerStyle={{ gap: 25, alignItems: 'center' }}
+          showsVerticalScrollIndicator={false}>
           {groups?.length > 0 ? (
             groups.map((item: any) => (
               <GroupButton
