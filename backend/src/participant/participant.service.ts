@@ -1,13 +1,14 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
-import { UpdateParticipantDto } from './dto/update-participant.dto';
-import { Participant, UserRole } from '@prisma/client';
+import { UpdateParticipantRoleDto } from './dto/update-participant.dto';
+import { Participant, RoleType, UserRole } from '@prisma/client';
 import { PARTICIPANT_MESSAGES } from 'src/messages/participant.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
 
@@ -92,7 +93,7 @@ export class ParticipantService {
     const participantBody = {
       groupId: group.id,
       userId,
-      role: createParticipantDto.role ?? UserRole.STUDENT,
+      role: UserRole.STUDENT,
     };
 
     return await this.prismaService.participant.create({
@@ -297,7 +298,22 @@ export class ParticipantService {
     }
   }
 
-  async findUsersInGroup(groupId: string): Promise<UserInGroup[]> {
+  async findUsersInGroup(
+    groupId: string,
+    callerId: string,
+  ): Promise<UserInGroup[]> {
+    await this.validator.validateGroupExists(groupId);
+    const callerUser = await this.validator.validateUserExists(callerId);
+
+    const callerParticipant = await this.prismaService.participant.findUnique({
+      where: { userId_groupId: { userId: callerId, groupId } },
+    });
+
+    // Quem chamou a rota deve ser ou ADMIN ou deve pertencer ao grupo
+    if (callerUser.sysRole != RoleType.ADMIN && !callerParticipant) {
+      throw new ForbiddenException(PARTICIPANT_MESSAGES.UNAUTHORIZED_ACCESS);
+    }
+
     const users = await this.prismaService.participant.findMany({
       where: {
         groupId,
@@ -331,26 +347,85 @@ export class ParticipantService {
   }
 
   async update(
-    userId: string,
+    callerId: string,
+    targetUserId: string,
     groupId: string,
-    updateParticipantDto: UpdateParticipantDto,
+    updateParticipantDto: UpdateParticipantRoleDto,
   ): Promise<Participant> {
-    await this.findOne(userId, groupId);
+    await this.validator.validateGroupExists(groupId);
+    await this.validator.validateUserExists(targetUserId);
+    await this.findOne(targetUserId, groupId);
+    const callerUser = await this.validator.validateUserExists(callerId);
+
+    const callerParticipant = await this.prismaService.participant.findUnique({
+      where: { userId_groupId: { userId: callerId, groupId } },
+    });
+
+    if (!callerParticipant) {
+      throw new NotFoundException(PARTICIPANT_MESSAGES.NOT_FOUND);
+    }
+
+    const isAdmin = callerUser.sysRole === RoleType.ADMIN;
+    const isInstructor = callerParticipant?.role === UserRole.INSTRUCTOR;
+
+    // Quem chamou a rota deve ser ou ADMIN ou deve ser Instrutor do grupo
+    if (!isAdmin && !isInstructor) {
+      throw new ForbiddenException(PARTICIPANT_MESSAGES.UNAUTHORIZED_ACCESS);
+    }
+
     return await this.prismaService.participant.update({
       where: {
-        userId_groupId: { userId, groupId },
+        userId_groupId: { userId: targetUserId, groupId },
       },
       data: updateParticipantDto,
     });
   }
 
-  async remove(userId: string, groupId: string): Promise<{ message: string }> {
+  async removeSelf(
+    userId: string,
+    groupId: string,
+  ): Promise<{ message: string }> {
     await this.findOne(userId, groupId);
     await this.prismaService.participant.delete({
       where: {
         userId_groupId: { userId, groupId },
       },
     });
+    return { message: PARTICIPANT_MESSAGES.DELETE_SUCCESS };
+  }
+
+  async removeUser(callerId: string, targetId: string, groupId: string) {
+    await this.findOne(targetId, groupId);
+
+    const callerUser = await this.prismaService.user.findUnique({
+      where: { id: callerId },
+    });
+
+    if (!callerUser) {
+      throw new NotFoundException(PARTICIPANT_MESSAGES.USER_NOT_FOUND);
+    }
+
+    const callerParticipant = await this.prismaService.participant.findUnique({
+      where: { userId_groupId: { userId: callerUser.id, groupId } },
+    });
+
+    if (!callerParticipant) {
+      throw new NotFoundException(PARTICIPANT_MESSAGES.NOT_FOUND);
+    }
+
+    if (
+      callerUser.sysRole != RoleType.ADMIN &&
+      callerParticipant.role != UserRole.INSTRUCTOR
+    ) {
+      throw new ForbiddenException(PARTICIPANT_MESSAGES.UNAUTHORIZED_ACCESS);
+    }
+
+    await this.prismaService.participant.delete({
+      where: {
+        userId_groupId: { userId: targetId, groupId },
+      },
+    });
+
     return { message: PARTICIPANT_MESSAGES.DELETE_SUCCESS };
   }
 }

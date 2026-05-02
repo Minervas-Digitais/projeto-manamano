@@ -21,18 +21,14 @@ export default function GlobalNotificationPage({ navigation }: any) {
     formState: { errors },
     setValue,
   } = useForm({});
-  const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [existingNotification, setExistingNotification] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-
-      if (loggedId && accessToken) {
+      if (accessToken) {
         setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
 
         if (body) {
           api
@@ -53,14 +49,12 @@ export default function GlobalNotificationPage({ navigation }: any) {
     };
 
     fetchData();
-  }, []);
+  }, [body, id, setValue]);
 
   const onSubmit = async (data: any) => {
     try {
-      let response;
-
       if (body && existingNotification) {
-        response = await api.patch(
+        await api.patch(
           `/notifications/update/${id}`,
           {
             body: data.input,
@@ -76,7 +70,7 @@ export default function GlobalNotificationPage({ navigation }: any) {
           text1: 'Comunicado atualizado com sucesso!',
         });
       } else {
-        response = await api.post(
+        await api.post(
           '/notifications/global',
           {
             type: 'WARNING',

@@ -6,16 +6,17 @@ import { useFocusEffect } from '@react-navigation/native';
 import {
   ConfigNotificationContainer,
   NotificationInfoContainer,
+  NotificationScrollContainer,
   NotificationInfoText,
   NotificationBodyContainer,
 } from './NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import NotificationCard from '../../components/NotificationCard/NotificationCard';
-import storage from '../SignIn/SignIn';
+import storage from '../../services/localStorage';
 import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import ModalOptionsNotification from '../../components/ModalOptionsNotification/ModalOptionsNotification';
-import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
+import DotsMenuIcon from '../../assets/dots-menu-big.svg';
 import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAllConfirmation';
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
@@ -70,7 +71,7 @@ export default function Notification({ navigation }: any) {
       setAccessTokenState(accessToken);
       setLoggedIdState(loggedId);
       api
-        .get('notifications/user/', {
+        .get('/notifications/user', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -132,7 +133,7 @@ export default function Notification({ navigation }: any) {
     );
     api
       .patch(
-        `notifications/${id}`,
+        `/notifications/${id}`,
         {},
         {
           headers: {
@@ -160,7 +161,7 @@ export default function Notification({ navigation }: any) {
   // Function to confirm deletion
   const handleConfirmDelete = async () => {
     try {
-      await api.delete(`notifications/${deleteModal.notifId}`, {
+      await api.delete(`/notifications/${deleteModal.notifId}`, {
         headers: {
           Authorization: `Bearer ${accessTokenState}`,
         },
@@ -206,9 +207,9 @@ export default function Notification({ navigation }: any) {
           admin={admin}
         />
         <NotificationBodyContainer>
-          <NotificationInfoContainer>
+          <NotificationScrollContainer>
             {notification && notification.length > 0 ? (
-              notification?.map((item: any) => (
+              notification.map((item: any) => (
                 <NotificationCard
                   key={item.id}
                   user={item.senderName}
@@ -228,22 +229,24 @@ export default function Notification({ navigation }: any) {
             ) : (
               <>
                 <NoNotification />
-                <NotificationInfoText font="inter-bold">
-                  Você não possui notificações no momento
-                </NotificationInfoText>
+                <NotificationInfoContainer>
+                  <NotificationInfoText font="inter-bold">
+                    Você não possui notificações no momento
+                  </NotificationInfoText>
+                </NotificationInfoContainer>
               </>
             )}
-          </NotificationInfoContainer>
 
-          <ButtonCustom
-            onPress={() => {
-              navigation.navigate('Home');
-            }}
-            backColor="#EF4036"
-            fontColor="#ffff"
-            text="Retornar para a tela inicial"
-            border={false}
-          />
+            <ButtonCustom
+              onPress={() => {
+                navigation.navigate('Home');
+              }}
+              backColor="#EF4036"
+              fontColor="#ffff"
+              text="Retornar para a tela inicial"
+              border={false}
+            />
+          </NotificationScrollContainer>
         </NotificationBodyContainer>
       </ConfigNotificationContainer>
     </>

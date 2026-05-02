@@ -46,7 +46,7 @@ jest.mock('../assets/white-gear.svg', () => {
   return MockGearIcon;
 });
 
-jest.mock('../assets/white-MG.svg', () => {
+jest.mock('../assets/white-mg.svg', () => {
   function MockSearchIcon() {
     return <View testID="search-icon" />;
   }
@@ -371,3 +371,6 @@ describe('ADMPage', () => {
     });
   });
 });
+
+
+

@@ -78,7 +78,6 @@ export default function CreateGroup() {
   };
 
   const handleCreateGroup = async () => {
-    const loggedId = await secureStorage.getItem('loggedId');
     if (!groupName.trim() || !groupDescription.trim()) {
       Toast.show({
         type: 'error',
@@ -136,35 +135,6 @@ export default function CreateGroup() {
 
       // Wait for all categories to be created
       await Promise.all(allCategoryPromises);
-
-      // Add user as moderator
-      try {
-        await api.post(
-          '/participant',
-          { userId: loggedId, role: 'INSTRUCTOR', inviteCode },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
-
-        navigation.navigate('Home');
-      } catch (participantError: any) {
-        if (participantError.response) {
-          Toast.show({
-            type: 'error',
-            text1: 'Erro',
-            text2: 'Falha ao adicionar usuário como moderador',
-          });
-        } else {
-          Toast.show({
-            type: 'error',
-            text1: 'Erro',
-            text2: 'Falha desconhecida',
-          });
-        }
-      }
     } catch (error) {
       Toast.show({
         type: 'error',

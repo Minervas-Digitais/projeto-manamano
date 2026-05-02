@@ -77,9 +77,10 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn((key) => {
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'fake-user-id';
       return null;
@@ -94,7 +95,7 @@ jest.mock('../services/api', () => {
   });
 
   const get = jest.fn((url) => {
-    if (url === 'category/group/123') {
+    if (url === '/category/group/123') {
       return Promise.resolve({ data: [{ id: '1', name: 'Aulas' }] });
     }
     return Promise.resolve({ data: [] });
@@ -209,7 +210,7 @@ describe('NewLesson', () => {
     const { getByTestId, findByTestId } = renderWithNavigation();
 
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('category/group/123', expect.anything());
+      expect(api.get).toHaveBeenCalledWith('/category/group/123', expect.anything());
     });
 
     fireEvent.changeText(getByTestId('input-title'), 'Aula Teste');
@@ -339,7 +340,7 @@ describe('NewLesson', () => {
     const { getByTestId } = renderWithNavigation();
 
     fireEvent.changeText(getByTestId('input-title'), 'Aula Teste');
-    fireEvent.changeText(getByTestId('input-date'), '31/12/2025');
+    fireEvent.changeText(getByTestId('input-date'), '31/12/2099');
     fireEvent.changeText(getByTestId('input-hour'), '23:59');
     fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
     fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/aula');
@@ -366,7 +367,7 @@ describe('NewLesson', () => {
     const { getByTestId } = renderWithNavigation();
 
     await waitFor(() => {
-      expect(apiMock.get).toHaveBeenCalledWith(`category/group/123`, expect.anything());
+      expect(apiMock.get).toHaveBeenCalledWith(`/category/group/123`, expect.anything());
     });
 
     fireEvent.changeText(getByTestId('input-title'), 'Título Teste');
@@ -392,14 +393,14 @@ describe('NewLesson', () => {
     const apiMock = require('../services/api').default;
 
     apiMock.get.mockImplementation((url: string) => {
-      if (url === 'category/group/123') {
+      if (url === '/category/group/123') {
         return Promise.reject(new Error('Erro ao buscar categorias'));
       }
       return Promise.resolve({ data: [] });
     });
 
-    const storageMock = require('../pages/SignIn/SignIn').storage;
-    storageMock.getString.mockImplementation((key: string) => {
+    const storageMock = require('../services/secureStorage').default;
+    storageMock.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'fake-user-id';
       return null;
@@ -417,3 +418,7 @@ describe('NewLesson', () => {
     });
   });
 });
+
+
+
+

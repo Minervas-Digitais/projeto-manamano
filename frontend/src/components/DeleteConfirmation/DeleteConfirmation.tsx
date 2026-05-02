@@ -59,7 +59,7 @@ export default function DeleteConfirmation({ text }: any) {
           </DeleteConfirmationButton>
           <DeleteConfirmationButton
             onPress={() => {
-              storage.delete('displayNotif');
+              localStorage.delete('displayNotif');
               setShouldDisplay(false);
             }}>
             <ModalOptionsNotificationText font="inter-regular" color="#515151">

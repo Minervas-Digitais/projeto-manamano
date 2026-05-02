@@ -3,8 +3,9 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Text, View, Image, StyleSheet, StatusBar } from 'react-native';
+import { Text, View, StyleSheet, StatusBar, Alert as RNAlert } from 'react-native';
 import { useFonts } from 'expo-font';
+import { isAxiosError } from 'axios';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { SignUpContainer, SignUpInputContainer, SignUpForm } from './SignUpStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
@@ -16,7 +17,16 @@ import IconEmail from '../../assets/e-mail-icon.svg';
 import IconWhats from '../../assets/whats-icon.svg';
 import IconPassword from '../../assets/lock-icon.svg';
 
+interface SignUpFormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
 export default function SignUp({ navigation }: any) {
+  const showAlert = (message: string) => RNAlert.alert(message);
+
   function cleanPhoneNumber(num: string): string {
     return num.replace(/\D/g, '');
   }
@@ -24,27 +34,24 @@ export default function SignUp({ navigation }: any) {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm({});
+  } = useForm<SignUpFormData>();
 
-  const onSubmit = (data: any) => {
-    alert(JSON.stringify(data));
+  const onSubmit = async (data: SignUpFormData) => {
     const onlyNumPhone = cleanPhoneNumber(data.phone);
     const updatedData = { ...data, phone: onlyNumPhone };
-    api
-      .post('/user', updatedData)
-      .then((res) => {
-        console.log('Resposta:', res.data);
-        if (res?.data.code === 'P2002') {
-          alert('E-mail ou celular já está associado a outra conta!');
-        } else {
-          alert('Cadastro realizado!');
-          navigation.navigate('SignIn');
-        }
-      })
-      .catch((error) => {
-        console.log('Erro na requisição:', error.message);
-        alert('Erro ao criar usuário.');
-      });
+
+    try {
+      await api.post('/user', updatedData);
+      showAlert('Cadastro realizado!');
+      navigation.navigate('SignIn');
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response?.status === 409) {
+        showAlert('E-mail ou celular já está associado a outra conta!');
+        return;
+      }
+
+      showAlert('Erro ao criar usuário.');
+    }
   };
 
   const [fontsLoaded] = useFonts({
@@ -114,7 +121,6 @@ export default function SignUp({ navigation }: any) {
                 />
               )}
             />
-            // o nome do erro precisa dar match com o nome especificado no Controller
             {errors.phone && <ErrorWarning errorText="Campo obrigatório" />}
             <Controller
               control={control}
@@ -132,7 +138,6 @@ export default function SignUp({ navigation }: any) {
                 />
               )}
             />
-            // o nome do erro precisa dar match com o nome especificado no Controller
             {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
           </SignUpInputContainer>
         </View>

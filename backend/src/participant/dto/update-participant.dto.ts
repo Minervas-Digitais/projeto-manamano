@@ -1,6 +1,7 @@
-import { PartialType, OmitType } from '@nestjs/mapped-types';
-import { CreateParticipantDto } from './create-participant.dto';
+import { IsEnum } from 'class-validator';
+import { UserRole } from '@prisma/client';
 
-export class UpdateParticipantDto extends PartialType(
-  OmitType(CreateParticipantDto, ['groupId'] as const),
-) {}
+export class UpdateParticipantRoleDto {
+  @IsEnum(UserRole)
+  role: UserRole;
+}

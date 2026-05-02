@@ -1,23 +1,47 @@
-FROM node:20.14.0-alpine3.19
+ARG NODE_IMAGE=node:20.19.5-alpine3.21
 
-WORKDIR /app  
+FROM ${NODE_IMAGE} AS base
 
-COPY package*.json ./  
-COPY entrypoint.sh ./  
+WORKDIR /app
 
-RUN npm install  
+COPY package*.json ./
 
+FROM base AS deps-dev
+RUN npm ci
+
+FROM base AS deps-prod
+RUN npm ci --omit=dev
+
+FROM deps-dev AS build
 COPY . .
-
-RUN chmod +x /app
-RUN chmod +x /app/entrypoint.sh
-
 RUN npx prisma generate --schema=/app/prisma/schema.prisma
-
+RUN npm run build
 RUN node verifyPrisma.js
 
-RUN npm run build
+FROM ${NODE_IMAGE} AS runtime-prod
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=deps-prod /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/entrypoint.sh ./entrypoint.sh
+
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 3000
+CMD ["/app/entrypoint.sh"]
 
-CMD ["npm", "run", "start:dev"]
+FROM ${NODE_IMAGE} AS runtime-dev
+
+WORKDIR /app
+ENV NODE_ENV=development
+
+COPY --from=deps-dev /app/node_modules ./node_modules
+COPY . .
+
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 3000
+CMD ["/app/entrypoint.sh"]

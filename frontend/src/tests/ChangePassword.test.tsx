@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import Toast from 'react-native-toast-message';
 import api from '../services/api';
 import ChangePassword from '../pages/ChangePassword/ChangePassword';
 import Config from '../pages/Configuration/Configuration';
@@ -9,6 +10,11 @@ import Config from '../pages/Configuration/Configuration';
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));
+
+jest.mock('react-native-toast-message', () => ({
+  show: jest.fn(),
+}));
+
 jest.mock('../services/api');
 const mockPatch = api.patch as jest.Mock;
 
@@ -23,9 +29,10 @@ const renderWithNavigation = () =>
     </NavigationContainer>,
   );
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: (key: string) => {
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return '123';
       return null;
@@ -57,25 +64,25 @@ describe('ChangePassword', () => {
     jest.clearAllMocks();
   });
 
-  it('deve renderizar os campos do formulário', () => {
-    const { getByLabelText, getByText } = renderWithNavigation();
+  it('deve renderizar os campos do formulário', async () => {
+    const { findByLabelText, findByText } = renderWithNavigation();
 
-    expect(getByLabelText('Digite a senha atual')).toBeTruthy();
-    expect(getByLabelText('Digite a nova senha')).toBeTruthy();
-    expect(getByLabelText('Confirme a nova senha')).toBeTruthy();
-    expect(getByText('Confirmar')).toBeTruthy();
+    expect(await findByLabelText('Digite a senha atual')).toBeTruthy();
+    expect(await findByLabelText('Digite a nova senha')).toBeTruthy();
+    expect(await findByLabelText('Confirme a nova senha')).toBeTruthy();
+    expect(await findByText('Confirmar')).toBeTruthy();
   });
 
   it('deve submeter e navegar após sucesso', async () => {
     mockPatch.mockResolvedValueOnce({ data: {} });
 
-    const { getByLabelText, getByText } = renderWithNavigation();
+    const { findByLabelText, findByText } = renderWithNavigation();
 
-    fireEvent.changeText(getByLabelText('Digite a senha atual'), 'senhaAntiga123');
-    fireEvent.changeText(getByLabelText('Digite a nova senha'), 'novaSenha1');
-    fireEvent.changeText(getByLabelText('Confirme a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'novaSenha1');
 
-    fireEvent.press(getByText('Confirmar'));
+    fireEvent.press(await findByText('Confirmar'));
 
     await waitFor(() => {
       expect(mockPatch).toHaveBeenCalledWith(
@@ -86,15 +93,19 @@ describe('ChangePassword', () => {
         }),
         expect.any(Object),
       );
-
-      expect(global.alert).toHaveBeenCalledWith('Senha atualizada com sucesso!');
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'success',
+          text2: 'Senha atualizada com sucesso!',
+        }),
+      );
     });
   });
 
   it('deve mostrar erro ao submeter sem preencher campos', async () => {
-    const { getByText, getAllByText } = renderWithNavigation();
+    const { findByText, getAllByText } = renderWithNavigation();
 
-    fireEvent.press(getByText('Confirmar'));
+    fireEvent.press(await findByText('Confirmar'));
 
     await waitFor(() => {
       const errors = getAllByText('Campo obrigatório');
@@ -103,32 +114,41 @@ describe('ChangePassword', () => {
   });
 
   it('deve mostrar erro quando as senhas não coincidem', async () => {
-    const { getByText, getByLabelText } = renderWithNavigation();
+    const { findByText, findByLabelText } = renderWithNavigation();
 
-    fireEvent.changeText(getByLabelText('Digite a senha atual'), 'senhaAntiga123');
-    fireEvent.changeText(getByLabelText('Digite a nova senha'), 'novaSenha1');
-    fireEvent.changeText(getByLabelText('Confirme a nova senha'), 'senhaDiferente');
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'senhaDiferente');
 
-    fireEvent.press(getByText('Confirmar'));
+    fireEvent.press(await findByText('Confirmar'));
 
-    await waitFor(() => {
-      expect(getByText('Senhas não coincidem')).toBeTruthy();
-    });
+    expect(await findByText('Senhas não coincidem')).toBeTruthy();
   });
 
   it('deve mostrar alerta de erro se a API falhar', async () => {
     mockPatch.mockRejectedValueOnce(new Error('Erro na API'));
 
-    const { getByLabelText, getByText } = renderWithNavigation();
+    const { findByLabelText, findByText } = renderWithNavigation();
 
-    fireEvent.changeText(getByLabelText('Digite a senha atual'), 'senhaAntiga123');
-    fireEvent.changeText(getByLabelText('Digite a nova senha'), 'novaSenha1');
-    fireEvent.changeText(getByLabelText('Confirme a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'novaSenha1');
 
-    fireEvent.press(getByText('Confirmar'));
+    fireEvent.press(await findByText('Confirmar'));
 
     await waitFor(() => {
-      expect(global.alert).toHaveBeenCalledWith('Erro ao mudar senha. Tente novamente mais tarde.');
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Erro ao mudar senha. Tente novamente mais tarde.',
+        }),
+      );
     });
   });
 });
+
+
+
+
+
+

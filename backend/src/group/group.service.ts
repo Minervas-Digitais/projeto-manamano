@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import { Group } from '@prisma/client';
+import { Group, UserRole } from '@prisma/client';
 import { GROUP_MESSAGES } from 'src/messages/group.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
 
@@ -13,16 +13,29 @@ export class GroupService {
     private readonly validator: ValidatorService,
   ) {}
 
-  async create(createGroupDto: CreateGroupDto): Promise<Group> {
+  async create(
+    createGroupDto: CreateGroupDto,
+    callerId: string,
+  ): Promise<Group> {
     const inviteCode = await this.generateUniqueInviteCode();
-    const newGroup = await this.prismaService.group.create({
-      data: {
-        ...createGroupDto,
-        inviteCode,
-      },
-    });
 
-    return newGroup;
+    return await this.prismaService.$transaction(async (prisma) => {
+      const group = await prisma.group.create({
+        data: {
+          ...createGroupDto,
+          inviteCode,
+        },
+      });
+
+      await prisma.participant.create({
+        data: {
+          groupId: group.id,
+          userId: callerId,
+          role: UserRole.INSTRUCTOR,
+        },
+      });
+      return group;
+    });
   }
 
   async findAll(): Promise<Group[]> {

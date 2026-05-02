@@ -1,15 +1,16 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import Welcome from '../pages/Welcome/Welcome';
-import { storage } from '../pages/SignIn/SignIn';
+import storage from '../services/secureStorage';
 
-jest.mock('../pages/SignIn/SignIn', () => ({
-  storage: {
-    getString: jest.fn(),
+jest.mock('../services/secureStorage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn(),
   },
 }));
 
-const mockGetString = storage.getString as jest.Mock;
+const mockGetString = storage.getItem as jest.Mock;
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
@@ -32,7 +33,7 @@ describe('Welcome', () => {
   });
 
   it('Deve renderizar corretamente e mostrar os botões de sign-in e sign-up', () => {
-    mockGetString.mockReturnValue(null);
+    mockGetString.mockResolvedValue(null);
 
     const { getByText } = render(<Welcome navigation={{ navigate: mockNavigation }} />);
 
@@ -43,7 +44,7 @@ describe('Welcome', () => {
   });
 
   it('Deve navegar para pagina de SignUp ao clicar no botao de cadastrar', () => {
-    mockGetString.mockReturnValue(null);
+    mockGetString.mockResolvedValue(null);
 
     const { getByText } = render(<Welcome navigation={{ navigate: mockNavigation }} />);
 
@@ -53,7 +54,7 @@ describe('Welcome', () => {
   });
 
   it('Deve navegar para a pagina de SignIn ao clicar no botão de entrar', () => {
-    mockGetString.mockReturnValue(null);
+    mockGetString.mockResolvedValue(null);
 
     const { getByText } = render(<Welcome navigation={{ navigate: mockNavigation }} />);
 
@@ -76,3 +77,9 @@ describe('Welcome', () => {
     });
   });
 });
+
+
+
+
+
+

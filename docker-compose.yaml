@@ -1,16 +1,42 @@
-services:  
-  postgres_db:    
-    image: postgres:latest
-    container_name: "manamano-db"
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    container_name: manamano-db
     restart: unless-stopped
-    ports: 
-      - '5432:5432'
-    environment:  
-      POSTGRES_USER: ${POSTGRES_USER}  
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     volumes:
-      - ./database:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
-volumes:  
-  postgres_data: 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: ${DOCKER_TARGET:-runtime-dev}
+    container_name: manamano-backend
+    restart: unless-stopped
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    env_file:
+      - ./.env
+      - ./backend/.env
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      BACKEND_PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_db:5432/${POSTGRES_DB}?schema=public
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+
+volumes:
+  postgres_data:

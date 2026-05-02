@@ -17,6 +17,18 @@ export const NotificationInfoContainer = styled.View`
   width: 100%;
 `;
 
+export const NotificationScrollContainer = styled.ScrollView.attrs({
+  contentContainerStyle: {
+    alignItems: 'center',
+    gap: 20,
+    paddingTop: 10,
+    paddingBottom: 12,
+  },
+})`
+  width: 100%;
+  flex: 1;
+`;
+
 export const NotificationInfoText = styled.Text<{ font: any }>`
   display: flex;
   color: #160e47;
@@ -32,6 +44,5 @@ export const NotificationBodyContainer = styled.View`
   align-items: center;
   justify-content: space-between;
   height: 89%;
-  overflow-y: auto;
   gap: 20px;
 `;
