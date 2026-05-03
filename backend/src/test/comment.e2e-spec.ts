@@ -8,6 +8,7 @@ import { UserModule } from 'src/user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { AuthService } from 'src/auth/auth.service';
 import { createUserWithToken, createPost } from './test-helpers';
+import { NotificationService } from 'src/notification/notification.service';
 
 describe('Comment (e2e)', () => {
   let app: INestApplication;
@@ -98,6 +99,31 @@ describe('Comment (e2e)', () => {
         .send({ content: '' });
 
       expect(res.status).toBe(400);
+    });
+    it('deve notificar o dono do post quando comentar em post de outro usuário', async () => {
+      const notifySpy = jest
+        .spyOn(app.get(NotificationService), 'createNotification')
+        .mockResolvedValue(undefined as any);
+
+      const otherUser = await createUserWithToken(prismaService, authService);
+
+      const dto: CreateCommentDto = {
+        content: 'comentário',
+        postId: post.id,
+      };
+
+      await request(app.getHttpServer())
+        .post('/comment')
+        .set('Authorization', `Bearer ${otherUser.token}`)
+        .send(dto);
+
+      expect(notifySpy).toHaveBeenCalledTimes(1);
+
+      const call = notifySpy.mock.calls[0][0];
+
+      expect(call.recipientId).toBe(user.id);
+      expect(call.groupId).toBe(group.id);
+      expect(call.body).toContain('comentou no seu post no grupo');
     });
   });
 

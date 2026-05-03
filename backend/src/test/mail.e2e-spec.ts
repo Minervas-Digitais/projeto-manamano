@@ -98,5 +98,55 @@ describe('Mail (e2e)', () => {
 
       expect(res.status).toBe(400);
     });
+
+    it('deve retornar 500 quando falhar envio de email', async () => {
+      jest.spyOn(mailService, 'getTransporter').mockReturnValue({
+        sendMail: jest.fn().mockRejectedValue(new Error('SMTP error')),
+      } as any);
+
+      const dto = {
+        subject: 'Teste',
+        text: 'Teste',
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/mail')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(dto);
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe(MAIL_MESSAGES.SEND_FAILURE);
+    });
+
+    it('deve chamar transporter com os dados corretos', async () => {
+      const sendMailMock = jest.fn().mockResolvedValue(true);
+
+      const transporterSpy = jest
+        .spyOn(mailService, 'getTransporter')
+        .mockReturnValue({
+          sendMail: sendMailMock,
+        } as any);
+
+      const dto = {
+        subject: 'Assunto X',
+        text: 'Conteudo X',
+      };
+
+      await request(app.getHttpServer())
+        .post('/mail')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(dto);
+
+      expect(transporterSpy).toHaveBeenCalled();
+      expect(sendMailMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: dto.subject,
+          text: expect.stringContaining(dto.text),
+          from: expect.any(String),
+          to: expect.any(String),
+          cc: user.email,
+        }),
+      );
+    });
   });
 });

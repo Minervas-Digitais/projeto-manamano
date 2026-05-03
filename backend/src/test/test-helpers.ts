@@ -1,4 +1,4 @@
-import { PostType } from '@prisma/client';
+import { PostType, UserRole } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { AuthService } from 'src/auth/auth.service';
@@ -10,7 +10,7 @@ const password = 'password123';
  * Cria um usuário de teste no banco.
  */
 export async function createUser(prisma: PrismaService, overrides = {}) {
-  const number = String(Date.now() + Math.floor(Math.random() * 1000));
+  const number = randomUUID();
   const email = `${randomUUID()}@test.com`;
 
   const hashedPassword = await hash(password, 10);
@@ -128,4 +128,24 @@ export async function getNotificationId(
   });
 
   return notification.id;
+}
+
+/**
+ * Coloca o usuario como participante de um grupo
+ */
+export async function createParticipant(
+  prisma: PrismaService,
+  data: {
+    userId: string;
+    groupId: string;
+    role?: UserRole;
+  },
+) {
+  return prisma.participant.create({
+    data: {
+      role: data.role ?? UserRole.STUDENT,
+      userId: data.userId,
+      groupId: data.groupId,
+    },
+  });
 }

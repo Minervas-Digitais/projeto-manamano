@@ -22,6 +22,14 @@ function makeUserDto(overrides = {}) {
   };
 }
 
+function createMockFile() {
+  return {
+    originalname: 'avatar.png',
+    mimetype: 'image/png',
+    buffer: Buffer.from('fake-image'),
+  } as Express.Multer.File;
+}
+
 describe('User', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
@@ -424,6 +432,85 @@ describe('User', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.message).toEqual('Unauthorized');
+    });
+  });
+
+  describe('updateProfilePicture()', () => {
+    it('deve atualizar foto de perfil', async () => {
+      const { user, token } = await createUserWithToken(
+        prismaService,
+        authService,
+      );
+
+      const file = createMockFile();
+
+      const response = await request(app.getHttpServer())
+        .patch('/user/profile-picture')
+        .set('Authorization', 'Bearer ' + token)
+        .attach('file', file.buffer, file.originalname);
+
+      expect(response.status).toBe(200);
+      expect(response.body.profilePicture).toBeDefined();
+    });
+
+    it('deve retornar erro 400 se nao enviar arquivo', async () => {
+      const { token } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer())
+        .patch('/user/profile-picture')
+        .set('Authorization', 'Bearer ' + token);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe('Um arquivo é necessário.');
+    });
+  });
+  describe('getProfilePicture()', () => {
+    it('deve retornar a imagem de perfil do usuario', async () => {
+      const { user, token } = await createUserWithToken(
+        prismaService,
+        authService,
+      );
+
+      const file = {
+        originalname: 'avatar.png',
+        mimetype: 'image/png',
+        buffer: Buffer.from('fake-image'),
+      } as Express.Multer.File;
+
+      await request(app.getHttpServer())
+        .patch('/user/profile-picture')
+        .set('Authorization', 'Bearer ' + token)
+        .attach('file', file.buffer, file.originalname);
+
+      const response = await request(app.getHttpServer()).get(
+        `/user/${user.id}/profile-picture`,
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toBe('image/png');
+      expect(response.headers['content-disposition']).toContain('inline');
+      expect(response.body).toBeDefined();
+    });
+
+    it('deve retornar 404 caso usuario nao tenha imagem', async () => {
+      const { user } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer()).get(
+        `/user/${user.id}/profile-picture`,
+      );
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe(
+        USER_MESSAGES.PROFILE_PICTURE_NOT_FOUND,
+      );
+    });
+
+    it('deve retornar 404 caso usuario nao exista', async () => {
+      const response = await request(app.getHttpServer()).get(
+        `/user/id-invalido/profile-picture`,
+      );
+
+      expect(response.status).toBe(404);
     });
   });
 });
