@@ -10,4 +10,5 @@ export const PARTICIPANT_MESSAGES = {
   NO_USERS_IN_GROUP: 'Não há usuários neste grupo.',
   DELETE_SUCCESS: 'Usuário removido com sucesso.',
   INVALID_ID_FORMAT: 'Formato do id invalido.',
+  REMOVE_LAST_INSTRUCTOR: 'Não é possível remover o último instrutor.',
 };

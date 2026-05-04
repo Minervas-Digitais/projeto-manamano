@@ -47,35 +47,6 @@ export class NotificationController {
     return this.notificationService.getNotificationsForUser(userId);
   }
 
-  @Patch(':notificationId')
-  async markAsRead(
-    @Param('notificationId') notificationId: string,
-    @User('id') userId: string,
-  ) {
-    return this.notificationService.markAsRead(notificationId, userId);
-  }
-
-  @Patch('update/:notificationId')
-  async updateNotification(
-    @Param('notificationId') notificationId: string,
-    @Body() updateNotificationDto: UpdateNotificationDto,
-    @User('id') userId: string,
-  ) {
-    return this.notificationService.updateNotification(
-      notificationId,
-      updateNotificationDto,
-      userId,
-    );
-  }
-
-  @Delete(':notificationId')
-  async deleteNotification(
-    @Param('notificationId') notificationId: string,
-    @User('id') userId: string,
-  ) {
-    return this.notificationService.deleteNotification(notificationId, userId);
-  }
-
   @Delete('user')
   async deleteAllNotifications(@User('id') userId: string) {
     return this.notificationService.deleteAllNotifications(userId);
@@ -85,7 +56,6 @@ export class NotificationController {
   async markAllAsRead(@User('id') userId: string) {
     return this.notificationService.markAllAsRead(userId);
   }
-
   @Post('register-token')
   async registerPushToken(
     @User('id') userId: string,
@@ -114,5 +84,34 @@ export class NotificationController {
     @Body() dto: UpdateNotificationSettingsDto,
   ) {
     return this.notificationService.updateNotificationSettings(userId, dto);
+  }
+
+  @Patch(':notificationId')
+  async markAsRead(
+    @Param('notificationId') notificationId: string,
+    @User('id') userId: string,
+  ) {
+    return this.notificationService.markAsRead(notificationId, userId);
+  }
+
+  @Patch('update/:notificationId')
+  async updateNotification(
+    @Param('notificationId') notificationId: string,
+    @Body() updateNotificationDto: UpdateNotificationDto,
+    @User('id') userId: string,
+  ) {
+    return this.notificationService.updateNotification(
+      notificationId,
+      updateNotificationDto,
+      userId,
+    );
+  }
+
+  @Delete(':notificationId')
+  async deleteNotification(
+    @Param('notificationId') notificationId: string,
+    @User('id') userId: string,
+  ) {
+    return this.notificationService.deleteNotification(notificationId, userId);
   }
 }

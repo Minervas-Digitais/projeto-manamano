@@ -7,7 +7,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { NOTIFICATION_MESSAGES } from 'src/messages/notification.messages';
 import { COMMENT_MESSAGES } from 'src/messages/comment.messages';
 import { GROUP_MESSAGES } from 'src/messages/group.messages';
-import { ARCHIVE_MESSAGES } from 'src/messages/archive.messages';
+import { POST_MESSAGES } from 'src/messages/post.messages';
 
 @Injectable()
 export class ValidatorService {
@@ -30,7 +30,7 @@ export class ValidatorService {
 
   async validatePostExists(postId: string) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
-    if (!post) throw new NotFoundException(ARCHIVE_MESSAGES.POST_NOT_FOUND);
+    if (!post) throw new NotFoundException(POST_MESSAGES.NOT_FOUND);
     return post;
   }
 

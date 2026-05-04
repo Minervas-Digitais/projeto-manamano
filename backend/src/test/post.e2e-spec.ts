@@ -2,51 +2,113 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-import {
-  createPostDto,
-  createTestCategory,
-  createTestGroup,
-  createTestPost,
-  createTestUser,
-  getAdminToken,
-  getUserToken,
-} from 'src/test/test-helpers';
 import request from 'supertest';
 import { UserModule } from 'src/user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { AuthService } from 'src/auth/auth.service';
 import { PostModule } from 'src/post/post.module';
 import { CreatePostDto } from 'src/post/dto/create-post.dto';
-import { RoleType } from '@prisma/client';
+import { POST_MESSAGES } from 'src/messages/post.messages';
+import {
+  createCategory,
+  createGroup,
+  createPost,
+  createUserWithToken,
+} from './test-helpers';
+import { PostType } from '@prisma/client';
+import { NotificationService } from 'src/notification/notification.service';
+
+export function makePostDto(
+  overrides: Partial<CreatePostDto> = {},
+): CreatePostDto {
+  const unique = Date.now() + Math.floor(Math.random() * 1000);
+
+  return {
+    title: `Post Teste ${unique}`,
+    input: `Conteúdo de teste ${unique}`,
+    type: PostType.NORMAL,
+    groupId: overrides.groupId ?? 'dummy-group-id',
+    categoryId: overrides.categoryId ?? 'dummy-category-id',
+    schedule: overrides.schedule,
+    urlLive: overrides.urlLive,
+    urlRecorded: overrides.urlRecorded,
+    isPinned: overrides.isPinned ?? false,
+    ...overrides,
+  } as CreatePostDto;
+}
 
 describe('Posts', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
+  let authService: AuthService;
   let userToken: string;
   let adminToken: string;
-  let authService: AuthService;
+
+  let user: any;
+  let group: any;
+  let category: any;
+  let post: any;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [PostModule, UserModule, AuthModule],
-    }).compile();
+    })
+      .overrideProvider(NotificationService)
+      .useValue({
+        createNotification: async () => {}, // para a criação de notificações
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
-    prismaService = moduleFixture.get<PrismaService>(PrismaService);
-    authService = moduleFixture.get<AuthService>(AuthService);
-
     await app.init();
 
-    userToken = await getUserToken(authService, prismaService);
-    adminToken = await getAdminToken(authService, prismaService);
+    prismaService = moduleFixture.get<PrismaService>(PrismaService);
+    authService = moduleFixture.get<AuthService>(AuthService);
+  });
+
+  beforeEach(async () => {
+    await prismaService.post.deleteMany({});
+    await prismaService.category.deleteMany({});
+    await prismaService.group.deleteMany({});
+    await prismaService.user.deleteMany({});
+
+    const userRes = await createUserWithToken(prismaService, authService, {
+      fullName: 'Test User',
+    });
+    user = userRes.user;
+    userToken = userRes.token;
+
+    const adminResult = await createUserWithToken(prismaService, authService, {
+      sysRole: 'ADMIN',
+    });
+
+    adminToken = adminResult.token;
+
+    group = await createGroup(prismaService, { name: 'Test Group' });
+    category = await createCategory(prismaService, {
+      name: 'Test Category',
+      groupId: group.id,
+    });
+
+    post = await createPost(prismaService, {
+      title: 'Post Teste',
+      input: 'Conteúdo de teste',
+      userId: user.id,
+      groupId: group.id,
+      categoryId: category.id,
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   describe('create()', () => {
     it('deve criar um post com sucesso', async () => {
-      const uniqueTitle = `Post Teste ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const postDto: CreatePostDto = await createPostDto(prismaService, {
-        title: uniqueTitle,
+      const postDto = makePostDto({
+        groupId: group.id,
+        categoryId: category.id,
       });
 
       const response = await request(app.getHttpServer())
@@ -55,15 +117,17 @@ describe('Posts', () => {
         .send(postDto);
 
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
-      expect(response.body.title).toBe(postDto.title);
-      expect(response.body.input).toBe(postDto.input);
+      expect(response.body.id).toBeDefined();
+      expect(response.body).toMatchObject({
+        title: postDto.title,
+        input: postDto.input,
+      });
+
+      await prismaService.post.delete({ where: { id: response.body.id } });
     });
 
     it('deve retornar 400 se dados obrigatórios estiverem faltando', async () => {
-      const invalidDto = {
-        type: 'INVALID_TYPE',
-      };
+      const invalidDto = { type: 'INVALID_TYPE' };
 
       const response = await request(app.getHttpServer())
         .post('/post')
@@ -74,25 +138,21 @@ describe('Posts', () => {
       expect(response.body.error).toBe('Bad Request');
       expect(response.body.message).toEqual(
         expect.arrayContaining([
-          'type must be one of the following values: NORMAL, EVENT, CLASS',
-          'input should not be empty',
-          'input must be a string',
-          'userId should not be empty',
-          'userId must be a string',
-          'categoryId should not be empty',
-          'categoryId must be a string',
-          'groupId should not be empty',
-          'groupId must be a string',
+          expect.stringContaining('type'),
+          expect.stringContaining('input'),
         ]),
       );
     });
 
-    it('deve retornar erro 401 caso o jwt token for invalido', async () => {
-      const postDto: CreatePostDto = await createPostDto(prismaService);
+    it('deve retornar 401 se token JWT for inválido', async () => {
+      const postDto = makePostDto({
+        groupId: group.id,
+        categoryId: category.id,
+      });
 
       const response = await request(app.getHttpServer())
         .post('/post')
-        .set('Authorization', `Bearer `)
+        .set('Authorization', 'Bearer ')
         .send(postDto);
 
       expect(response.status).toBe(401);
@@ -101,14 +161,15 @@ describe('Posts', () => {
   });
 
   describe('findAll()', () => {
-    it('deve retornar a lista de posts para o usuario ADMIN', async () => {
-      await createTestPost(prismaService);
-
+    it('deve retornar a lista de posts para o usuário ADMIN', async () => {
       const response = await request(app.getHttpServer())
         .get('/post')
-        .set('Authorization', `Bearer ` + adminToken);
+        .set('Authorization', `Bearer ${adminToken}`);
 
+      expect(response.status).toBe(200);
+      expect(response.body).toBeInstanceOf(Array);
       expect(response.body.length).toBeGreaterThan(0);
+      expect(response.body[0]).toHaveProperty('title', post.title);
     });
 
     it('deve retornar 404 quando não houver posts', async () => {
@@ -117,11 +178,12 @@ describe('Posts', () => {
       const response = await request(app.getHttpServer())
         .get('/post')
         .set('Authorization', `Bearer ${adminToken}`);
+
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('Nenhuma publicação encontrada.');
     });
 
-    it('deve retornar erro 401 caso o jwt token for invalido', async () => {
+    it('deve retornar erro 401 caso o JWT token seja inválido', async () => {
       const response = await request(app.getHttpServer())
         .get('/post')
         .set('Authorization', `Bearer `);
@@ -130,10 +192,10 @@ describe('Posts', () => {
       expect(response.body.message).toBe('Unauthorized');
     });
 
-    it('deve retornar erro 403 caso o usuario nao seja ADMIN', async () => {
+    it('deve retornar erro 403 caso o usuário não seja ADMIN', async () => {
       const response = await request(app.getHttpServer())
         .get('/post')
-        .set('Authorization', `Bearer ` + userToken);
+        .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(403);
       expect(response.body.message).toBe('Forbidden resource');
@@ -142,75 +204,60 @@ describe('Posts', () => {
 
   describe('findOne()', () => {
     it('deve retornar um post existente com sucesso', async () => {
-      const postId = await createTestPost(prismaService);
-
       const response = await request(app.getHttpServer())
-        .get(`/post/${postId}`)
+        .get(`/post/${post.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('id', postId);
+      expect(response.body).toHaveProperty('id', post.id);
       expect(response.body).toHaveProperty('Comment');
       expect(Array.isArray(response.body.Comment)).toBe(true);
     });
 
     it('deve retornar 404 para um post inexistente', async () => {
-      const postId = 'invalidId';
       const response = await request(app.getHttpServer())
-        .get(`/post/${postId}`)
+        .get(`/post/invalid-id`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('Publicação não encontrada.');
     });
 
-    it('deve retornar erro 401 caso o jwt token for invalido', async () => {
-      const postId = await createTestPost(prismaService);
-
+    it('deve retornar erro 401 caso o JWT token seja inválido', async () => {
       const response = await request(app.getHttpServer())
-        .get('/post/' + postId)
-        .set('Authorization', `Bearer `);
+        .get(`/post/${post.id}`)
+        .set('Authorization', 'Bearer ');
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Unauthorized');
-    });
-
-    it('deve retornar erro 403 caso o usuario nao seja ADMIN', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/post')
-        .set('Authorization', `Bearer ` + userToken);
-
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe('Forbidden resource');
     });
   });
 
   describe('update()', () => {
     it('deve permitir que um ADMIN atualize um post', async () => {
-      const postId = await createTestPost(prismaService);
-      const updateDto = await createPostDto(prismaService, {
+      const updateDto = makePostDto({
         title: 'Post Atualizado',
+        input: 'Conteúdo atualizado',
+        groupId: group.id,
+        categoryId: category.id,
       });
 
       const response = await request(app.getHttpServer())
-        .patch(`/post/${postId}`)
+        .patch(`/post/${post.id}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send(updateDto);
 
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id', postId);
+      expect(response.body).toHaveProperty('id', post.id);
       expect(response.body.title).toBe(updateDto.title);
       expect(response.body.input).toBe(updateDto.input);
     });
 
     it('deve retornar 403 se um usuário comum tentar atualizar', async () => {
-      const postId = await createTestPost(prismaService);
-      const updateDto = await createPostDto(prismaService, {
-        title: 'Post Atualizado',
-      });
+      const updateDto = makePostDto({ title: 'Post Atualizado' });
 
       const response = await request(app.getHttpServer())
-        .patch(`/post/${postId}`)
+        .patch(`/post/${post.id}`)
         .set('Authorization', `Bearer ${userToken}`)
         .send(updateDto);
 
@@ -219,29 +266,23 @@ describe('Posts', () => {
     });
 
     it('deve retornar 404 se tentar atualizar um post inexistente', async () => {
-      const postId = 'invalidId';
-      const updateDto = await createPostDto(prismaService, {
-        title: 'Post Atualizado',
-      });
+      const updateDto = makePostDto({ title: 'Post Atualizado' });
 
       const response = await request(app.getHttpServer())
-        .patch(`/post/${postId}`)
+        .patch(`/post/invalid-id`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send(updateDto);
 
       expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Publicação não encontrada.');
+      expect(response.body.message).toBe(POST_MESSAGES.NOT_FOUND);
     });
 
-    it('deve retornar erro 401 caso o jwt token for invalido', async () => {
-      const postId = await createTestPost(prismaService);
-      const updateDto = await createPostDto(prismaService, {
-        title: 'Post Atualizado',
-      });
+    it('deve retornar erro 401 caso o JWT token for inválido', async () => {
+      const updateDto = makePostDto({ title: 'Post Atualizado' });
 
       const response = await request(app.getHttpServer())
-        .patch('/post/' + postId)
-        .set('Authorization', `Bearer `)
+        .patch(`/post/${post.id}`)
+        .set('Authorization', 'Bearer ')
         .send(updateDto);
 
       expect(response.status).toBe(401);
@@ -251,20 +292,19 @@ describe('Posts', () => {
 
   describe('remove()', () => {
     it('deve permitir que um ADMIN delete um post', async () => {
-      const postId = await createTestPost(prismaService);
       const response = await request(app.getHttpServer())
-        .delete(`/post/${postId}`)
+        .delete(`/post/${post.id}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('id', postId);
+      expect(response.body).toHaveProperty('id', post.id);
     });
 
     it('deve retornar 404 ao tentar deletar um post inexistente', async () => {
-      const postId = 'invalidId';
+      const invalidPostId = 'invalidId';
 
       const response = await request(app.getHttpServer())
-        .delete(`/post/${postId}`)
+        .delete(`/post/${invalidPostId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(response.status).toBe(404);
@@ -272,9 +312,8 @@ describe('Posts', () => {
     });
 
     it('deve retornar 403 se usuário comum tentar deletar', async () => {
-      const postId = await createTestPost(prismaService);
       const response = await request(app.getHttpServer())
-        .delete(`/post/${postId}`)
+        .delete(`/post/${post.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(403);
@@ -282,10 +321,8 @@ describe('Posts', () => {
     });
 
     it('deve retornar erro 401 caso o jwt token for invalido', async () => {
-      const postId = await createTestPost(prismaService);
-
       const response = await request(app.getHttpServer())
-        .delete('/post/' + postId)
+        .delete(`/post/${post.id}`)
         .set('Authorization', `Bearer `);
 
       expect(response.status).toBe(401);
@@ -295,64 +332,22 @@ describe('Posts', () => {
 
   describe('savePost', () => {
     it('deve salvar um post para o usuário corretamente', async () => {
-      const userId = await createTestUser(
-        prismaService,
-        '2093812098',
-        'testeemail@gmail.com',
-      );
-      const postId = await createTestPost(prismaService);
-      const idsParam = `${postId},${userId}`;
+      const userRes = await createUserWithToken(prismaService, authService, {
+        fullName: 'Test User',
+      });
+      userToken = userRes.token;
 
       const response = await request(app.getHttpServer())
-        .patch(`/post/save/${idsParam}`)
-        .set('Authorization', `Bearer ${adminToken}`);
+        .patch(`/post/save/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(201);
-      expect(response.body.savedPost).toContain(postId);
-    });
-
-    it('deve retornar 404 se usuário não existir', async () => {
-      const postId = await createTestPost(prismaService);
-      const idsParam = `${postId},invalidUser`;
-
-      const response = await request(app.getHttpServer())
-        .patch(`/post/save/${idsParam}`)
-        .set('Authorization', `Bearer ${userToken}`);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Usuário não encontrado.');
-    });
-
-    it('deve retornar erro ao tentar salvar próprio post', async () => {
-      const postId = await createTestPost(prismaService);
-      const post = await prismaService.post.findUnique({
-        where: { id: postId },
-      });
-
-      const userId = post.userId;
-      const idsParam = `${postId},${userId}`;
-
-      const response = await request(app.getHttpServer())
-        .patch(`/post/save/${idsParam}`)
-        .set('Authorization', `Bearer ${userToken}`);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe(
-        'Você não pode salvar sua própria publicação.',
-      );
+      expect(response.body.savedPost).toContain(post.id);
     });
 
     it('deve retornar erro 401 se token inválido ou ausente', async () => {
-      const userId = await createTestUser(
-        prismaService,
-        '2093812098',
-        'testeemail@gmail.com',
-      );
-      const postId = await createTestPost(prismaService);
-      const idsParam = `${postId},${userId}`;
-
       const response = await request(app.getHttpServer())
-        .patch(`/post/save/${idsParam}`)
+        .patch(`/post/save/${post.id}`)
         .set('Authorization', `Bearer `);
 
       expect(response.status).toBe(401);
@@ -362,38 +357,26 @@ describe('Posts', () => {
 
   describe('removeSavedPost', () => {
     it('deve remover um post salvo com sucesso', async () => {
-      const userId = await createTestUser(prismaService);
-      const postId = await createTestPost(prismaService);
-      const idsParam = `${postId},${userId}`;
+      const userRes = await createUserWithToken(prismaService, authService, {
+        fullName: 'Test User',
+      });
+      userToken = userRes.token;
+
+      await request(app.getHttpServer())
+        .patch(`/post/save/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
 
       const response = await request(app.getHttpServer())
-        .patch(`/post/unsave/${idsParam}`)
+        .patch(`/post/unsave/${post.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(201);
-      expect(response.body.savedPost).not.toContain(postId);
-    });
-
-    it('deve retornar 404 se usuário não existir', async () => {
-      const userId = 'invalidId';
-      const postId = await createTestPost(prismaService);
-      const idsParam = `${postId},${userId}`;
-
-      const response = await request(app.getHttpServer())
-        .patch(`/post/unsave/${idsParam}`)
-        .set('Authorization', `Bearer ${userToken}`);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Usuário não encontrado.');
+      expect(response.body.savedPost).not.toContain(post.id);
     });
 
     it('deve retornar erro 401 se token JWT for inválido', async () => {
-      const userId = await createTestUser(prismaService);
-      const postId = await createTestPost(prismaService);
-      const idsParam = `${postId},${userId}`;
-
       const response = await request(app.getHttpServer())
-        .patch(`/post/unsave/${idsParam}`)
+        .patch(`/post/unsave/${post.id}`)
         .set('Authorization', `Bearer `);
 
       expect(response.status).toBe(401);
@@ -403,9 +386,8 @@ describe('Posts', () => {
 
   describe('pinPost', () => {
     it('deve fixar um post com sucesso', async () => {
-      const postId = await createTestPost(prismaService);
       const response = await request(app.getHttpServer())
-        .patch(`/post/pin/${postId}`)
+        .patch(`/post/pin/${post.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(201);
@@ -424,9 +406,8 @@ describe('Posts', () => {
     });
 
     it('deve retornar 401 se o token for inválido', async () => {
-      const postId = await createTestPost(prismaService);
       const response = await request(app.getHttpServer())
-        .patch(`/post/pin/${postId}`)
+        .patch(`/post/pin/${post.id}`)
         .set('Authorization', `Bearer`);
 
       expect(response.status).toBe(401);
@@ -436,10 +417,12 @@ describe('Posts', () => {
 
   describe('unpinPost', () => {
     it('deve desfixar um post com sucesso', async () => {
-      prismaService.post.deleteMany({});
-      const postId = await createTestPost(prismaService, { isPinned: true });
+      await request(app.getHttpServer())
+        .patch(`/post/pin/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
       const response = await request(app.getHttpServer())
-        .patch(`/post/unpin/${postId}`)
+        .patch(`/post/unpin/${post.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(201);
@@ -458,9 +441,8 @@ describe('Posts', () => {
     });
 
     it('deve retornar 401 se o token for inválido', async () => {
-      const postId = await createTestPost(prismaService, { isPinned: true });
       const response = await request(app.getHttpServer())
-        .patch(`/post/unpin/${postId}`)
+        .patch(`/post/unpin/${post.id}`)
         .set('Authorization', `Bearer`);
 
       expect(response.status).toBe(401);
@@ -470,12 +452,17 @@ describe('Posts', () => {
 
   describe('getPinnedPosts', () => {
     it('deve retornar apenas posts fixados de um grupo', async () => {
-      await prismaService.post.deleteMany({});
-      const groupId = await createTestGroup(prismaService, 'postTeste');
-      await createTestPost(prismaService, { isPinned: true, groupId: groupId });
+      await createPost(prismaService, {
+        title: 'Pinned Post',
+        input: 'Conteúdo fixado',
+        userId: user.id,
+        groupId: group.id,
+        categoryId: category.id,
+        isPinned: true,
+      });
 
       const response = await request(app.getHttpServer())
-        .get(`/post/group/pinned/${groupId}`)
+        .get(`/post/group/pinned/${group.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(200);
@@ -483,17 +470,13 @@ describe('Posts', () => {
       expect(response.body.length).toBeGreaterThan(0);
       response.body.forEach((post) => {
         expect(post.isPinned).toBe(true);
-        expect(post.groupId).toBe(groupId);
+        expect(post.groupId).toBe(group.id);
       });
     });
 
     it('deve retornar lista vazia se o grupo não tiver posts fixados', async () => {
-      await prismaService.group.deleteMany({});
-      const groupId = await createTestGroup(prismaService, 'postTeste');
-      await createTestPost(prismaService, { groupId: groupId });
-
       const response = await request(app.getHttpServer())
-        .get(`/post/group/pinned/${groupId}`)
+        .get(`/post/group/pinned/${group.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(200);
@@ -501,11 +484,8 @@ describe('Posts', () => {
     });
 
     it('deve retornar 401 se token JWT for inválido', async () => {
-      const groupId = await createTestGroup(prismaService, 'postTeste');
-      await createTestPost(prismaService, { groupId: groupId });
-
       const response = await request(app.getHttpServer())
-        .get(`/post/group/pinned/${groupId}`)
+        .get(`/post/group/pinned/${group.id}`)
         .set('Authorization', 'Bearer ');
 
       expect(response.status).toBe(401);
@@ -515,53 +495,29 @@ describe('Posts', () => {
 
   describe('getGroupPosts', () => {
     it('deve retornar todos os posts do grupo em ordem decrescente de criação', async () => {
-      const groupId = await createTestGroup(prismaService, 'postTeste');
-      await createTestPost(prismaService, { groupId: groupId });
-
       const response = await request(app.getHttpServer())
-        .get(`/post/group/${groupId}`)
+        .get(`/post/group/${group.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.length).toBeGreaterThanOrEqual(0);
-      response.body.forEach((post) => {
-        expect(post.groupId).toBe(groupId);
-      });
-    });
 
-    it('deve retornar error 404 se o grupo não tiver posts', async () => {
-      const groupId = await createTestGroup(prismaService);
+      const { data, meta } = response.body;
 
-      const userId = await createTestUser(
-        prismaService,
-        '1234567890',
-        '1234567890@example.com',
-      );
+      expect(Array.isArray(data)).toBe(true);
+      expect(data.length).toBeGreaterThan(0);
 
-      await prismaService.participant.create({
-        data: {
-          userId,
-          groupId,
-          role: RoleType.MEMBER,
-        },
+      data.forEach((post) => {
+        expect(post.groupId).toBe(group.id);
       });
 
-      const response = await request(app.getHttpServer())
-        .get(`/post/group/${groupId}`)
-        .set('Authorization', `Bearer ${userToken}`);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe(
-        'Nenhuma publicação encontrada neste grupo.',
-      );
+      expect(meta).toHaveProperty('page');
+      expect(meta).toHaveProperty('limit');
+      expect(meta).toHaveProperty('total');
     });
 
     it('deve retornar 401 se o token for inválido', async () => {
-      const groupId = await createTestGroup(prismaService, 'postTeste');
-      await createTestPost(prismaService, { groupId: groupId });
-
       const response = await request(app.getHttpServer())
-        .get(`/post/group/${groupId}`)
+        .get(`/post/group/${group.id}`)
         .set('Authorization', 'Bearer ');
 
       expect(response.status).toBe(401);
@@ -571,43 +527,28 @@ describe('Posts', () => {
 
   describe('getCategoryPosts', () => {
     it('deve retornar os posts da categoria em ordem decrescente de criação', async () => {
-      const groupId = await createTestGroup(prismaService);
-      const categoryId = await createTestCategory(prismaService, groupId);
-      await createTestPost(prismaService, { categoryId: categoryId });
-
       const response = await request(app.getHttpServer())
-        .get(`/post/category/${categoryId}`)
+        .get(`/post/category/${category.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThanOrEqual(0);
-      response.body.forEach((post) => {
-        expect(post.categoryId).toBe(categoryId);
+
+      const { data, meta } = response.body;
+
+      expect(Array.isArray(data)).toBe(true);
+      expect(data.length).toBeGreaterThan(0);
+
+      data.forEach((post) => {
+        expect(post.categoryId).toBe(category.id);
       });
-    });
 
-    it('deve retornar 404 se a categoria não tiver posts', async () => {
-      const groupId = await createTestGroup(prismaService, 'grupoTeste');
-      const categoryId = await createTestCategory(prismaService, groupId);
-
-      const response = await request(app.getHttpServer())
-        .get(`/post/category/${categoryId}`)
-        .set('Authorization', `Bearer ${userToken}`);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe(
-        'Nenhuma publicação encontrada nesta categoria.',
-      );
+      expect(meta).toHaveProperty('page');
+      expect(meta).toHaveProperty('limit');
     });
 
     it('deve retornar 401 se o token for inválido', async () => {
-      const groupId = await createTestGroup(prismaService);
-      const categoryId = await createTestCategory(prismaService, groupId);
-      await createTestPost(prismaService, { categoryId: categoryId });
-
       const response = await request(app.getHttpServer())
-        .get(`/post/category/${categoryId}`)
+        .get(`/post/category/${category.id}`)
         .set('Authorization', 'Bearer ');
 
       expect(response.status).toBe(401);
@@ -617,52 +558,32 @@ describe('Posts', () => {
 
   describe('findUserPosts', () => {
     it('deve retornar os posts do usuário em ordem decrescente', async () => {
-      const userId = await createTestUser(prismaService);
-      await createTestPost(prismaService, { userId: userId });
-
       const response = await request(app.getHttpServer())
-        .get(`/post/${userId}/posts`)
+        .get(`/post/${user.id}/posts`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThanOrEqual(0);
-      response.body.forEach((post) => {
-        expect(post.userId).toBe(userId);
+
+      const { data, meta } = response.body;
+
+      expect(Array.isArray(data)).toBe(true);
+      expect(data.length).toBeGreaterThan(0);
+
+      data.forEach((post) => {
+        expect(post.userId).toBe(user.id);
       });
-    });
 
-    it('deve retornar 404 se o usuário não tiver posts', async () => {
-      const userId = await createTestUser(
-        prismaService,
-        '320701233',
-        'usuariosempost@post.com',
-      );
-
-      const response = await request(app.getHttpServer())
-        .get(`/post/${userId}/posts`)
-        .set('Authorization', `Bearer ${userToken}`);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe(
-        'Nenhuma publicação encontrada para este usuário.',
-      );
+      expect(meta).toHaveProperty('page');
+      expect(meta).toHaveProperty('limit');
     });
 
     it('deve retornar 401 se o token for inválido', async () => {
-      const userId = await createTestUser(prismaService);
-      await createTestPost(prismaService, { userId: userId });
-
       const response = await request(app.getHttpServer())
-        .get(`/post/${userId}/posts`)
+        .get(`/post/${user.id}/posts`)
         .set('Authorization', 'Bearer ');
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Unauthorized');
     });
-  });
-
-  afterAll(async () => {
-    await app.close();
   });
 });

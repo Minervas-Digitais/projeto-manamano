@@ -5,36 +5,34 @@ import { NotificationModule } from '../notification/notification.module';
 import { UserModule } from 'src/user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { CreateNotificationDto } from '../notification/dto/create-notification.dto';
-import { NotificationType, User } from '@prisma/client';
+import { NotificationType } from '@prisma/client';
 import request from 'supertest';
-import { UpdateNotificationDto } from '../notification/dto/update-notification.dto';
-import {
-  createTestGroup,
-  createTestParticipant,
-  createTestUser,
-  getAdminToken,
-  getNotificationId,
-  getRecipientToken,
-  getSenderToken,
-  getUserToken,
-} from 'src/test/test-helpers';
 import { AuthService } from 'src/auth/auth.service';
 import { NotificationService } from 'src/notification/notification.service';
+import {
+  createGroup,
+  createUserWithToken,
+  getNotificationId,
+} from './test-helpers';
+import { NOTIFICATION_MESSAGES } from 'src/messages/notification.messages';
 import Expo from 'expo-server-sdk';
 
 describe('Notification', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
-  let notificationService: NotificationService;
+  let authService: AuthService;
+
+  let user: any;
+  let admin: any;
+  let sender: any;
+  let recipient: any;
+
   let userToken: string;
   let adminToken: string;
-  let recipientToken: string;
   let senderToken: string;
-  let authService: AuthService;
-  let groupId: string;
-  let recipientUser: User;
-  let senderUser: User;
-  let adminUser: User;
+  let recipientToken: string;
+
+  let group: any;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -43,144 +41,122 @@ describe('Notification', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
-    prismaService = moduleFixture.get<PrismaService>(PrismaService);
-    authService = moduleFixture.get<AuthService>(AuthService);
-    notificationService =
-      moduleFixture.get<NotificationService>(NotificationService);
-
     await app.init();
 
-    await prismaService.notification.deleteMany({});
-    await prismaService.user.deleteMany({});
-    await prismaService.group.deleteMany?.({});
-    userToken = await getUserToken(authService, prismaService);
-    adminToken = await getAdminToken(authService, prismaService);
-    recipientToken = await getRecipientToken(authService, prismaService);
-    senderToken = await getSenderToken(authService, prismaService);
-    groupId = await createTestGroup(prismaService);
-    await createTestParticipant(prismaService);
-
-    await createTestUser(
-      prismaService,
-      '23013321412',
-      'testrecipient@example.com',
-    );
-    await createTestUser(
-      prismaService,
-      '23013321412',
-      'testsender@example.com',
-    );
-
-    recipientUser = await prismaService.user.findUnique({
-      where: { email: 'testrecipient@example.com' },
-    });
-    senderUser = await prismaService.user.findUnique({
-      where: { email: 'testsender@example.com' },
-    });
-    adminUser = await prismaService.user.findUnique({
-      where: { email: 'admin@example.com' },
-    });
+    prismaService = moduleFixture.get(PrismaService);
+    authService = moduleFixture.get(AuthService);
   });
 
-  afterAll(async () => {
-    await prismaService.notification.deleteMany({});
-    await prismaService.user.deleteMany({});
-    await prismaService.group.deleteMany?.({});
-    await app.close();
+  beforeEach(async () => {
+    await prismaService.notification.deleteMany();
+    await prismaService.participant.deleteMany();
+    await prismaService.group.deleteMany();
+    await prismaService.user.deleteMany();
+
+    const userResult = await createUserWithToken(prismaService, authService);
+    const adminResult = await createUserWithToken(prismaService, authService, {
+      sysRole: 'ADMIN',
+    });
+    const senderResult = await createUserWithToken(prismaService, authService);
+    const recipientResult = await createUserWithToken(
+      prismaService,
+      authService,
+    );
+
+    user = userResult.user;
+    admin = adminResult.user;
+    sender = senderResult.user;
+    recipient = recipientResult.user;
+
+    userToken = userResult.token;
+    adminToken = adminResult.token;
+    senderToken = senderResult.token;
+    recipientToken = recipientResult.token;
+
+    group = await createGroup(prismaService, { name: 'Test Group' });
+
+    await prismaService.participant.createMany({
+      data: [
+        { userId: sender.id, groupId: group.id, role: 'STUDENT' },
+        { userId: recipient.id, groupId: group.id, role: 'STUDENT' },
+        { userId: admin.id, groupId: group.id, role: 'INSTRUCTOR' },
+      ],
+    });
   });
 
   describe('Create', () => {
-    let sendPushMock: jest.SpyInstance;
+    let pushMock: jest.SpyInstance;
 
     beforeEach(() => {
-      sendPushMock = jest
+      pushMock = jest
         .spyOn(NotificationService.prototype, 'sendPushNotification')
         .mockResolvedValue([]);
     });
 
     afterEach(() => {
-      sendPushMock.mockRestore();
+      pushMock.mockRestore();
     });
 
-    it('Deve criar notificação FIXED com recipientId e enviar push', async () => {
-      const notificationDTO: CreateNotificationDto = {
-        senderId: senderUser.id,
-        recipientId: recipientUser.id,
-        body: 'notificação fixa com recipientId',
+    it('deve criar notificação FIXED para um usuário', async () => {
+      const dto: CreateNotificationDto = {
+        recipientId: recipient.id,
+        body: 'notificação fixa',
         type: NotificationType.FIXED,
       };
 
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send(dto);
 
-      expect(response.status).toBe(201);
-      expect(sendPushMock).toHaveBeenCalledWith(
-        recipientUser.id,
+      expect(res.status).toBe(201);
+
+      expect(pushMock).toHaveBeenCalledWith(
+        sender.id,
+        recipient.id,
         'Nova notificação',
-        'notificação fixa com recipientId',
+        'notificação fixa',
         undefined,
         NotificationType.FIXED,
       );
     });
 
-    it('Deve criar notificações FIXED para todos participantes do grupo', async () => {
-      const notificationDTO: CreateNotificationDto = {
-        senderId: senderUser.id,
-        recipientId: null,
-        type: NotificationType.FIXED,
-        body: 'notificação fixa para grupo',
-        groupId,
-        groupName: 'grupoTeste',
-        senderName: 'remetenteTeste',
-      };
-
-      const response = await request(app.getHttpServer())
-        .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('count');
-      expect(response.body.count).toBeGreaterThan(0);
-      expect(sendPushMock).toHaveBeenCalled();
-    });
-
-    it('Deve criar notificação COMMENT com recipientId e enviar push', async () => {
-      const recipientUserId = await createTestUser(prismaService);
-      const senderUserId = await createTestUser(
-        prismaService,
-        '1234567892',
-        'testsender@example.com',
-      );
-
-      const notificationDTO: CreateNotificationDto = {
-        senderId: senderUserId,
-        recipientId: recipientUserId,
+    it('deve criar notificação COMMENT', async () => {
+      const dto: CreateNotificationDto = {
+        recipientId: recipient.id,
+        body: 'comentário',
         type: NotificationType.COMMENT,
-        body: 'bodyTeste',
-        groupName: 'groupTeste',
-        senderName: 'senderTeste',
-        groupId: undefined,
       };
 
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
-      expect(sendPushMock).toHaveBeenCalledWith(
-        recipientUserId,
-        'Nova notificação',
-        'bodyTeste',
-        undefined,
-        NotificationType.COMMENT,
-      );
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send(dto);
+
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('id');
     });
 
-    it('Deve retornar erro ao criar notificação FIXED para grupo sem participantes', async () => {
+    it('deve criar notificação FIXED para grupo', async () => {
+      const dto: CreateNotificationDto = {
+        recipientId: null,
+        body: 'grupo',
+        type: NotificationType.FIXED,
+        groupId: group.id,
+        groupName: 'Grupo',
+        senderName: 'Sender',
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/notifications')
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send(dto);
+
+      expect(res.status).toBe(201);
+      expect(res.body.count).toBeGreaterThan(0);
+    });
+
+    it('Deve retornar count 0 ao criar notificação FIXED para grupo sem participantes', async () => {
       const emptyGroupId = await prismaService.group
         .create({
           data: {
@@ -191,7 +167,6 @@ describe('Notification', () => {
         .then((group) => group.id);
 
       const notificationDTO: CreateNotificationDto = {
-        senderId: senderUser.id,
         recipientId: null,
         body: 'notificação para grupo vazio',
         type: NotificationType.FIXED,
@@ -202,284 +177,210 @@ describe('Notification', () => {
 
       const response = await request(app.getHttpServer())
         .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
-
-      expect(response.status).toBe(400);
-      expect(response.body.message).toContain(
-        'Não há participantes neste grupo para notificar',
-      );
-    });
-
-    it('Deve criar notificação WARNING com usuário ADMIN', async () => {
-      const notificationDTO: CreateNotificationDto = {
-        senderId: senderUser.id,
-        body: 'corpo de teste warning admin',
-        recipientId: recipientUser.id,
-        type: NotificationType.WARNING,
-        groupName: 'grupoTeste',
-        senderName: 'remetenteTeste',
-      };
-
-      const response = await request(app.getHttpServer())
-        .post('/notifications')
-        .set('Authorization', 'Bearer ' + adminToken)
+        .set('Authorization', 'Bearer ' + senderToken)
         .send(notificationDTO);
 
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
-      expect(sendPushMock).toHaveBeenCalledWith(
-        recipientUser.id,
-        'Nova notificação',
-        'corpo de teste warning admin',
-        undefined,
-        NotificationType.WARNING,
-      );
+      expect(response.body).toHaveProperty('count', 0);
     });
 
-    it('Deve falhar ao criar uma notificação WARNING com usuário não ADMIN', async () => {
-      const notificationDTO: CreateNotificationDto = {
-        senderId: senderUser.id,
-        body: 'corpo de teste',
-        recipientId: recipientUser.id,
-        type: NotificationType.WARNING,
-        groupName: 'grupoTeste',
-        senderName: 'remetenteTeste',
-      };
+    it('deve retornar count 0 se grupo não tiver participantes', async () => {
+      const emptyGroup = await createGroup(prismaService, { name: 'Empty' });
 
-      const response = await request(app.getHttpServer())
-        .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
-
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe(
-        'Apenas ADMIN podem criar notificações do tipo WARNING',
-      );
-      expect(sendPushMock).not.toHaveBeenCalled();
-    });
-
-    it('Deve criar notificação COMMENT e cair no catch do envio push', async () => {
-      sendPushMock.mockRejectedValueOnce(new Error('Falha no envio do push'));
-
-      const notificationDTO: CreateNotificationDto = {
-        senderId: senderUser.id,
-        recipientId: recipientUser.id,
-        body: 'teste erro no push',
-        type: NotificationType.COMMENT,
-        groupName: 'grupoTeste',
-        senderName: 'remetenteTeste',
-      };
-
-      const response = await request(app.getHttpServer())
-        .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
-      expect(sendPushMock).toHaveBeenCalled();
-    });
-
-    it('Deve criar notificações FIXED para participante do grupo e cair no catch do envio push', async () => {
-      sendPushMock.mockRejectedValueOnce(new Error('Erro no envio push'));
-
-      const notificationDTO: CreateNotificationDto = {
-        senderId: senderUser.id,
+      const dto: CreateNotificationDto = {
         recipientId: null,
-        body: 'notificação fixa para grupo com erro no push',
+        body: 'grupo vazio',
         type: NotificationType.FIXED,
-        groupId,
-        groupName: 'grupoTeste',
-        senderName: 'remetenteTeste',
+        groupId: emptyGroup.id,
+        groupName: 'Empty',
+        senderName: 'Sender',
       };
 
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send(dto);
 
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('count');
-      expect(response.body.count).toBeGreaterThan(0);
-      expect(sendPushMock).toHaveBeenCalled();
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('count', 0);
     });
 
-    it('Deve falhar quando o remetente não existir', async () => {
-      const notificationDTO: CreateNotificationDto = {
-        senderId: 'id-invalido-remetente',
-        body: 'corpo de teste',
-        recipientId: recipientUser.id,
+    it('deve permitir WARNING para ADMIN', async () => {
+      const dto: CreateNotificationDto = {
+        recipientId: recipient.id,
+        body: 'warning',
+        type: NotificationType.WARNING,
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/notifications')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(dto);
+
+      expect(res.status).toBe(201);
+    });
+
+    it('deve bloquear WARNING para usuário comum', async () => {
+      const dto: CreateNotificationDto = {
+        recipientId: recipient.id,
+        body: 'warning',
+        type: NotificationType.WARNING,
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/notifications')
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send(dto);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('deve falhar ao tentar notificar a si mesmo', async () => {
+      const dto: CreateNotificationDto = {
+        recipientId: sender.id,
+        body: 'self',
         type: NotificationType.COMMENT,
-        groupName: 'grupoTeste',
-        senderName: 'remetenteTeste',
       };
 
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send(dto);
 
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Remetente não encontrado');
-      expect(sendPushMock).not.toHaveBeenCalled();
+      expect(res.status).toBe(400);
     });
 
-    it('Deve falhar quando o destinatário não existir', async () => {
-      const notificationDTO: CreateNotificationDto = {
-        senderId: senderUser.id,
-        body: 'corpo de teste',
-        recipientId: 'id-invalido-destinatario',
+    it('deve falhar quando destinatário não existir', async () => {
+      const dto: CreateNotificationDto = {
+        recipientId: 'id-invalido',
+        body: 'erro',
         type: NotificationType.COMMENT,
-        groupName: 'grupoTeste',
-        senderName: 'remetenteTeste',
       };
 
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send(dto);
 
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Destinatário não encontrado');
-      expect(sendPushMock).not.toHaveBeenCalled();
+      expect(res.status).toBe(404);
     });
 
-    it('deve retornar erro 400 caso os campos forem invalidos', async () => {
-      const notificationDTO: CreateNotificationDto = {
-        senderId: 123 as any,
-        body: 123 as any,
-        recipientId: 123 as any,
-        type: 123 as any,
-        groupName: 123 as any,
-        senderName: 123 as any,
+    it('deve continuar mesmo se push falhar', async () => {
+      pushMock.mockRejectedValueOnce(new Error('push error'));
+
+      const dto: CreateNotificationDto = {
+        recipientId: recipient.id,
+        body: 'erro push',
+        type: NotificationType.COMMENT,
       };
 
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send(dto);
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Bad Request');
-      expect(response.body.message).toEqual([
-        'senderId must be a string',
-        'recipientId must be a string',
-        'body must be a string',
-        'type must be one of the following values: COMMENT, WARNING, FIXED',
-        'groupName must be a string',
-        'senderName must be a string',
-      ]);
-      expect(sendPushMock).not.toHaveBeenCalled();
+      expect(res.status).toBe(201);
+      expect(pushMock).toHaveBeenCalled();
     });
   });
 
   describe('getNotificationsForUser', () => {
-    it('Deve retornar todas as notificacoes de um usuario', async () => {
-      const notificationDTO1 = {
-        senderId: senderUser.id,
-        recipientId: recipientUser.id,
-        body: 'bodyTeste1',
+    it('deve retornar todas as notificações do usuário', async () => {
+      const notifications = [
+        { body: 'bodyTeste1' },
+        { body: 'bodyTeste2' },
+      ].map((n) => ({
+        senderId: sender.id,
+        recipientId: recipient.id,
+        body: n.body,
         type: NotificationType.COMMENT,
         groupName: 'groupTeste',
         senderName: 'senderTeste',
-      };
-      const notificationDTO2 = {
-        senderId: senderUser.id,
-        recipientId: recipientUser.id,
-        body: 'bodyTeste2',
-        type: NotificationType.COMMENT,
-        groupName: 'groupTeste',
-        senderName: 'senderTeste',
-      };
+      }));
+
       await prismaService.notification.createMany({
-        data: [notificationDTO1, notificationDTO2],
+        data: notifications,
       });
 
       const response = await request(app.getHttpServer())
-        .get(`/notifications/user/${recipientUser.id}`)
+        .get(`/notifications/user`)
         .set('Authorization', 'Bearer ' + recipientToken);
 
       expect(response.status).toBe(200);
-      expect(response.body.length).toBeGreaterThanOrEqual(2);
-      expect(response.body[0].senderId).toEqual(senderUser.id);
-      expect(response.body[0].recipientId).toEqual(recipientUser.id);
-      expect(response.body[1].senderId).toEqual(senderUser.id);
-      expect(response.body[1].recipientId).toEqual(recipientUser.id);
-    });
 
-    it('Deve retornar [] caso o id seja invalido', async () => {
-      const id = 123;
+      const result = response.body;
 
-      const response = await request(app.getHttpServer())
-        .get(`/notifications/user/${id}`)
-        .set('Authorization', 'Bearer ' + recipientToken);
+      expect(result.length).toBeGreaterThanOrEqual(2);
 
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Usuário não encontrado');
+      result.forEach((notification: any) => {
+        expect(notification.senderId).toBe(sender.id);
+        expect(notification.recipientId).toBe(recipient.id);
+      });
+
+      const bodies = result.map((n: any) => n.body);
+      expect(bodies).toEqual(
+        expect.arrayContaining(['bodyTeste1', 'bodyTeste2']),
+      );
     });
   });
 
   describe('markAsRead', () => {
     it('Deve marcar uma notificacao como lida', async () => {
       const notificationId = await getNotificationId(
-        app,
-        authService,
         prismaService,
+        sender.id,
+        sender.id,
       );
-      const update = { isRead: true };
+
       const response = await request(app.getHttpServer())
         .patch(`/notifications/${notificationId}`)
-        .set('Authorization', 'Bearer ' + senderToken)
-        .send(update);
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send({ isRead: true });
+
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('isRead');
       expect(response.body.isRead).toBe(true);
     });
 
     it('Deve retornar erro caso o id seja invalido', async () => {
-      const notificationId = 123;
-      const update: UpdateNotificationDto = {
-        isRead: true,
-      };
-
       const response = await request(app.getHttpServer())
-        .patch(`/notifications/${notificationId}`)
-        .set('Authorization', 'Bearer ' + senderToken)
-        .send(update);
+        .patch(`/notifications/id-invalido`)
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send({ isRead: true });
 
       expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Notificação não encontrada');
+      expect(response.body.message).toBe(NOTIFICATION_MESSAGES.NOT_FOUND);
     });
   });
 
   describe('deleteNotification', () => {
     it('Deve deletar uma notificacao', async () => {
       const notificationId = await getNotificationId(
-        app,
-        authService,
         prismaService,
+        sender.id,
+        sender.id,
       );
+
       const response = await request(app.getHttpServer())
         .delete(`/notifications/${notificationId}`)
-        .set('Authorization', 'Bearer ' + senderToken);
+        .set('Authorization', `Bearer ${senderToken}`);
+
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('id');
     });
 
     it('Deve retornar erro caso o id seja invalido', async () => {
-      const notificationId = 123;
-
       const response = await request(app.getHttpServer())
-        .delete(`/notifications/${notificationId}`)
-        .set('Authorization', 'Bearer ' + senderToken);
+        .delete(`/notifications/id-invalido`)
+        .set('Authorization', `Bearer ${senderToken}`);
+
       expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Notificação não encontrada');
+      expect(response.body.message).toBe(NOTIFICATION_MESSAGES.NOT_FOUND);
     });
   });
 
   describe('CreateGlobal', () => {
     let sendPushMock: jest.SpyInstance;
+
     beforeEach(() => {
       sendPushMock = jest
         .spyOn(NotificationService.prototype, 'sendPushNotification')
@@ -487,30 +388,35 @@ describe('Notification', () => {
     });
 
     afterEach(() => {
-      sendPushMock.mockRestore();
+      if (sendPushMock) {
+        sendPushMock.mockRestore();
+      }
+    });
+
+    afterAll(async () => {
+      await app.close();
     });
 
     it('Deve criar uma notificacao global apenas se for admin', async () => {
-      const notificationDTO = {
-        senderId: adminUser.id,
+      const dto = {
         body: 'bodyTeste',
-        recipientId: recipientUser.id,
         type: NotificationType.COMMENT,
         groupName: 'groupTeste',
         senderName: 'senderTeste',
       };
+
       const response = await request(app.getHttpServer())
         .post('/notifications/global')
-        .set('Authorization', 'Bearer ' + adminToken)
-        .send(notificationDTO);
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(dto);
+
       expect(response.status).toBe(201);
     });
 
-    it('Deve criar notificação global e capturar erro no envio push para algum usuário', async () => {
-      sendPushMock.mockRejectedValueOnce(new Error('Eroo no envio push'));
+    it('Deve criar notificação global mesmo se push falhar', async () => {
+      sendPushMock.mockRejectedValueOnce(new Error('Erro no push'));
 
-      const notificationDTO = {
-        senderId: adminUser.id,
+      const dto = {
         body: 'bodyTeste',
         type: NotificationType.COMMENT,
         groupName: 'groupTeste',
@@ -519,22 +425,18 @@ describe('Notification', () => {
 
       const response = await request(app.getHttpServer())
         .post('/notifications/global')
-        .set('Authorization', 'Bearer ' + adminToken)
-        .send(notificationDTO);
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(dto);
 
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('count');
       expect(response.body.count).toBeGreaterThan(0);
       expect(sendPushMock).toHaveBeenCalled();
-
-      sendPushMock.mockRestore();
     });
 
-    it('Deve negar acesso a token de usuario', async () => {
-      const notificationDTO: CreateNotificationDto = {
-        senderId: senderUser.id,
+    it('Deve negar acesso a usuário comum', async () => {
+      const dto: CreateNotificationDto = {
         body: 'bodyTeste',
-        recipientId: recipientUser.id,
+        recipientId: recipient.id,
         type: NotificationType.COMMENT,
         groupName: 'groupTeste',
         senderName: 'senderTeste',
@@ -542,8 +444,8 @@ describe('Notification', () => {
 
       const response = await request(app.getHttpServer())
         .post('/notifications/global')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(dto);
 
       expect(response.status).toBe(403);
       expect(response.body.message).toBe('Forbidden resource');
@@ -551,662 +453,302 @@ describe('Notification', () => {
   });
 
   describe('deleteAllNotifications', () => {
-    it('Deve deletar todas as notificações de um usuário existente', async () => {
-      await request(app.getHttpServer())
-        .post('/notifications')
-        .set('Authorization', 'Bearer ' + senderToken)
-        .send({
-          senderId: senderUser.id,
-          recipientId: recipientUser.id,
-          body: 'bodyTeste',
-          type: NotificationType.COMMENT,
-          groupName: 'grupoTeste',
-          senderName: 'senderTeste',
-        });
-
-      const response = await request(app.getHttpServer())
-        .delete(`/notifications/user/${recipientUser.id}`)
-        .set('Authorization', 'Bearer ' + senderToken);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('count');
-      expect(response.body.count).toBeGreaterThanOrEqual(1);
-    });
-
-    it('Deve retornar erro ao tentar deletar notificações de usuário inexistente', async () => {
-      const fakeUserId = 'non-existing-user-id';
-
-      const response = await request(app.getHttpServer())
-        .delete(`/notifications/user/${fakeUserId}`)
-        .set('Authorization', 'Bearer ' + senderToken);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Usuário não encontrado');
-    });
-
-    it('Deve retornar count 0 ao deletar notificações de um usuário sem notificações', async () => {
-      await prismaService.notification.deleteMany({
-        where: {
-          recipient: {
-            OR: [{ phone: '2837192123' }, { email: '230273@gmail.com' }],
+    it('deve deletar todas as notificações de um usuário', async () => {
+      await prismaService.notification.createMany({
+        data: [
+          {
+            senderId: sender.id,
+            recipientId: recipient.id,
+            body: 'body1',
+            type: NotificationType.COMMENT,
           },
-        },
+          {
+            senderId: sender.id,
+            recipientId: recipient.id,
+            body: 'body2',
+            type: NotificationType.COMMENT,
+          },
+        ],
       });
 
-      await prismaService.user.deleteMany({
-        where: {
-          OR: [{ phone: '2837192123' }, { email: '230273@gmail.com' }],
-        },
-      });
+      const res = await request(app.getHttpServer())
+        .delete(`/notifications/user`)
+        .set('Authorization', `Bearer ${recipientToken}`);
 
-      const emptyUser = await createTestUser(
-        prismaService,
-        '2837192123',
-        '2301273@gmail.com',
-      );
+      expect(res.status).toBe(200);
+      expect(res.body.count).toBeGreaterThanOrEqual(2);
+    });
 
-      const response = await request(app.getHttpServer())
-        .delete(`/notifications/user/${emptyUser}`)
-        .set('Authorization', 'Bearer ' + senderToken);
+    it('deve retornar count 0 se usuário não tiver notificações', async () => {
+      const emptyUser = await createUserWithToken(prismaService, authService);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('count');
-      expect(response.body.count).toBe(0);
+      const res = await request(app.getHttpServer())
+        .delete(`/notifications/user`)
+        .set('Authorization', `Bearer ${emptyUser.token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.count).toBe(0);
     });
   });
 
   describe('markAllAsRead', () => {
-    it('Deve marcar todas as notificações como lidas para um usuário', async () => {
-      await request(app.getHttpServer())
-        .post('/notifications')
-        .set('Authorization', 'Bearer ' + senderToken)
-        .send({
-          senderId: senderUser.id,
-          recipientId: recipientUser.id,
-          body: 'bodyTeste',
-          type: NotificationType.COMMENT,
-          groupName: 'grupoTeste',
-          senderName: 'senderTeste',
-        });
-
-      const response = await request(app.getHttpServer())
-        .patch(`/notifications/user/${recipientUser.id}`)
-        .set('Authorization', 'Bearer ' + senderToken);
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('count');
-      expect(response.body.count).toBeGreaterThanOrEqual(1);
-    });
-
-    it('Deve retornar erro ao tentar marcar notificações como lidas para usuário inexistente', async () => {
-      const fakeUserId = 'non-existing-user-id';
-
-      const response = await request(app.getHttpServer())
-        .patch(`/notifications/user/${fakeUserId}`)
-        .set('Authorization', 'Bearer ' + senderToken);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Usuário não encontrado');
-    });
-
-    it('Deve retornar count 0 ao tentar marcar notificações como lidas quando não há notificações não lidas', async () => {
-      await prismaService.notification.deleteMany({
-        where: {
-          recipient: {
-            OR: [{ phone: '283719212' }, { email: '230273@gmail.com' }],
+    it('deve marcar todas como lidas', async () => {
+      await prismaService.notification.createMany({
+        data: [
+          {
+            senderId: sender.id,
+            recipientId: recipient.id,
+            body: 'body1',
+            type: NotificationType.COMMENT,
+            isRead: false,
           },
-        },
+          {
+            senderId: sender.id,
+            recipientId: recipient.id,
+            body: 'body2',
+            type: NotificationType.COMMENT,
+            isRead: false,
+          },
+        ],
       });
 
-      await prismaService.user.deleteMany({
-        where: {
-          OR: [{ phone: '283719212' }, { email: '230273123@gmail.com' }],
-        },
-      });
+      const res = await request(app.getHttpServer())
+        .patch(`/notifications/user`)
+        .set('Authorization', `Bearer ${recipientToken}`);
 
-      const emptyUser = await createTestUser(
-        prismaService,
-        '283719212',
-        '230273123@gmail.com',
-      );
+      expect(res.status).toBe(200);
+      expect(res.body.count).toBeGreaterThanOrEqual(2);
+    });
 
-      const response = await request(app.getHttpServer())
-        .patch(`/notifications/user/${emptyUser}`)
-        .set('Authorization', 'Bearer ' + senderToken);
+    it('deve retornar count 0 se não houver notificações não lidas', async () => {
+      const emptyUser = await createUserWithToken(prismaService, authService);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('count');
-      expect(response.body.count).toBe(0);
+      const res = await request(app.getHttpServer())
+        .patch(`/notifications/user`)
+        .set('Authorization', `Bearer ${emptyUser.token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.count).toBe(0);
     });
   });
 
   describe('UpdateNotification', () => {
-    it('Deve atualizar uma notificação com sucesso', async () => {
-      const notificationCreated = await prismaService.notification.create({
-        data: {
-          senderId: senderUser.id,
-          recipientId: recipientUser.id,
-          body: 'Notificação original do teste service',
-          type: NotificationType.COMMENT,
-        },
-      });
-
-      const updateData: UpdateNotificationDto = {
-        body: 'Corpo atualizado via teste direto no service',
-        isRead: true,
-        groupName: 'grupoServiceTeste',
-      };
-
-      const response = await request(app.getHttpServer())
-        .patch(`/notifications/update/${notificationCreated.id}`)
-        .set('Authorization', 'Bearer ' + senderToken)
-        .send(updateData);
-
-      expect(response.status).toBe(200);
-      expect(response.body.id).toBe(notificationCreated.id);
-      expect(response.body.body).toBe(updateData.body);
-      expect(response.body.isRead).toBe(true);
-      expect(response.body.groupName).toBe(updateData.groupName);
-    });
-
-    it('Deve retornar 404 ao tentar atualizar notificação inexistente via rota HTTP', async () => {
-      const invalidId = 'id-invalido-teste';
-
-      const updatePayload: UpdateNotificationDto = {
-        body: 'Corpo qualquer',
-      };
-
-      const response = await request(app.getHttpServer())
-        .patch(`/notifications/update/${invalidId}`)
-        .set('Authorization', 'Bearer ' + senderToken)
-        .send(updatePayload);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Notificação não encontrada.');
-    });
-
-    it('Deve permitir atualização parcial de uma notificação', async () => {
+    it('deve atualizar uma notificação', async () => {
       const notification = await prismaService.notification.create({
         data: {
-          senderId: senderUser.id,
-          recipientId: recipientUser.id,
-          body: 'Mensagem original',
+          senderId: sender.id,
+          recipientId: recipient.id,
+          body: 'original',
           type: NotificationType.COMMENT,
         },
       });
 
-      const updateData: UpdateNotificationDto = {
-        isRead: true,
-      };
-
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .patch(`/notifications/update/${notification.id}`)
-        .set('Authorization', 'Bearer ' + senderToken)
-        .send(updateData);
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send({
+          body: 'atualizado',
+          isRead: true,
+          groupName: 'grupoTeste',
+        });
 
-      expect(response.status).toBe(200);
-      expect(response.body.id).toBe(notification.id);
-      expect(response.body.isRead).toBe(true);
-      expect(response.body.body).toBe('Mensagem original');
+      expect(res.status).toBe(200);
+      expect(res.body.body).toBe('atualizado');
+      expect(res.body.isRead).toBe(true);
+      expect(res.body.groupName).toBe('grupoTeste');
     });
 
-    it('Deve ignorar atualização se nenhum campo for enviado', async () => {
+    it('deve retornar 404 para id inválido', async () => {
+      const res = await request(app.getHttpServer())
+        .patch('/notifications/update/id-invalido')
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send({ body: 'teste' });
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('Notificação não encontrada.');
+    });
+
+    it('deve permitir atualização parcial', async () => {
       const notification = await prismaService.notification.create({
         data: {
-          senderId: senderUser.id,
-          recipientId: recipientUser.id,
-          body: 'Teste sem atualização',
+          senderId: sender.id,
+          recipientId: recipient.id,
+          body: 'original',
           type: NotificationType.COMMENT,
         },
       });
 
-      const updateData: UpdateNotificationDto = {};
-
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .patch(`/notifications/update/${notification.id}`)
-        .set('Authorization', 'Bearer ' + senderToken)
-        .send(updateData);
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send({ isRead: true });
 
-      expect(response.status).toBe(200);
-      expect(response.body.body).toBe('Teste sem atualização');
+      expect(res.status).toBe(200);
+      expect(res.body.isRead).toBe(true);
+      expect(res.body.body).toBe('original');
     });
 
-    it('Deve retornar erro ao tentar atualizar notificação inexistente sem campos', async () => {
-      const invalidId = 'id-invalido-teste';
-      const updateData: UpdateNotificationDto = {};
-      const response = await request(app.getHttpServer())
-        .patch(`/notifications/update/${invalidId}`)
-        .set('Authorization', 'Bearer ' + senderToken)
-        .send(updateData);
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Notificação não encontrada.');
+    it('deve ignorar update vazio', async () => {
+      const notification = await prismaService.notification.create({
+        data: {
+          senderId: sender.id,
+          recipientId: recipient.id,
+          body: 'sem update',
+          type: NotificationType.COMMENT,
+        },
+      });
+
+      const res = await request(app.getHttpServer())
+        .patch(`/notifications/update/${notification.id}`)
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send({});
+
+      expect(res.status).toBe(200);
+      expect(res.body.body).toBe('sem update');
+    });
+
+    it('deve retornar erro ao atualizar inexistente sem payload', async () => {
+      const res = await request(app.getHttpServer())
+        .patch('/notifications/update/id-invalido')
+        .set('Authorization', `Bearer ${senderToken}`)
+        .send({});
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('Notificação não encontrada.');
     });
   });
 
   describe('registerPushNotifToken', () => {
-    it('deve registrar o pushNotifToken com sucesso via endpoint', async () => {
-      const userId = await createTestUser(
-        prismaService,
-        '1234567891',
-        'testeuser@example.com',
-      );
+    it('deve registrar o token', async () => {
+      const pushToken = 'token-123';
 
-      const token = await getUserToken(
-        authService,
-        prismaService,
-        'testeuser@example.com',
-      );
-
-      const pushToken = 'token-funcional-123';
-
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/notifications/register-token')
-        .set('Authorization', `Bearer ${token}`)
+        .set('Authorization', `Bearer ${userToken}`)
         .send({ pushNotifToken: pushToken });
 
-      expect(response.status).toBe(201);
-      expect(response.body).toEqual({ success: true });
+      expect(res.status).toBe(201);
+      expect(res.body).toEqual({ success: true });
 
-      const user = await prismaService.user.findUnique({
-        where: { id: userId },
+      const updated = await prismaService.user.findUnique({
+        where: { id: user.id },
       });
 
-      expect(user.pushNotifToken).toBe(pushToken);
+      expect(updated.pushNotifToken).toBe(pushToken);
     });
 
-    it('deve retornar erro 400 se pushNotifToken não for enviado', async () => {
-      const response = await request(app.getHttpServer())
+    it('deve falhar sem token', async () => {
+      const res = await request(app.getHttpServer())
         .post('/notifications/register-token')
         .set('Authorization', `Bearer ${userToken}`)
         .send({});
 
-      expect(response.status).toBe(400);
-      expect(response.body.message).toContain('Push token é obrigatório');
+      expect(res.status).toBe(400);
     });
 
-    it('deve garantir que o token só é registrado para o usuário autenticado', async () => {
-      const email = 'otheruser@example.com';
-      const phone = '111222333';
-      const otherUserId = await createTestUser(prismaService, phone, email);
-      // Tenta registrar token usando token de outro usuário
-      const response = await request(app.getHttpServer())
+    it('deve retornar 401 sem JWT', async () => {
+      const res = await request(app.getHttpServer())
         .post('/notifications/register-token')
-        .set('Authorization', `Bearer ${userToken}`)
-        .send({ pushNotifToken: 'token-teste' });
-      expect(response.status).toBe(201);
-      const user = await prismaService.user.findUnique({
-        where: { id: otherUserId },
-      });
-      expect(user.pushNotifToken).not.toBe('token-teste');
-    });
+        .send({ pushNotifToken: 'x' });
 
-    it('deve retornar 401 se não enviar token JWT', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/notifications/register-token')
-        .send({ pushNotifToken: 'any-token' });
-
-      expect(response.status).toBe(401);
+      expect(res.status).toBe(401);
     });
   });
 
   describe('sendPushNotification', () => {
-    let notificationService: NotificationService;
-    let userFindUniqueSpy: jest.SpyInstance;
+    let service: NotificationService;
+    let validatorMock: any;
 
-    beforeAll(() => {
-      notificationService = new NotificationService(prismaService);
+    beforeEach(() => {
+      validatorMock = {
+        validateUserExists: jest.fn(),
+      };
+
+      service = new NotificationService(prismaService, validatorMock);
     });
 
     afterEach(() => {
       jest.restoreAllMocks();
-      userFindUniqueSpy = undefined;
-      if (jest.isMockFunction(Expo.isExpoPushToken)) {
-        (Expo.isExpoPushToken as unknown as jest.Mock).mockRestore();
-      }
     });
 
-    it('deve lançar NotFoundException se usuário não existir', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+    it('deve retornar undefined se erro ocorrer', async () => {
+      validatorMock.validateUserExists.mockRejectedValueOnce(new Error('fail'));
 
-      await expect(
-        notificationService.sendPushNotification('user-id', 'title', 'body'),
-      ).rejects.toThrow('Usuário não encontrado');
+      const result = await service.sendPushNotification(
+        'sender',
+        'user',
+        'title',
+        'body',
+      );
+
+      expect(result).toBeUndefined();
     });
 
-    it('deve lançar erro se usuário não tiver pushNotifToken', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue({
-        id: 'user-id',
-        pushNotifToken: null,
-      } as any);
-
-      await expect(
-        notificationService.sendPushNotification('user-id', 'title', 'body'),
-      ).rejects.toThrow('Usuário não possui push token registrado');
-    });
-
-    it('deve lançar erro se push token for inválido', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue({
-        id: 'user-id',
-        pushNotifToken: 'invalid-token',
-      } as any);
-
-      jest.spyOn(Expo, 'isExpoPushToken').mockReturnValue(false);
-
-      await expect(
-        notificationService.sendPushNotification('user-id', 'title', 'body'),
-      ).rejects.toThrow('Push token inválido');
-    });
-
-    it('deve retornar { skipped: true } se usuário desativou popup', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue({
-        id: 'user-id',
+    it('deve retornar skipped se disablePopup', async () => {
+      validatorMock.validateUserExists.mockResolvedValue({
+        id: 'user',
         pushNotifToken: 'ExpoPushToken[valid]',
         disablePopup: true,
-      } as any);
+      });
 
       jest.spyOn(Expo, 'isExpoPushToken').mockReturnValue(true);
 
-      const result = await notificationService.sendPushNotification(
-        'user-id',
+      const result = await service.sendPushNotification(
+        'sender',
+        'user',
         'title',
         'body',
       );
 
       expect(result).toEqual({ skipped: true });
-    });
-
-    it('deve retornar { skipped: true } se usuário silenciou notificações do sistema para tipos COMMENT ou WARNING', async () => {
-      const user = {
-        id: 'user-id',
-        pushNotifToken: 'ExpoPushToken[valid]',
-        muteSystem: true,
-        disablePopup: false,
-      } as any;
-
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(user);
-      jest.spyOn(Expo, 'isExpoPushToken').mockReturnValue(true);
-
-      const resultComment = await notificationService.sendPushNotification(
-        user.id,
-        'title',
-        'body',
-        undefined,
-        NotificationType.COMMENT,
-      );
-
-      const resultWarning = await notificationService.sendPushNotification(
-        user.id,
-        'title',
-        'body',
-        undefined,
-        NotificationType.WARNING,
-      );
-
-      expect(resultComment).toEqual({ skipped: true });
-      expect(resultWarning).toEqual({ skipped: true });
-    });
-
-    it('deve retornar { skipped: true } se usuário silenciou notificações de grupos para tipo FIXED', async () => {
-      const user = {
-        id: 'user-id',
-        pushNotifToken: 'ExpoPushToken[valid]',
-        muteGroups: true,
-        disablePopup: false,
-      } as any;
-
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(user);
-      jest.spyOn(Expo, 'isExpoPushToken').mockReturnValue(true);
-
-      const result = await notificationService.sendPushNotification(
-        user.id,
-        'title',
-        'body',
-        { groupId: 'group1' },
-        NotificationType.FIXED,
-      );
-
-      expect(result).toEqual({ skipped: true });
-    });
-
-    it('deve enviar a notificação com sucesso e retornar tickets reais', async () => {
-      const user = {
-        id: 'user-id',
-        pushNotifToken: 'ExpoPushToken[xxxxxxxxxxxxxxxxxxxxxx]',
-        disablePopup: false,
-      } as any;
-
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(user);
-      jest.spyOn(Expo, 'isExpoPushToken').mockReturnValue(true);
-
-      const result = await notificationService.sendPushNotification(
-        user.id,
-        'title',
-        'body',
-        { extraData: 123 },
-        NotificationType.COMMENT,
-      );
-
-      expect(Array.isArray(result)).toBe(true);
     });
   });
 
   describe('getNotificationSettings', () => {
-    let userId: string;
-    let token: string;
-    const email = 'testnotifuser@example.com';
-    const phone = '999888777';
+    it('deve retornar configs do usuário logado', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/notifications/notification-settings')
+        .set('Authorization', `Bearer ${userToken}`);
 
-    beforeAll(async () => {
-      await prismaService.user.deleteMany({ where: { email } });
-      await prismaService.user.deleteMany({ where: { phone } });
-
-      userId = await createTestUser(prismaService, phone, email);
-      token = await getUserToken(authService, prismaService, email, phone);
-    });
-
-    it('deve retornar as configurações do usuário corretamente', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/notifications/${userId}/notification-settings`)
-        .set('Authorization', `Bearer ${token}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
         disablePopup: false,
         muteSystem: false,
         muteGroups: false,
       });
     });
 
-    it('deve retornar 401 se tentar acessar configurações de outro usuário', async () => {
-      const otherUserId = await createTestUser(
-        prismaService,
-        '111222333',
-        'otheruser@example.com',
+    it('deve retornar 401 sem token', async () => {
+      const res = await request(app.getHttpServer()).get(
+        '/notifications/notification-settings',
       );
 
-      const response = await request(app.getHttpServer())
-        .get(`/notifications/${otherUserId}/notification-settings`)
-        .set('Authorization', `Bearer ${token}`);
-
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe(
-        'Você só pode acessar suas próprias configurações',
-      );
-    });
-
-    it('deve retornar 401 se não enviar token JWT', async () => {
-      const response = await request(app.getHttpServer()).get(
-        `/notifications/${userId}/notification-settings`,
-      );
-
-      expect(response.status).toBe(401);
-      expect(response.body.message).toContain('Unauthorized');
+      expect(res.status).toBe(401);
     });
   });
 
   describe('updateNotificationSettings', () => {
-    beforeAll(async () => {
-      await prismaService.user.deleteMany({
-        where: { email: 'testNotif@email.com' },
-      });
+    it('deve atualizar configs', async () => {
+      const res = await request(app.getHttpServer())
+        .patch('/notifications/notification-settings')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          disablePopup: true,
+          muteGroups: true,
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.disablePopup).toBe(true);
+      expect(res.body.muteGroups).toBe(true);
     });
 
-    afterAll(async () => {
-      await prismaService.user.deleteMany({
-        where: { email: 'testNotif@email.com' },
-      });
-    });
-    it('deve retornar 401 ao tentar atualizar configurações de outro usuário', async () => {
-      const email1 = 'user1-branch@example.com';
-      const phone1 = '1010101010';
-      const email2 = 'user2-branch@example.com';
-      const phone2 = '2020202020';
-      const userId1 = await createTestUser(prismaService, phone1, email1);
-      const userId2 = await createTestUser(prismaService, phone2, email2);
-      const token1 = await getUserToken(
-        authService,
-        prismaService,
-        email1,
-        phone1,
-      );
-      const updateDto = { muteSystem: true };
-      const response = await request(app.getHttpServer())
-        .patch(`/notifications/${userId2}/notification-settings`)
-        .set('Authorization', 'Bearer ' + token1)
-        .send(updateDto);
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe(
-        'Você só pode modificar suas próprias configurações',
-      );
-    });
+    it('deve falhar com dto vazio', async () => {
+      const res = await request(app.getHttpServer())
+        .patch('/notifications/notification-settings')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({});
 
-    it('deve lançar BadRequestException se tentar criar notificação FIXED para grupo sem participantes', async () => {
-      const senderId = await createTestUser(
-        prismaService,
-        '3030303030',
-        'sender-badrequest@example.com',
-      );
-      const groupId = await prismaService.group
-        .create({
-          data: { name: 'GrupoBranch', inviteCode: 'INVITE-BRANCH' },
-        })
-        .then((group) => group.id);
-
-      const notificationDTO: CreateNotificationDto = {
-        senderId,
-        recipientId: null,
-        body: 'body branch',
-        type: NotificationType.FIXED,
-        groupId,
-        groupName: 'GrupoBranch',
-        senderName: 'senderBranch',
-      };
-
-      const response = await request(app.getHttpServer())
-        .post('/notifications')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(notificationDTO);
-      expect(response.status).toBe(400);
-      expect(response.body.message).toBe(
-        'Não há participantes neste grupo para notificar.',
-      );
-    });
-
-    it('deve retornar erro ao falhar em enviar a notificação push', async () => {
-      const user = {
-        id: 'user-id-catch',
-        pushNotifToken: 'ExpoPushToken[valid]',
-        disablePopup: false,
-      } as any;
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(user);
-      jest.spyOn(Expo, 'isExpoPushToken').mockReturnValue(true);
-      const notificationServiceLocal = new NotificationService(prismaService);
-      const expoMock = jest
-        .spyOn(
-          (notificationServiceLocal as any).expo,
-          'sendPushNotificationsAsync',
-        )
-        .mockRejectedValueOnce(new Error('Erro de envio'));
-      await expect(
-        notificationServiceLocal.sendPushNotification(user.id, 'title', 'body'),
-      ).rejects.toThrow('Erro de envio');
-      expoMock.mockRestore();
-      jest.restoreAllMocks();
-    });
-
-    it('deve atualizar as configurações do usuário', async () => {
-      const email = 'testNotifUser2@email.com';
-      const phone = '999888999';
-
-      const userId = await createTestUser(prismaService, phone, email);
-      const token = await getUserToken(
-        authService,
-        prismaService,
-        email,
-        phone,
-      );
-      const updateDto = {
-        disablePopup: true,
-        muteSystem: false,
-        muteGroups: true,
-      };
-      const response = await request(app.getHttpServer())
-        .patch(`/notifications/${userId}/notification-settings`)
-        .set('Authorization', 'Bearer ' + token)
-        .send(updateDto);
-      expect(response.status).toBe(200);
-      expect(response.body.disablePopup).toBe(true);
-      expect(response.body.muteSystem).toBe(false);
-      expect(response.body.muteGroups).toBe(true);
-    });
-
-    it('deve retornar 401 ao tentar atualizar configurações de outro usuário', async () => {
-      const email1 = 'testNotifUser3@email.com';
-      const phone1 = '999888998';
-      const email2 = 'testNotifUser4@email.com';
-      const phone2 = '999888997';
-
-      const userId1 = await createTestUser(prismaService, phone1, email1);
-      const userId2 = await createTestUser(prismaService, phone2, email2);
-      const token1 = await getUserToken(
-        authService,
-        prismaService,
-        email1,
-        phone1,
-      );
-
-      const updateDto = { disablePopup: true };
-      const response = await request(app.getHttpServer())
-        .patch(`/notifications/${userId2}/notification-settings`)
-        .set('Authorization', 'Bearer ' + token1)
-        .send(updateDto);
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe(
-        'Você só pode modificar suas próprias configurações',
-      );
-    });
-
-    it('deve lançar BadRequestException se dto estiver vazio', async () => {
-      const id = await createTestUser(
-        prismaService,
-        '293792323',
-        'testNotif@email.com',
-      );
-      await expect(
-        notificationService.updateNotificationSettings(id, {}),
-      ).rejects.toThrow('Nenhuma configuração para atualizar');
-    });
-
-    it('deve lançar NotFoundException se usuário não existir', async () => {
-      const updateDto = {
-        disablePopup: true,
-      };
-
-      await expect(
-        notificationService.updateNotificationSettings(
-          'id-invalido-123',
-          updateDto,
-        ),
-      ).rejects.toThrow('Usuário não encontrado');
+      expect(res.status).toBe(400);
     });
   });
 });

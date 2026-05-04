@@ -1,38 +1,22 @@
-import {
-  INestApplication,
-  ValidationPipe,
-  ExecutionContext,
-  CanActivate,
-} from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
 import { MailModule } from 'src/mail/mail.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { MailService } from 'src/mail/mail.service';
 import { AuthService } from 'src/auth/auth.service';
-import * as bcrypt from 'bcrypt';
-import { createTestUser, getUserToken } from 'src/test/test-helpers';
+import { createUserWithToken } from './test-helpers';
+import { MAIL_MESSAGES } from 'src/messages/mail.messages';
 
-class MockAuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    return true;
-  }
-}
-const mockMailService = {
-  sendMail: jest.fn().mockResolvedValue({
-    message: 'Mail sent successfully (mock)',
-  }),
-};
-
-describe('Mail', () => {
+describe('Mail (e2e)', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let mailService: MailService;
-  let userId: string;
   let authService: AuthService;
+
+  let user: any;
   let userToken: string;
 
   beforeAll(async () => {
@@ -44,15 +28,18 @@ describe('Mail', () => {
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
 
-    prismaService = moduleFixture.get<PrismaService>(PrismaService);
-    authService = moduleFixture.get<AuthService>(AuthService);
-    mailService = moduleFixture.get<MailService>(MailService);
+    prismaService = moduleFixture.get(PrismaService);
+    authService = moduleFixture.get(AuthService);
+    mailService = moduleFixture.get(MailService);
+  });
 
-    userToken = await getUserToken(authService, prismaService);
-    const user = await prismaService.user.findUnique({
-      where: { email: 'testuser@example.com' },
-    });
-    userId = user.id;
+  beforeEach(async () => {
+    await prismaService.user.deleteMany();
+
+    const result = await createUserWithToken(prismaService, authService);
+
+    user = result.user;
+    userToken = result.token;
   });
 
   afterAll(async () => {
@@ -60,49 +47,106 @@ describe('Mail', () => {
   });
 
   describe('POST /mail', () => {
-    it('deve enviar um email com sucesso (com token real)', async () => {
+    let sendMailMock: jest.Mock;
+
+    beforeEach(() => {
+      sendMailMock = jest.fn().mockResolvedValue(true);
+
+      jest.spyOn(mailService, 'getTransporter').mockReturnValue({
+        sendMail: sendMailMock,
+      } as any);
+    });
+
+    it('deve enviar email com sucesso', async () => {
       const spy = jest.spyOn(mailService, 'sendMail');
 
-      const response = await request(app.getHttpServer())
+      const dto = {
+        subject: 'Teste de envio',
+        text: 'Teste automatizado',
+      };
+
+      const res = await request(app.getHttpServer())
         .post('/mail')
         .set('Authorization', `Bearer ${userToken}`)
-        .send({
-          subject: 'Teste de envio',
-          text: 'Este é um teste automatizado de envio de e-mail',
-          userId: userId,
-        });
+        .send(dto);
 
-      expect(response.status).toBe(201);
-      expect(response.body.message).toContain('Mail sent successfully');
-      expect(spy).toHaveBeenCalledWith({
-        subject: 'Teste de envio',
-        text: 'Este é um teste automatizado de envio de e-mail',
-        userId: userId,
-      });
+      expect(res.status).toBe(201);
+      expect(res.body.message).toContain(MAIL_MESSAGES.SEND_SUCCESS);
+
+      expect(spy).toHaveBeenCalledWith(dto, user.id);
+
+      expect(sendMailMock).toHaveBeenCalled();
     });
 
     it('deve retornar 401 sem token', async () => {
-      const response = await request(app.getHttpServer()).post('/mail').send({
+      const res = await request(app.getHttpServer()).post('/mail').send({
         subject: 'Teste',
         text: 'Teste',
-        userId,
       });
 
-      expect(response.status).toBe(401);
+      expect(res.status).toBe(401);
     });
 
-    it('deve retornar erro 400 se campos forem inválidos', async () => {
-      const response = await request(app.getHttpServer())
+    it('deve retornar 400 se payload inválido', async () => {
+      const res = await request(app.getHttpServer())
         .post('/mail')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           subject: 123,
           text: false,
-          userId: null,
         });
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Bad Request');
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 500 quando falhar envio de email', async () => {
+      jest.spyOn(mailService, 'getTransporter').mockReturnValue({
+        sendMail: jest.fn().mockRejectedValue(new Error('SMTP error')),
+      } as any);
+
+      const dto = {
+        subject: 'Teste',
+        text: 'Teste',
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/mail')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(dto);
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe(MAIL_MESSAGES.SEND_FAILURE);
+    });
+
+    it('deve chamar transporter com os dados corretos', async () => {
+      const sendMailMock = jest.fn().mockResolvedValue(true);
+
+      const transporterSpy = jest
+        .spyOn(mailService, 'getTransporter')
+        .mockReturnValue({
+          sendMail: sendMailMock,
+        } as any);
+
+      const dto = {
+        subject: 'Assunto X',
+        text: 'Conteudo X',
+      };
+
+      await request(app.getHttpServer())
+        .post('/mail')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(dto);
+
+      expect(transporterSpy).toHaveBeenCalled();
+      expect(sendMailMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: dto.subject,
+          text: expect.stringContaining(dto.text),
+          from: expect.any(String),
+          to: expect.any(String),
+          cc: user.email,
+        }),
+      );
     });
   });
 });

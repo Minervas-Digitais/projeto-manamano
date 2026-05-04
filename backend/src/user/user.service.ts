@@ -171,7 +171,7 @@ export class UserService {
         name: file.originalname,
         mimeType: file.mimetype,
         contentBase64: file.buffer.toString('base64'),
-        userId: id,
+        User: { connect: { id } },
       },
     });
 

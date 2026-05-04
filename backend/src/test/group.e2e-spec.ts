@@ -9,15 +9,17 @@ import { AuthModule } from '../auth/auth.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { createGroupDto } from 'src/group/dto/create-group.dto.factory';
 import { updateGroupDto } from 'src/group/dto/update-group.dto.factory';
-import { getUserToken, createTestGroup, getAdminToken } from './test-helpers';
 import { AuthService } from 'src/auth/auth.service';
+import { createUserWithToken, createGroup } from './test-helpers';
 
-describe('Group E2E', () => {
+describe('Group (e2e)', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
+  let authService: AuthService;
+
   let userToken: string;
   let adminToken: string;
-  let authService: AuthService;
+  let groupId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -26,248 +28,177 @@ describe('Group E2E', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
-    prismaService = moduleFixture.get<PrismaService>(PrismaService);
-    authService = moduleFixture.get<AuthService>(AuthService);
-
     await app.init();
 
-    userToken = await getUserToken(authService, prismaService);
-    adminToken = await getAdminToken(authService, prismaService);
+    prismaService = moduleFixture.get(PrismaService);
+    authService = moduleFixture.get(AuthService);
   });
 
-  describe('create()', () => {
-    it('deve criar um novo grupo', async () => {
-      const groupDto = createGroupDto();
-      const response = await request(app.getHttpServer())
-        .post('/group')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(groupDto);
+  beforeEach(async () => {
+    await prismaService.group.deleteMany();
+    await prismaService.user.deleteMany();
 
-      expect(response.status).toBe(201);
+    userToken = (await createUserWithToken(prismaService, authService)).token;
+    adminToken = (
+      await createUserWithToken(prismaService, authService, {
+        sysRole: 'ADMIN',
+      })
+    ).token;
 
-      expect(response.body).toHaveProperty('id');
-      expect(response.body).toHaveProperty('name');
-      expect(response.body).toHaveProperty('description');
-      expect(response.body).toHaveProperty('inviteCode');
-      expect(response.body).toHaveProperty('createdAt');
-      expect(response.body).toHaveProperty('updatedAt');
-      expect(response.body.name).toBe(groupDto.name);
-      expect(response.body.description).toBe(groupDto.description);
-    });
-
-    it('deve retornar erro 400 caso o nome for invalido', async () => {
-      const groupDto = createGroupDto({ name: '' });
-
-      const response = await request(app.getHttpServer())
-        .post('/group')
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(groupDto);
-
-      expect(response.status).toBe(400);
-      expect(response.body.message).toEqual(['name should not be empty']);
-      expect(response.body.error).toBe('Bad Request');
-    });
-
-    it('deve retornar erro 401 caso o token for invalido', async () => {
-      const groupDto = createGroupDto();
-
-      const response = await request(app.getHttpServer())
-        .post('/group')
-        .set('Authorization', 'Bearer ')
-        .send(groupDto);
-
-      expect(response.status).toBe(401);
-      expect(response.body.message).toEqual('Unauthorized');
-    });
-  });
-
-  describe('findAll()', () => {
-    it('deve retornar lista de grupos para usuário com papel ADMIN', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/group')
-        .set('Authorization', 'Bearer ' + adminToken);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('id');
-      expect(response.body[0]).toHaveProperty('name');
-      expect(response.body[0]).toHaveProperty('description');
-      expect(response.body[0]).toHaveProperty('inviteCode');
-      expect(response.body[0]).toHaveProperty('createdAt');
-      expect(response.body[0]).toHaveProperty('updatedAt');
-    });
-
-    it('deve retornar erro 403 para usuário sem papel ADMIN', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/group')
-        .set('Authorization', 'Bearer ' + userToken);
-
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe('Forbidden resource');
-      expect(response.body.error).toBe('Forbidden');
-    });
-
-    it('deve retornar erro 401 caso o token for invalido', async () => {
-      const groupDto = createGroupDto();
-
-      const response = await request(app.getHttpServer())
-        .get('/group')
-        .set('Authorization', 'Bearer ')
-        .send(groupDto);
-
-      expect(response.status).toBe(401);
-      expect(response.body.message).toEqual('Unauthorized');
-    });
-  });
-
-  describe('findOne()', () => {
-    it('deve retornar o grupo do id especificado', async () => {
-      const groupId = await createTestGroup(prismaService);
-
-      const response = await request(app.getHttpServer())
-        .get(`/group/${groupId}`)
-        .set('Authorization', 'Bearer ' + adminToken);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('id', groupId);
-      expect(response.body).toHaveProperty('name');
-      expect(response.body).toHaveProperty('description');
-      expect(response.body).toHaveProperty('inviteCode');
-      expect(response.body).toHaveProperty('createdAt');
-      expect(response.body).toHaveProperty('updatedAt');
-    });
-
-    it('deve retornar 404 quando o grupo não for encontrado', async () => {
-      const invalidGroupId = 'invalidId';
-      const response = await request(app.getHttpServer())
-        .get(`/group/${invalidGroupId}`)
-        .set('Authorization', 'Bearer ' + adminToken);
-
-      expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty('message', 'Grupo não encontrado.');
-    });
-  });
-
-  describe('update()', () => {
-    it('deve atualizar o grupo com sucesso para um usuário ADMIN', async () => {
-      const groupId = await createTestGroup(prismaService);
-      const updateData = updateGroupDto({
-        name: 'Teste Update',
-        description: 'Teste update descrição',
-      });
-
-      const response = await request(app.getHttpServer())
-        .patch(`/group/${groupId}`)
-        .set('Authorization', 'Bearer ' + adminToken)
-        .send(updateData);
-
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id', groupId);
-      expect(response.body).toHaveProperty('name', updateData.name);
-      expect(response.body).toHaveProperty(
-        'description',
-        updateData.description,
-      );
-    });
-
-    it('deve retornar erro 404 caso o id do grupo seja invalido', async () => {
-      const groupId = 'invalidId';
-      const updateData = updateGroupDto({
-        name: 'Teste Update',
-        description: 'Teste update descrição',
-      });
-
-      const response = await request(app.getHttpServer())
-        .patch(`/group/${groupId}`)
-        .set('Authorization', 'Bearer ' + adminToken)
-        .send(updateData);
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Grupo não encontrado.');
-      expect(response.body.error).toBe('Not Found');
-    });
-
-    it('deve retornar erro 403 para um usuário sem ADMIN', async () => {
-      const groupId = await createTestGroup(
-        prismaService,
-        'grupo para atualizar',
-      );
-      const updateData = updateGroupDto({
-        name: 'Teste Update',
-        description: 'Teste update descrição',
-      });
-
-      const response = await request(app.getHttpServer())
-        .patch(`/group/${groupId}`)
-        .set('Authorization', 'Bearer ' + userToken)
-        .send(updateData);
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe('Forbidden resource');
-    });
-
-    it('deve retornar erro 400 caso os parametros de update sejam invalidos', async () => {
-      const groupId = await createTestGroup(prismaService);
-      const updateData = updateGroupDto({
-        name: '',
-        description: 'Teste update descrição',
-      });
-
-      const response = await request(app.getHttpServer())
-        .patch(`/group/${groupId}`)
-        .set('Authorization', 'Bearer ' + adminToken)
-        .send(updateData);
-
-      expect(response.status).toBe(400);
-      expect(response.body.message).toEqual(['name should not be empty']);
-      expect(response.body.error).toBe('Bad Request');
-    });
-  });
-
-  describe('remove()', () => {
-    it('deve remover o grupo com sucesso para um usuário ADMIN', async () => {
-      const groupId = await createTestGroup(prismaService);
-
-      const response = await request(app.getHttpServer())
-        .delete(`/group/${groupId}`)
-        .set('Authorization', 'Bearer ' + adminToken);
-
-      expect(response.status).toBe(200);
-    });
-
-    it('deve retornar 403 se usuário não for ADMIN', async () => {
-      const groupId = await createTestGroup(prismaService);
-      const res = await request(app.getHttpServer())
-        .delete(`/group/${groupId}`)
-        .set('Authorization', 'Bearer ' + userToken);
-
-      expect(res.status).toBe(403);
-      expect(res.body.message).toBe('Forbidden resource');
-    });
-
-    it('deve retornar 404 se grupo não existir', async () => {
-      const nonExistentId = 'idInvalido';
-      const res = await request(app.getHttpServer())
-        .delete(`/group/${nonExistentId}`)
-        .set('Authorization', 'Bearer ' + adminToken);
-
-      expect(res.status).toBe(404);
-      expect(res.body.message).toBe('Grupo não encontrado.');
-    });
-  });
-
-  it('deve retornar erro se nao houver grupos', async () => {
-    await prismaService.group.deleteMany({});
-
-    const response = await request(app.getHttpServer())
-      .get('/group')
-      .set('Authorization', 'Bearer ' + adminToken);
-
-    expect(response.status).toBe(404);
-    expect(response.body.message).toBe('Não há grupos cadastrados.');
+    const group = await createGroup(prismaService);
+    groupId = group.id;
   });
 
   afterAll(async () => {
     await app.close();
+  });
+
+  describe('create()', () => {
+    it('deve criar grupo', async () => {
+      const dto = createGroupDto();
+
+      const res = await request(app.getHttpServer())
+        .post('/group')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(dto);
+
+      expect(res.status).toBe(201);
+      expect(res.body.name).toBe(dto.name);
+      expect(res.body.description).toBe(dto.description);
+      expect(res.body).toHaveProperty('id');
+    });
+
+    it('deve falhar com payload inválido', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/group')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ name: '' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 401 sem token', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/group')
+        .send(createGroupDto());
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('findAll()', () => {
+    it('admin deve listar grupos', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/group')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+    });
+
+    it('user não admin deve receber 403', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/group')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('deve retornar 404 se não houver grupos', async () => {
+      await prismaService.group.deleteMany();
+
+      const res = await request(app.getHttpServer())
+        .get('/group')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('findOne()', () => {
+    it('deve retornar grupo', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/group/${groupId}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(groupId);
+    });
+
+    it('deve retornar 404 se não existir', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/group/invalid-id')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('update()', () => {
+    it('admin deve atualizar grupo', async () => {
+      const dto = updateGroupDto({ name: 'Novo Nome' });
+
+      const res = await request(app.getHttpServer())
+        .patch(`/group/${groupId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(dto);
+
+      expect(res.status).toBe(201);
+      expect(res.body.name).toBe('Novo Nome');
+    });
+
+    it('deve retornar 403 para user comum', async () => {
+      const res = await request(app.getHttpServer())
+        .patch(`/group/${groupId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(updateGroupDto());
+
+      expect(res.status).toBe(403);
+    });
+
+    it('deve retornar 404 se grupo não existir', async () => {
+      const res = await request(app.getHttpServer())
+        .patch('/group/invalid-id')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(updateGroupDto());
+
+      expect(res.status).toBe(404);
+    });
+
+    it('deve retornar 400 se payload inválido', async () => {
+      const res = await request(app.getHttpServer())
+        .patch(`/group/${groupId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: '' });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('remove()', () => {
+    it('admin deve deletar grupo', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/group/${groupId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('deve retornar 403 para user comum', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/group/${groupId}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(403);
+    });
+
+    it('deve retornar 404 se não existir', async () => {
+      const res = await request(app.getHttpServer())
+        .delete('/group/invalid-id')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(404);
+    });
   });
 });

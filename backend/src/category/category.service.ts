@@ -31,13 +31,17 @@ export class CategoryService {
   }
 
   async findCategoriesInGroup(groupId: string): Promise<Category[]> {
-    const categories = await this.prismaService.category.findMany({
-      where: {
-        groupId,
-      },
+    const group = await this.prismaService.group.findUnique({
+      where: { id: groupId },
     });
 
-    return categories;
+    if (!group) {
+      throw new NotFoundException('Grupo não encontrado.');
+    }
+
+    return this.prismaService.category.findMany({
+      where: { groupId },
+    });
   }
 
   async findOne(categoryId: string): Promise<Category> {

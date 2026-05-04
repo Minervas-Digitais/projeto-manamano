@@ -74,14 +74,18 @@ export class NotificationService {
       data: this.buildNotificationData(dto, recipientId, senderId),
     });
 
-    await this.sendPushNotification(
-      senderId,
-      recipientId,
-      this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
-      dto.body,
-      dto.groupId ? { groupId: dto.groupId } : undefined,
-      dto.type,
-    );
+    try {
+      await this.sendPushNotification(
+        senderId,
+        recipientId,
+        this.getNotificationTitle(dto.type, dto.groupName, dto.senderName),
+        dto.body,
+        dto.groupId ? { groupId: dto.groupId } : undefined,
+        dto.type,
+      );
+    } catch (erro) {
+      console.error('Erro push individual:', erro.message);
+    }
 
     return notification;
   }
@@ -129,7 +133,7 @@ export class NotificationService {
       });
 
       if (participants.length === 0) {
-        throw new Error(NOTIFICATION_MESSAGES.NO_PARTICIPANTS);
+        return { count: 0 };
       }
 
       const data = participants.map((p) =>
@@ -147,7 +151,9 @@ export class NotificationService {
             dto.body,
             { groupId: dto.groupId },
             dto.type,
-          ),
+          ).catch((err) => {
+            console.error('Erro push grupo:', err.message);
+          }),
         ),
       );
 
@@ -230,7 +236,9 @@ export class NotificationService {
           dto.body,
           undefined,
           dto.type,
-        ),
+        ).catch((err) => {
+          console.error('Erro push grupo:', err.message);
+        }),
       ),
     );
 
