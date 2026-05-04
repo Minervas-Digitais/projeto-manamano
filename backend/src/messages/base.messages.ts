@@ -5,4 +5,5 @@ export const BASE_MESSAGES = {
   UNAUTHORIZED_ACCESS: 'Você não tem permissão para acessar este recurso.',
   DELETE_SUCCESS: 'Registro deletado com sucesso.',
   EMPTY_LIST: 'Nenhum registro encontrado.',
+  SUCCESS: 'Operação realizada com sucesso',
 };
