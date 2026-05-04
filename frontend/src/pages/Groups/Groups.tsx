@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View } from 'react-native';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
@@ -23,46 +23,48 @@ export default function Groups() {
   const [userData, setUserData] = useState<any>(null);
   const [groups, setGroups] = useState([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      // Retrieve the access token from storage
-      const token = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-      if (loggedId && token) {
-        api
-          .get('participant/groups/', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          })
-          .then((res: any) => {
-            setGroups(res.data);
-          })
-          .catch(() => {
-            setGroups([]);
-          });
-      }
-      console.log(groups);
-
-      // Fetch user information to check the "tipo"
-      if (token) {
-        try {
-          const userId = await secureStorage.getItem('loggedId');
-
-          const { data: fetchedUserData } = await api.get(`/user/${userId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          setUserData(fetchedUserData);
-        } catch (error) {
-          console.error('Error fetching user data:', error);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        // Retrieve the access token from storage
+        const token = await secureStorage.getItem('accessToken');
+        const loggedId = await secureStorage.getItem('loggedId');
+        if (loggedId && token) {
+          api
+            .get('participant/groups/', {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            })
+            .then((res: any) => {
+              setGroups(res.data);
+            })
+            .catch(() => {
+              setGroups([]);
+            });
         }
-      }
-    };
+        console.log(groups);
 
-    fetchData();
-  }, []);
+        // Fetch user information to check the "tipo"
+        if (token) {
+          try {
+            const userId = await secureStorage.getItem('loggedId');
+
+            const { data: fetchedUserData } = await api.get(`/user/${userId}`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            setUserData(fetchedUserData);
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+          }
+        }
+      };
+
+      fetchData();
+    }, []),
+  );
 
   if (!fontsLoaded) {
     return null; // Avoid returning undefined; return null instead
@@ -98,7 +100,9 @@ export default function Groups() {
     <GroupsContainer>
       <HeaderCustom icon menu text="Grupos" font="inter-bold" />
       <GroupsBody>
-        <GroupsList>
+        <GroupsList
+          contentContainerStyle={{ gap: 25, alignItems: 'center' }}
+          showsVerticalScrollIndicator={false}>
           {groups?.length > 0 ? (
             groups.map((item: any) => (
               <GroupButton

@@ -1,27 +1,18 @@
 /* eslint-disable import/prefer-default-export */
+import { ScrollView } from 'react-native';
 import styled from 'styled-components/native';
 
 export const GroupsContainer = styled.View`
-  display: flex;
-  width: 100vw;
-  height: 100vh;
+  flex: 1;
 `;
 
 export const GroupsBody = styled.View`
-  display: flex;
-  height: 89vh;
-  width: 100vw;
+  flex: 1;
   background-color: #f2f6fa;
   padding: 25px;
 `;
 
-export const GroupsList = styled.View`
-  display: flex;
-  align-items: center;
-  height: 100%;
+export const GroupsList = styled(ScrollView)`
   width: 100%;
   background-color: #f2f6fa;
-  gap: 25px;
-  overflow-y: auto;
-  scrollbar-width: none;
 `;
