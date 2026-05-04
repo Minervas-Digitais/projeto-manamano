@@ -2,9 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import { Group, UserRole } from '@prisma/client';
+import { Group, PostType, UserRole } from '@prisma/client';
 import { GROUP_MESSAGES } from 'src/messages/group.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
+
+const defaultCategories = [
+  { name: 'Geral', type: PostType.NORMAL },
+  { name: 'Avisos', type: PostType.NORMAL },
+  { name: 'Eventos', type: PostType.EVENT },
+  { name: 'Aulas', type: PostType.CLASS },
+];
 
 @Injectable()
 export class GroupService {
@@ -34,6 +41,14 @@ export class GroupService {
           role: UserRole.INSTRUCTOR,
         },
       });
+
+      await prisma.category.createMany({
+        data: defaultCategories.map((cat) => ({
+          ...cat,
+          groupId: group.id,
+        })),
+      });
+
       return group;
     });
   }
