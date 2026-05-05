@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "icon": "../frontend/src/assets/logo.png",
+    "icon": "./src/assets/logo.png",
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
@@ -21,8 +21,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.manamano.app",
-      "googleServicesFile": "./google-services.json",
-      "usesCleartextTraffic": true
+      "googleServicesFile": "./google-services.json"
     },
     "web": {},
     "plugins": [
