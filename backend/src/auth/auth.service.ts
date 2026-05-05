@@ -86,8 +86,6 @@ export class AuthService {
 
   async refresh(refreshLoginDto: RefreshDto) {
     try {
-      console.log('TOKEN RECEBIDO:', refreshLoginDto.refreshToken);
-
       const payload = this.jwtService.verify(refreshLoginDto.refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET,
       });
@@ -96,14 +94,10 @@ export class AuthService {
         where: { id: payload.sub },
       });
 
-      console.log('USER:', user);
-
       if (!user || !user.refreshToken) {
         throw new UnauthorizedException(BASE_MESSAGES.UNAUTHORIZED_ACCESS);
       }
 
-      console.log('TOKEN RECEBIDO:', refreshLoginDto.refreshToken);
-      console.log('HASH NO BANCO:', user.refreshToken);
       const isValid = await bcrypt.compare(
         refreshLoginDto.refreshToken,
         user.refreshToken,
