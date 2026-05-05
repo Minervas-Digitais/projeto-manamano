@@ -33,6 +33,7 @@ import GlobalNotificationPage from './src/pages/GlobalNotificationPage/GlobalNot
 import Groups from './src/pages/Groups/Groups';
 import { useNotifications } from './src/hooks/useNotification';
 import { SavedPostsProvider } from './src/context/SavedPostsContext';
+import { AuthProvider } from './src/context/auth/AuthProvider';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -75,81 +76,87 @@ export default function App() {
   }, []);
 
   return (
-    <SavedPostsProvider>
-      <NavigationContainer independent linking={linking}>
-        <Stack.Navigator initialRouteName="WelcomeScreen">
-          <Stack.Screen
-            name="WelcomeScreen"
-            component={WelcomeScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="Config" component={Config} options={{ headerShown: false }} />
-          <Stack.Screen name="ADMPage" component={ADMPage} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="GlobalNotification"
-            component={GlobalNotificationPage}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
+    <AuthProvider>
+      <SavedPostsProvider>
+        <NavigationContainer independent linking={linking}>
+          <Stack.Navigator initialRouteName="WelcomeScreen">
+            <Stack.Screen
+              name="WelcomeScreen"
+              component={WelcomeScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="Config" component={Config} options={{ headerShown: false }} />
+            <Stack.Screen name="ADMPage" component={ADMPage} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="GlobalNotification"
+              component={GlobalNotificationPage}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
 
-          <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="EntrarGrupo"
-            component={EnterGroup}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="EditProfile"
-            component={EditProfile}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
-          <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="ChangePassword"
-            component={ChangePassword}
-            options={{ headerShown: false }}
-          />
+            <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="EntrarGrupo"
+              component={EnterGroup}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="EditProfile"
+              component={EditProfile}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
+            <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="ChangePassword"
+              component={ChangePassword}
+              options={{ headerShown: false }}
+            />
 
-          <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
-          <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
-          <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="Notification"
-            component={Notification}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="CreateGroup"
-            component={CreateGroup}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
-          <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
-          <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
-          <Stack.Screen name="GroupPage" component={GroupPage} options={{ headerShown: false }} />
+            <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
+            <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
+            <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="Notification"
+              component={Notification}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="CreateGroup"
+              component={CreateGroup}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
+            <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
+            <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
+            <Stack.Screen name="GroupPage" component={GroupPage} options={{ headerShown: false }} />
 
-          <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="VisitorProfile"
-            component={VisitorProfile}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="GetInTouch" component={GetInTouch} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="ConfigNotification"
-            component={ConfigNotification}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="EditGroup" component={EditGroup} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="NotificationPage"
-            component={NotificationPage}
-            options={{ headerShown: false }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SavedPostsProvider>
+            <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="VisitorProfile"
+              component={VisitorProfile}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="GetInTouch"
+              component={GetInTouch}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="ConfigNotification"
+              component={ConfigNotification}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="EditGroup" component={EditGroup} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="NotificationPage"
+              component={NotificationPage}
+              options={{ headerShown: false }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SavedPostsProvider>
+    </AuthProvider>
   );
 }

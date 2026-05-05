@@ -25,9 +25,10 @@ import ConfigIcon from '../../assets/config-icon.svg';
 import OutIcon from '../../assets/out-icon.svg';
 import NotificationIcon2 from '../../assets/notification-unread-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function SideMenu({ display, onPress }: any) {
+  const { logout } = useAuth();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const [fontsLoaded] = useFonts({
@@ -38,10 +39,12 @@ export default function SideMenu({ display, onPress }: any) {
   }
 
   const handleLogout = async () => {
-    await secureStorage.removeItem('accessToken');
-    await secureStorage.removeItem('loggedId');
+    await logout();
 
-    navigation.navigate('WelcomeScreen');
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'WelcomeScreen' }],
+    });
   };
 
   return (

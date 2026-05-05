@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable global-require */
-import { StatusBar } from 'react-native';
+import { ActivityIndicator, StatusBar, View } from 'react-native';
 import React, { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import {
@@ -12,27 +12,37 @@ import {
   WelcomeContainer,
 } from './WelcomeStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function WelcomeScreen({ navigation }: any) {
+  const { accessToken, isLoading } = useAuth();
+
   useEffect(() => {
-    const checkAuth = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-      if (loggedId && accessToken) {
-        navigation.navigate('Home');
-      }
-    };
-    checkAuth();
-  }, [navigation]);
+    if (isLoading) return;
+
+    if (accessToken) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
+    }
+  }, [accessToken, isLoading, navigation]);
+
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
   });
-  if (!fontsLoaded) {
-    return undefined;
+
+  if (!fontsLoaded || isLoading) {
+    // trocar por uma splash screen depois
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#EF4036" />
+      </View>
+    );
   }
+
   return (
     <WelcomeContainer>
       <StatusBar translucent backgroundColor="transparent" />
