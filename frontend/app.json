@@ -1,7 +1,7 @@
 {
   "expo": {
     "scheme": "manamano",
-    "name": "frontend",
+    "name": "ManaMano",
     "slug": "manamanoapp",
     "version": "1.0.0",
     "orientation": "portrait",
