@@ -39,6 +39,7 @@ coverage/
 #yarn
 .yarn/*
 
-android/*
+android/.gradle/
+android/build/
 
 ios/
