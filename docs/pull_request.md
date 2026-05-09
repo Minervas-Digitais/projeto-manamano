@@ -131,3 +131,7 @@ Feedbacks devem ser objetivos e técnicos.
 ## Observações
 
 **Branches devem ser removidas após merge.**
+
+Após a abertura do PR, ele será revisado pelos responsáveis do projeto.
+
+Caso sejam encontrados problemas, ajustes poderão ser solicitados antes da aprovação e merge.
