@@ -2,7 +2,6 @@
 
 set -e
 
-
 # Diretório do script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -19,41 +18,81 @@ echo "Starting Android build..."
 
 cd "$FRONTEND_DIR"
 
-# npx expo prebuild
+# Gera/sincroniza android nativo
+npx expo prebuild
 
-# eas build \
-#   --platform android \
-#   --profile preview \
-#   --non-interactive
+echo "Starting EAS build..."
 
-# echo "Fetching latest APK URL..."
+# Inicia build async
+BUILD_JSON=$(eas build \
+  --platform android \
+  --profile preview \
+  --non-interactive \
+  --no-wait \
+  --json)
 
-# APK_URL=$(eas build:list \
-#   --json \
-#   --limit 1 \
-#   --non-interactive \
-#   2>/dev/null \
-#   | jq -r '.[0].artifacts.applicationArchiveUrl')
+# Pega ID do build
+BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
 
-# echo "Downloading APK..."
+echo "Build started:"
+echo "$BUILD_ID"
 
-# mkdir -p "$NGINX_DOWNLOADS_DIR"
+echo "Waiting for build to finish..."
 
-# curl -L "$APK_URL" \
-#   -o "$NGINX_DOWNLOADS_DIR/app.apk"
+while true; do
+  BUILD_INFO=$(eas build:list \
+    --json \
+    --limit 1 \
+    --non-interactive)
 
-# echo "Build complete!"
-# echo "APK saved to:"
-# echo "$NGINX_DOWNLOADS_DIR/app.apk"
+  CURRENT_ID=$(echo "$BUILD_INFO" | jq -r '.[0].id')
+  STATUS=$(echo "$BUILD_INFO" | jq -r '.[0].status')
+
+  # garante build correto
+  if [ "$CURRENT_ID" != "$BUILD_ID" ]; then
+    echo "Waiting for correct build..."
+    sleep 15
+    continue
+  fi
+
+  echo "Current status: $STATUS"
+
+  if [ "$STATUS" = "FINISHED" ]; then
+    echo "Build finished successfully!"
+    break
+  fi
+
+  if [ "$STATUS" = "ERRORED" ] || [ "$STATUS" = "CANCELED" ]; then
+    echo "Build failed."
+    exit 1
+  fi
+
+  sleep 30
+done
+
+echo "Fetching APK URL..."
+
+APK_URL=$(echo "$BUILD_INFO" \
+  | jq -r '.[0].artifacts.applicationArchiveUrl')
+
+mkdir -p "$NGINX_DOWNLOADS_DIR"
+
+echo "Downloading APK..."
+
+curl -L "$APK_URL" \
+  -o "$NGINX_DOWNLOADS_DIR/app.apk"
+
+echo "Build complete!"
+echo "APK saved to:"
+echo "$NGINX_DOWNLOADS_DIR/app.apk"
 
 echo "Registering version in backend..."
 
-# Version infos
-BUILD_JSON=$(eas build:list --json --limit 1 --non-interactive)
+BUILD=$(echo "$BUILD_INFO" \
+  | jq -r '.[0].appBuildVersion')
 
-EAS_BUILD_ID=$(echo "$BUILD_JSON" | jq -r '.[0].id')
-BUILD=$(echo "$BUILD_JSON" | jq -r '.[0].appBuildVersion')
-VERSION=$(echo "$BUILD_JSON" | jq -r '.[0].appVersion')
+VERSION=$(echo "$BUILD_INFO" \
+  | jq -r '.[0].appVersion')
 
 echo "Sending request..."
 
@@ -62,6 +101,9 @@ curl -X POST http://localhost:3000/app/version \
   -d "{
     \"version\": \"$VERSION\",
     \"build\": $BUILD,
-    \"easBuildId\": \"$EAS_BUILD_ID\",
+    \"easBuildId\": \"$BUILD_ID\",
     \"mandatory\": false
   }"
+
+echo ""
+echo "Done"
