@@ -29,7 +29,6 @@ import {
   PostCardImageUser,
   PostCardSpaceBetween,
 } from '../../components/PostCard/PostCardStyle';
-import SideMenu from '../../components/SideMenu/SideMenu';
 import PostCard from '../../components/PostCard/PostCard';
 import secureStorage from '../../services/secureStorage';
 import localStorage from '../../services/localStorage';
@@ -37,13 +36,14 @@ import api from '../../services/api';
 import MenuIcon from '../../assets/menuWhite-icon.svg';
 import LupaIcon from '../../assets/lupaWhite-icon.svg';
 import { AxiosError } from 'axios';
+import { useSideMenu } from '../../context/SideMenuContext';
 
 export const storageHome = new MMKV();
 
 const POSTS_PER_PAGE = 15;
 
 export default function Home({ navigation }: any) {
-  const [sideMenu, setSideMenu] = useState(true);
+  const { toggleMenu } = useSideMenu();
   const defaultAvatar = require('../../assets/user-profile.png');
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
@@ -314,11 +314,10 @@ export default function Home({ navigation }: any) {
   return (
     <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
       <StatusBar />
-      <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <HomeContainerInfo>
         <PostCardSpaceBetween>
           <PostCardIcons>
-            <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
+            <TouchableOpacity onPress={toggleMenu}>
               <MenuIcon />
             </TouchableOpacity>
           </PostCardIcons>

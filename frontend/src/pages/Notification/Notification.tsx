@@ -19,8 +19,8 @@ import ModalOptionsNotification from '../../components/ModalOptionsNotification/
 import DotsMenuIcon from '../../assets/dotsMenuBig.svg';
 import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAllConfirmation';
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import NoNotification from '../../assets/no-notification-icon.svg';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export interface IUser {
   id: string;
@@ -184,7 +184,13 @@ export default function Notification({ navigation }: any) {
   };
 
   return (
-    <>
+    <ScreenWithHeader
+      headerProps={{
+        icon: <DotsMenuIcon />,
+        text: admin ? 'Comunicados' : 'Notificação',
+        font: 'inter-bold',
+        onPress: () => setDisplay(!display),
+      }}>
       <DeleteOneConfirmation
         visible={deleteModal.visible}
         text="Tem certeza que deseja excluir a notificação?"
@@ -193,16 +199,10 @@ export default function Notification({ navigation }: any) {
       />
 
       <ConfigNotificationContainer>
-        <HeaderCustom
-          icon={<DotsMenuIcon />}
-          text={admin ? 'Comunicados' : 'Notificação'}
-          font="inter-bold"
-          onPress={() => setDisplay(!display)}
-        />
         <ModalOptionsNotification
           display={display}
           type="header"
-          style={{ top: 60, zIndex: 11 }}
+          style={{ top: 8, right: 25, zIndex: 11 }}
           height="80px"
           admin={admin}
         />
@@ -249,6 +249,6 @@ export default function Notification({ navigation }: any) {
           </NotificationScrollContainer>
         </NotificationBodyContainer>
       </ConfigNotificationContainer>
-    </>
+    </ScreenWithHeader>
   );
 }

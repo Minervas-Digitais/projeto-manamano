@@ -1,10 +1,10 @@
 /* eslint-disable global-require */
-import React, { useState } from 'react';
+import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { HeaderContainer, HeaderText, NoIcon } from './HeaderCustomStyle';
 import BackButton from '../BackButton/BackButton';
 import Menu from '../../assets/menu-icon.svg';
-import SideMenu from '../SideMenu/SideMenu';
+import { useSideMenu } from '../../context/SideMenuContext';
 
 export default function HeaderCustom({
   font,
@@ -15,16 +15,13 @@ export default function HeaderCustom({
   menu,
   testID,
 }: any) {
-  const [sideMenu, setSideMenu] = useState(true);
+  const { toggleMenu } = useSideMenu();
 
   return (
     <HeaderContainer>
       {menu ? (
         <View>
-          <View style={{ right: 25 }}>
-            <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
-          </View>
-          <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
+          <TouchableOpacity onPress={toggleMenu}>
             <Menu />
           </TouchableOpacity>
         </View>

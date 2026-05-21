@@ -3,6 +3,7 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   SideMenuBottomOptionsContainer,
   SideMenuContainer,
@@ -28,6 +29,18 @@ import { RootStackParamList } from '../../navigation/types';
 
 export default function SideMenu({ display, onPress }: any) {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
+  const containerPaddingBottom = Math.max(insets.bottom, 16);
+
+  const handleNavigate = <T extends keyof RootStackParamList>(
+    screen: T,
+    params?: RootStackParamList[T],
+  ) => {
+    if (onPress) {
+      onPress();
+    }
+    navigation.navigate(screen, params as never);
+  };
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -37,8 +50,8 @@ export default function SideMenu({ display, onPress }: any) {
   }
   return (
     <SideMenuPage display={display}>
-      <SideMenuContainer>
-        <SideMenuLogoContainer onPress={() => navigation.navigate('Home')}>
+      <SideMenuContainer style={{ paddingBottom: containerPaddingBottom }}>
+        <SideMenuLogoContainer onPress={() => handleNavigate('Home')}>
           <LogoManaMano width={40} height={40} />
         </SideMenuLogoContainer>
         <SideMenuLineContainer>
@@ -49,25 +62,25 @@ export default function SideMenu({ display, onPress }: any) {
             icon={<ProfileIcon width={24} height={24} />}
             text="Perfil"
             font="inter-bold"
-            onPress={() => navigation.navigate('Profile', {})}
+            onPress={() => handleNavigate('Profile', {})}
           />
           <SideMenuOptions
             icon={<SearchIcon width={24} height={24} />}
             text="Pesquisar"
             font="inter-bold"
-            onPress={() => navigation.navigate('Search')}
+            onPress={() => handleNavigate('Search')}
           />
           <SideMenuOptions
             icon={<GroupIcon width={24} height={24} />}
             text="Grupos"
             font="inter-bold"
-            onPress={() => navigation.navigate('Groups')}
+            onPress={() => handleNavigate('Groups')}
           />
           <SideMenuOptions
             icon={<SavedIcon width={24} height={24} />}
             text="Publicações salvas"
             font="inter-bold"
-            onPress={() => navigation.navigate('Profile', { initialTab: 'saved' })}
+            onPress={() => handleNavigate('Profile', { initialTab: 'saved' })}
           />
           <SideMenuOptions
             icon={<NotificationIcon width={24} height={24} />}
@@ -75,13 +88,13 @@ export default function SideMenu({ display, onPress }: any) {
             type="notification"
             text="Notificações"
             font="inter-bold"
-            onPress={() => navigation.navigate('Notification')}
+            onPress={() => handleNavigate('Notification')}
           />
           <SideMenuOptions
             icon={<SpeakWithUsIcon width={24} height={24} />}
             text="Fale conosco"
             font="inter-bold"
-            onPress={() => navigation.navigate('GetInTouch')}
+            onPress={() => handleNavigate('GetInTouch')}
           />
         </SideMenuOptionsContainer>
         <SideMenuLineContainer>
@@ -92,13 +105,13 @@ export default function SideMenu({ display, onPress }: any) {
             icon={<ConfigIcon width={24} height={24} />}
             text="Configurações"
             font="inter-bold"
-            onPress={() => navigation.navigate('Config')}
+            onPress={() => handleNavigate('Config')}
           />
           <SideMenuOptions
             icon={<OutIcon width={24} height={24} />}
             text="Sair"
             font="inter-bold"
-            onPress={() => navigation.navigate('WelcomeScreen')}
+            onPress={() => handleNavigate('WelcomeScreen')}
             color="#EF4036"
           />
         </SideMenuBottomOptionsContainer>

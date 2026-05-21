@@ -25,10 +25,9 @@ import { HomePageBlue, HomePageWhite } from '../Home/HomeStyle';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
 import { GroupPageTabs } from '../GroupPage/GroupPageStyle';
 import PostCard from '../../components/PostCard/PostCard';
-import SideMenu from '../../components/SideMenu/SideMenu';
+import { useSideMenu } from '../../context/SideMenuContext';
 import api from '../../services/api';
 import secureStorage from '../../services/secureStorage';
-import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import LocationIcon from '../../assets/location-icon.svg';
 import ShareWhiteIcon from '../../assets/share-white-icon.svg';
 import MenuIcon from '../../assets/menuWhite-icon.svg';
@@ -42,7 +41,7 @@ export default function VisitorProfile({ navigation }: any) {
   const route = useRoute();
   const { id: userId } = route.params as { id: string };
 
-  const [sideMenu, setSideMenu] = useState(true);
+  const { toggleMenu } = useSideMenu();
   const [user, setUser] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,10 +132,9 @@ export default function VisitorProfile({ navigation }: any) {
   if (!user) {
     return (
       <HomePageBlue>
-        <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
         <ProfileContainerInfo>
           <ProfileContainerButtons>
-            <TouchableOpacity testID="menu-toggle-button" onPress={() => setSideMenu(!sideMenu)}>
+            <TouchableOpacity testID="menu-toggle-button" onPress={toggleMenu}>
               <MenuIcon />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => {}}>
@@ -196,10 +194,9 @@ export default function VisitorProfile({ navigation }: any) {
   return (
     <HomePageBlue>
       <StatusBar />
-      <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <ProfileContainerInfo>
         <ProfileContainerButtons>
-          <TouchableOpacity testID="menu-toggle-button" onPress={() => setSideMenu(!sideMenu)}>
+          <TouchableOpacity testID="menu-toggle-button" onPress={toggleMenu}>
             <MenuIcon />
           </TouchableOpacity>
           <TouchableOpacity testID="share-button" onPress={onShareProfile}>
@@ -274,7 +271,6 @@ export default function VisitorProfile({ navigation }: any) {
           )}
         </ProfilePostsContainer>
       </HomePageWhite>
-      <Toast config={toastConfig} />
     </HomePageBlue>
   );
 }

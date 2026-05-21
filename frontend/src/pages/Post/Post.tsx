@@ -10,7 +10,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Buffer } from 'buffer'; // se necessário pra conversão base64
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import PostAttachment from '../../components/PostAttachmentCard/PostAttachment';
 import {
   CommentsContainer,
@@ -28,12 +27,12 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
 import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
-import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import { useSavedPosts } from '../../context/SavedPostsContext';
 import SaveIcon from '../../assets/save-icon.svg';
 import SavedIcon from '../../assets/saved-icon.svg';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 const { width } = Dimensions.get('window');
 const defaultAvatar = require('../../assets/user-profile.png');
@@ -327,33 +326,34 @@ export default function Post() {
   }
 
   return (
-    <View
-      style={{
-        backgroundColor: '#f2f6fa',
-        height: '100%',
-        display: loggedIdState && accessTokenState ? 'flex' : 'none',
+    <ScreenWithHeader
+      headerProps={{
+        font: 'inter-bold',
+        text: 'Publicação',
+        icon: <DotsMenuIcon width="30px" height="30px" />,
+        onPress: () => setModalOptions(!modalOptions),
       }}>
-      <HeaderCustom
-        font="inter-bold"
-        text="Publicação"
-        icon={<DotsMenuIcon width="30px" height="30px" />}
-        onPress={() => setModalOptions(!modalOptions)}
-      />
-      {modalOptions ? (
-        <ModalOptions
-          postId={postId}
-          fixed={false}
-          handleSavePress={handleSavePress}
-          onShare={onShare}
-          onPressFix={() => {}}
-        />
-      ) : (
-        ''
-      )}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        style={{ backgroundColor: '#f2f6fa', flex: 1 }}>
-        <PostContainer>
+      <View
+        style={{
+          backgroundColor: '#f2f6fa',
+          height: '100%',
+          display: loggedIdState && accessTokenState ? 'flex' : 'none',
+        }}>
+        {modalOptions ? (
+          <ModalOptions
+            postId={postId}
+            fixed={false}
+            handleSavePress={handleSavePress}
+            onShare={onShare}
+            onPressFix={() => {}}
+          />
+        ) : (
+          ''
+        )}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={{ backgroundColor: '#f2f6fa', flex: 1 }}>
+          <PostContainer>
           <PostUpperPart>
             <ProfileImage source={postUserImage} />
             <ProfileName font="inter-bold">{postUser?.fullName}</ProfileName>
@@ -413,9 +413,9 @@ export default function Post() {
               <View />
             )}
           </CommentsContainer>
-          <Toast config={toastConfig} />
         </PostContainer>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </ScreenWithHeader>
   );
 }

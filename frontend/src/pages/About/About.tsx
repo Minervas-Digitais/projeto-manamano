@@ -2,9 +2,9 @@
 import React from 'react';
 import { useFonts } from 'expo-font';
 import { AboutContainer, AboutPage } from './AboutStyle';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
 import DevMemberCard from '../../components/DevMemberCard/DevMemberCard';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function About() {
   const rayaneDomingosDev = require('../../assets/rayaneDomingos.png');
@@ -76,36 +76,37 @@ export default function About() {
     },
   ];
   return (
-    <AboutPage>
-      <HeaderCustom font="inter-bold" text="Sobre" />
-      <AboutContainer>
-        <GroupDataText font="inter-semiBold" color="#160E47" size="18px">
-          ManaMano
-        </GroupDataText>
-        <GroupDataText font="inter-bold" color="#4E4E4E" size="14px">
-          O MANAMANO contribui para a formação de nano e microempreendedoras(es) das periferias do
-          Rio de Janeiro, criando oportunidades de desenvolvimento de negócios e geração de renda
-          para além da crise da Covid-19.
-        </GroupDataText>
-        <GroupDataText font="inter-semiBold" color="#160E47" size="18px">
-          Quem fez o App
-        </GroupDataText>
-        {devMembers?.length > 0 ? (
-          devMembers?.map((item: any) => (
-            <DevMemberCard
-              key={item.name}
-              name={item.name}
-              image={item.image}
-              description={item.description}
-              url={item.linkedin}
-            />
-          ))
-        ) : (
-          <GroupDataText font="inter-bold" color="#4E4E4E" size="14px">
-            Não há membros
+    <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Sobre' }}>
+      <AboutPage>
+        <AboutContainer>
+          <GroupDataText font="inter-semiBold" color="#160E47" size="18px">
+            ManaMano
           </GroupDataText>
-        )}
-      </AboutContainer>
-    </AboutPage>
+          <GroupDataText font="inter-bold" color="#4E4E4E" size="14px">
+            O MANAMANO contribui para a formação de nano e microempreendedoras(es) das periferias do
+            Rio de Janeiro, criando oportunidades de desenvolvimento de negócios e geração de renda
+            para além da crise da Covid-19.
+          </GroupDataText>
+          <GroupDataText font="inter-semiBold" color="#160E47" size="18px">
+            Quem fez o App
+          </GroupDataText>
+          {devMembers?.length > 0 ? (
+            devMembers?.map((item: any) => (
+              <DevMemberCard
+                key={item.name}
+                name={item.name}
+                image={item.image}
+                description={item.description}
+                url={item.linkedin}
+              />
+            ))
+          ) : (
+            <GroupDataText font="inter-bold" color="#4E4E4E" size="14px">
+              Não há membros
+            </GroupDataText>
+          )}
+        </AboutContainer>
+      </AboutPage>
+    </ScreenWithHeader>
   );
 }

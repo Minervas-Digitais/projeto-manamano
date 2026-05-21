@@ -1,4 +1,8 @@
 /* eslint-disable global-require */
+/* eslint-disable react/jsx-closing-bracket-location */
+/* eslint-disable react/jsx-indent */
+/* eslint-disable react/jsx-indent-props */
+/* eslint-disable react/jsx-wrap-multilines */
 import React, { useState, useEffect } from 'react';
 import {
   Image,
@@ -12,7 +16,6 @@ import {
 import { Buffer } from 'buffer';
 import { useFonts } from 'expo-font';
 import { MMKV } from 'react-native-mmkv';
-import { AxiosError } from 'axios';
 import {
   PageContainer,
   SearchInputWrapper,
@@ -22,11 +25,11 @@ import {
 } from './SearchStyle';
 import ResultSection from '../../components/ResultSection/ResultSection';
 import Lupa from '../../assets/lupa-search.svg';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import api from '../../services/api';
 import secureStorage from '../../services/secureStorage';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
-const storage = new MMKV(); // Only for recentUsers cache
+const storage = new MMKV();
 
 interface User {
   id: string;
@@ -44,7 +47,6 @@ export default function Search() {
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
   const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
-  const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -73,13 +75,13 @@ export default function Search() {
     }
   };
 
-  // Fetch recent users from MMKV on mount
   useEffect(() => {
     const storedUsers = storage.getString('recentUsers');
     if (storedUsers) {
       setRecentUsers(JSON.parse(storedUsers));
     }
   }, []);
+
   useEffect(() => {
     const fetchUserRole = async () => {
       const accessToken = await secureStorage.getItem('accessToken');
@@ -87,7 +89,6 @@ export default function Search() {
 
       if (accessToken && loggedId) {
         setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
 
         try {
           const res = await api.get(`/user/${loggedId}`, {
@@ -99,23 +100,24 @@ export default function Search() {
           if (res.data?.sysRole === 'ADMIN') {
             setIsAdmin(true);
           }
-        } catch (error) {
-          console.error('Erro ao buscar o usuário:', error);
+        } catch {
+          setIsAdmin(false);
         }
       }
     };
 
     fetchUserRole();
   }, []);
+
   const saveRecentUser = async (user: { id: string; name: string }) => {
-    const avatar = await getUserProfileImage(user.id);
+    const image = await getUserProfileImage(user.id);
 
     const newUser: User = {
       ...user,
-      avatar,
+      avatar: image,
     };
 
-    const updatedUsers = [newUser, ...recentUsers.filter((u) => u.id !== user.id)];
+    const updatedUsers = [newUser, ...recentUsers.filter((item) => item.id !== user.id)];
 
     if (updatedUsers.length > 10) {
       updatedUsers.pop();
@@ -125,161 +127,159 @@ export default function Search() {
     storage.set('recentUsers', JSON.stringify(updatedUsers));
   };
 
-  const handleAvatarPress = (userId: string) => {
-    console.log(`Avatar clicked: ${userId}`);
-  };
+  const handleAvatarPress = () => {};
 
   const screenWidth = Dimensions.get('window').width;
 
   useEffect(
-    () =>
-      // Cleanup timeout on unmount
-      () => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-      },
+    () => () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    },
     [timeoutId],
   );
 
   if (!fontsLoaded) {
-    return undefined; // Or a loader of your choice
+    return null;
   }
 
   const handleSearchChange = (text: string) => {
     setSearchText(text);
 
-    // Clear previous timeout
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
 
-    // Set a new timeout
     const id = setTimeout(() => {
       setDebouncedSearchText(text);
-
-      // Only update debouncedSearchText; no recent user addition here
     }, 2000);
     setTimeoutId(id);
   };
 
   return (
-    <PageContainer>
-      <HeaderCustom font="inter-bold" text="Pesquisa" testID="titulo-pesquisa" />
-      <ContentContainer>
-        <SearchInputWrapper>
-          <SearchIcon>
-            <Lupa />
-          </SearchIcon>
-          <TextInput
-            placeholder="Pesquisar"
-            value={searchText}
-            onChangeText={handleSearchChange}
-            style={{
-              flex: 1,
-              fontSize: 16,
-              color: '#ABAFB1',
-              padding: 0,
-              margin: 0,
-              borderWidth: 0,
-              fontFamily: 'inter-regular',
-            }}
-            testID="input-pesquisa"
-          />
-        </SearchInputWrapper>
+    <ScreenWithHeader
+      headerProps={{
+        font: 'inter-bold',
+        text: 'Pesquisa',
+        testID: 'titulo-pesquisa',
+      }}>
+      <PageContainer>
+        <ContentContainer>
+          <SearchInputWrapper>
+            <SearchIcon>
+              <Lupa />
+            </SearchIcon>
+            <TextInput
+              placeholder="Pesquisar"
+              value={searchText}
+              onChangeText={handleSearchChange}
+              style={{
+                flex: 1,
+                fontSize: 16,
+                color: '#ABAFB1',
+                padding: 0,
+                margin: 0,
+                borderWidth: 0,
+                fontFamily: 'inter-regular',
+              }}
+              testID="input-pesquisa"
+            />
+          </SearchInputWrapper>
 
-        {debouncedSearchText.length > 0 && accessTokenState ? (
-          <ResultSection
-            searchText={debouncedSearchText}
-            saveRecentUser={saveRecentUser}
-            accessToken={accessTokenState}
-            admin={isAdmin}
-          />
-        ) : (
-          <RecentSection>
-            {recentUsers.length > 0 && (
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: 'bold',
-                  marginBottom: 10,
-                  fontFamily: 'inter-bold',
-                  color: '#515151',
-                }}>
-                Recentes
-              </Text>
-            )}
-            <ScrollView
-              testID="scroll-recentes"
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              nestedScrollEnabled>
-              {recentUsers.map((user) => {
-                const nameParts = user.name.split(' ');
-                return (
-                  <View
-                    key={user.id}
-                    style={{ alignItems: 'center', marginRight: 20 }}
-                    testID={`usuario-${user.name.toLowerCase().replace(/\s/g, '-')}`}>
-                    <TouchableOpacity
-                      onPress={() => handleAvatarPress(user.id)}
-                      testID={`touchable-avatar-image-${user.id}`}>
-                      <Image
-                        source={user.avatar || avatar}
-                        style={{
-                          width: screenWidth / 8,
-                          height: screenWidth / 8,
-                          borderRadius: screenWidth / 8 / 2,
-                        }}
-                      />
-                    </TouchableOpacity>
+          {debouncedSearchText.length > 0 && accessTokenState ? (
+            <ResultSection
+              searchText={debouncedSearchText}
+              saveRecentUser={saveRecentUser}
+              accessToken={accessTokenState}
+              admin={isAdmin}
+            />
+          ) : (
+            <RecentSection>
+              {recentUsers.length > 0 && (
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                    marginBottom: 10,
+                    fontFamily: 'inter-bold',
+                    color: '#515151',
+                  }}>
+                  Recentes
+                </Text>
+              )}
+              <ScrollView
+                testID="scroll-recentes"
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled>
+                {recentUsers.map((user) => {
+                  const nameParts = user.name.split(' ');
+                  return (
+                    <View
+                      key={user.id}
+                      style={{ alignItems: 'center', marginRight: 20 }}
+                      testID={`usuario-${user.name.toLowerCase().replace(/\s/g, '-')}`}>
+                      <TouchableOpacity
+                        onPress={() => handleAvatarPress(user.id)}
+                        testID={`touchable-avatar-image-${user.id}`}>
+                        <Image
+                          source={user.avatar || avatar}
+                          style={{
+                            width: screenWidth / 8,
+                            height: screenWidth / 8,
+                            borderRadius: screenWidth / 8 / 2,
+                          }}
+                        />
+                      </TouchableOpacity>
 
-                    {nameParts.length >= 2 ? (
-                      <View>
-                        <TouchableOpacity
-                          onPress={() => handleAvatarPress(user.id)}
-                          testID={`touchable-avatar-name1-${user.id}`}>
-                          <Text
-                            style={{
-                              textAlign: 'center',
-                              fontFamily: 'inter-regular',
-                              fontSize: 10,
-                            }}>
-                            {nameParts[0]}
-                          </Text>
-                          <Text
-                            style={{
-                              textAlign: 'center',
-                              fontFamily: 'inter-regular',
-                              fontSize: 10,
-                            }}>
-                            {nameParts[1]}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
-                      <View>
-                        <TouchableOpacity
-                          onPress={() => handleAvatarPress(user.id)}
-                          testID={`touchable-avatar-name-${user.id}`}>
-                          <Text
-                            style={{
-                              textAlign: 'center',
-                              fontFamily: 'inter-regular',
-                              fontSize: 10,
-                            }}>
-                            {user.name}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-                );
-              })}
-            </ScrollView>
-          </RecentSection>
-        )}
-      </ContentContainer>
-    </PageContainer>
+                      {nameParts.length >= 2 ? (
+                        <View>
+                          <TouchableOpacity
+                            onPress={() => handleAvatarPress(user.id)}
+                            testID={`touchable-avatar-name1-${user.id}`}>
+                            <Text
+                              style={{
+                                textAlign: 'center',
+                                fontFamily: 'inter-regular',
+                                fontSize: 10,
+                              }}>
+                              {nameParts[0]}
+                            </Text>
+                            <Text
+                              style={{
+                                textAlign: 'center',
+                                fontFamily: 'inter-regular',
+                                fontSize: 10,
+                              }}>
+                              {nameParts[1]}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <View>
+                          <TouchableOpacity
+                            onPress={() => handleAvatarPress(user.id)}
+                            testID={`touchable-avatar-name-${user.id}`}>
+                            <Text
+                              style={{
+                                textAlign: 'center',
+                                fontFamily: 'inter-regular',
+                                fontSize: 10,
+                              }}>
+                              {user.name}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </RecentSection>
+          )}
+        </ContentContainer>
+      </PageContainer>
+    </ScreenWithHeader>
   );
 }

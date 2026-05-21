@@ -7,7 +7,6 @@ import * as FileSystem from 'expo-file-system';
 import { View, ScrollView, Dimensions } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import CategoryButton from '../../components/CategoryButton/CategoryButton';
 import { GroupPageCategoryContainer, GroupPageCategoryList } from '../GroupPage/GroupPageStyle';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
@@ -27,10 +26,10 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import api from '../../services/api';
 import secureStorage from '../../services/secureStorage';
 import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
-import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 import AttachmentIcon from '../../assets/add-attachment-icon.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export const validateDateInternal = (dateRef: React.RefObject<any>) => {
   const inputDate = dateRef.current ? new Date(dateRef.current.getRawValue()) : new Date();
@@ -292,14 +291,14 @@ export default function NewPost({ navigation }: any) {
     return undefined;
   }
   return (
-    <View
-      style={{
-        backgroundColor: '#f2f6fa',
-        height: '100%',
-        display: loggedIdState && accessTokenState ? 'flex' : 'none',
-      }}>
-      <HeaderCustom font="inter-bold" text="Publicação" />
-      <NewPostContainer>
+    <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Publicação' }}>
+      <View
+        style={{
+          backgroundColor: '#f2f6fa',
+          height: '100%',
+          display: loggedIdState && accessTokenState ? 'flex' : 'none',
+        }}>
+        <NewPostContainer>
         <GroupPageCategoryContainer>
           <GroupDataText color="#4E4E4E" font="inter-semiBold" size="18px">
             Categoria
@@ -359,7 +358,6 @@ export default function NewPost({ navigation }: any) {
                   <AttachmentIcon />
                 </LinkIcon>
               </View>
-              <Toast config={toastConfig} />
             </NewPostInputTextContainer>
             <View style={{ paddingBottom: 30 }}>
               <ButtonCustom
@@ -441,7 +439,6 @@ export default function NewPost({ navigation }: any) {
                 {errors.hour && <ErrorWarning errorText={errors.hour.message} />}
               </View>
             </MiddlePart>
-            <Toast config={toastConfig} />
             <BottomPartContainer>
               <Controller
                 control={control}
@@ -469,7 +466,8 @@ export default function NewPost({ navigation }: any) {
             </BottomPartContainer>
           </NewEventInputContainer>
         )}
-      </NewPostContainer>
-    </View>
+        </NewPostContainer>
+      </View>
+    </ScreenWithHeader>
   );
 }

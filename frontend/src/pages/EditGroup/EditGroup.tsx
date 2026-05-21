@@ -13,7 +13,6 @@ import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 import { EditGroupContainer, EditGroupForm, EditGroupPage } from './EditGroupStyle';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
@@ -21,6 +20,7 @@ import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import secureStorage from '../../services/secureStorage';
 import localStorage from '../../services/localStorage';
 import api from '../../services/api';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function EditGroup({ navigation }: any) {
   const [accessTokenState, setAccessTokenState] = useState('');
@@ -100,55 +100,55 @@ export default function EditGroup({ navigation }: any) {
     }
   };
   return (
-    <EditGroupPage>
-      <HeaderCustom font="inter-bold" text="Editar Grupo" />
+    <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Editar Grupo' }}>
+      <EditGroupPage>
+        <EditGroupContainer>
+          <View>
+            <EditGroupForm>
+              <Controller
+                control={control}
+                name="name"
+                rules={{
+                  maxLength: { value: 20, message: 'Máximo de 20 caracteres' },
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <InputTextCustom
+                    onChangeText={onChange}
+                    value={value}
+                    label="Nome do Grupo"
+                    imageIcon={null}
+                  />
+                )}
+              />
+              {errors.name && <ErrorWarning errorText={errors.name.message} />}
 
-      <EditGroupContainer>
-        <View>
-          <EditGroupForm>
-            <Controller
-              control={control}
-              name="name"
-              rules={{
-                maxLength: { value: 20, message: 'Máximo de 20 caracteres' },
-              }}
-              render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Nome do Grupo"
-                  imageIcon={null}
-                />
-              )}
-            />
-            {errors.name && <ErrorWarning errorText={errors.name.message} />}
-
-            <Controller
-              control={control}
-              name="description"
-              rules={{
-                maxLength: { value: 500, message: 'Máximo de 500 caracteres' },
-              }}
-              render={({ field: { onChange, value } }) => (
-                <BigInputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Descrição do Grupo"
-                  imageIcon={null}
-                />
-              )}
-            />
-            {errors.description && <ErrorWarning errorText={errors.description.message} />}
-          </EditGroupForm>
-        </View>
-        <ButtonCustom
-          onPress={handleSubmit(onSubmit)}
-          backColor="#160E47"
-          fontColor="#fff"
-          text="Salvar alterações"
-          border
-        />
-      </EditGroupContainer>
-    </EditGroupPage>
+              <Controller
+                control={control}
+                name="description"
+                rules={{
+                  maxLength: { value: 500, message: 'Máximo de 500 caracteres' },
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <BigInputTextCustom
+                    onChangeText={onChange}
+                    value={value}
+                    label="Descrição do Grupo"
+                    imageIcon={null}
+                  />
+                )}
+              />
+              {errors.description && <ErrorWarning errorText={errors.description.message} />}
+            </EditGroupForm>
+          </View>
+          <ButtonCustom
+            onPress={handleSubmit(onSubmit)}
+            backColor="#160E47"
+            fontColor="#fff"
+            text="Salvar alterações"
+            border
+          />
+        </EditGroupContainer>
+      </EditGroupPage>
+    </ScreenWithHeader>
   );
 }

@@ -3,13 +3,13 @@ import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import api from '../../services/api';
 import secureStorage from '../../services/secureStorage';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function EnterGroup({ navigation }: any) {
   const {
@@ -76,34 +76,35 @@ export default function EnterGroup({ navigation }: any) {
     return undefined;
   }
   return (
-    <View style={{ flex: 1, backgroundColor: '#f2f6fa' }}>
-      <HeaderCustom font="inter-bold" text="Entrar em Grupo" />
-      <SignInForm>
-        <SignInInputContainer style={{ gap: 30 }}>
-          <Controller
-            control={control}
-            name="inviteCode"
-            rules={{
-              required: true,
-            }}
-            render={({ field: { onChange, value } }) => (
-              <InputTextCustom
-                onChangeText={onChange}
-                value={value}
-                label="Código de Convite"
-                imageIcon={null}
-              />
-            )}
-          />
-          {errors.inviteCode && <ErrorWarning errorText="Campo obrigatório" />}
-          <ButtonCustom
-            onPress={handleSubmit(onSubmit)}
-            backColor="#160E47"
-            fontColor="white"
-            text="Entrar"
-          />
-        </SignInInputContainer>
-      </SignInForm>
-    </View>
+    <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Entrar em Grupo' }}>
+      <View style={{ flex: 1, backgroundColor: '#f2f6fa' }}>
+        <SignInForm>
+          <SignInInputContainer style={{ gap: 30 }}>
+            <Controller
+              control={control}
+              name="inviteCode"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, value } }) => (
+                <InputTextCustom
+                  onChangeText={onChange}
+                  value={value}
+                  label="Código de Convite"
+                  imageIcon={null}
+                />
+              )}
+            />
+            {errors.inviteCode && <ErrorWarning errorText="Campo obrigatório" />}
+            <ButtonCustom
+              onPress={handleSubmit(onSubmit)}
+              backColor="#160E47"
+              fontColor="white"
+              text="Entrar"
+            />
+          </SignInInputContainer>
+        </SignInForm>
+      </View>
+    </ScreenWithHeader>
   );
 }
