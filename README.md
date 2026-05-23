@@ -8,11 +8,11 @@ A plataforma ManaMano é um aplicativo com o objetivo de criar um espaço de int
 
 ## Tabela de Conteúdo
 
-1.  [Tecnologias](#tecnologias)
-2.  [Instalação Rápida](#instalação-rápida)
-3.  [Configuração](#configuração)
-4.  [Referências](#referências)
-5.  [Autores](#autores)
+1. [Tecnologias](#tecnologias)
+2. [Instalação Rápida](#instalação-rápida)
+3. [Configuração](#configuração)
+4. [Referências](#referências)
+5. [Autores](#autores)
 
 ## Tecnologias
 
@@ -38,7 +38,7 @@ A plataforma ManaMano é um aplicativo com o objetivo de criar um espaço de int
 
 ## Instalação Rápida
 
-A utilização do Docker é o método recomendado para rodar o projeto localmente.
+A utilização do Docker é o método recomendado para rodar o projeto.
 
 O aplicativo mobile utilizará o build previamente feito via EAS Build, localizado em projeto-manamano/nginx/downloads/app.apk.
 
@@ -118,13 +118,6 @@ cp .env.example .env
 ### 2. Preencher variáveis
 
 Preencha os arquivos `.env` com os valores necessários do projeto.
-
-Principais variáveis incluem:
-
-- Banco de dados
-- JWT_SECRET
-- URLs de API
-- Configurações do Expo / Firebase
 
 ---
 

@@ -35,8 +35,6 @@ Na raiz do projeto, execute:
 docker compose up -d postgres_db
 ```
 
----
-
 ## 2. Configurar variáveis de ambiente
 
 Entre na pasta do backend:
@@ -53,23 +51,17 @@ cp .env.example .env
 
 Preencha as variáveis necessárias do projeto.
 
----
-
 ## 3. Instalar dependências
 
 ```bash
 npm install
 ```
 
----
-
 ## 4. Rodar migrations
 
 ```bash
 npx prisma migrate deploy
 ```
-
----
 
 ## 5. Iniciar backend
 
@@ -91,8 +83,6 @@ O frontend utiliza React Native com Expo.
 
 O aplicativo pode ser executado diretamente no Android Emulator ou através de builds Android utilizando EAS Build.
 
----
-
 ## 1. Configurar variáveis de ambiente
 
 Entre na pasta do frontend:
@@ -109,15 +99,11 @@ cp .env.example .env
 
 Preencha as variáveis necessárias do projeto.
 
----
-
 ## 2. Instalar dependências
 
 ```bash
 npm install
 ```
-
----
 
 ## 3. Sincronizar código nativo
 
@@ -133,8 +119,6 @@ Esse comando normalmente só é necessário quando:
 ```bash
 npx expo prebuild
 ```
-
----
 
 ## 4. Configurar Android Studio
 
@@ -166,7 +150,6 @@ para abrir o aplicativo no Android Emulator.
 
 O projeto utiliza EAS Build para geração dos APKs Android.
 
----
 
 ## EAS Build
 
@@ -176,15 +159,12 @@ O projeto utiliza EAS Build para geração dos APKs Android.
 npm install -g eas-cli
 ```
 
----
 
 ### 2. Login no Expo
 
 ```bash
 eas login
 ```
-
----
 
 ### 3. Build de Preview
 
