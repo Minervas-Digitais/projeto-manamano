@@ -172,11 +172,10 @@ export class ParticipantService {
     );
 
     const groupsWithCounts: GroupWithDetails[] = groups.map((group) => {
-      const postsWithCommentsCount: PostWithCommentsCount[] =
-        group.group.posts.map((post) => ({
-          ...post,
-          commentsCount: commentCountMap.get(post.id) || 0,
-        }));
+      const postsWithCommentsCount: PostWithCommentsCount[] = group.group.posts.map((post) => ({
+        ...post,
+        commentsCount: commentCountMap.get(post.id) || 0,
+      }));
 
       return {
         role: group.role,
@@ -192,11 +191,7 @@ export class ParticipantService {
     return groupsWithCounts;
   }
 
-  async findUserGroupsPostsPaginated(
-    userId: string,
-    page: number = 1,
-    limit: number = 15,
-  ) {
+  async findUserGroupsPostsPaginated(userId: string, page: number = 1, limit: number = 15) {
     try {
       // Buscar os grupos do usuário (sem posts)
       const userGroups = await this.prismaService.participant.findMany({
@@ -298,10 +293,7 @@ export class ParticipantService {
     }
   }
 
-  async findUsersInGroup(
-    groupId: string,
-    callerId: string,
-  ): Promise<UserInGroup[]> {
+  async findUsersInGroup(groupId: string, callerId: string): Promise<UserInGroup[]> {
     await this.validator.validateGroupExists(groupId);
     const callerUser = await this.validator.validateUserExists(callerId);
 
@@ -381,10 +373,7 @@ export class ParticipantService {
     });
   }
 
-  async removeSelf(
-    userId: string,
-    groupId: string,
-  ): Promise<{ message: string }> {
+  async removeSelf(userId: string, groupId: string): Promise<{ message: string }> {
     await this.findOne(userId, groupId);
     await this.prismaService.participant.delete({
       where: {
@@ -413,10 +402,7 @@ export class ParticipantService {
       throw new NotFoundException(PARTICIPANT_MESSAGES.NOT_FOUND);
     }
 
-    if (
-      callerUser.sysRole != RoleType.ADMIN &&
-      callerParticipant.role != UserRole.INSTRUCTOR
-    ) {
+    if (callerUser.sysRole != RoleType.ADMIN && callerParticipant.role != UserRole.INSTRUCTOR) {
       throw new ForbiddenException(PARTICIPANT_MESSAGES.UNAUTHORIZED_ACCESS);
     }
 

@@ -37,8 +37,7 @@ export class SearchController {
     @Param(
       'filter',
       new ParseEnumPipe(SearchFilter, {
-        exceptionFactory: () =>
-          new BadRequestException(SEARCH_MESSAGES.INVALID_FILTER),
+        exceptionFactory: () => new BadRequestException(SEARCH_MESSAGES.INVALID_FILTER),
       }),
     )
     filter: SearchFilter,

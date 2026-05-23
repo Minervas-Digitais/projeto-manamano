@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, BadRequestException } from '@nestjs/common';
 import { Body, Param, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -22,23 +15,14 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post()
-  async create(
-    @Body() createNotificationDto: CreateNotificationDto,
-    @User('id') senderId: string,
-  ) {
-    return this.notificationService.createNotification(
-      createNotificationDto,
-      senderId,
-    );
+  async create(@Body() createNotificationDto: CreateNotificationDto, @User('id') senderId: string) {
+    return this.notificationService.createNotification(createNotificationDto, senderId);
   }
 
   @Post('global')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  async createGlobal(
-    @Body() dto: CreateNotificationDto,
-    @User('id') senderId: string,
-  ) {
+  async createGlobal(@Body() dto: CreateNotificationDto, @User('id') senderId: string) {
     return this.notificationService.createGlobalNotification(dto, senderId);
   }
 
@@ -57,18 +41,12 @@ export class NotificationController {
     return this.notificationService.markAllAsRead(userId);
   }
   @Post('register-token')
-  async registerPushToken(
-    @User('id') userId: string,
-    @Body() body: { pushNotifToken: string },
-  ) {
+  async registerPushToken(@User('id') userId: string, @Body() body: { pushNotifToken: string }) {
     if (!body.pushNotifToken) {
       throw new BadRequestException('Push token é obrigatório');
     }
 
-    await this.notificationService.registerPushNotifToken(
-      userId,
-      body.pushNotifToken,
-    );
+    await this.notificationService.registerPushNotifToken(userId, body.pushNotifToken);
 
     return { success: true };
   }
@@ -87,10 +65,7 @@ export class NotificationController {
   }
 
   @Patch(':notificationId')
-  async markAsRead(
-    @Param('notificationId') notificationId: string,
-    @User('id') userId: string,
-  ) {
+  async markAsRead(@Param('notificationId') notificationId: string, @User('id') userId: string) {
     return this.notificationService.markAsRead(notificationId, userId);
   }
 

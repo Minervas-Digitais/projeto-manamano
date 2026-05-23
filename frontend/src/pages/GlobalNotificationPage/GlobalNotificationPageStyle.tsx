@@ -8,4 +8,3 @@ export const GlobalNotificationContainer = styled.View`
   padding: 30px;
   padding-top: 20px;
 `;
-

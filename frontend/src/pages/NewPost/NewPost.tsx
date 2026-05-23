@@ -299,173 +299,173 @@ export default function NewPost({ navigation }: any) {
           display: loggedIdState && accessTokenState ? 'flex' : 'none',
         }}>
         <NewPostContainer>
-        <GroupPageCategoryContainer>
-          <GroupDataText color="#4E4E4E" font="inter-semiBold" size="18px">
-            Categoria
-          </GroupDataText>
-          <GroupPageCategoryList>
-            {categories
-              .filter((category) => category.name !== 'Aulas')
-              .map((category) => (
-                <CategoryButton
-                  key={category.id}
-                  categoryName={category.name}
-                  onPress={() => setFilterPosts(category.name)}
-                  filter={filterPosts}
-                />
-              ))}
-          </GroupPageCategoryList>
-        </GroupPageCategoryContainer>
-        {selectedCategoryType !== 'EVENT' ? (
-          <NewPostInputContainer>
-            <NewPostInputTextContainer>
-              <Controller
-                control={control}
-                name="input"
-                rules={{
-                  required: true,
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <BigInputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    imageIcon={null}
-                    accessibilityLabel="Mensagem"
+          <GroupPageCategoryContainer>
+            <GroupDataText color="#4E4E4E" font="inter-semiBold" size="18px">
+              Categoria
+            </GroupDataText>
+            <GroupPageCategoryList>
+              {categories
+                .filter((category) => category.name !== 'Aulas')
+                .map((category) => (
+                  <CategoryButton
+                    key={category.id}
+                    categoryName={category.name}
+                    onPress={() => setFilterPosts(category.name)}
+                    filter={filterPosts}
                   />
-                )}
-              />
-              {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <ScrollView
-                  horizontal
-                  contentContainerStyle={{
-                    flexDirection: 'row',
-                    flexGrow: 1,
-                    gap: 10,
-                    maxWidth: 300,
-                  }}>
-                  {files.map((item: any) => (
-                    <NewPostArchive
-                      key={item.id}
-                      name={item.name}
-                      archive
-                      removed={visibility[item.id]}
-                      onPress={() => handleClick(item.id)}
-                    />
-                  ))}
-                </ScrollView>
-                <LinkIcon onPress={pickFile} testID="attach-file-button">
-                  <AttachmentIcon />
-                </LinkIcon>
-              </View>
-            </NewPostInputTextContainer>
-            <View style={{ paddingBottom: 30 }}>
-              <ButtonCustom
-                onPress={handleSubmit(onSubmit)}
-                backColor="#160E47"
-                fontColor="white"
-                text="Publicar"
-                rightIcon={<ArrowIcon />}
-              />
-            </View>
-          </NewPostInputContainer>
-        ) : (
-          <NewEventInputContainer>
-            <NamePart>
-              <Controller
-                control={control}
-                name="title"
-                rules={{
-                  required: 'Campo obrigatório',
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <InputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="Título"
-                    imageIcon={null}
-                  />
-                )}
-              />
-              {errors.title && <ErrorWarning errorText={errors.title.message} />}
-            </NamePart>
-            <MiddlePart>
-              <View style={{ flex: 1, marginRight: width * 0.03135 }}>
+                ))}
+            </GroupPageCategoryList>
+          </GroupPageCategoryContainer>
+          {selectedCategoryType !== 'EVENT' ? (
+            <NewPostInputContainer>
+              <NewPostInputTextContainer>
                 <Controller
                   control={control}
-                  name="date"
+                  name="input"
                   rules={{
-                    required: 'Campo Obrigatório',
-                    validate: validateDate,
+                    required: true,
                   }}
                   render={({ field: { onChange, value } }) => (
-                    <InputTextCustom
+                    <BigInputTextCustom
                       onChangeText={onChange}
                       value={value}
-                      label="Data"
-                      imageIcon={<CalendarIcon />}
-                      type="datetime"
-                      options={{ format: 'DD/MM/YYYY' }}
-                      innerRef={(refValue: any) => {
-                        dateRef.current = refValue;
-                      }}
-                    />
-                  )}
-                />
-                {errors.date && <ErrorWarning errorText={errors.date.message} />}
-              </View>
-              <View style={{ flex: 1, marginLeft: width * 0.03135 }}>
-                <Controller
-                  control={control}
-                  name="hour"
-                  rules={{
-                    required: 'Campo Obrigatório',
-                    validate: validateHour,
-                  }}
-                  render={({ field: { onChange, value } }) => (
-                    <InputTextCustom
-                      onChangeText={onChange}
-                      value={value}
-                      label="Horário"
                       imageIcon={null}
-                      type="datetime"
-                      options={{ format: 'HH:mm' }}
-                      innerRef={(refValue: any) => {
-                        hourRef.current = refValue;
-                      }}
+                      accessibilityLabel="Mensagem"
                     />
                   )}
                 />
-                {errors.hour && <ErrorWarning errorText={errors.hour.message} />}
+                {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <ScrollView
+                    horizontal
+                    contentContainerStyle={{
+                      flexDirection: 'row',
+                      flexGrow: 1,
+                      gap: 10,
+                      maxWidth: 300,
+                    }}>
+                    {files.map((item: any) => (
+                      <NewPostArchive
+                        key={item.id}
+                        name={item.name}
+                        archive
+                        removed={visibility[item.id]}
+                        onPress={() => handleClick(item.id)}
+                      />
+                    ))}
+                  </ScrollView>
+                  <LinkIcon onPress={pickFile} testID="attach-file-button">
+                    <AttachmentIcon />
+                  </LinkIcon>
+                </View>
+              </NewPostInputTextContainer>
+              <View style={{ paddingBottom: 30 }}>
+                <ButtonCustom
+                  onPress={handleSubmit(onSubmit)}
+                  backColor="#160E47"
+                  fontColor="white"
+                  text="Publicar"
+                  rightIcon={<ArrowIcon />}
+                />
               </View>
-            </MiddlePart>
-            <BottomPartContainer>
-              <Controller
-                control={control}
-                name="input"
-                rules={{
-                  required: true,
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <BigInputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    imageIcon={null}
-                    label="Descrição"
+            </NewPostInputContainer>
+          ) : (
+            <NewEventInputContainer>
+              <NamePart>
+                <Controller
+                  control={control}
+                  name="title"
+                  rules={{
+                    required: 'Campo obrigatório',
+                  }}
+                  render={({ field: { onChange, value } }) => (
+                    <InputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      label="Título"
+                      imageIcon={null}
+                    />
+                  )}
+                />
+                {errors.title && <ErrorWarning errorText={errors.title.message} />}
+              </NamePart>
+              <MiddlePart>
+                <View style={{ flex: 1, marginRight: width * 0.03135 }}>
+                  <Controller
+                    control={control}
+                    name="date"
+                    rules={{
+                      required: 'Campo Obrigatório',
+                      validate: validateDate,
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                      <InputTextCustom
+                        onChangeText={onChange}
+                        value={value}
+                        label="Data"
+                        imageIcon={<CalendarIcon />}
+                        type="datetime"
+                        options={{ format: 'DD/MM/YYYY' }}
+                        innerRef={(refValue: any) => {
+                          dateRef.current = refValue;
+                        }}
+                      />
+                    )}
                   />
-                )}
-              />
-              {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-              <ButtonCustom
-                onPress={handleSubmit(onSubmit)}
-                backColor="#160E47"
-                fontColor="white"
-                text="Publicar"
-                rightIcon={<ArrowIcon />}
-              />
-            </BottomPartContainer>
-          </NewEventInputContainer>
-        )}
+                  {errors.date && <ErrorWarning errorText={errors.date.message} />}
+                </View>
+                <View style={{ flex: 1, marginLeft: width * 0.03135 }}>
+                  <Controller
+                    control={control}
+                    name="hour"
+                    rules={{
+                      required: 'Campo Obrigatório',
+                      validate: validateHour,
+                    }}
+                    render={({ field: { onChange, value } }) => (
+                      <InputTextCustom
+                        onChangeText={onChange}
+                        value={value}
+                        label="Horário"
+                        imageIcon={null}
+                        type="datetime"
+                        options={{ format: 'HH:mm' }}
+                        innerRef={(refValue: any) => {
+                          hourRef.current = refValue;
+                        }}
+                      />
+                    )}
+                  />
+                  {errors.hour && <ErrorWarning errorText={errors.hour.message} />}
+                </View>
+              </MiddlePart>
+              <BottomPartContainer>
+                <Controller
+                  control={control}
+                  name="input"
+                  rules={{
+                    required: true,
+                  }}
+                  render={({ field: { onChange, value } }) => (
+                    <BigInputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      imageIcon={null}
+                      label="Descrição"
+                    />
+                  )}
+                />
+                {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
+                <ButtonCustom
+                  onPress={handleSubmit(onSubmit)}
+                  backColor="#160E47"
+                  fontColor="white"
+                  text="Publicar"
+                  rightIcon={<ArrowIcon />}
+                />
+              </BottomPartContainer>
+            </NewEventInputContainer>
+          )}
         </NewPostContainer>
       </View>
     </ScreenWithHeader>

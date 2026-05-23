@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 (async () => {
   try {
     console.log('Verificando geração do Prisma Client...');
-    
+
     // Verifica se o modelo Archive foi gerado
     if (prisma.archive) {
       console.log('Modelo Archive gerado com sucesso!');
@@ -25,6 +25,4 @@ const prisma = new PrismaClient();
     console.error('Erro ao verificar Prisma Client:', error);
     process.exit(1);
   }
-
-  
 })();

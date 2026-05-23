@@ -4,12 +4,7 @@ import { ArchiveModule } from 'src/archive/archive.module';
 import { CreateArchiveDto } from 'src/archive/dto/archive.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import request from 'supertest';
-import {
-  createCategory,
-  createGroup,
-  createPost,
-  createUserWithToken,
-} from './test-helpers';
+import { createCategory, createGroup, createPost, createUserWithToken } from './test-helpers';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthModule } from 'src/auth/auth.module';
 

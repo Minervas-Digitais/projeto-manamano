@@ -25,10 +25,7 @@ export class GroupController {
 
   @HttpCode(201)
   @Post()
-  create(
-    @User('id') callerId: string,
-    @Body() createGroupDto: CreateGroupDto,
-  ): Promise<Group> {
+  create(@User('id') callerId: string, @Body() createGroupDto: CreateGroupDto): Promise<Group> {
     return this.groupService.create(createGroupDto, callerId);
   }
 

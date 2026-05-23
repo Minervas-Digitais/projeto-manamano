@@ -28,7 +28,9 @@ export default function ScreenWithHeader({
 }: ScreenWithHeaderProps) {
   return (
     <SafeAreaView
-      edges={Platform.OS === 'android' ? ['left', 'right', 'bottom'] : ['left', 'right', 'top', 'bottom']}
+      edges={
+        Platform.OS === 'android' ? ['left', 'right', 'bottom'] : ['left', 'right', 'top', 'bottom']
+      }
       style={[{ flex: 1, backgroundColor: '#f2f6fa' }, containerStyle]}>
       <StatusBar hidden />
       <HeaderCustom {...headerProps} />

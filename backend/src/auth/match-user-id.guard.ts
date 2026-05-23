@@ -13,9 +13,7 @@ export class MatchUserIdGuard implements CanActivate {
     const userIdFromToken = request.user?.id;
 
     if (!userIdFromToken) {
-      throw new UnauthorizedException(
-        'Token de autenticação ausente ou inválido.',
-      );
+      throw new UnauthorizedException('Token de autenticação ausente ou inválido.');
     }
 
     let userIdFromRequest: string | undefined =
@@ -36,9 +34,7 @@ export class MatchUserIdGuard implements CanActivate {
     }
 
     if (userIdFromRequest !== userIdFromToken) {
-      throw new ForbiddenException(
-        'Acesso negado: token não corresponde ao usuário solicitado.',
-      );
+      throw new ForbiddenException('Acesso negado: token não corresponde ao usuário solicitado.');
     }
 
     return true;

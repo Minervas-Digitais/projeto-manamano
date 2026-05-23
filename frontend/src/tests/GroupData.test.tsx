@@ -183,9 +183,3 @@ describe('GroupData', () => {
     expect(emptyMessages.length).toBe(2);
   });
 });
-
-
-
-
-
-

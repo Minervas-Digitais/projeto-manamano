@@ -2,9 +2,10 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import Toast from 'react-native-toast-message';
 import NewLesson from '../pages/NewLesson/NewLesson';
 import api from '../services/api';
-import Toast from 'react-native-toast-message';
+
 const fs = require('fs');
 
 // Mock fonts
@@ -418,7 +419,3 @@ describe('NewLesson', () => {
     });
   });
 });
-
-
-
-

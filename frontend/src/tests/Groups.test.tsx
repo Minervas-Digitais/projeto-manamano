@@ -1,11 +1,10 @@
 import React from 'react';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { View } from 'react-native';
 import api from '../services/api';
 import storage from '../services/secureStorage';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import Groups from '../pages/Groups/Groups';
-import { NavigationContainer } from '@react-navigation/native';
-
-import { View } from 'react-native';
 
 View.prototype.measure = (
   cb: (x: number, y: number, width: number, height: number, pageX: number, pageY: number) => void,
@@ -303,9 +302,3 @@ describe('Groups', () => {
     expect(queryByText('Entrar em Grupo')).toBeNull();
   });
 });
-
-
-
-
-
-

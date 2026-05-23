@@ -11,12 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { GroupModule } from 'src/group/group.module';
 import { AuthService } from 'src/auth/auth.service';
 import { SEARCH_MESSAGES } from 'src/messages/search.messages';
-import {
-  createCategory,
-  createGroup,
-  createPost,
-  createUserWithToken,
-} from './test-helpers';
+import { createCategory, createGroup, createPost, createUserWithToken } from './test-helpers';
 
 describe('SearchController', () => {
   let app: INestApplication;
@@ -103,16 +98,12 @@ describe('SearchController', () => {
       response.body.posts.forEach((p) => {
         const title = p.title?.toLowerCase() ?? '';
         const input = p.input?.toLowerCase() ?? '';
-        expect(title.includes(searchTerm) || input.includes(searchTerm)).toBe(
-          true,
-        );
+        expect(title.includes(searchTerm) || input.includes(searchTerm)).toBe(true);
       });
     });
 
     it('deve retornar 401 se não enviar token', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/search')
-        .send({ input: 'Test' });
+      const response = await request(app.getHttpServer()).post('/search').send({ input: 'Test' });
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Unauthorized');

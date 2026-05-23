@@ -176,7 +176,8 @@ export default function Profile({ navigation, route }: any) {
   }
   // Split the fullName to display the first two names
   const fullNameSplit = fullName.split(' ');
-  const displayName = fullNameSplit.length > 1 ? `${fullNameSplit[0]} ${fullNameSplit[1]}` : fullName;
+  const displayName =
+    fullNameSplit.length > 1 ? `${fullNameSplit[0]} ${fullNameSplit[1]}` : fullName;
   const districtLabel =
     district.find((item) => item.value === String(neighborhood))?.label || 'Unknown';
 

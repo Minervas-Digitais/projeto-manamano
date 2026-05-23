@@ -355,66 +355,66 @@ export default function Post() {
           showsVerticalScrollIndicator={false}
           style={{ backgroundColor: '#f2f6fa', flex: 1 }}>
           <PostContainer>
-          <PostUpperPart>
-            <ProfileImage source={postUserImage} />
-            <ProfileName font="inter-bold">{postUser?.fullName}</ProfileName>
-            <PostDate font="inter-semibold">{formattedDate}</PostDate>
-          </PostUpperPart>
-          <PostText font="inter-regular">{post?.input}</PostText>
-          <ScrollView
-            showsHorizontalScrollIndicator={false}
-            horizontal
-            contentContainerStyle={{ gap: 15 }}
-            style={{ maxHeight: 85 }}>
-            {postArchives.map((archive) => (
-              <PostAttachment archive key={archive.id} text={archive.name} file={archive} />
-            ))}
-          </ScrollView>
-          <View style={{ width: '100%', left: -0.06 * width }}>
-            <HorizontalSeparator />
-          </View>
-          <CommentsContainer>
-            <Controller
-              control={control}
-              name="input"
-              defaultValue=""
-              rules={{
-                required: true,
-              }}
-              render={({ field: { onChange, value } }) => (
-                <Pressable testID="input-container" onPress={() => setIsFocused(true)}>
-                  <CommentInputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    isFocused={isFocused}
-                    onPressSubmit={handleSubmit(onSubmit)}
-                    onBlur={handleBlur}
-                  />
-                </Pressable>
+            <PostUpperPart>
+              <ProfileImage source={postUserImage} />
+              <ProfileName font="inter-bold">{postUser?.fullName}</ProfileName>
+              <PostDate font="inter-semibold">{formattedDate}</PostDate>
+            </PostUpperPart>
+            <PostText font="inter-regular">{post?.input}</PostText>
+            <ScrollView
+              showsHorizontalScrollIndicator={false}
+              horizontal
+              contentContainerStyle={{ gap: 15 }}
+              style={{ maxHeight: 85 }}>
+              {postArchives.map((archive) => (
+                <PostAttachment archive key={archive.id} text={archive.name} file={archive} />
+              ))}
+            </ScrollView>
+            <View style={{ width: '100%', left: -0.06 * width }}>
+              <HorizontalSeparator />
+            </View>
+            <CommentsContainer>
+              <Controller
+                control={control}
+                name="input"
+                defaultValue=""
+                rules={{
+                  required: true,
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <Pressable testID="input-container" onPress={() => setIsFocused(true)}>
+                    <CommentInputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      isFocused={isFocused}
+                      onPressSubmit={handleSubmit(onSubmit)}
+                      onBlur={handleBlur}
+                    />
+                  </Pressable>
+                )}
+              />
+              {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
+              {Array.isArray(post?.Comment) && post.Comment.length > 0 ? (
+                post?.Comment.map((item: any) => {
+                  const formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
+                    locale: ptBR,
+                  });
+                  const commentUser = commentUsers[item.userId];
+                  return (
+                    <CommentCard
+                      key={item.id}
+                      fullName={commentUser?.fullName || 'Usuário desconhecido'}
+                      input={item.content}
+                      createdAt={formattedDate}
+                      userId={item.userId}
+                    />
+                  );
+                })
+              ) : (
+                <View />
               )}
-            />
-            {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-            {Array.isArray(post?.Comment) && post.Comment.length > 0 ? (
-              post?.Comment.map((item: any) => {
-                const formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
-                  locale: ptBR,
-                });
-                const commentUser = commentUsers[item.userId];
-                return (
-                  <CommentCard
-                    key={item.id}
-                    fullName={commentUser?.fullName || 'Usuário desconhecido'}
-                    input={item.content}
-                    createdAt={formattedDate}
-                    userId={item.userId}
-                  />
-                );
-              })
-            ) : (
-              <View />
-            )}
-          </CommentsContainer>
-        </PostContainer>
+            </CommentsContainer>
+          </PostContainer>
         </ScrollView>
       </View>
     </ScreenWithHeader>

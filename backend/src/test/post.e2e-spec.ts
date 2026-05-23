@@ -9,18 +9,11 @@ import { AuthService } from 'src/auth/auth.service';
 import { PostModule } from 'src/post/post.module';
 import { CreatePostDto } from 'src/post/dto/create-post.dto';
 import { POST_MESSAGES } from 'src/messages/post.messages';
-import {
-  createCategory,
-  createGroup,
-  createPost,
-  createUserWithToken,
-} from './test-helpers';
+import { createCategory, createGroup, createPost, createUserWithToken } from './test-helpers';
 import { PostType } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
 
-export function makePostDto(
-  overrides: Partial<CreatePostDto> = {},
-): CreatePostDto {
+export function makePostDto(overrides: Partial<CreatePostDto> = {}): CreatePostDto {
   const unique = Date.now() + Math.floor(Math.random() * 1000);
 
   return {
@@ -137,10 +130,7 @@ describe('Posts', () => {
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('Bad Request');
       expect(response.body.message).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining('type'),
-          expect.stringContaining('input'),
-        ]),
+        expect.arrayContaining([expect.stringContaining('type'), expect.stringContaining('input')]),
       );
     });
 

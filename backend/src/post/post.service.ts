@@ -90,13 +90,8 @@ export class PostService {
     };
   }
 
-  async create(
-    createPostDto: CreatePostDto,
-    userId: string,
-  ): Promise<SerializedPost> {
-    const group = await this.validator.validateGroupExists(
-      createPostDto.groupId,
-    );
+  async create(createPostDto: CreatePostDto, userId: string): Promise<SerializedPost> {
+    const group = await this.validator.validateGroupExists(createPostDto.groupId);
 
     await this.validator.validateUserExists(userId);
 
@@ -151,10 +146,7 @@ export class PostService {
     return this.serializePost(post);
   }
 
-  async update(
-    id: string,
-    updatePostDto: UpdatePostDto,
-  ): Promise<SerializedPost> {
+  async update(id: string, updatePostDto: UpdatePostDto): Promise<SerializedPost> {
     await this.validator.validatePostExists(id);
     const updated = await this.prismaService.post.update({
       where: { id },
@@ -197,10 +189,7 @@ export class PostService {
     return omitHash(updatedUser);
   }
 
-  async removeSavedPost(
-    userId: string,
-    postId: string,
-  ): Promise<Omit<User, 'hash'>> {
+  async removeSavedPost(userId: string, postId: string): Promise<Omit<User, 'hash'>> {
     const user = await this.validator.validateUserExists(userId);
     await this.validator.validatePostExists(postId);
 
@@ -280,11 +269,7 @@ export class PostService {
     };
   }
 
-  async getCategoryPosts(
-    categoryId: string,
-    page: number = 1,
-    limit: number = 10,
-  ) {
+  async getCategoryPosts(categoryId: string, page: number = 1, limit: number = 10) {
     const skip = (page - 1) * limit;
 
     const posts = await this.prismaService.post.findMany({

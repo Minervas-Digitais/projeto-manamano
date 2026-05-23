@@ -63,9 +63,7 @@ describe('User', () => {
     it('deve criar um novo usuario', async () => {
       const userDto = makeUserDto();
 
-      const response = await request(app.getHttpServer())
-        .post('/user')
-        .send(userDto);
+      const response = await request(app.getHttpServer()).post('/user').send(userDto);
 
       expect(response.status).toBe(201);
       expect(response.body).toMatchObject({
@@ -83,17 +81,13 @@ describe('User', () => {
         phone: existingUser.phone,
       });
 
-      const response = await request(app.getHttpServer())
-        .post('/user')
-        .send(userDto);
+      const response = await request(app.getHttpServer()).post('/user').send(userDto);
 
       expect(response.status).toBe(409);
     });
 
     it('deve retornar erro 400 se faltar campos obrigatorios', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/user')
-        .send({});
+      const response = await request(app.getHttpServer()).post('/user').send({});
 
       expect(response.status).toBe(400);
     });
@@ -101,11 +95,9 @@ describe('User', () => {
 
   describe('findAll()', () => {
     it('deve retornar todos os usuarios para admin', async () => {
-      const { token: adminToken } = await createUserWithToken(
-        prismaService,
-        authService,
-        { sysRole: RoleType.ADMIN },
-      );
+      const { token: adminToken } = await createUserWithToken(prismaService, authService, {
+        sysRole: RoleType.ADMIN,
+      });
 
       await createUser(prismaService);
       await createUser(prismaService);
@@ -128,10 +120,7 @@ describe('User', () => {
     });
 
     it('deve retornar erro 403 caso usuario nao seja admin', async () => {
-      const { token: userToken } = await createUserWithToken(
-        prismaService,
-        authService,
-      );
+      const { token: userToken } = await createUserWithToken(prismaService, authService);
 
       const response = await request(app.getHttpServer())
         .get('/user')
@@ -184,10 +173,7 @@ describe('User', () => {
 
   describe('update()', () => {
     it('deve atualizar o usuario com as informações passadas', async () => {
-      const { user, token } = await createUserWithToken(
-        prismaService,
-        authService,
-      );
+      const { user, token } = await createUserWithToken(prismaService, authService);
 
       const updateDto: UpdateUserDto = {
         fullName: 'Usuario Atualizado',
@@ -224,11 +210,9 @@ describe('User', () => {
 
   describe('remove()', () => {
     it('deve remover o usuario caso o token seja admin', async () => {
-      const { token: adminToken } = await createUserWithToken(
-        prismaService,
-        authService,
-        { sysRole: 'ADMIN' },
-      );
+      const { token: adminToken } = await createUserWithToken(prismaService, authService, {
+        sysRole: 'ADMIN',
+      });
 
       const user = await createUser(prismaService);
 
@@ -246,11 +230,9 @@ describe('User', () => {
     });
 
     it('deve retornar erro 404 caso o usuario nao exista', async () => {
-      const { token: adminToken } = await createUserWithToken(
-        prismaService,
-        authService,
-        { sysRole: 'ADMIN' },
-      );
+      const { token: adminToken } = await createUserWithToken(prismaService, authService, {
+        sysRole: 'ADMIN',
+      });
 
       const response = await request(app.getHttpServer())
         .delete('/user/id-inexistente')
@@ -290,10 +272,7 @@ describe('User', () => {
       const oldPassword = 'password123';
       const newPassword = 'newPassword123';
 
-      const { user, token } = await createUserWithToken(
-        prismaService,
-        authService,
-      );
+      const { user, token } = await createUserWithToken(prismaService, authService);
 
       const response = await request(app.getHttpServer())
         .patch('/user/change-password')
@@ -354,11 +333,9 @@ describe('User', () => {
 
   describe('updateRole()', () => {
     it('deve atualizar o role do usuario', async () => {
-      const { token: adminToken } = await createUserWithToken(
-        prismaService,
-        authService,
-        { sysRole: RoleType.ADMIN },
-      );
+      const { token: adminToken } = await createUserWithToken(prismaService, authService, {
+        sysRole: RoleType.ADMIN,
+      });
 
       const user = await createUser(prismaService);
 
@@ -372,11 +349,9 @@ describe('User', () => {
     });
 
     it('deve retornar erro 404 caso o usuario seja invalido', async () => {
-      const { token: adminToken } = await createUserWithToken(
-        prismaService,
-        authService,
-        { sysRole: RoleType.ADMIN },
-      );
+      const { token: adminToken } = await createUserWithToken(prismaService, authService, {
+        sysRole: RoleType.ADMIN,
+      });
 
       const response = await request(app.getHttpServer())
         .patch('/user/id-invalido/role')
@@ -388,11 +363,9 @@ describe('User', () => {
     });
 
     it('deve retornar erro 400 caso o role seja invalido', async () => {
-      const { token: adminToken } = await createUserWithToken(
-        prismaService,
-        authService,
-        { sysRole: RoleType.ADMIN },
-      );
+      const { token: adminToken } = await createUserWithToken(prismaService, authService, {
+        sysRole: RoleType.ADMIN,
+      });
 
       const user = await createUser(prismaService);
 
@@ -437,10 +410,7 @@ describe('User', () => {
 
   describe('updateProfilePicture()', () => {
     it('deve atualizar foto de perfil', async () => {
-      const { user, token } = await createUserWithToken(
-        prismaService,
-        authService,
-      );
+      const { user, token } = await createUserWithToken(prismaService, authService);
 
       const file = createMockFile();
 
@@ -466,10 +436,7 @@ describe('User', () => {
   });
   describe('getProfilePicture()', () => {
     it('deve retornar a imagem de perfil do usuario', async () => {
-      const { user, token } = await createUserWithToken(
-        prismaService,
-        authService,
-      );
+      const { user, token } = await createUserWithToken(prismaService, authService);
 
       const file = {
         originalname: 'avatar.png',
@@ -482,9 +449,7 @@ describe('User', () => {
         .set('Authorization', 'Bearer ' + token)
         .attach('file', file.buffer, file.originalname);
 
-      const response = await request(app.getHttpServer()).get(
-        `/user/${user.id}/profile-picture`,
-      );
+      const response = await request(app.getHttpServer()).get(`/user/${user.id}/profile-picture`);
 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toBe('image/png');
@@ -495,20 +460,14 @@ describe('User', () => {
     it('deve retornar 404 caso usuario nao tenha imagem', async () => {
       const { user } = await createUserWithToken(prismaService, authService);
 
-      const response = await request(app.getHttpServer()).get(
-        `/user/${user.id}/profile-picture`,
-      );
+      const response = await request(app.getHttpServer()).get(`/user/${user.id}/profile-picture`);
 
       expect(response.status).toBe(404);
-      expect(response.body.message).toBe(
-        USER_MESSAGES.PROFILE_PICTURE_NOT_FOUND,
-      );
+      expect(response.body.message).toBe(USER_MESSAGES.PROFILE_PICTURE_NOT_FOUND);
     });
 
     it('deve retornar 404 caso usuario nao exista', async () => {
-      const response = await request(app.getHttpServer()).get(
-        `/user/id-invalido/profile-picture`,
-      );
+      const response = await request(app.getHttpServer()).get(`/user/id-invalido/profile-picture`);
 
       expect(response.status).toBe(404);
     });

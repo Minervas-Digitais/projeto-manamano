@@ -10,11 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from 'src/auth/auth.service';
 
-import {
-  createUserWithToken,
-  createGroup,
-  createCategory,
-} from './test-helpers';
+import { createUserWithToken, createGroup, createCategory } from './test-helpers';
 
 describe('Category', () => {
   let app: INestApplication;
@@ -216,9 +212,7 @@ describe('Category', () => {
     });
 
     it('deve retornar 401 se o token JWT for inválido ou ausente', async () => {
-      const res = await request(app.getHttpServer()).get(
-        '/category/qualquer-id',
-      );
+      const res = await request(app.getHttpServer()).get('/category/qualquer-id');
 
       expect(res.status).toBe(401);
     });
@@ -269,9 +263,7 @@ describe('Category', () => {
     });
 
     it('deve retornar 401 se o token JWT for inválido ou ausente', async () => {
-      const res = await request(app.getHttpServer()).patch(
-        '/category/qualquer-id',
-      );
+      const res = await request(app.getHttpServer()).patch('/category/qualquer-id');
 
       expect(res.status).toBe(401);
     });
@@ -307,9 +299,7 @@ describe('Category', () => {
     });
 
     it('deve retornar 401 se o token JWT for inválido ou ausente', async () => {
-      const res = await request(app.getHttpServer()).delete(
-        '/category/qualquer-id',
-      );
+      const res = await request(app.getHttpServer()).delete('/category/qualquer-id');
 
       expect(res.status).toBe(401);
     });

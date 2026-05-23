@@ -1,8 +1,8 @@
 import React from 'react';
 import { Alert } from 'react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import api from '../services/api';
 import storage from '../services/secureStorage';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import GetInTouch from '../pages/GetInTouch/GetInTouch';
 
 // MOCKS
@@ -154,9 +154,3 @@ describe('GetInTouch', () => {
     );
   });
 });
-
-
-
-
-
-

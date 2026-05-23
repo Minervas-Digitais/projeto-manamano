@@ -1,5 +1,6 @@
 import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
 const { width, height } = Dimensions.get('window');
 
 export const ADMPageContainer = styled.View`

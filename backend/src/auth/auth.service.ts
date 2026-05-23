@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -64,10 +60,7 @@ export class AuthService {
         throw new NotFoundException('Usuário não encontrado.');
       }
 
-      const isPasswordValid = await bcrypt.compare(
-        createLoginDto.password,
-        user.hash,
-      );
+      const isPasswordValid = await bcrypt.compare(createLoginDto.password, user.hash);
 
       if (!isPasswordValid) {
         throw new UnauthorizedException('Senha incorreta.');
@@ -98,10 +91,7 @@ export class AuthService {
         throw new UnauthorizedException(BASE_MESSAGES.UNAUTHORIZED_ACCESS);
       }
 
-      const isValid = await bcrypt.compare(
-        refreshLoginDto.refreshToken,
-        user.refreshToken,
-      );
+      const isValid = await bcrypt.compare(refreshLoginDto.refreshToken, user.refreshToken);
 
       if (!isValid) {
         throw new UnauthorizedException(BASE_MESSAGES.UNAUTHORIZED_ACCESS);

@@ -108,12 +108,8 @@ export class UserController {
   }
 
   @Get(':id/profile-picture')
-  async getProfilePicture(
-    @Param('id') id: string,
-    @Res() res: express.Response,
-  ): Promise<void> {
-    const { buffer, mimeType, name } =
-      await this.userService.getProfilePictureBuffer(id);
+  async getProfilePicture(@Param('id') id: string, @Res() res: express.Response): Promise<void> {
+    const { buffer, mimeType, name } = await this.userService.getProfilePictureBuffer(id);
 
     res.set({
       'Content-Type': mimeType,

@@ -58,10 +58,7 @@ export class CategoryService {
     return category;
   }
 
-  async update(
-    id: string,
-    updateCategoryDto: UpdateCategoryDto,
-  ): Promise<Category> {
+  async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
     await this.findOne(id);
 
     if (updateCategoryDto.groupId) {

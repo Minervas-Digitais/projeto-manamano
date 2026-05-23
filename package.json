@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "lint:backend": "eslint backend/src --ext .ts",
+    "lint:frontend": "eslint frontend/src --ext .ts,.tsx",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-import": "^2.32.0",
+    "prettier": "^3.8.3"
+  }
+}

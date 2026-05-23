@@ -449,7 +449,10 @@ describe('CreateGroup Page', () => {
 
     await waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'error', text2: 'Falha ao adicionar usuário como moderador' }),
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Falha ao adicionar usuário como moderador',
+        }),
       );
     });
 
@@ -508,9 +511,3 @@ describe('CreateGroup Page', () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
-
-
-
-
-
-

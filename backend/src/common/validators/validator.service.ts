@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NOTIFICATION_MESSAGES } from 'src/messages/notification.messages';
 import { COMMENT_MESSAGES } from 'src/messages/comment.messages';
@@ -15,8 +11,7 @@ export class ValidatorService {
 
   async validateUserExists(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user)
-      throw new NotFoundException(NOTIFICATION_MESSAGES.USER_NOT_FOUND);
+    if (!user) throw new NotFoundException(NOTIFICATION_MESSAGES.USER_NOT_FOUND);
     return user;
   }
 
@@ -54,9 +49,7 @@ export class ValidatorService {
     const notification = await this.validateNotificationExists(notifId);
 
     if (notification.recipientId !== userId) {
-      throw new ForbiddenException(
-        NOTIFICATION_MESSAGES.UNAUTHORIZED_NOTIF_UPDATE,
-      );
+      throw new ForbiddenException(NOTIFICATION_MESSAGES.UNAUTHORIZED_NOTIF_UPDATE);
     }
   }
 
@@ -64,9 +57,7 @@ export class ValidatorService {
     const notification = await this.validateNotificationExists(notificationId);
 
     if (notification.senderId !== userId) {
-      throw new ForbiddenException(
-        NOTIFICATION_MESSAGES.UNAUTHORIZED_NOTIF_UPDATE,
-      );
+      throw new ForbiddenException(NOTIFICATION_MESSAGES.UNAUTHORIZED_NOTIF_UPDATE);
     }
   }
 }

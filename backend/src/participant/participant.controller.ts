@@ -13,11 +13,7 @@ import {
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { UpdateParticipantRoleDto } from './dto/update-participant.dto';
-import {
-  GroupWithDetails,
-  ParticipantService,
-  UserInGroup,
-} from './participant.service';
+import { GroupWithDetails, ParticipantService, UserInGroup } from './participant.service';
 import { Participant, RoleType } from '@prisma/client';
 import { User } from 'src/user/user.decorator';
 import { RolesGuard } from 'src/auth/roles.guard';
@@ -34,10 +30,7 @@ export class ParticipantController {
     @Body() createParticipantDto: CreateParticipantDto,
     @User('id') userId: string,
   ): Promise<Participant> {
-    return this.participantService.joinGroupWithInvite(
-      createParticipantDto,
-      userId,
-    );
+    return this.participantService.joinGroupWithInvite(createParticipantDto, userId);
   }
 
   @HttpCode(200)
@@ -73,19 +66,12 @@ export class ParticipantController {
   ) {
     const pageNumber = page ? parseInt(page, 10) : 1;
     const limitNumber = limit ? parseInt(limit, 10) : 15;
-    return this.participantService.findUserGroupsPostsPaginated(
-      userId,
-      pageNumber,
-      limitNumber,
-    );
+    return this.participantService.findUserGroupsPostsPaginated(userId, pageNumber, limitNumber);
   }
 
   @HttpCode(200)
   @Get('group/:groupId/me')
-  findOne(
-    @User('id') userId: string,
-    @Param('groupId') groupId: string,
-  ): Promise<Participant> {
+  findOne(@User('id') userId: string, @Param('groupId') groupId: string): Promise<Participant> {
     return this.participantService.findOne(userId, groupId);
   }
 
@@ -98,12 +84,7 @@ export class ParticipantController {
     @Body()
     updateParticipantDto: UpdateParticipantRoleDto,
   ): Promise<Participant> {
-    return this.participantService.update(
-      callerId,
-      targetUserId,
-      groupId,
-      updateParticipantDto,
-    );
+    return this.participantService.update(callerId, targetUserId, groupId, updateParticipantDto);
   }
 
   @HttpCode(200)

@@ -78,9 +78,7 @@ describe('Group (e2e)', () => {
     });
 
     it('deve retornar 401 sem token', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/group')
-        .send(createGroupDto());
+      const res = await request(app.getHttpServer()).post('/group').send(createGroupDto());
 
       expect(res.status).toBe(401);
     });

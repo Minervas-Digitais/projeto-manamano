@@ -217,7 +217,9 @@ describe('EditGroup', () => {
   });
 
   it('deve navegar para GroupPage após submissão bem-sucedida', async () => {
-    const { getByText, getByLabelText } = render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
+    const { getByText, getByLabelText } = render(
+      <EditGroup navigation={{ navigate: mockedNavigate }} />,
+    );
 
     await waitFor(() => {
       expect(mockedApi.get).toHaveBeenCalled();
@@ -263,9 +265,3 @@ describe('EditGroup', () => {
     });
   });
 });
-
-
-
-
-
-

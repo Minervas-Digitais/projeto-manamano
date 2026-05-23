@@ -121,11 +121,9 @@ describe('Mail (e2e)', () => {
     it('deve chamar transporter com os dados corretos', async () => {
       const sendMailMock = jest.fn().mockResolvedValue(true);
 
-      const transporterSpy = jest
-        .spyOn(mailService, 'getTransporter')
-        .mockReturnValue({
-          sendMail: sendMailMock,
-        } as any);
+      const transporterSpy = jest.spyOn(mailService, 'getTransporter').mockReturnValue({
+        sendMail: sendMailMock,
+      } as any);
 
       const dto = {
         subject: 'Assunto X',

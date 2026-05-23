@@ -39,10 +39,7 @@ export class UserService {
       throw new ConflictException(USER_MESSAGES.EMAIL_OR_PHONE_IN_USE);
     }
 
-    const hashedPassword = await bcrypt.hash(
-      createUserDto.password,
-      roundsOfHashing,
-    );
+    const hashedPassword = await bcrypt.hash(createUserDto.password, roundsOfHashing);
 
     const userData = {
       fullName: createUserDto.fullName,
@@ -94,10 +91,7 @@ export class UserService {
     return users.map(omitHash);
   }
 
-  async update(
-    id: string,
-    updateUserDto: UpdateUserDto,
-  ): Promise<Omit<User, 'hash'>> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'hash'>> {
     await this.validator.validateUserExists(id);
     const updatedUser = await this.prismaService.user.update({
       where: { id },
@@ -140,10 +134,7 @@ export class UserService {
     return omitHash(updatedUser);
   }
 
-  async updateUserRole(
-    id: string,
-    sysRole: RoleType,
-  ): Promise<Omit<User, 'hash'>> {
+  async updateUserRole(id: string, sysRole: RoleType): Promise<Omit<User, 'hash'>> {
     await this.validator.validateUserExists(id);
 
     const updatedUser = await this.prismaService.user.update({

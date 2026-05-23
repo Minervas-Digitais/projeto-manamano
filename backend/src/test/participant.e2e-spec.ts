@@ -259,9 +259,7 @@ describe('Participant (E2E)', () => {
     });
 
     it('deve retornar 401 sem token', async () => {
-      const res = await request(app.getHttpServer()).get(
-        `/participant/group/${group.id}/users`,
-      );
+      const res = await request(app.getHttpServer()).get(`/participant/group/${group.id}/users`);
 
       expect(res.status).toBe(401);
     });
@@ -526,9 +524,7 @@ describe('Participant (E2E)', () => {
     });
 
     it('deve retornar 401 sem token', async () => {
-      const res = await request(app.getHttpServer()).get(
-        '/participant/groups/posts',
-      );
+      const res = await request(app.getHttpServer()).get('/participant/groups/posts');
 
       expect(res.status).toBe(401);
     });
@@ -576,9 +572,7 @@ describe('Participant (E2E)', () => {
     });
 
     it('deve retornar 401 sem token', async () => {
-      const res = await request(app.getHttpServer()).get(
-        `/participant/group/${group.id}/me`,
-      );
+      const res = await request(app.getHttpServer()).get(`/participant/group/${group.id}/me`);
 
       expect(res.status).toBe(401);
     });
@@ -741,9 +735,7 @@ describe('Participant (E2E)', () => {
     });
 
     it('deve retornar 401 sem token', async () => {
-      const res = await request(app.getHttpServer()).delete(
-        `/participant/group/${group.id}`,
-      );
+      const res = await request(app.getHttpServer()).delete(`/participant/group/${group.id}`);
 
       expect(res.status).toBe(401);
     });

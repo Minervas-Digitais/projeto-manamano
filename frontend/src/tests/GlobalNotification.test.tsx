@@ -1,9 +1,9 @@
 import React from 'react';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import Toast from 'react-native-toast-message';
 import api from '../services/api';
 import storage from '../services/secureStorage';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import GlobalNotificationPage from '../pages/GlobalNotificationPage/GlobalNotificationPage';
-import Toast from 'react-native-toast-message';
 
 // MOCKS
 
@@ -154,8 +154,3 @@ describe('GlobalNotification', () => {
     expect(mockGoBack).not.toHaveBeenCalled();
   });
 });
-
-
-
-
-
