@@ -16,61 +16,53 @@ import IconPassword from '../../assets/lock-icon.svg';
 import ManaManoLogo from '../../assets/logo-boas-vindas.svg';
 import { registerForPushNotificationsAsync } from '../../hooks/useNotification';
 import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function SignIn({ navigation }: any) {
+  const { login } = useAuth();
+
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({});
-  const onSubmit = (data: any) => {
-    api
-      .post('/auth/login', data)
-      .then(async (res) => {
-        if (res.data.accessToken) {
-          await secureStorage.setItem('accessToken', res.data.accessToken);
-          await secureStorage.setItem('loggedId', res.data.loggedId);
 
-          // Tentar registrar notificações push (não bloqueia o login se falhar)
+  const onSubmit = async (data: any) => {
+    try {
+      const accessToken = await login(data.email, data.password);
+
+      // Tentar registrar notificações push (não bloqueia o login se falhar)
+      try {
+        const pushToken = await registerForPushNotificationsAsync();
+
+        if (pushToken) {
           try {
-            const pushToken = await registerForPushNotificationsAsync();
-
-            if (pushToken) {
-              try {
-                await api.post(
-                  '/notifications/register-token',
-                  { pushNotifToken: pushToken },
-                  {
-                    headers: {
-                      Authorization: `Bearer ${res.data.accessToken}`,
-                    },
-                  },
-                );
-              } catch (error) {
-                console.error('Erro ao enviar push token para o backend:', error);
-              }
-            }
+            await api.post(
+              '/notifications/register-token',
+              { pushNotifToken: pushToken },
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              },
+            );
           } catch (error) {
-            console.error('Erro ao registrar notificações push:', error);
+            console.error('Erro ao enviar push token para o backend:', error);
           }
-
-          navigation.navigate('Home');
-        } else {
-          Toast.show({
-            type: 'error',
-            text1: 'Erro ao entrar',
-            text2: 'E-mail ou senha incorretos',
-          });
         }
-      })
-      .catch((error) => {
-        console.error('Erro ao fazer login:', error);
-        Toast.show({
-          type: 'error',
-          text1: 'Erro de conexão',
-          text2: 'Verifique sua conexão e tente novamente.',
-        });
+      } catch (error) {
+        console.error('Erro ao registrar notificações push:', error);
+      }
+
+      navigation.navigate('Home');
+    } catch (error) {
+      console.error('Erro ao fazer login:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao entrar',
+        text2: 'E-mail ou senha incorretos',
       });
+    }
   };
 
   const [fontsLoaded] = useFonts({

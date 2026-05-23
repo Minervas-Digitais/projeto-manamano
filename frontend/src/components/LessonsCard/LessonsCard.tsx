@@ -6,7 +6,6 @@ import { useFonts } from 'expo-font';
 import { Alert, Linking } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
-import { toastConfig } from '../../pages/GlobalNotificationPage/GlobalNotificationPageStyle';
 
 import {
   LessonsCardButtonContainer,
@@ -108,7 +107,6 @@ export default function LessonsCard({ date, title, urlLive }: any) {
           <LessonsCardDateText>{date}</LessonsCardDateText>
         </LessonsCardInfoContainerSpaceBetween>
       )}
-      <Toast config={toastConfig} />
     </LessonsCardContainer>
   );
 }

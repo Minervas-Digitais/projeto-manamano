@@ -4,6 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import EnterGroup from './src/pages/EnterGroup/EnterGroup';
 import ChangePassword from './src/pages/ChangePassword/ChangePassword';
 import Config from './src/pages/Configuration/Configuration';
@@ -33,6 +35,9 @@ import GlobalNotificationPage from './src/pages/GlobalNotificationPage/GlobalNot
 import Groups from './src/pages/Groups/Groups';
 import { useNotifications } from './src/hooks/useNotification';
 import { SavedPostsProvider } from './src/context/SavedPostsContext';
+import { AuthProvider } from './src/context/auth/AuthProvider';
+import { SideMenuProvider, useSideMenu } from './src/context/SideMenuContext';
+import { toastConfig } from './src/components/Toast/ToastConfig';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -43,6 +48,77 @@ Notifications.setNotificationHandler({
 });
 
 const Stack = createNativeStackNavigator();
+
+function AppNavigator({ linking }: { linking: any }) {
+  const { isOpen, closeMenu } = useSideMenu();
+
+  return (
+    <NavigationContainer independent linking={linking} onStateChange={closeMenu}>
+      <SideMenu display={!isOpen} onPress={closeMenu} />
+      <Stack.Navigator initialRouteName="WelcomeScreen">
+        <Stack.Screen
+          name="WelcomeScreen"
+          component={WelcomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="Config" component={Config} options={{ headerShown: false }} />
+        <Stack.Screen name="ADMPage" component={ADMPage} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="GlobalNotification"
+          component={GlobalNotificationPage}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
+
+        <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
+        <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
+        <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />
+        <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
+        <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="ChangePassword"
+          component={ChangePassword}
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
+        <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
+        <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="Notification"
+          component={Notification}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
+        <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
+        <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
+        <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
+        <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
+        <Stack.Screen name="GroupPage" component={GroupPage} options={{ headerShown: false }} />
+
+        <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="VisitorProfile"
+          component={VisitorProfile}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="GetInTouch" component={GetInTouch} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="ConfigNotification"
+          component={ConfigNotification}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="EditGroup" component={EditGroup} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="NotificationPage"
+          component={NotificationPage}
+          options={{ headerShown: false }}
+        />
+      </Stack.Navigator>
+      <Toast config={toastConfig} />
+    </NavigationContainer>
+  );
+}
 
 export default function App() {
   const linking = {
@@ -75,81 +151,14 @@ export default function App() {
   }, []);
 
   return (
-    <SavedPostsProvider>
-      <NavigationContainer independent linking={linking}>
-        <Stack.Navigator initialRouteName="WelcomeScreen">
-          <Stack.Screen
-            name="WelcomeScreen"
-            component={WelcomeScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="Config" component={Config} options={{ headerShown: false }} />
-          <Stack.Screen name="ADMPage" component={ADMPage} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="GlobalNotification"
-            component={GlobalNotificationPage}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
-
-          <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="EntrarGrupo"
-            component={EnterGroup}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="EditProfile"
-            component={EditProfile}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
-          <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="ChangePassword"
-            component={ChangePassword}
-            options={{ headerShown: false }}
-          />
-
-          <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
-          <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
-          <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="Notification"
-            component={Notification}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="CreateGroup"
-            component={CreateGroup}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
-          <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
-          <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
-          <Stack.Screen name="GroupPage" component={GroupPage} options={{ headerShown: false }} />
-
-          <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="VisitorProfile"
-            component={VisitorProfile}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="GetInTouch" component={GetInTouch} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="ConfigNotification"
-            component={ConfigNotification}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="EditGroup" component={EditGroup} options={{ headerShown: false }} />
-          <Stack.Screen
-            name="NotificationPage"
-            component={NotificationPage}
-            options={{ headerShown: false }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SavedPostsProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <SavedPostsProvider>
+          <SideMenuProvider>
+            <AppNavigator linking={linking} />
+          </SideMenuProvider>
+        </SavedPostsProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

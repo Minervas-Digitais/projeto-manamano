@@ -21,6 +21,7 @@ model User {
   expertise             String?
   enterprise            String?
   bio                   String?
+  refreshToken  String? 
  
   profilePictureId      String?        @unique
   profilePicture        Archive?       @relation("UserProfilePicture", fields: [profilePictureId], references: [id], onDelete: SetNull)
@@ -149,6 +150,20 @@ model Archive {
 
   Post          Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+}
+
+model AppVersion {
+  id        String   @id @default(uuid())
+  version   String
+  build     Int
+  mandatory Boolean  @default(false)
+  easBuildId String
+  notes     String[]
+
+  isActive  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum PostType {

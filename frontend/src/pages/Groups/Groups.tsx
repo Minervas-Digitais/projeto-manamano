@@ -6,18 +6,20 @@ import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
 import AddButton from '../../components/AddButton/AddButton';
-import secureStorage from '../../services/secureStorage';
 import ShowPopup from '../../components/GroupPopup/GroupPopup';
 import api from '../../services/api';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import Add from '../../assets/add-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function Groups() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Use navigation instance
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
+
+  const { accessToken, loggedId } = useAuth();
 
   const [showPopup, setShowPopup] = useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -26,14 +28,11 @@ export default function Groups() {
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
-        // Retrieve the access token from storage
-        const token = await secureStorage.getItem('accessToken');
-        const loggedId = await secureStorage.getItem('loggedId');
-        if (loggedId && token) {
+        if (loggedId && accessToken) {
           api
             .get('participant/groups/', {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             })
             .then((res: any) => {
@@ -46,13 +45,11 @@ export default function Groups() {
         console.log(groups);
 
         // Fetch user information to check the "tipo"
-        if (token) {
+        if (accessToken) {
           try {
-            const userId = await secureStorage.getItem('loggedId');
-
-            const { data: fetchedUserData } = await api.get(`/user/${userId}`, {
+            const { data: fetchedUserData } = await api.get(`/user/${loggedId}`, {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             });
             setUserData(fetchedUserData);
@@ -97,44 +94,45 @@ export default function Groups() {
   };
 
   return (
-    <GroupsContainer>
-      <HeaderCustom icon menu text="Grupos" font="inter-bold" />
-      <GroupsBody>
-        <GroupsList
-          contentContainerStyle={{ gap: 25, alignItems: 'center' }}
-          showsVerticalScrollIndicator={false}>
-          {groups?.length > 0 ? (
-            groups.map((item: any) => (
-              <GroupButton
-                key={item.groupId}
-                groupName={item.group.name}
-                onlineMembers={item.participantCount}
-                onPress={() => {
-                  navigation.navigate('GroupPage', {
-                    groupId: item.groupId,
-                    groupName: item.group.name,
-                  });
-                }}
-                showFilter={false}
-                containerStyle={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: '100%',
-                  backgroundColor: '#f2f6fa',
-                }}
-              />
-            ))
-          ) : (
-            <View />
-          )}
-        </GroupsList>
-      </GroupsBody>
-      <AddButton testID="add-button" icon={<Add />} onPress={handleAddButtonPress} />
-      <ShowPopup
-        visible={showPopup}
-        onClose={() => setShowPopup(false)}
-        onOptionSelect={handlePopupOption}
-      />
-    </GroupsContainer>
+    <ScreenWithHeader headerProps={{ menu: true, text: 'Grupos', font: 'inter-bold' }}>
+      <GroupsContainer>
+        <GroupsBody>
+          <GroupsList
+            contentContainerStyle={{ gap: 25, alignItems: 'center' }}
+            showsVerticalScrollIndicator={false}>
+            {groups?.length > 0 ? (
+              groups.map((item: any) => (
+                <GroupButton
+                  key={item.groupId}
+                  groupName={item.group.name}
+                  onlineMembers={item.participantCount}
+                  onPress={() => {
+                    navigation.navigate('GroupPage', {
+                      groupId: item.groupId,
+                      groupName: item.group.name,
+                    });
+                  }}
+                  showFilter={false}
+                  containerStyle={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    backgroundColor: '#f2f6fa',
+                  }}
+                />
+              ))
+            ) : (
+              <View />
+            )}
+          </GroupsList>
+        </GroupsBody>
+        <AddButton testID="add-button" icon={<Add />} onPress={handleAddButtonPress} />
+        <ShowPopup
+          visible={showPopup}
+          onClose={() => setShowPopup(false)}
+          onOptionSelect={handlePopupOption}
+        />
+      </GroupsContainer>
+    </ScreenWithHeader>
   );
 }

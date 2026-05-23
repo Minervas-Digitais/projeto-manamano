@@ -3,10 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import Toast from 'react-native-toast-message';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import NotificationButton from '../../components/NotificationButton/NotificationButton';
 import api from '../../services/api';
 import secureStorage from '../../services/secureStorage';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function ConfigNotification() {
   const [fontsLoaded] = useFonts({
@@ -79,26 +79,27 @@ export default function ConfigNotification() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f2f6fa', gap: 40 }}>
-      <HeaderCustom font="inter-bold" text="Notificações" />
-      <NotificationButton
-        font="inter-bold"
-        text="Desabilitar notificação pop-up"
-        isActive={settings.disablePopup}
-        onToggle={() => handleToggle('disablePopup')}
-      />
-      <NotificationButton
-        font="inter-bold"
-        text="Silenciar notificação do Sistema"
-        isActive={settings.muteSystem}
-        onToggle={() => handleToggle('muteSystem')}
-      />
-      <NotificationButton
-        font="inter-bold"
-        text="Silenciar notificação dos grupos"
-        isActive={settings.muteGroups}
-        onToggle={() => handleToggle('muteGroups')}
-      />
-    </View>
+    <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Notificações' }}>
+      <View style={{ flex: 1, backgroundColor: '#f2f6fa', gap: 40 }}>
+        <NotificationButton
+          font="inter-bold"
+          text="Desabilitar notificação pop-up"
+          isActive={settings.disablePopup}
+          onToggle={() => handleToggle('disablePopup')}
+        />
+        <NotificationButton
+          font="inter-bold"
+          text="Silenciar notificação do Sistema"
+          isActive={settings.muteSystem}
+          onToggle={() => handleToggle('muteSystem')}
+        />
+        <NotificationButton
+          font="inter-bold"
+          text="Silenciar notificação dos grupos"
+          isActive={settings.muteGroups}
+          onToggle={() => handleToggle('muteGroups')}
+        />
+      </View>
+    </ScreenWithHeader>
   );
 }

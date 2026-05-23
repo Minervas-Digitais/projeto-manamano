@@ -7,7 +7,6 @@ import { Controller, useForm } from 'react-hook-form';
 import * as FileSystem from 'expo-file-system';
 import { useRoute } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
@@ -17,10 +16,10 @@ import { LinkPart, NewLessonContainer } from './NewLessonStyle';
 import ArchiveCard from '../../components/ArchiveCard/ArchiveCard';
 import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
-import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 import LinkIcon from '../../assets/input-link-icon.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 interface InputRef {
   getRawValue: () => string;
@@ -239,12 +238,12 @@ export default function NewLesson({ navigation }: any) {
   }
   const { width } = Dimensions.get('window');
   return (
-    <ScrollView
-      style={{ backgroundColor: '#f2f6fa', minHeight: '100%' }}
-      contentContainerStyle={{ minHeight: '100%' }}>
-      {' '}
-      <HeaderCustom font="inter-bold" text="Publicação" />
-      <NewLessonContainer>
+    <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Publicação' }}>
+      <ScrollView
+        style={{ backgroundColor: '#f2f6fa', minHeight: '100%' }}
+        contentContainerStyle={{ minHeight: '100%' }}>
+        {' '}
+        <NewLessonContainer>
         <NamePart>
           <Controller
             control={control}
@@ -383,7 +382,6 @@ export default function NewLesson({ navigation }: any) {
             ))}
             <ArchiveCard testID="btn-add-file" onClick={pickFile} />
           </ScrollView>
-          <Toast config={toastConfig} />
           <ButtonCustom
             testID="btn-publish"
             onPress={handleSubmit(onSubmit)}
@@ -393,7 +391,8 @@ export default function NewLesson({ navigation }: any) {
             rightIcon={<ArrowIcon />}
           />
         </LinkPart>
-      </NewLessonContainer>
-    </ScrollView>
+        </NewLessonContainer>
+      </ScrollView>
+    </ScreenWithHeader>
   );
 }

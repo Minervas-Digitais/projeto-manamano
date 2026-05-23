@@ -30,12 +30,10 @@ import {
   GroupPageTabs,
   GroupPageTabsContainer,
 } from './GroupPageStyle';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
 import PostCard from '../../components/PostCard/PostCard';
 import CategoryButton from '../../components/CategoryButton/CategoryButton';
 import LessonsCard from '../../components/LessonsCard/LessonsCard';
-import SideMenu from '../../components/SideMenu/SideMenu';
 import api from '../../services/api';
 import { storageHome } from '../Home/Home';
 import EventCard from '../../components/EventCard/EventCard';
@@ -43,6 +41,7 @@ import GroupArchives from '../../components/GroupArchives/GroupArchives';
 import NotificationIcon from '../../assets/notification-icon.svg';
 import AddPostIcon from '../../assets/add-post-icon.svg';
 import secureStorage from '../../services/secureStorage';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function GroupPage({ navigation }: any) {
   const route = useRoute();
@@ -55,7 +54,6 @@ export default function GroupPage({ navigation }: any) {
   const [filesSelect, setFilesSelect] = useState(false);
   const [filterPosts, setFilterPosts] = useState('Geral');
   const [filterFiles, setFilterFiles] = useState('Fotos');
-  const [sideMenu, setSideMenu] = useState(true);
   const [categories, setCategories] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
   const [archives, setArchives] = useState<any[]>([]);
@@ -356,77 +354,136 @@ export default function GroupPage({ navigation }: any) {
   }
 
   return (
-    <GroupPageContainer>
-      <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
-      <HeaderCustom
-        font="inter-bold"
-        text={groupName}
-        icon={<NotificationIcon />}
-        onPress={() => navigation.navigate('Notification')}
-        onPressTitle={() => navigation.navigate('GroupData', { groupId })}
-        menu
-      />
-      <GroupPageTabs style={style.line}>
-        <GroupPageTabsContainer
-          onPress={() => {
-            setClassesSelect(false);
-            setMuralSelect(true);
-            setFilesSelect(false);
-          }}
-          style={muralSelect ? style.selectStyleTab : {}}>
-          <GroupDataText font="inter-bold" size="18px" color={muralSelect ? '#EF4036' : '#8F8F8F'}>
-            Mural
-          </GroupDataText>
-        </GroupPageTabsContainer>
-        <GroupPageTabsContainer
-          onPress={() => {
-            setClassesSelect(true);
-            setMuralSelect(false);
-            setFilesSelect(false);
-          }}
-          style={classesSelect ? style.selectStyleTab : {}}>
-          <GroupDataText
-            font="inter-bold"
-            size="18px"
-            color={classesSelect ? '#EF4036' : '#8F8F8F'}>
-            Aulas
-          </GroupDataText>
-        </GroupPageTabsContainer>
-        <GroupPageTabsContainer
-          onPress={() => {
-            setClassesSelect(false);
-            setMuralSelect(false);
-            setFilesSelect(true);
-          }}
-          style={filesSelect ? style.selectStyleTab : {}}>
-          <GroupDataText font="inter-bold" size="18px" color={filesSelect ? '#EF4036' : '#8F8F8F'}>
-            Arquivos
-          </GroupDataText>
-        </GroupPageTabsContainer>
-      </GroupPageTabs>
-      <GroupPageContent>
-        {muralSelect ? (
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: 120 }}
-            onScroll={handleScroll}
-            scrollEventThrottle={400}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#EF4036']} />
-            }>
-            <GroupPageListFixPost>
-              {posts.length > 0 ? (
-                posts
-                  .filter((item: any) => item.isPinned)
-                  .slice()
-                  .reverse()
-                  .map((item: any) => {
-                    if (item.type === 'NORMAL') {
+    <ScreenWithHeader
+      headerProps={{
+        font: 'inter-bold',
+        text: groupName,
+        icon: <NotificationIcon />,
+        onPress: () => navigation.navigate('Notification'),
+        onPressTitle: () => navigation.navigate('GroupData', { groupId }),
+        menu: true,
+      }}>
+      <GroupPageContainer>
+        <GroupPageTabs style={style.line}>
+          <GroupPageTabsContainer
+            onPress={() => {
+              setClassesSelect(false);
+              setMuralSelect(true);
+              setFilesSelect(false);
+            }}
+            style={muralSelect ? style.selectStyleTab : {}}>
+            <GroupDataText
+              font="inter-bold"
+              size="18px"
+              color={muralSelect ? '#EF4036' : '#8F8F8F'}>
+              Mural
+            </GroupDataText>
+          </GroupPageTabsContainer>
+          <GroupPageTabsContainer
+            onPress={() => {
+              setClassesSelect(true);
+              setMuralSelect(false);
+              setFilesSelect(false);
+            }}
+            style={classesSelect ? style.selectStyleTab : {}}>
+            <GroupDataText
+              font="inter-bold"
+              size="18px"
+              color={classesSelect ? '#EF4036' : '#8F8F8F'}>
+              Aulas
+            </GroupDataText>
+          </GroupPageTabsContainer>
+          <GroupPageTabsContainer
+            onPress={() => {
+              setClassesSelect(false);
+              setMuralSelect(false);
+              setFilesSelect(true);
+            }}
+            style={filesSelect ? style.selectStyleTab : {}}>
+            <GroupDataText
+              font="inter-bold"
+              size="18px"
+              color={filesSelect ? '#EF4036' : '#8F8F8F'}>
+              Arquivos
+            </GroupDataText>
+          </GroupPageTabsContainer>
+        </GroupPageTabs>
+        <GroupPageContent>
+          {muralSelect ? (
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 120 }}
+              onScroll={handleScroll}
+              scrollEventThrottle={400}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={['#EF4036']}
+                />
+              }>
+              <GroupPageListFixPost>
+                {posts.length > 0 ? (
+                  posts
+                    .filter((item: any) => item.isPinned)
+                    .slice()
+                    .reverse()
+                    .map((item: any) => {
+                      if (item.type === 'NORMAL') {
+                        return (
+                          <PostCard
+                            key={item.id}
+                            userId={item.userId}
+                            nameUser={item.nameUser}
+                            getUserProfileImage={getUserProfileImage}
+                            postContent={item.input}
+                            numComments={item.numComments}
+                            date={formatRelativeDate(item.createdAt)}
+                            onPressFix={() => fixActions(item.id, item.isPinned)}
+                            onPressPost={() => onPressPostAction(item.id)}
+                            dotsMenu
+                            fix
+                            isSaved={savedPosts.includes(item.id)}
+                            postId={item.id}
+                          />
+                        );
+                      }
+                      return null;
+                    })
+                ) : (
+                  <View />
+                )}
+              </GroupPageListFixPost>
+              <GroupPageCategoryContainer>
+                <GroupDataText color="#4E4E4E" font="inter-semiBold" size="18px">
+                  Categorias
+                </GroupDataText>
+                <GroupPageCategoryList>
+                  {categories?.length > 0 ? (
+                    categories.map((item: any) => (
+                      <CategoryButton
+                        key={item.id || item.name}
+                        categoryName={item.name}
+                        onPress={() => {
+                          setFilterPosts(item.name);
+                        }}
+                        filter={filterPosts}
+                      />
+                    ))
+                  ) : (
+                    <View />
+                  )}
+                </GroupPageCategoryList>
+              </GroupPageCategoryContainer>
+              <GroupPagePostList>
+                {posts?.length > 0 ? (
+                  posts?.map((item: any) => {
+                    if (filterPosts === item.categoryName && item.type === 'NORMAL') {
                       return (
                         <PostCard
                           key={item.id}
-                          userId={item.userId}
                           nameUser={item.nameUser}
+                          userId={item.userId}
                           getUserProfileImage={getUserProfileImage}
                           postContent={item.input}
                           numComments={item.numComments}
@@ -434,173 +491,115 @@ export default function GroupPage({ navigation }: any) {
                           onPressFix={() => fixActions(item.id, item.isPinned)}
                           onPressPost={() => onPressPostAction(item.id)}
                           dotsMenu
-                          fix
                           isSaved={savedPosts.includes(item.id)}
                           postId={item.id}
                         />
                       );
                     }
+                    if (filterPosts === item.categoryName && item.type === 'EVENT') {
+                      return (
+                        <EventCard
+                          key={item.id}
+                          date={formatRelativeDate(item.createdAt)}
+                          title={item.title}
+                          description={item.input}
+                        />
+                      );
+                    }
                     return null;
                   })
-              ) : (
-                <View />
+                ) : (
+                  <View />
+                )}
+              </GroupPagePostList>
+
+              {loading && (
+                <View style={style.loadingContainer}>
+                  <ActivityIndicator size="large" color="#EF4036" />
+                </View>
               )}
-            </GroupPageListFixPost>
-            <GroupPageCategoryContainer>
-              <GroupDataText color="#4E4E4E" font="inter-semiBold" size="18px">
-                Categorias
-              </GroupDataText>
-              <GroupPageCategoryList>
-                {categories?.length > 0 ? (
-                  categories.map((item: any) => (
+
+              {!hasMore && posts.length > 0 && (
+                <View style={style.endMessage}>
+                  <GroupDataText color="#8F8F8F" size="14px" font="inter-regular">
+                    Não há mais publicações
+                  </GroupDataText>
+                </View>
+              )}
+            </ScrollView>
+          ) : classesSelect ? (
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 120 }}>
+              <GroupPageLessonsContainer style={{ paddingBottom: 0 }}>
+                {posts?.length > 0 ? (
+                  posts?.map((item: any) => {
+                    if (item.type === 'CLASS') {
+                      return (
+                        <LessonsCard
+                          key={item.id}
+                          date={formatDateTime(item.schedule)}
+                          title={item.title}
+                          urlLive={item.urlLive}
+                        />
+                      );
+                    }
+                    return null;
+                  })
+                ) : (
+                  <View />
+                )}
+              </GroupPageLessonsContainer>
+            </ScrollView>
+          ) : (
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }}>
+              <GroupPageLessonsContainer style={{ justifyContent: 'center', flexDirection: 'row' }}>
+                {fileCategory?.length > 0 ? (
+                  fileCategory?.map((item: any) => (
                     <CategoryButton
-                      key={item.id || item.name}
-                      categoryName={item.name}
+                      key={item.categoryName}
+                      categoryName={item.categoryName}
                       onPress={() => {
-                        setFilterPosts(item.name);
+                        setFilterFiles(item.categoryName);
                       }}
-                      filter={filterPosts}
+                      filter={filterFiles}
                     />
                   ))
                 ) : (
                   <View />
                 )}
-              </GroupPageCategoryList>
-            </GroupPageCategoryContainer>
-            <GroupPagePostList>
-              {posts?.length > 0 ? (
-                posts?.map((item: any) => {
-                  if (filterPosts === item.categoryName && item.type === 'NORMAL') {
+              </GroupPageLessonsContainer>
+              <GroupPageArchivesContainer>
+                {archives?.map((item: any) => {
+                  const fileType = getFileTypeFromMime(item.mimeType);
+                  if (filterFiles === fileType) {
                     return (
-                      <PostCard
+                      <GroupArchives
                         key={item.id}
-                        nameUser={item.nameUser}
-                        userId={item.userId}
-                        getUserProfileImage={getUserProfileImage}
-                        postContent={item.input}
-                        numComments={item.numComments}
-                        date={formatRelativeDate(item.createdAt)}
-                        onPressFix={() => fixActions(item.id, item.isPinned)}
-                        onPressPost={() => onPressPostAction(item.id)}
-                        dotsMenu
-                        isSaved={savedPosts.includes(item.id)}
-                        postId={item.id}
-                      />
-                    );
-                  }
-                  if (filterPosts === item.categoryName && item.type === 'EVENT') {
-                    return (
-                      <EventCard
-                        key={item.id}
-                        date={formatRelativeDate(item.createdAt)}
-                        title={item.title}
-                        description={item.input}
+                        archive={{
+                          id: item.id,
+                          name: item.name || 'Arquivo',
+                          uri: item.contentBase64,
+                          mimeType: item.mimeType || 'application/octet-stream',
+                        }}
                       />
                     );
                   }
                   return null;
-                })
-              ) : (
-                <View />
-              )}
-            </GroupPagePostList>
-
-            {loading && (
-              <View style={style.loadingContainer}>
-                <ActivityIndicator size="large" color="#EF4036" />
-              </View>
-            )}
-
-            {!hasMore && posts.length > 0 && (
-              <View style={style.endMessage}>
-                <GroupDataText color="#8F8F8F" size="14px" font="inter-regular">
-                  Não há mais publicações
-                </GroupDataText>
-              </View>
-            )}
-          </ScrollView>
-        ) : classesSelect ? (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 120 }}>
-            <GroupPageLessonsContainer style={{ paddingBottom: 0 }}>
-              {posts?.length > 0 ? (
-                posts?.map((item: any) => {
-                  if (item.type === 'CLASS') {
-                    return (
-                      <LessonsCard
-                        key={item.id}
-                        date={formatDateTime(item.schedule)}
-                        title={item.title}
-                        urlLive={item.urlLive}
-                      />
-                    );
-                  }
-                  return null;
-                })
-              ) : (
-                <View />
-              )}
-            </GroupPageLessonsContainer>
-          </ScrollView>
-        ) : (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }}>
-            <GroupPageLessonsContainer style={{ justifyContent: 'center', flexDirection: 'row' }}>
-              {fileCategory?.length > 0 ? (
-                fileCategory?.map((item: any) => (
-                  <CategoryButton
-                    key={item.categoryName}
-                    categoryName={item.categoryName}
-                    onPress={() => {
-                      setFilterFiles(item.categoryName);
-                    }}
-                    filter={filterFiles}
-                  />
-                ))
-              ) : (
-                <View />
-              )}
-            </GroupPageLessonsContainer>
-            <GroupPageArchivesContainer>
-              {archives?.map((item: any) => {
-                const fileType = getFileTypeFromMime(item.mimeType);
-                if (filterFiles === fileType) {
-                  return (
-                    <GroupArchives
-                      key={item.id}
-                      archive={{
-                        id: item.id,
-                        name: item.name || 'Arquivo',
-                        uri: item.contentBase64,
-                        mimeType: item.mimeType || 'application/octet-stream',
-                      }}
-                    />
-                  );
+                })}
+              </GroupPageArchivesContainer>
+            </ScrollView>
+          )}
+        </GroupPageContent>
+        {(muralSelect || (classesSelect && (userRole === 'ADMIN' || userRole === 'MODERATOR'))) && (
+          <GroupPageAddPostButton>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('groupId no GroupPage', groupId);
+                if (classesSelect) {
+                  navigation.navigate('NewLesson', { groupId });
+                } else {
+                  navigation.navigate('NewPost', { groupId });
                 }
-                return null;
-              })}
-            </GroupPageArchivesContainer>
-          </ScrollView>
-        )}
-      </GroupPageContent>
-      {(muralSelect || (classesSelect && (userRole === 'ADMIN' || userRole === 'MODERATOR'))) && (
-        <GroupPageAddPostButton>
-          <TouchableOpacity
-            onPress={() => {
-              console.log('groupId no GroupPage', groupId);
-              if (classesSelect) {
-                navigation.navigate('NewLesson', { groupId });
-              } else {
-                navigation.navigate('NewPost', { groupId });
-              }
-            }}
-            style={{
-              width: 70,
-              height: 70,
-              borderRadius: 35,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <LinearGradient
-              colors={['#1c1049', '#363061']}
+              }}
               style={{
                 width: 70,
                 height: 70,
@@ -608,12 +607,22 @@ export default function GroupPage({ navigation }: any) {
                 justifyContent: 'center',
                 alignItems: 'center',
               }}>
-              <AddPostIcon />
-            </LinearGradient>
-          </TouchableOpacity>
-        </GroupPageAddPostButton>
-      )}
-    </GroupPageContainer>
+              <LinearGradient
+                colors={['#1c1049', '#363061']}
+                style={{
+                  width: 70,
+                  height: 70,
+                  borderRadius: 35,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                <AddPostIcon />
+              </LinearGradient>
+            </TouchableOpacity>
+          </GroupPageAddPostButton>
+        )}
+      </GroupPageContainer>
+    </ScreenWithHeader>
   );
 }
 

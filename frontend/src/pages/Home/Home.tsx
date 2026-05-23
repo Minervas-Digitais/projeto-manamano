@@ -29,21 +29,20 @@ import {
   PostCardImageUser,
   PostCardSpaceBetween,
 } from '../../components/PostCard/PostCardStyle';
-import SideMenu from '../../components/SideMenu/SideMenu';
 import PostCard from '../../components/PostCard/PostCard';
 import secureStorage from '../../services/secureStorage';
-import localStorage from '../../services/localStorage';
 import api from '../../services/api';
 import MenuIcon from '../../assets/menu-white-icon.svg';
 import LupaIcon from '../../assets/lupa-white-icon.svg';
-import { AxiosError } from 'axios';
+import { useAuth } from '../../context/auth/useAuth';
+import { useSideMenu } from '../../context/SideMenuContext';
 
 export const storageHome = new MMKV();
 
 const POSTS_PER_PAGE = 15;
 
 export default function Home({ navigation }: any) {
-  const [sideMenu, setSideMenu] = useState(true);
+  const { toggleMenu } = useSideMenu();
   const defaultAvatar = require('../../assets/user-profile.png');
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
@@ -63,10 +62,10 @@ export default function Home({ navigation }: any) {
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
 
+  const { accessToken, loggedId } = useAuth();
+
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
       if (loggedId && accessToken) {
         setAccessTokenState(accessToken);
         setLoggedIdState(loggedId);
@@ -83,7 +82,7 @@ export default function Home({ navigation }: any) {
 
         // Buscar grupos (sem posts)
         api
-          .get(`participant/groups/`, {
+          .get('participant/groups/', {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -118,7 +117,7 @@ export default function Home({ navigation }: any) {
       if (isInitial) setInitialLoading(true);
 
       try {
-        const response = await api.get(`participant/groups/posts`, {
+        const response = await api.get('participant/groups/posts', {
           params: {
             page: pageNumber,
             limit: POSTS_PER_PAGE,
@@ -314,11 +313,10 @@ export default function Home({ navigation }: any) {
   return (
     <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
       <StatusBar />
-      <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <HomeContainerInfo>
         <PostCardSpaceBetween>
           <PostCardIcons>
-            <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
+            <TouchableOpacity onPress={toggleMenu}>
               <MenuIcon />
             </TouchableOpacity>
           </PostCardIcons>

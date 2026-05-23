@@ -3,11 +3,11 @@ import styled from 'styled-components/native';
 
 export const HeaderContainer = styled.View`
   flex-direction: row;
-  height: 10%;
+  height: 72px;
   background-color: #f2f6fa;
   justify-content: space-between;
   align-items: center;
-  padding: 25px;
+  padding: 16px 25px;
   ${Platform.select({
     ios: `
       shadow-color: rgba(141, 140, 140, 1);
