@@ -21,6 +21,7 @@ model User {
   expertise             String?
   enterprise            String?
   bio                   String?
+  refreshToken  String? 
  
   profilePictureId      String?        @unique
   profilePicture        Archive?       @relation("UserProfilePicture", fields: [profilePictureId], references: [id], onDelete: SetNull)

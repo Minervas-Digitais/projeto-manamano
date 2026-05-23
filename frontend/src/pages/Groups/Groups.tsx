@@ -6,18 +6,20 @@ import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
 import AddButton from '../../components/AddButton/AddButton';
-import secureStorage from '../../services/secureStorage';
 import ShowPopup from '../../components/GroupPopup/GroupPopup';
 import api from '../../services/api';
 import Add from '../../assets/add-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function Groups() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Use navigation instance
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
+
+  const { accessToken, loggedId } = useAuth();
 
   const [showPopup, setShowPopup] = useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -26,14 +28,11 @@ export default function Groups() {
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
-        // Retrieve the access token from storage
-        const token = await secureStorage.getItem('accessToken');
-        const loggedId = await secureStorage.getItem('loggedId');
-        if (loggedId && token) {
+        if (loggedId && accessToken) {
           api
             .get('participant/groups/', {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             })
             .then((res: any) => {
@@ -46,13 +45,11 @@ export default function Groups() {
         console.log(groups);
 
         // Fetch user information to check the "tipo"
-        if (token) {
+        if (accessToken) {
           try {
-            const userId = await secureStorage.getItem('loggedId');
-
-            const { data: fetchedUserData } = await api.get(`/user/${userId}`, {
+            const { data: fetchedUserData } = await api.get(`/user/${loggedId}`, {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             });
             setUserData(fetchedUserData);

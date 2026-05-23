@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable global-require */
-import { StatusBar } from 'react-native';
+import { ActivityIndicator, StatusBar, View } from 'react-native';
 import React, { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import * as Application from 'expo-application';
@@ -13,32 +13,39 @@ import {
   WelcomeContainer,
 } from './WelcomeStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 import api from '../../services/api';
 
 export default function WelcomeScreen({ navigation }: any) {
+  const { accessToken, isLoading, loggedId } = useAuth();
+
   useEffect(() => {
     async function checkAppVersion() {
-      const build = Number(Application.nativeBuildVersion);
+      try {
+        const build = Number(Application.nativeBuildVersion);
 
-      const res = await api.get(`http://localhost:3000/version/check?build=${build}`);
+        const res = await api.get(`/version/check?build=${build}`);
 
-      if (res.data.update) {
-        console.log('Tem que atualizar');
+        if (res.data.update) {
+          console.log('Tem que atualizar');
+        }
+      } catch (error) {
+        console.log(error);
       }
     }
 
     const checkAuth = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
       if (loggedId && accessToken) {
-        navigation.navigate('Home');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
       }
     };
 
     checkAppVersion();
     checkAuth();
-  }, [navigation]);
+  }, [navigation, loggedId, accessToken]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -46,8 +53,13 @@ export default function WelcomeScreen({ navigation }: any) {
     'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
   });
 
-  if (!fontsLoaded) {
-    return undefined;
+  if (!fontsLoaded || isLoading) {
+    // trocar por uma splash screen depois
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#EF4036" />
+      </View>
+    );
   }
 
   return (

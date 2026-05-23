@@ -35,6 +35,7 @@ import GlobalNotificationPage from './src/pages/GlobalNotificationPage/GlobalNot
 import Groups from './src/pages/Groups/Groups';
 import { useNotifications } from './src/hooks/useNotification';
 import { SavedPostsProvider } from './src/context/SavedPostsContext';
+import { AuthProvider } from './src/context/auth/AuthProvider';
 import { SideMenuProvider, useSideMenu } from './src/context/SideMenuContext';
 import { toastConfig } from './src/components/Toast/ToastConfig';
 
@@ -70,16 +71,8 @@ function AppNavigator({ linking }: { linking: any }) {
         <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
 
         <Stack.Screen name="Post" component={Post} options={{ headerShown: false }} />
-        <Stack.Screen
-          name="EntrarGrupo"
-          component={EnterGroup}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="EditProfile"
-          component={EditProfile}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="EntrarGrupo" component={EnterGroup} options={{ headerShown: false }} />
+        <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />
         <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
         <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
         <Stack.Screen
@@ -97,11 +90,7 @@ function AppNavigator({ linking }: { linking: any }) {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="SideMenu" component={SideMenu} options={{ headerShown: false }} />
-        <Stack.Screen
-          name="CreateGroup"
-          component={CreateGroup}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
         <Stack.Screen name="GroupData" component={GroupData} options={{ headerShown: false }} />
         <Stack.Screen name="About" component={About} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={Home} options={{ headerShown: false }} />
@@ -163,11 +152,13 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SavedPostsProvider>
-        <SideMenuProvider>
-          <AppNavigator linking={linking} />
-        </SideMenuProvider>
-      </SavedPostsProvider>
+      <AuthProvider>
+        <SavedPostsProvider>
+          <SideMenuProvider>
+            <AppNavigator linking={linking} />
+          </SideMenuProvider>
+        </SavedPostsProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
