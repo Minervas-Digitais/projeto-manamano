@@ -2,3 +2,5 @@ backend/.env
 .env
 database/
 backend/node_modules/
+
+tests/

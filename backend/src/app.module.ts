@@ -12,6 +12,7 @@ import { SearchModule } from './search/search.module';
 import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
 import { ArchiveModule } from './archive/archive.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ArchiveModule } from './archive/archive.module';
     SearchModule,
     NotificationModule,
     ArchiveModule,
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
