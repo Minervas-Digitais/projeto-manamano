@@ -1,10 +1,11 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "./node_modules/expo/tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react",
     "strict": true,
     "esModuleInterop": true,
-    "lib": ["ES2020"]
+    "lib": ["ES2020"],
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "src",

@@ -1,4 +1,4 @@
-import { PrismaClient, PostType, UserRole } from '@prisma/client';
+import { PrismaClient, PostType, UserRole, Prisma } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
@@ -133,7 +133,6 @@ async function main() {
       Array.from({ length: faker.number.int({ min: 2, max: 4 }) }).map(
         async (_, fileIndex) => {
           const imageUrl = `https://picsum.photos/200?random=${postIndex * 10 + fileIndex}`;
-
           const base64 = await fetchImageBase64(imageUrl);
 
           return prisma.archive.create({
@@ -142,7 +141,7 @@ async function main() {
               mimeType: 'image/jpeg',
               contentBase64: base64,
               postId: post.id,
-            },
+            } as Prisma.ArchiveUncheckedCreateInput,
           });
         },
       ),

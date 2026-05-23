@@ -26,6 +26,7 @@ import ConfigIcon from '../../assets/config-icon.svg';
 import OutIcon from '../../assets/out-icon.svg';
 import NotificationIcon2 from '../../assets/notification-unread-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
+import secureStorage from '../../services/secureStorage';
 
 export default function SideMenu({ display, onPress }: any) {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -48,6 +49,14 @@ export default function SideMenu({ display, onPress }: any) {
   if (!fontsLoaded) {
     return undefined;
   }
+
+  const handleLogout = async () => {
+    await secureStorage.removeItem('accessToken');
+    await secureStorage.removeItem('loggedId');
+
+    navigation.navigate('WelcomeScreen');
+  };
+
   return (
     <SideMenuPage display={display}>
       <SideMenuContainer style={{ paddingBottom: containerPaddingBottom }}>
@@ -111,7 +120,7 @@ export default function SideMenu({ display, onPress }: any) {
             icon={<OutIcon width={24} height={24} />}
             text="Sair"
             font="inter-bold"
-            onPress={() => handleNavigate('WelcomeScreen')}
+            onPress={handleLogout}
             color="#EF4036"
           />
         </SideMenuBottomOptionsContainer>

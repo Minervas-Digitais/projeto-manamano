@@ -1,439 +1,151 @@
-import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { PrismaService } from 'src/prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
-import { NotificationType, RoleType, UserRole } from '@prisma/client';
-import { CreateGroupDto } from 'src/group/dto/create-group.dto';
-import { CreatePostDto } from 'src/post/dto/create-post.dto';
-import { PostType } from '@prisma/client';
+import { PostType, UserRole } from '@prisma/client';
+import { hash } from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { AuthService } from 'src/auth/auth.service';
-import { CreateParticipantDto } from 'src/participant/dto/create-participant.dto';
-import { CreateNotificationDto } from 'src/notification/dto/create-notification.dto';
-import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
-const DEFAULT_PASSWORD = 'password123';
+const password = 'password123';
 
-export async function getUserToken(
-  authService: AuthService,
-  prisma: PrismaService,
-  email: string = 'testuser@example.com',
-  phone: string = '1234567890',
-  name: string = 'Test User',
-) {
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-  });
+/**
+ * Cria um usuário de teste no banco.
+ */
+export async function createUser(prisma: PrismaService, overrides = {}) {
+  const number = randomUUID();
+  const email = `${randomUUID()}@test.com`;
 
-  if (!existingUser) {
-    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-    await prisma.user.create({
-      data: {
-        fullName: name,
-        email,
-        phone: phone,
-        hash: hashedPassword,
-      },
-    });
-  }
+  const hashedPassword = await hash(password, 10);
 
-  const loginResponse = await authService.login({
-    email,
-    password: DEFAULT_PASSWORD,
-  });
-
-  return loginResponse.accessToken;
-}
-
-export async function getAdminToken(
-  authService: AuthService,
-  prisma: PrismaService,
-) {
-  const email = 'admin@example.com';
-
-  const existingAdmin = await prisma.user.findUnique({
-    where: { email },
-  });
-
-  if (!existingAdmin) {
-    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-
-    await prisma.user.create({
-      data: {
-        fullName: 'Admin User',
-        email,
-        phone: '1111111111',
-        hash: hashedPassword,
-        sysRole: RoleType.ADMIN,
-      },
-    });
-  }
-
-  const loginResponse = await authService.login({
-    email,
-    password: 'password123',
-  });
-
-  return loginResponse.accessToken;
-}
-
-export async function getSenderToken(
-  authService: AuthService,
-  prisma: PrismaService,
-): Promise<string | null> {
-  const email = 'testsender@example.com';
-  const phone = '1234567892';
-
-  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-
-  await prisma.user.upsert({
-    where: { email },
-    update: {},
-    create: {
-      fullName: 'TestSenderUser',
+  return prisma.user.create({
+    data: {
+      fullName: 'Test User',
       email,
-      phone,
+      phone: number,
       hash: hashedPassword,
+      ...overrides,
     },
   });
-
-  const loginResponse = await authService.login({
-    email,
-    password: DEFAULT_PASSWORD,
-  });
-
-  return loginResponse.accessToken;
 }
 
-export async function getRecipientToken(
-  authService: AuthService,
+/**
+ * Cria usuário e retorna { user, token }.
+ */
+export async function createUserWithToken(
   prisma: PrismaService,
-): Promise<string | null> {
-  const email = 'testrecipient@example.com';
-  const phone = '1234567231523541';
-
-  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-
-  await prisma.user.upsert({
-    where: { email },
-    update: {},
-    create: {
-      fullName: 'TestRecipientUser',
-      email,
-      phone,
-      hash: hashedPassword,
-    },
-  });
-
-  const loginResponse = await authService.login({
-    email,
-    password: DEFAULT_PASSWORD,
-  });
-
-  return loginResponse?.accessToken || null;
-}
-
-export async function createTestGroup(
-  prisma: PrismaService,
-  name: string = 'Test Group',
+  auth: AuthService,
+  overrides = {},
 ) {
-  const existingGroup = await prisma.group.findFirst({
-    where: {
-      name: name,
-    },
+  const user = await createUser(prisma, overrides);
+
+  const { accessToken } = await auth.login({
+    email: user.email,
+    password,
   });
 
-  if (existingGroup != null) {
-    const stillExists = await prisma.group.findUnique({
-      where: { id: existingGroup.id },
-    });
-    if (stillExists) {
-      return stillExists.id;
-    }
-  }
-
-  const newGroup = await prisma.group.create({
-    data: {
-      name: name,
-      description: 'Descrição teste',
-      inviteCode: String(await generateUniqueInviteCode(prisma)),
-    } as CreateGroupDto,
-  });
-
-  const persisted = await prisma.group.findUnique({
-    where: { id: newGroup.id },
-  });
-  if (!persisted) throw new Error('Grupo não foi persistido corretamente');
-
-  return newGroup.id;
-}
-
-export async function createTestCategory(
-  prisma: PrismaService,
-  groupId: string,
-) {
-  const existingCategory = await prisma.category.findFirst({
-    where: {
-      groupId,
-    },
-  });
-
-  if (existingCategory != null) {
-    return existingCategory.id;
-  }
-
-  const newCategory = await prisma.category.create({
-    data: {
-      name: 'Teste Category',
-      type: PostType.NORMAL,
-      groupId,
-    },
-  });
-
-  return newCategory.id;
-}
-
-export async function createPostDto(
-  prisma: PrismaService,
-  overrides: Partial<CreatePostDto> = {},
-): Promise<CreatePostDto> {
-  const groupId = await createTestGroup(prisma);
-
-  const categoryId =
-    overrides.categoryId || (await createTestCategory(prisma, groupId));
-
-  const defaultDto: CreatePostDto = {
-    title: 'Post Teste',
-    input: 'Teste',
-    type: PostType.NORMAL,
-    groupId,
-    categoryId,
-    isPinned: false,
-    urlLive: undefined,
-    urlRecorded: undefined,
-    schedule: undefined,
-    ...overrides,
+  return {
+    user,
+    token: accessToken,
   };
-
-  return defaultDto;
 }
 
-export async function createTestPost(
+/**
+ * Cria uma categoria vinculada a um grupo
+ */
+export async function createCategory(
   prisma: PrismaService,
-  overrides: Partial<CreatePostDto> = {},
+  data: Partial<{ name: string; type: PostType; groupId: string }> = {},
 ) {
-  const post: CreatePostDto = await createPostDto(prisma, overrides);
-  const userId = await createTestUser(prisma);
-  const existingPost = await prisma.post.findFirst({
-    where: { title: post.title },
+  return prisma.category.create({
+    data: {
+      name: data.name ?? 'Test Category',
+      type: data.type ?? PostType.NORMAL,
+      groupId: data.groupId!,
+    },
   });
-
-  if (existingPost) {
-    return existingPost.id;
-  }
-  const newPost = await prisma.post.create({
-    data: { ...post, userId },
-  });
-
-  return newPost.id;
 }
 
-export async function createUserDto(
-  overrides: Partial<CreateUserDto> = {},
-): Promise<CreateUserDto> {
-  const defaultDto = {
-    fullName: 'Teste User',
-    email: 'testEmail@gmail.com',
-    hash: DEFAULT_PASSWORD,
-    phone: '123456789',
-    ...overrides,
-  } as CreateUserDto;
-
-  return defaultDto;
+/**
+ * Cria um grupo.
+ */
+export async function createGroup(prisma: PrismaService, overrides = {}) {
+  return prisma.group.create({
+    data: {
+      name: 'Test Group',
+      inviteCode: Math.random().toString(36).slice(2, 10),
+      ...overrides,
+    },
+  });
 }
 
-export async function createTestUser(
+/**
+ * Cria um post de teste
+ */
+export async function createPost(
   prisma: PrismaService,
-  phone: string = '1234567891',
-  email: string = 'testeuser@example.com',
+  data: Partial<{
+    input: string;
+    title: string;
+    type: PostType;
+    userId: string;
+    groupId: string;
+    categoryId: string;
+    schedule: string;
+    urlLive: string;
+    urlRecorded: string;
+    isPinned: boolean;
+  }> = {},
 ) {
-  const existingUser = await prisma.user.findFirst({
-    where: {
-      OR: [{ phone }, { email }],
-    },
-  });
-
-  if (existingUser) return existingUser.id;
-
-  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-  const newUser = await prisma.user.create({
+  return prisma.post.create({
     data: {
-      fullName: 'Teste User',
-      email: email,
-      hash: hashedPassword,
-      phone,
+      input: data.input ?? 'Test content',
+      title: data.title,
+      type: data.type ?? PostType.NORMAL,
+      userId: data.userId!,
+      groupId: data.groupId!,
+      categoryId: data.categoryId!,
+      schedule: data.schedule ? new Date(data.schedule) : undefined,
+      urlLive: data.urlLive,
+      urlRecorded: data.urlRecorded,
+      isPinned: data.isPinned ?? false,
     },
   });
-
-  return newUser.id;
 }
 
-export async function createTestArchive(
-  prisma: PrismaService,
-  group_id: string = null,
-  post_id: string = null,
-) {
-  const name = 'testearchivename123';
-
-  const existingArchive = await prisma.archive.findFirst({
-    where: { name },
-  });
-
-  if (existingArchive != null) {
-    return existingArchive.id;
-  }
-
-  const user_id = await createTestUser(prisma);
-
-  if (post_id == null) {
-    post_id = await createTestPost(prisma);
-  }
-
-  if (group_id == null) {
-    group_id = await createTestGroup(prisma);
-  }
-
-  const newArchive = await prisma.archive.create({
-    data: {
-      name: name,
-      mimeType: 'text',
-      contentBase64: 'stringembase64aaa',
-      userId: user_id,
-      groupId: group_id,
-      postId: post_id,
-    },
-  });
-
-  return newArchive.id;
-}
-
-export async function deleteAllTestArchives(prisma: PrismaService) {
-  const deleted = await prisma.archive.deleteMany({
-    where: { name: 'testearchivename123' },
-  });
-}
-
-export async function createParticipantDto(prisma: PrismaService) {
-  const groupId = await createTestGroup(prisma);
-
-  const fullGroup = await prisma.group.findUnique({
-    where: { id: groupId },
-  });
-
-  const dto: CreateParticipantDto = {
-    inviteCode: fullGroup.inviteCode,
-  };
-
-  return [dto, groupId];
-}
-
-export async function createTestParticipant(prisma: PrismaService) {
-  const dtoRes = await createParticipantDto(prisma);
-  const dto = dtoRes[0];
-  const groupId: string = String(dtoRes[1]);
-  const number = Array.from({ length: 10 }, () =>
-    Math.floor(Math.random() * 10),
-  ).join('');
-  const userId = await createTestUser(
-    prisma,
-    number,
-    String(number) + '@gmail.com',
-  );
-
-  const participant = await prisma.participant.create({
-    data: {
-      role: UserRole.STUDENT,
-      groupId: groupId,
-      userId,
-    },
-  });
-  return participant;
-}
-
-async function generateInviteCode(length: number = 8) {
-  const characters =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  const charactersLength = characters.length;
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-}
-
-async function isInviteCodeUnique(
-  inviteCode: string,
-  prismaService: PrismaService,
-) {
-  try {
-    const group = await prismaService.group.findUnique({
-      where: { inviteCode },
-    });
-    return !group;
-  } catch (error) {
-    return error;
-  }
-}
-
-async function generateUniqueInviteCode(
-  prismaService: PrismaService,
-  length: number = 8,
-) {
-  try {
-    let inviteCode: string;
-    let isUnique = false;
-
-    do {
-      inviteCode = await generateInviteCode(length);
-      isUnique = await isInviteCodeUnique(inviteCode, prismaService);
-    } while (!isUnique);
-
-    return inviteCode;
-  } catch (error) {
-    return error;
-  }
-}
-
+/**
+ * Retorna o ID de uma notificação
+ */
 export async function getNotificationId(
-  app: INestApplication,
-  authService: AuthService,
   prisma: PrismaService,
+  senderId: string,
+  recipientId: string,
 ) {
-  const recipientUser = await prisma.user.findUnique({
-    where: { email: 'testrecipient@example.com' },
+  const notification = await prisma.notification.create({
+    data: {
+      senderId,
+      recipientId,
+      body: 'teste',
+      type: 'COMMENT',
+    },
   });
 
-  const senderToken = await getSenderToken(authService, prisma);
-  const senderUser = await prisma.user.findUnique({
-    where: { email: 'testuser@example.com' },
+  return notification.id;
+}
+
+/**
+ * Coloca o usuario como participante de um grupo
+ */
+export async function createParticipant(
+  prisma: PrismaService,
+  data: {
+    userId: string;
+    groupId: string;
+    role?: UserRole;
+  },
+) {
+  return prisma.participant.create({
+    data: {
+      role: data.role ?? UserRole.STUDENT,
+      userId: data.userId,
+      groupId: data.groupId,
+    },
   });
-
-  if (!senderUser || !recipientUser) {
-    throw new Error('Usuário sender ou recipient não encontrado no banco');
-  }
-
-  const notificationDTO: CreateNotificationDto = {
-    body: 'bodyTeste',
-    recipientId: recipientUser.id,
-    type: NotificationType.COMMENT,
-    groupName: 'groupTeste',
-    senderName: 'senderTeste',
-  };
-
-  const response = await request(app.getHttpServer())
-    .post('/notifications')
-    .set('Authorization', 'Bearer ' + senderToken)
-    .send(notificationDTO)
-    .expect(201);
-
-  return response.body.id;
 }

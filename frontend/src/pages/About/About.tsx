@@ -7,14 +7,14 @@ import DevMemberCard from '../../components/DevMemberCard/DevMemberCard';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function About() {
-  const rayaneDomingosDev = require('../../assets/rayaneDomingos.png');
-  const pedroMateusDev = require('../../assets/pedroMateus.png');
-  const mellaniePereiraDev = require('../../assets/mellaniePereira.png');
-  const nicolasBastosDev = require('../../assets/nicolasBastos.png');
-  const talesMoreiraDev = require('../../assets/talesMoreira.png');
-  const jhonataMonteiroDev = require('../../assets/jhonataMonteiro.png');
-  const guilhermeSobreiraDev = require('../../assets/guilhermeSobreira.png');
-  const thiagoBarcellosDev = require('../../assets/thiagoBarcellos.jpg');
+  const rayaneDomingosDev = require('../../assets/rayane-domingos.png');
+  const pedroMateusDev = require('../../assets/pedro-mateus.png');
+  const mellaniePereiraDev = require('../../assets/mellanie-pereira.png');
+  const nicolasBastosDev = require('../../assets/nicolas-bastos.png');
+  const talesMoreiraDev = require('../../assets/tales-moreira.png');
+  const jhonataMonteiroDev = require('../../assets/jhonata-monteiro.png');
+  const guilhermeSobreiraDev = require('../../assets/guilherme-sobreira.png');
+  const thiagoBarcellosDev = require('../../assets/thiago-barcellos.jpg');
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),

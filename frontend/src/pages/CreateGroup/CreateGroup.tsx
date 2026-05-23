@@ -120,16 +120,8 @@ export default function CreateGroup() {
         text2: `Grupo criado com sucesso! ID: ${groupId}`,
       });
 
-      const defaultCategories = [
-        { name: 'Geral', type: 'NORMAL' },
-        { name: 'Avisos', type: 'NORMAL' },
-        { name: 'Eventos', type: 'EVENT' },
-        { name: 'Aulas', type: 'CLASS' },
-      ];
-
       // Create all categories in parallel for better performance
       const allCategoryPromises = [
-        ...defaultCategories.map(({ name, type }) => createCategory(name, type, groupId)),
         ...categories.map((category) => createCategory(category, 'NORMAL', groupId)),
       ];
 
@@ -142,6 +134,7 @@ export default function CreateGroup() {
         text2: 'Falha ao criar grupo ou categoria',
       });
     }
+    navigation.goBack();
   };
 
   if (!fontsLoaded) {

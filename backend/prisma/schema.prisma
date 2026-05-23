@@ -137,6 +137,7 @@ model Archive {
   name          String
   mimeType      String
   contentBase64 String
+  type          String?
   userId        String?
   groupId       String?
   postId        String?

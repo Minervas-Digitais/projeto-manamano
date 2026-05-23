@@ -18,7 +18,7 @@ import SaveIcon from '../../assets/save-icon.svg';
 import SavedIcon from '../../assets/saved-icon.svg';
 import CommentIcon from '../../assets/comment-icon.svg';
 import FixIcon from '../../assets/fix-icon.svg';
-import DotsMenuIcon from '../../assets/dotsMenu-icon.svg';
+import DotsMenuIcon from '../../assets/dots-menu-icon.svg';
 import { useSavedPosts } from '../../context/SavedPostsContext';
 
 const defaultAvatar = require('../../assets/user-profile.png');

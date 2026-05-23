@@ -5,147 +5,227 @@ import { CreateArchiveDto } from 'src/archive/dto/archive.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import request from 'supertest';
 import {
-  createTestGroup,
-  createTestUser,
-  createTestArchive,
-  createTestPost,
-  deleteAllTestArchives,
+  createCategory,
+  createGroup,
+  createPost,
+  createUserWithToken,
 } from './test-helpers';
+import { AuthService } from 'src/auth/auth.service';
+import { AuthModule } from 'src/auth/auth.module';
 
 describe('Archive', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
+  let authService: AuthService;
+
+  let user: any;
+  let userToken: string;
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [ArchiveModule],
+      imports: [ArchiveModule, AuthModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
+
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
+    authService = moduleFixture.get<AuthService>(AuthService);
 
     await app.init();
+
+    const userResult = await createUserWithToken(prismaService, authService);
+    user = userResult.user;
+    userToken = userResult.token;
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   describe('uploadArquivo', () => {
     it('deve fazer o upload do arquivo', async () => {
-      const user_id = await createTestUser(prismaService);
-      const group_id = await createTestGroup(prismaService);
+      const group = await createGroup(prismaService);
 
-      const archiveDTO: CreateArchiveDto = {
-        name: 'testearchivename123',
-        mimeType: 'text',
-        contentBase64: 'stringembase64aaa',
-        type: 'text/plain',
-        userId: user_id,
-        groupId: group_id,
+      const dto: CreateArchiveDto = {
+        name: 'arquivo-teste',
+        mimeType: 'text/plain',
+        contentBase64: 'base64string',
+        groupId: group.id,
+        type: 'IMAGE',
       };
 
-      const response = await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/archives')
-        .send(archiveDTO);
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(dto);
 
-      expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('id');
-      expect(response.body).toHaveProperty('name');
-      expect(response.body).toHaveProperty('mimeType');
-      expect(response.body).toHaveProperty('userId');
-      expect(response.body).toHaveProperty('groupId');
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('id');
+      expect(res.body.name).toBe(dto.name);
+      expect(res.body.type).toBe(dto.type);
+      expect(res.body.userId).toBe(user.id);
+      expect(res.body.groupId).toBe(group.id);
     });
 
-    it('deve retornar erro 400 caso os campos forem invalidos', async () => {
-      const archiveDTO: CreateArchiveDto = {
-        name: 123 as any,
-        mimeType: 123 as any,
-        contentBase64: 123 as any,
-        type: 123 as any,
-        userId: 123 as any,
-        groupId: 123 as any,
-      };
-      const response = await request(app.getHttpServer())
+    it('deve retornar 400 para payload inválido', async () => {
+      const res = await request(app.getHttpServer())
         .post('/archives')
-        .send(archiveDTO);
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          name: 123,
+          mimeType: false,
+        });
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe('Bad Request');
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 401 sem token', async () => {
+      const res = await request(app.getHttpServer()).post('/archives').send({});
+
+      expect(res.status).toBe(401);
     });
   });
 
   describe('getArchive', () => {
     it('deve retornar um arquivo', async () => {
-      // criar arquivo
-      const archive_id = await createTestArchive(prismaService);
-      // procurar arquivo pela request
-      const response = await request(app.getHttpServer()).get(
-        `/archives/${archive_id}`,
-      );
-      // checar se veio o esperado
-      expect(response.status).toBe(200);
-      expect(response.body.id).toEqual(archive_id);
+      const group = await createGroup(prismaService);
+
+      const archive = await prismaService.archive.create({
+        data: {
+          name: 'file',
+          mimeType: 'text/plain',
+          contentBase64: 'base64',
+          type: 'text/plain',
+          userId: user.id,
+          groupId: group.id,
+        },
+      });
+
+      const res = await request(app.getHttpServer())
+        .get(`/archives/${archive.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(archive.id);
+      expect(res.body.type).toBe('text/plain');
     });
 
-    it('deve retornar erro se o id for invalido', async () => {
-      const invalid_id = -1;
+    it('deve retornar 404 se não existir', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/archives/id-invalido')
+        .set('Authorization', `Bearer ${userToken}`);
 
-      const response = await request(app.getHttpServer()).get(
-        `/archives/${invalid_id}`,
-      );
-      expect(response.status).toBe(404);
-      expect(response.body.message).toEqual('Archive not found');
+      expect(res.status).toBe(404);
     });
   });
 
   describe('getArchivesByPostId', () => {
-    it('deve retornar um arquivo referente ao post_id', async () => {
-      const _ = await deleteAllTestArchives(prismaService);
-      // pegar um post_id valido
-      const post_id = await createTestPost(prismaService);
-      const group_id = await createTestGroup(prismaService);
-      // fazer o upload de um arquivo usando esse post_id
-      const archive_id = await createTestArchive(
-        prismaService,
-        group_id,
-        post_id,
-      );
-      // fazer a request
-      const response = await request(app.getHttpServer()).get(
-        `/archives/post/${post_id}`,
-      );
-      // checar se veio o esperado
-      expect(response.status).toBe(200);
-      expect(response.body[0].id).toEqual(archive_id);
+    it('deve retornar arquivos do post', async () => {
+      const group = await createGroup(prismaService);
+
+      const category = await createCategory(prismaService, {
+        groupId: group.id,
+      });
+
+      const post = await createPost(prismaService, {
+        userId: user.id,
+        groupId: group.id,
+        categoryId: category.id,
+      });
+
+      const archive = await prismaService.archive.create({
+        data: {
+          name: 'file-post',
+          mimeType: 'text/plain',
+          contentBase64: 'base64',
+          type: 'text/plain',
+          userId: user.id,
+          groupId: group.id,
+          postId: post.id,
+        },
+      });
+
+      const res = await request(app.getHttpServer())
+        .get(`/archives/post/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0].id).toBe(archive.id);
     });
-    it('deve retornar um array vazio se o id for inválido', async () => {
-      const invalid_id = -1;
-      const response = await request(app.getHttpServer()).get(
-        `/archives/post/${invalid_id}`,
-      );
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual([]);
+
+    it('deve retornar array vazio se não houver arquivos', async () => {
+      const group = await createGroup(prismaService);
+
+      const category = await createCategory(prismaService, {
+        groupId: group.id,
+      });
+
+      const post = await createPost(prismaService, {
+        userId: user.id,
+        groupId: group.id,
+        categoryId: category.id,
+      });
+
+      const res = await request(app.getHttpServer())
+        .get(`/archives/post/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('deve retornar 404 se o post não existir', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/archives/post/id-invalido')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(404);
     });
   });
 
   describe('getArchivesByGroupId', () => {
-    it('deve retornar um arquivo referente ao group_id', async () => {
-      // pegar um group_id valido
-      const group_id = await createTestGroup(prismaService);
-      // fazer o upload de um arquivo usando esse group_id
-      const archive_id = await createTestArchive(prismaService, group_id);
-      // fazer a request
-      const response = await request(app.getHttpServer()).get(
-        `/archives/group/${group_id}`,
-      );
-      // checar se veio o esperado
-      expect(response.status).toBe(200);
-      expect(response.body[0].id).toEqual(archive_id);
+    it('deve retornar arquivos do grupo', async () => {
+      const group = await createGroup(prismaService);
+
+      const archive = await prismaService.archive.create({
+        data: {
+          name: 'file-group',
+          mimeType: 'text/plain',
+          contentBase64: 'base64',
+          type: 'text/plain',
+          userId: user.id,
+          groupId: group.id,
+        },
+      });
+
+      const res = await request(app.getHttpServer())
+        .get(`/archives/group/${group.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0].id).toBe(archive.id);
     });
-    it('deve retornar um erro se o id for invalido', async () => {
-      const invalid_id = -1;
-      const response = await request(app.getHttpServer()).get(
-        `/archives/group/${invalid_id}`,
-      );
-      expect(response.status).toBe(404);
-      expect(response.body.message).toEqual('No archives found for this group');
+
+    it('deve retornar array vazio se grupo não tiver arquivos', async () => {
+      const group = await createGroup(prismaService);
+
+      const res = await request(app.getHttpServer())
+        .get(`/archives/group/${group.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('deve retornar 404 se grupo não existir', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/archives/group/id-invalido')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(404);
     });
   });
 });

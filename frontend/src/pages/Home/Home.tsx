@@ -33,8 +33,8 @@ import PostCard from '../../components/PostCard/PostCard';
 import secureStorage from '../../services/secureStorage';
 import localStorage from '../../services/localStorage';
 import api from '../../services/api';
-import MenuIcon from '../../assets/menuWhite-icon.svg';
-import LupaIcon from '../../assets/lupaWhite-icon.svg';
+import MenuIcon from '../../assets/menu-white-icon.svg';
+import LupaIcon from '../../assets/lupa-white-icon.svg';
 import { AxiosError } from 'axios';
 import { useSideMenu } from '../../context/SideMenuContext';
 

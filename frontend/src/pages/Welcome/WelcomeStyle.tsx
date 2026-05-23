@@ -1,6 +1,6 @@
 import styled from 'styled-components/native';
 import Logo from '../../assets/logo-boas-vindas.svg';
-import manamanoPattern from '../../assets/Manamano-pattern-random.svg';
+import manamanoPattern from '../../assets/manamano-pattern-random.svg';
 
 export const RectContainer = styled.View`
   padding-top: 40px;

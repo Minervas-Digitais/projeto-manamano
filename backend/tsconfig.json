@@ -19,5 +19,6 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "isolatedModules": true
-  }
+  },
+  "include": ["src", "src/**/*.spec.ts", "src/**/*.e2e-spec.ts"]
 }
