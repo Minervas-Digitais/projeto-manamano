@@ -15,7 +15,7 @@ import {
   GroupDataLine,
   GroupDataButtonView,
 } from './GroupDataStyle';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import GroupMembers from '../../components/GroupMembers/GroupMembers';
 import secureStorage from '../../services/secureStorage';
@@ -170,14 +170,15 @@ export default function GroupData({ navigation }: any) {
     loggedUserParticipantRole === 'MODERATOR';
 
   return (
-    <GroupDataPage>
-      <HeaderCustom
-        font="inter-bold"
-        text="Dados do grupo"
-        icon={<NotificationIcon />}
-        onPress={() => navigation.navigate('Notification')}
-      />
-      <GroupDataScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+    <ScreenWithHeader
+      headerProps={{
+        font: 'inter-bold',
+        text: 'Dados do grupo',
+        icon: <NotificationIcon />,
+        onPress: () => navigation.navigate('Notification'),
+      }}>
+      <GroupDataPage>
+        <GroupDataScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         <GroupDataContainerInfo>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
             <GroupDataText color="#EF4036" font="inter-bold" size="20px">
@@ -323,5 +324,6 @@ export default function GroupData({ navigation }: any) {
         }}
       />
     </GroupDataPage>
+    </ScreenWithHeader>
   );
 }

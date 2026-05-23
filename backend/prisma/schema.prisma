@@ -152,6 +152,20 @@ model Archive {
 
 }
 
+model AppVersion {
+  id        String   @id @default(uuid())
+  version   String
+  build     Int
+  mandatory Boolean  @default(false)
+  easBuildId String
+  notes     String[]
+
+  isActive  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum PostType {
   NORMAL
   EVENT

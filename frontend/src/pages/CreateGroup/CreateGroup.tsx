@@ -16,8 +16,8 @@ import {
 import secureStorage from '../../services/secureStorage';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { RootStackParamList } from '../../navigation/types';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function CreateGroup() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -142,10 +142,10 @@ export default function CreateGroup() {
   }
 
   return (
-    <Container>
-      <HeaderCustom menu font="inter-bold" text="Criar Grupo" />
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1 }}>
-        <ContentContainer>
+    <ScreenWithHeader headerProps={{ menu: true, font: 'inter-bold', text: 'Criar Grupo' }}>
+      <Container>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1 }}>
+          <ContentContainer>
           <Text style={{ padding: 4, fontSize: 12, color: '#5E6366' }}>Nome do Grupo</Text>
           <Input
             value={groupName}
@@ -229,8 +229,9 @@ export default function CreateGroup() {
               testID="create-group-button"
             />
           </View>
-        </ContentContainer>
-      </ScrollView>
-    </Container>
+          </ContentContainer>
+        </ScrollView>
+      </Container>
+    </ScreenWithHeader>
   );
 }

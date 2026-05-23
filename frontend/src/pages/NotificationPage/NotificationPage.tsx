@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { Image, View } from 'react-native';
 import { useFonts } from 'expo-font';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { NotificationPageContainer } from './NotificationPageStyle';
 import {
   NotificationTextContainerWarning,
@@ -12,6 +11,7 @@ import {
 } from '../../components/NotificationCard/NotificationCardStyle';
 import localStorage from '../../services/localStorage';
 import MegaPhone from '../../assets/megaphone-icon.svg';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function NotificationPage() {
   useEffect(() => {
@@ -32,9 +32,7 @@ export default function NotificationPage() {
     return undefined;
   }
   return (
-    <>
-      <HeaderCustom font="inter-bold" text="Notificação" onPress={() => {}} />
-
+    <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Notificação' }}>
       <NotificationPageContainer>
         <View>
           <NotificationTextContainerWarning height="min-content" style={{}}>
@@ -46,6 +44,6 @@ export default function NotificationPage() {
           </NotificationTextContainerWarning>
         </View>
       </NotificationPageContainer>
-    </>
+    </ScreenWithHeader>
   );
 }

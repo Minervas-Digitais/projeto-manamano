@@ -25,7 +25,7 @@ import { HomePageBlue, HomePageWhite } from '../Home/HomeStyle';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
 import { GroupPageTabs } from '../GroupPage/GroupPageStyle';
 import PostCard from '../../components/PostCard/PostCard';
-import SideMenu from '../../components/SideMenu/SideMenu';
+import { useSideMenu } from '../../context/SideMenuContext';
 import Location from '../../assets/location-icon.svg';
 import ShareWhite from '../../assets/share-white-icon.svg';
 import MenuIcon from '../../assets/menu-white-icon.svg';
@@ -47,7 +47,7 @@ export default function Profile({ navigation, route }: any) {
     }
   };
 
-  const [sideMenu, setSideMenu] = useState(true);
+  const { toggleMenu } = useSideMenu();
 
   const [fullName, setFullName] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
@@ -206,10 +206,9 @@ export default function Profile({ navigation, route }: any) {
 
   return (
     <HomePageBlue>
-      <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
       <ProfileContainerInfo>
         <ProfileContainerButtons>
-          <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
+          <TouchableOpacity onPress={toggleMenu}>
             <MenuIcon />
           </TouchableOpacity>
           <TouchableOpacity onPress={onShare}>

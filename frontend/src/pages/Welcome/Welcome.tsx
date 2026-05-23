@@ -3,6 +3,7 @@
 import { ActivityIndicator, StatusBar, View } from 'react-native';
 import React, { useEffect } from 'react';
 import { useFonts } from 'expo-font';
+import * as Application from 'expo-application';
 import {
   ButtomContainer,
   LogoSVG,
@@ -13,20 +14,38 @@ import {
 } from './WelcomeStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { useAuth } from '../../context/auth/useAuth';
+import api from '../../services/api';
 
 export default function WelcomeScreen({ navigation }: any) {
-  const { accessToken, isLoading } = useAuth();
+  const { accessToken, isLoading, loggedId } = useAuth();
 
   useEffect(() => {
-    if (isLoading) return;
+    async function checkAppVersion() {
+      try {
+        const build = Number(Application.nativeBuildVersion);
 
-    if (accessToken) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Home' }],
-      });
+        const res = await api.get(`/version/check?build=${build}`);
+
+        if (res.data.update) {
+          console.log('Tem que atualizar');
+        }
+      } catch (error) {
+        console.log(error);
+      }
     }
-  }, [accessToken, isLoading, navigation]);
+
+    const checkAuth = async () => {
+      if (loggedId && accessToken) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      }
+    };
+
+    checkAppVersion();
+    checkAuth();
+  }, [navigation, loggedId, accessToken]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),

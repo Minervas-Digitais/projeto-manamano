@@ -3,7 +3,6 @@ import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
@@ -13,6 +12,7 @@ import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import ArrowIcon from '../../assets/arrow-icon.svg';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function GetInTouch() {
   const [loggedIdState, setLoggedIdState] = useState('');
@@ -64,65 +64,68 @@ export default function GetInTouch() {
     return undefined;
   }
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: '#f2f6fa',
-        display: loggedIdState && accessTokenState ? 'flex' : 'none',
-      }}>
-      <HeaderCustom font="inter-bold" text="Fale Conosco" />
-      <SignInForm>
-        <SignInInputContainer style={{ gap: 30 }}>
-          <Controller
-            control={control}
-            name="subject"
-            rules={{
-              required: true,
-            }}
-            render={({ field: { onChange, value } }) => (
-              <InputTextCustom
-                onChangeText={onChange}
-                value={value}
-                label="Assunto"
-                imageIcon={null}
-              />
-            )}
-          />
-          {errors.subject && <ErrorWarning errorText="Campo obrigatório" />}
-          <Controller
-            control={control}
-            name="getintouch"
-            rules={{
-              required: true,
-            }}
-            render={({ field: { onChange, value } }) => (
-              <BigInputTextCustom
-                onChangeText={onChange}
-                value={value}
-                label="Mensagem"
-                imageIcon={null}
-              />
-            )}
-          />
-          {errors.getintouch && <ErrorWarning errorText="Campo obrigatório" />}
-          <ButtonCustom
-            onPress={handleSubmit(onSubmit)}
-            backColor="#160E47"
-            fontColor="white"
-            text="Enviar"
-            rightIcon={ArrowIcon}
-          />
-          <RedText font="inter-regular">
-            * Sua mensagem será
-            <SemiBoldRedText font="inter-semibold"> encaminhada </SemiBoldRedText>
-            para o <SemiBoldRedText font="inter-semibold">e-mail do ManaMano.</SemiBoldRedText>{' '}
-            Portanto, caso necessário,{' '}
-            <SemiBoldRedText font="inter-semibold">
-              confira seu e-mail para obter respostas.{' '}
-            </SemiBoldRedText>
-          </RedText>
-        </SignInInputContainer>
-      </SignInForm>
-    </View>
+    <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Fale Conosco' }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#f2f6fa',
+          display: loggedIdState && accessTokenState ? 'flex' : 'none',
+        }}>
+        <SignInForm>
+          <SignInInputContainer style={{ gap: 30 }}>
+            <Controller
+              control={control}
+              name="subject"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, value } }) => (
+                <InputTextCustom
+                  onChangeText={onChange}
+                  value={value}
+                  label="Assunto"
+                  imageIcon={null}
+                />
+              )}
+            />
+            {errors.subject && <ErrorWarning errorText="Campo obrigatório" />}
+            <Controller
+              control={control}
+              name="getintouch"
+              rules={{
+                required: true,
+              }}
+              render={({ field: { onChange, value } }) => (
+                <BigInputTextCustom
+                  onChangeText={onChange}
+                  value={value}
+                  label="Mensagem"
+                  imageIcon={null}
+                />
+              )}
+            />
+            {errors.getintouch && <ErrorWarning errorText="Campo obrigatório" />}
+            <ButtonCustom
+              onPress={handleSubmit(onSubmit)}
+              backColor="#160E47"
+              fontColor="white"
+              text="Enviar"
+              rightIcon={ArrowIcon}
+            />
+            <RedText font="inter-regular">
+              * Sua mensagem será
+              <SemiBoldRedText font="inter-semibold"> encaminhada </SemiBoldRedText>
+              para o <SemiBoldRedText font="inter-semibold">
+                e-mail do ManaMano.
+              </SemiBoldRedText>{' '}
+              Portanto, caso necessário,{' '}
+              <SemiBoldRedText font="inter-semibold">
+                confira seu e-mail para obter respostas.{' '}
+              </SemiBoldRedText>
+            </RedText>
+          </SignInInputContainer>
+        </SignInForm>
+      </View>
+    </ScreenWithHeader>
   );
 }
