@@ -98,7 +98,9 @@ export default function Groups() {
     <ScreenWithHeader headerProps={{ menu: true, text: 'Grupos', font: 'inter-bold' }}>
       <GroupsContainer>
         <GroupsBody>
-          <GroupsList>
+          <GroupsList
+            contentContainerStyle={{ gap: 25, alignItems: 'center' }}
+            showsVerticalScrollIndicator={false}>
             {groups?.length > 0 ? (
               groups.map((item: any) => (
                 <GroupButton
