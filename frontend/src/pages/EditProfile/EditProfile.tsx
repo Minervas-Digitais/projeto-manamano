@@ -15,7 +15,7 @@ import { AxiosError } from 'axios';
 import secureStorage from '../../services/secureStorage';
 import localStorage from '../../services/localStorage';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
-import SideMenu from '../../components/SideMenu/SideMenu';
+import { useSideMenu } from '../../context/SideMenuContext';
 import {
   BlueBackground,
   BottomPart,
@@ -113,7 +113,7 @@ export default function EditProfile() {
     return true;
   };
 
-  const [sideMenu, setSideMenu] = useState(true);
+  const { toggleMenu } = useSideMenu();
   const [profileData, setProfileData] = useState<any>(null);
   const [profileImageData, setProfileImage] = useState<any>(null);
 
@@ -273,8 +273,7 @@ export default function EditProfile() {
   return (
     <BlueBackground>
       <StatusBar />
-      <SideMenu display={sideMenu} onPress={() => setSideMenu(!sideMenu)} />
-      <TouchableOpacity onPress={() => setSideMenu(!sideMenu)}>
+      <TouchableOpacity onPress={toggleMenu}>
         <MenuW>
           <Menu width={24} height={24} />
         </MenuW>

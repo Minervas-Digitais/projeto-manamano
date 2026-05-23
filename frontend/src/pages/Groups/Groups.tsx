@@ -9,9 +9,9 @@ import AddButton from '../../components/AddButton/AddButton';
 import secureStorage from '../../services/secureStorage';
 import ShowPopup from '../../components/GroupPopup/GroupPopup';
 import api from '../../services/api';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import Add from '../../assets/add-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function Groups() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Use navigation instance
@@ -97,44 +97,45 @@ export default function Groups() {
   };
 
   return (
-    <GroupsContainer>
-      <HeaderCustom icon menu text="Grupos" font="inter-bold" />
-      <GroupsBody>
-        <GroupsList
-          contentContainerStyle={{ gap: 25, alignItems: 'center' }}
-          showsVerticalScrollIndicator={false}>
-          {groups?.length > 0 ? (
-            groups.map((item: any) => (
-              <GroupButton
-                key={item.groupId}
-                groupName={item.group.name}
-                onlineMembers={item.participantCount}
-                onPress={() => {
-                  navigation.navigate('GroupPage', {
-                    groupId: item.groupId,
-                    groupName: item.group.name,
-                  });
-                }}
-                showFilter={false}
-                containerStyle={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  width: '100%',
-                  backgroundColor: '#f2f6fa',
-                }}
-              />
-            ))
-          ) : (
-            <View />
-          )}
-        </GroupsList>
-      </GroupsBody>
-      <AddButton testID="add-button" icon={<Add />} onPress={handleAddButtonPress} />
-      <ShowPopup
-        visible={showPopup}
-        onClose={() => setShowPopup(false)}
-        onOptionSelect={handlePopupOption}
-      />
-    </GroupsContainer>
+    <ScreenWithHeader headerProps={{ menu: true, text: 'Grupos', font: 'inter-bold' }}>
+      <GroupsContainer>
+        <GroupsBody>
+          <GroupsList
+            contentContainerStyle={{ gap: 25, alignItems: 'center' }}
+            showsVerticalScrollIndicator={false}>
+            {groups?.length > 0 ? (
+              groups.map((item: any) => (
+                <GroupButton
+                  key={item.groupId}
+                  groupName={item.group.name}
+                  onlineMembers={item.participantCount}
+                  onPress={() => {
+                    navigation.navigate('GroupPage', {
+                      groupId: item.groupId,
+                      groupName: item.group.name,
+                    });
+                  }}
+                  showFilter={false}
+                  containerStyle={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: '100%',
+                    backgroundColor: '#f2f6fa',
+                  }}
+                />
+              ))
+            ) : (
+              <View />
+            )}
+          </GroupsList>
+        </GroupsBody>
+        <AddButton testID="add-button" icon={<Add />} onPress={handleAddButtonPress} />
+        <ShowPopup
+          visible={showPopup}
+          onClose={() => setShowPopup(false)}
+          onOptionSelect={handlePopupOption}
+        />
+      </GroupsContainer>
+    </ScreenWithHeader>
   );
 }

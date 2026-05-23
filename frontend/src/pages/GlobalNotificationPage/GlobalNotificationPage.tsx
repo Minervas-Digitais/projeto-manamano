@@ -4,13 +4,13 @@ import { Controller, useForm } from 'react-hook-form';
 import React, { useEffect, useState } from 'react';
 import Toast from 'react-native-toast-message';
 import { useRoute } from '@react-navigation/native';
-import HeaderCustom from '../../components/HeaderCustom/HeaderCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
 import secureStorage from '../../services/secureStorage';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
-import { GlobalNotificationContainer, toastConfig } from './GlobalNotificationPageStyle';
+import { GlobalNotificationContainer } from './GlobalNotificationPageStyle';
+import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function GlobalNotificationPage({ navigation }: any) {
   const route = useRoute();
@@ -108,33 +108,34 @@ export default function GlobalNotificationPage({ navigation }: any) {
     return undefined;
   }
   return (
-    <View style={{ flex: 1, backgroundColor: '#f2f6fa' }}>
-      <HeaderCustom font="inter-bold" text={body ? 'Editar Comunicado' : 'Comunicado'} />
-      <GlobalNotificationContainer>
-        <Controller
-          control={control}
-          name="input"
-          rules={{
-            required: true,
-          }}
-          render={({ field: { onChange, value } }) => (
-            <BigInputTextCustom
-              onChangeText={onChange}
-              value={value}
-              label={body ? 'Editar Comunicado' : 'Criar Comunicado'}
-              imageIcon={null}
-            />
-          )}
-        />
-        {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-        <Toast config={toastConfig} />
-        <ButtonCustom
-          onPress={handleSubmit(onSubmit)}
-          backColor="#160E47"
-          fontColor="white"
-          text={body ? 'Atualizar' : 'Publicar'}
-        />
-      </GlobalNotificationContainer>
-    </View>
+    <ScreenWithHeader
+      headerProps={{ font: 'inter-bold', text: body ? 'Editar Comunicado' : 'Comunicado' }}>
+      <View style={{ flex: 1, backgroundColor: '#f2f6fa' }}>
+        <GlobalNotificationContainer>
+          <Controller
+            control={control}
+            name="input"
+            rules={{
+              required: true,
+            }}
+            render={({ field: { onChange, value } }) => (
+              <BigInputTextCustom
+                onChangeText={onChange}
+                value={value}
+                label={body ? 'Editar Comunicado' : 'Criar Comunicado'}
+                imageIcon={null}
+              />
+            )}
+          />
+          {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
+          <ButtonCustom
+            onPress={handleSubmit(onSubmit)}
+            backColor="#160E47"
+            fontColor="white"
+            text={body ? 'Atualizar' : 'Publicar'}
+          />
+        </GlobalNotificationContainer>
+      </View>
+    </ScreenWithHeader>
   );
 }
