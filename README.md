@@ -42,7 +42,7 @@ A utilização do Docker é o método recomendado para rodar o projeto.
 
 O aplicativo mobile utilizará o build previamente feito via EAS Build, localizado em projeto-manamano/nginx/downloads/app.apk.
 
-Uma versão alternativa (sem Docker) pode ser encontrada em `docs/setup.md`.
+O fluxo completo sem usar o docker esta descrito no arquivo de [setup](./docs/setup.md)
 
 ### 1. Pré-requisitos
 
