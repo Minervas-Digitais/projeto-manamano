@@ -34,9 +34,7 @@ export class CategoryController {
 
   @HttpCode(200)
   @Get('group/:groupId')
-  findCategoriesInGroup(
-    @Param('groupId') groupId: string,
-  ): Promise<Category[]> {
+  findCategoriesInGroup(@Param('groupId') groupId: string): Promise<Category[]> {
     return this.categoryService.findCategoriesInGroup(groupId);
   }
 

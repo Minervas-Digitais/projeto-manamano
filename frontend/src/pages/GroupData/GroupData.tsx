@@ -179,151 +179,151 @@ export default function GroupData({ navigation }: any) {
       }}>
       <GroupDataPage>
         <GroupDataScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-        <GroupDataContainerInfo>
-          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-            <GroupDataText color="#EF4036" font="inter-bold" size="20px">
-              {groupInfo?.name || 'Erro'}
+          <GroupDataContainerInfo>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+              <GroupDataText color="#EF4036" font="inter-bold" size="20px">
+                {groupInfo?.name || 'Erro'}
+              </GroupDataText>
+              <TouchableOpacity
+                testID="edit-group-button"
+                onPress={() => navigation.navigate('EditGroup')}>
+                <EditIcon />
+              </TouchableOpacity>
+            </View>
+            <GroupDataText color="#160E47" font="inter-bold" size="18px">
+              Descrição
             </GroupDataText>
-            <TouchableOpacity
-              testID="edit-group-button"
-              onPress={() => navigation.navigate('EditGroup')}>
-              <EditIcon />
-            </TouchableOpacity>
-          </View>
-          <GroupDataText color="#160E47" font="inter-bold" size="18px">
-            Descrição
-          </GroupDataText>
-          <GroupDataScrollContent size={`${screenHeight * 0.12}px`}>
-            <GroupDataText color="#515151" font="inter-regular" size="13px">
-              {groupInfo?.description || 'Erro carregar os dados'}
+            <GroupDataScrollContent size={`${screenHeight * 0.12}px`}>
+              <GroupDataText color="#515151" font="inter-regular" size="13px">
+                {groupInfo?.description || 'Erro carregar os dados'}
+              </GroupDataText>
+            </GroupDataScrollContent>
+          </GroupDataContainerInfo>
+          <GroupDataLine />
+          <GroupDataContainerInfo>
+            <GroupDataText color="#160E47" font="inter-semiBold" size="18px">
+              Membros
             </GroupDataText>
-          </GroupDataScrollContent>
-        </GroupDataContainerInfo>
-        <GroupDataLine />
-        <GroupDataContainerInfo>
-          <GroupDataText color="#160E47" font="inter-semiBold" size="18px">
-            Membros
-          </GroupDataText>
-          <GroupDataScrollContent gap="20px" size={`${screenHeight * 0.4}px`}>
-            <GroupDataText color="#3F3D3D" font="inter-bold" size="14px">
-              Docentes
-            </GroupDataText>
-            {groupParticipant?.length > 0 ? (
-              groupParticipant?.map((item: any) => {
-                if (item.role !== 'MEMBER') {
-                  return (
-                    <View
-                      key={item.userId}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}>
-                      <TouchableOpacity
-                        onPress={() => {
-                          navigation.navigate('VisitorProfile', { id: item.userId });
-                        }}
-                        style={{ flex: 1 }}>
-                        <GroupMembers user={item.user.fullName} image={duckPhoto} />
-                      </TouchableOpacity>
-                      {canRemoveParticipants() && (
+            <GroupDataScrollContent gap="20px" size={`${screenHeight * 0.4}px`}>
+              <GroupDataText color="#3F3D3D" font="inter-bold" size="14px">
+                Docentes
+              </GroupDataText>
+              {groupParticipant?.length > 0 ? (
+                groupParticipant?.map((item: any) => {
+                  if (item.role !== 'MEMBER') {
+                    return (
+                      <View
+                        key={item.userId}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}>
                         <TouchableOpacity
                           onPress={() => {
-                            setSelectedParticipant(item);
-                            setDeleteModalVisible(true);
+                            navigation.navigate('VisitorProfile', { id: item.userId });
                           }}
-                          style={{ marginLeft: 10, padding: 10 }}>
-                          <TrashCan />
+                          style={{ flex: 1 }}>
+                          <GroupMembers user={item.user.fullName} image={duckPhoto} />
                         </TouchableOpacity>
-                      )}
-                    </View>
-                  );
-                }
-                return null;
-              })
-            ) : (
-              <GroupDataText color="#515151" font="inter-regular" size="12px">
-                Vazio...
+                        {canRemoveParticipants() && (
+                          <TouchableOpacity
+                            onPress={() => {
+                              setSelectedParticipant(item);
+                              setDeleteModalVisible(true);
+                            }}
+                            style={{ marginLeft: 10, padding: 10 }}>
+                            <TrashCan />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  }
+                  return null;
+                })
+              ) : (
+                <GroupDataText color="#515151" font="inter-regular" size="12px">
+                  Vazio...
+                </GroupDataText>
+              )}
+              <GroupDataText color="#3F3D3D" font="inter-bold" size="14px">
+                Colegas
               </GroupDataText>
-            )}
-            <GroupDataText color="#3F3D3D" font="inter-bold" size="14px">
-              Colegas
-            </GroupDataText>
-            {groupParticipant?.length > 0 ? (
-              groupParticipant?.map((item: any) => {
-                if (item.role === 'MEMBER') {
-                  return (
-                    <View
-                      key={item.userId}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}>
-                      <TouchableOpacity
-                        onPress={() => {
-                          navigation.navigate('VisitorProfile', { id: item.userId });
-                        }}
-                        style={{ flex: 1 }}>
-                        <GroupMembers user={item.user.fullName} image={duckPhoto} />
-                      </TouchableOpacity>
-                      {canRemoveParticipants() && (
+              {groupParticipant?.length > 0 ? (
+                groupParticipant?.map((item: any) => {
+                  if (item.role === 'MEMBER') {
+                    return (
+                      <View
+                        key={item.userId}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}>
                         <TouchableOpacity
                           onPress={() => {
-                            setSelectedParticipant(item);
-                            setDeleteModalVisible(true);
+                            navigation.navigate('VisitorProfile', { id: item.userId });
                           }}
-                          style={{ marginLeft: 10, padding: 10 }}>
-                          <TrashCan />
+                          style={{ flex: 1 }}>
+                          <GroupMembers user={item.user.fullName} image={duckPhoto} />
                         </TouchableOpacity>
-                      )}
-                    </View>
-                  );
-                }
-                return null;
-              })
-            ) : (
-              <GroupDataText color="#515151" font="inter-regular" size="12">
-                Vazio...
-              </GroupDataText>
-            )}
-          </GroupDataScrollContent>
-        </GroupDataContainerInfo>
-        <GroupDataButtonView>
-          <ButtonCustom
-            backColor="#EF4036"
-            fontColor="#FFFFFF"
-            onPress={() => {
-              setLeaveGroupModal(true);
-            }}
-            border={false}
-            text="Sair do Grupo"
-          />
-        </GroupDataButtonView>
-      </GroupDataScrollView>
-      <DeleteOneConfirmation
-        visible={deleteModal.visible}
-        text={`Tem certeza que deseja remover ${deleteModal.participantName} do grupo?`}
-        onConfirm={() => {
-          handleDeleteParticipant(deleteModal.participantId);
-          setDeleteModal({ visible: false, participantId: '', participantName: '' });
-        }}
-        onCancel={() => {
-          setDeleteModal({ visible: false, participantId: '', participantName: '' });
-        }}
-      />
-      <DeleteOneConfirmation
-        visible={leaveGroupModal}
-        text="Tem certeza que deseja sair do grupo?"
-        onConfirm={() => {
-          handleRemoveParticipant();
-          setLeaveGroupModal(false);
-        }}
-        onCancel={() => {
-          setLeaveGroupModal(false);
-        }}
-      />
-    </GroupDataPage>
+                        {canRemoveParticipants() && (
+                          <TouchableOpacity
+                            onPress={() => {
+                              setSelectedParticipant(item);
+                              setDeleteModalVisible(true);
+                            }}
+                            style={{ marginLeft: 10, padding: 10 }}>
+                            <TrashCan />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  }
+                  return null;
+                })
+              ) : (
+                <GroupDataText color="#515151" font="inter-regular" size="12">
+                  Vazio...
+                </GroupDataText>
+              )}
+            </GroupDataScrollContent>
+          </GroupDataContainerInfo>
+          <GroupDataButtonView>
+            <ButtonCustom
+              backColor="#EF4036"
+              fontColor="#FFFFFF"
+              onPress={() => {
+                setLeaveGroupModal(true);
+              }}
+              border={false}
+              text="Sair do Grupo"
+            />
+          </GroupDataButtonView>
+        </GroupDataScrollView>
+        <DeleteOneConfirmation
+          visible={deleteModal.visible}
+          text={`Tem certeza que deseja remover ${deleteModal.participantName} do grupo?`}
+          onConfirm={() => {
+            handleDeleteParticipant(deleteModal.participantId);
+            setDeleteModal({ visible: false, participantId: '', participantName: '' });
+          }}
+          onCancel={() => {
+            setDeleteModal({ visible: false, participantId: '', participantName: '' });
+          }}
+        />
+        <DeleteOneConfirmation
+          visible={leaveGroupModal}
+          text="Tem certeza que deseja sair do grupo?"
+          onConfirm={() => {
+            handleRemoveParticipant();
+            setLeaveGroupModal(false);
+          }}
+          onCancel={() => {
+            setLeaveGroupModal(false);
+          }}
+        />
+      </GroupDataPage>
     </ScreenWithHeader>
   );
 }

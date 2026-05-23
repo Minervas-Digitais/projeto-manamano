@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+android
+ios
+.expo
+
+frontend/.expo
+
+frontend/google-services.json

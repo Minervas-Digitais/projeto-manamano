@@ -116,7 +116,3 @@ describe('SignUp', () => {
     expect(mockedNavigate).not.toHaveBeenCalled();
   });
 });
-
-
-
-

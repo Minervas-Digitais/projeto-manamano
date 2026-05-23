@@ -30,11 +30,7 @@ export class NotificationService {
     private readonly validator: ValidatorService,
   ) {}
 
-  private buildNotificationData(
-    dto: CreateNotificationDto,
-    recipientId: string,
-    senderId: string,
-  ) {
+  private buildNotificationData(dto: CreateNotificationDto, recipientId: string, senderId: string) {
     return {
       senderId: senderId,
       recipientId,
@@ -53,9 +49,7 @@ export class NotificationService {
   ): string {
     switch (type) {
       case NotificationType.FIXED:
-        return groupName
-          ? `Nova notificação em ${groupName}`
-          : 'Nova notificação';
+        return groupName ? `Nova notificação em ${groupName}` : 'Nova notificação';
       case NotificationType.WARNING:
         return 'Aviso importante';
       case NotificationType.COMMENT:
@@ -104,15 +98,11 @@ export class NotificationService {
     }
 
     if (dto.recipientId && dto.recipientId === senderId) {
-      throw new BadRequestException(
-        NOTIFICATION_MESSAGES.CANNOT_NOTIFY_YOURSELF,
-      );
+      throw new BadRequestException(NOTIFICATION_MESSAGES.CANNOT_NOTIFY_YOURSELF);
     }
 
     if (dto.type === NotificationType.WARNING && sender.sysRole !== 'ADMIN') {
-      throw new ForbiddenException(
-        NOTIFICATION_MESSAGES.UNAUTHORIZED_WARNING_CALL,
-      );
+      throw new ForbiddenException(NOTIFICATION_MESSAGES.UNAUTHORIZED_WARNING_CALL);
     }
 
     //FIXED pra 01 usuario
@@ -122,11 +112,7 @@ export class NotificationService {
     }
 
     // FIXED para grupo
-    if (
-      dto.type === NotificationType.FIXED &&
-      !dto.recipientId &&
-      dto.groupId
-    ) {
+    if (dto.type === NotificationType.FIXED && !dto.recipientId && dto.groupId) {
       const participants = await this.prisma.participant.findMany({
         where: { groupId: dto.groupId },
         select: { userId: true },
@@ -136,9 +122,7 @@ export class NotificationService {
         return { count: 0 };
       }
 
-      const data = participants.map((p) =>
-        this.buildNotificationData(dto, p.userId, senderId),
-      );
+      const data = participants.map((p) => this.buildNotificationData(dto, p.userId, senderId));
 
       const result = await this.prisma.notification.createMany({ data });
 
@@ -178,14 +162,8 @@ export class NotificationService {
     });
   }
 
-  async markAsRead(
-    notificationId: string,
-    userId: string,
-  ): Promise<Notification> {
-    await this.validator.ensureUserIsNotificationRecipient(
-      notificationId,
-      userId,
-    );
+  async markAsRead(notificationId: string, userId: string): Promise<Notification> {
+    await this.validator.ensureUserIsNotificationRecipient(notificationId, userId);
 
     return this.prisma.notification.update({
       where: { id: notificationId },
@@ -193,14 +171,8 @@ export class NotificationService {
     });
   }
 
-  async deleteNotification(
-    notificationId: string,
-    userId: string,
-  ): Promise<Notification> {
-    await this.validator.ensureUserIsNotificationRecipient(
-      notificationId,
-      userId,
-    );
+  async deleteNotification(notificationId: string, userId: string): Promise<Notification> {
+    await this.validator.ensureUserIsNotificationRecipient(notificationId, userId);
 
     return this.prisma.notification.delete({
       where: { id: notificationId },
@@ -221,9 +193,7 @@ export class NotificationService {
       throw new NotFoundException(NOTIFICATION_MESSAGES.NO_RECIPIENTS_GLOBAL);
     }
 
-    const data = users.map((user) =>
-      this.buildNotificationData(dto, user.id, senderId),
-    );
+    const data = users.map((user) => this.buildNotificationData(dto, user.id, senderId));
 
     const result = await this.prisma.notification.createMany({ data });
 
@@ -322,9 +292,7 @@ export class NotificationService {
     dto: UpdateNotificationSettingsDto,
   ): Promise<Omit<User, 'hash'>> {
     if (Object.keys(dto).length === 0) {
-      throw new BadRequestException(
-        NOTIFICATION_MESSAGES.NO_SETTINGS_TO_UPDATE,
-      );
+      throw new BadRequestException(NOTIFICATION_MESSAGES.NO_SETTINGS_TO_UPDATE);
     }
 
     await this.validator.validateUserExists(id);
@@ -368,8 +336,7 @@ export class NotificationService {
 
       // Desativar do "Sistema"
       if (
-        (type === NotificationType.COMMENT ||
-          type === NotificationType.WARNING) &&
+        (type === NotificationType.COMMENT || type === NotificationType.WARNING) &&
         user.muteSystem
       ) {
         return { skipped: true };

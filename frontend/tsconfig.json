@@ -5,7 +5,8 @@
     "strict": true,
     "esModuleInterop": true,
     "lib": ["ES2020"],
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "types": ["jest", "react", "react-native"]
   },
   "include": [
     "src",

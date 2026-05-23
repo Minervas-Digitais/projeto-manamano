@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import Toast from 'react-native-toast-message';
 import api from '../services/api';
 import SignIn from '../pages/SignIn/SignIn';
-import Toast from 'react-native-toast-message';
 
 const mockedNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
@@ -108,7 +108,3 @@ describe('SignIn', () => {
     });
   });
 });
-
-
-
-

@@ -11,10 +11,7 @@ export class MailService {
     private readonly validator: ValidatorService,
   ) {}
 
-  async sendMail(
-    email: CreateMailDto,
-    userId: string,
-  ): Promise<{ message: string }> {
+  async sendMail(email: CreateMailDto, userId: string): Promise<{ message: string }> {
     const user = await this.validator.validateUserExists(userId);
 
     const transporter = this.getTransporter();

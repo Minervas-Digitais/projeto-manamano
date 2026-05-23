@@ -81,26 +81,26 @@ describe('ConfigNotification', () => {
     expect(await findByText('Silenciar notificação dos grupos')).toBeTruthy();
   });
 
-  test.each(testButtons)('deve alternar os ícones SVG ao clicar no botão %s', async ({ idSuffix, label }) => {
-    const { findByTestId, findByText, queryByTestId } = renderWithNavigation();
+  test.each(testButtons)(
+    'deve alternar os ícones SVG ao clicar no botão %s',
+    async ({ idSuffix, label }) => {
+      const { findByTestId, findByText, queryByTestId } = renderWithNavigation();
 
-    await findByTestId(`toggle-${idSuffix}`);
+      await findByTestId(`toggle-${idSuffix}`);
 
-    expect(await findByTestId(`EllipseB-${idSuffix}`)).toBeTruthy();
-    expect(await findByTestId(`Rect-${idSuffix}`)).toBeTruthy();
-    expect(queryByTestId(`EllipseW-${idSuffix}`)).toBeNull();
-    expect(queryByTestId(`RectActv-${idSuffix}`)).toBeNull();
+      expect(await findByTestId(`EllipseB-${idSuffix}`)).toBeTruthy();
+      expect(await findByTestId(`Rect-${idSuffix}`)).toBeTruthy();
+      expect(queryByTestId(`EllipseW-${idSuffix}`)).toBeNull();
+      expect(queryByTestId(`RectActv-${idSuffix}`)).toBeNull();
 
-    fireEvent.press(await findByText(label));
+      fireEvent.press(await findByText(label));
 
-    await waitFor(() => {
-      expect(queryByTestId(`EllipseW-${idSuffix}`)).toBeTruthy();
-      expect(queryByTestId(`RectActv-${idSuffix}`)).toBeTruthy();
-      expect(queryByTestId(`EllipseB-${idSuffix}`)).toBeNull();
-      expect(queryByTestId(`Rect-${idSuffix}`)).toBeNull();
-    });
-  });
+      await waitFor(() => {
+        expect(queryByTestId(`EllipseW-${idSuffix}`)).toBeTruthy();
+        expect(queryByTestId(`RectActv-${idSuffix}`)).toBeTruthy();
+        expect(queryByTestId(`EllipseB-${idSuffix}`)).toBeNull();
+        expect(queryByTestId(`Rect-${idSuffix}`)).toBeNull();
+      });
+    },
+  );
 });
-
-
-

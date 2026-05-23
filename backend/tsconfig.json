@@ -8,17 +8,23 @@
     "allowSyntheticDefaultImports": true,
     "lib": ["ES2023"],
     "target": "es2022",
-    "sourceMap": true,
+
+    "rootDir": "./src",
     "outDir": "./dist",
+
     "baseUrl": "./",
+
     "incremental": true,
     "skipLibCheck": true,
+
     "strictNullChecks": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "isolatedModules": true
+    "isolatedModules": true,
+
+    "ignoreDeprecations": "6.0"
   },
   "include": ["src", "src/**/*.spec.ts", "src/**/*.e2e-spec.ts"]
 }

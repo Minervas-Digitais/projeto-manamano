@@ -28,23 +28,17 @@ export class ArchiveController {
   }
 
   @Get(':archiveId')
-  async getArchive(
-    @Param('archiveId') archiveId: string,
-  ): Promise<ResponseArchiveDto> {
+  async getArchive(@Param('archiveId') archiveId: string): Promise<ResponseArchiveDto> {
     return this.archiveService.getArchiveById(archiveId);
   }
 
   @Get('post/:postId')
-  async getArchivesByPostId(
-    @Param('postId') postId: string,
-  ): Promise<ResponseArchiveDto[]> {
+  async getArchivesByPostId(@Param('postId') postId: string): Promise<ResponseArchiveDto[]> {
     return this.archiveService.getArchivesByPostId(postId);
   }
 
   @Get('group/:groupId')
-  async getArchivesByGroupId(
-    @Param('groupId') groupId: string,
-  ): Promise<ResponseArchiveDto[]> {
+  async getArchivesByGroupId(@Param('groupId') groupId: string): Promise<ResponseArchiveDto[]> {
     return this.archiveService.getArchivesByGroupId(groupId);
   }
 }

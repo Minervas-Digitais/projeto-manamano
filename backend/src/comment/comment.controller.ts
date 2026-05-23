@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  HttpCode,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -19,10 +11,7 @@ export class CommentController {
 
   @HttpCode(201)
   @Post()
-  create(
-    @Body() createCommentDto: CreateCommentDto,
-    @User('id') userId: string,
-  ) {
+  create(@Body() createCommentDto: CreateCommentDto, @User('id') userId: string) {
     return this.commentService.create(createCommentDto, userId);
   }
 

@@ -20,10 +20,7 @@ export class GroupService {
     private readonly validator: ValidatorService,
   ) {}
 
-  async create(
-    createGroupDto: CreateGroupDto,
-    callerId: string,
-  ): Promise<Group> {
+  async create(createGroupDto: CreateGroupDto, callerId: string): Promise<Group> {
     const inviteCode = await this.generateUniqueInviteCode();
 
     return await this.prismaService.$transaction(async (prisma) => {
@@ -66,10 +63,7 @@ export class GroupService {
     return group;
   }
 
-  async update(
-    groupId: string,
-    updateGroupDto: UpdateGroupDto,
-  ): Promise<Group> {
+  async update(groupId: string, updateGroupDto: UpdateGroupDto): Promise<Group> {
     await this.validator.validateGroupExists(groupId);
     return await this.prismaService.group.update({
       where: {
@@ -92,8 +86,7 @@ export class GroupService {
 
   /* Funções auxiliares */
   private generateInviteCode(length: number = 8) {
-    const characters =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     const charactersLength = characters.length;
     for (let i = 0; i < length; i++) {

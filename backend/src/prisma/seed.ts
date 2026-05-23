@@ -7,10 +7,7 @@ async function fetchImageBase64(url: string): Promise<string> {
   const { default: fetch } = await import('node-fetch');
   try {
     const response = await fetch(url);
-    if (
-      !response.ok ||
-      !response.headers.get('content-type')?.startsWith('image/')
-    ) {
+    if (!response.ok || !response.headers.get('content-type')?.startsWith('image/')) {
       throw new Error('Resposta inválida ou não é imagem.');
     }
     const buffer = await response.arrayBuffer();
@@ -130,21 +127,19 @@ async function main() {
 
   await Promise.all(
     posts.flatMap((post, postIndex) =>
-      Array.from({ length: faker.number.int({ min: 2, max: 4 }) }).map(
-        async (_, fileIndex) => {
-          const imageUrl = `https://picsum.photos/200?random=${postIndex * 10 + fileIndex}`;
-          const base64 = await fetchImageBase64(imageUrl);
+      Array.from({ length: faker.number.int({ min: 2, max: 4 }) }).map(async (_, fileIndex) => {
+        const imageUrl = `https://picsum.photos/200?random=${postIndex * 10 + fileIndex}`;
+        const base64 = await fetchImageBase64(imageUrl);
 
-          return prisma.archive.create({
-            data: {
-              name: faker.system.fileName(),
-              mimeType: 'image/jpeg',
-              contentBase64: base64,
-              postId: post.id,
-            } as Prisma.ArchiveUncheckedCreateInput,
-          });
-        },
-      ),
+        return prisma.archive.create({
+          data: {
+            name: faker.system.fileName(),
+            mimeType: 'image/jpeg',
+            contentBase64: base64,
+            postId: post.id,
+          } as Prisma.ArchiveUncheckedCreateInput,
+        });
+      }),
     ),
   );
   console.log('✅ Arquivos criados');

@@ -250,23 +250,12 @@ describe('EditProfile', () => {
     await waitFor(() => {
       expect(DocumentPicker.getDocumentAsync).toHaveBeenCalled();
 
-      expect(mockedApi.patch).toHaveBeenCalledWith(
-        '/user/profile-picture',
-        expect.any(FormData),
-        {
-          headers: {
-            Authorization: 'Bearer mock-token',
-            'Content-Type': 'multipart/form-data',
-          },
+      expect(mockedApi.patch).toHaveBeenCalledWith('/user/profile-picture', expect.any(FormData), {
+        headers: {
+          Authorization: 'Bearer mock-token',
+          'Content-Type': 'multipart/form-data',
         },
-      );
+      });
     });
   });
 });
-
-
-
-
-
-
-

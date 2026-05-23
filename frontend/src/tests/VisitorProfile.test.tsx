@@ -1,9 +1,9 @@
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import VisitorProfile from '../pages/VisitorProfile/VisitorProfile';
-import api from '../services/api';
 import * as Clipboard from 'expo-clipboard';
 import { Share } from 'react-native';
+import VisitorProfile from '../pages/VisitorProfile/VisitorProfile';
+import api from '../services/api';
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
@@ -258,9 +258,3 @@ describe('VisitorProfile', () => {
     });
   });
 });
-
-
-
-
-
-

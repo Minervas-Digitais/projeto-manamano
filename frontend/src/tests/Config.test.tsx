@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import Config from '../pages/Configuration/Configuration';
 import { NavigationContainer } from '@react-navigation/native';
+import Config from '../pages/Configuration/Configuration';
 
 // MOCKS
 const mockedNavigate = jest.fn();
@@ -65,6 +65,3 @@ describe('Config Page', () => {
     expect(mockedNavigate).toHaveBeenCalledWith('ChangePassword');
   });
 });
-
-
-

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable } from 'react-native';
 import { Buffer } from 'buffer';
+import { AxiosError } from 'axios';
 import {
   CommentInputText,
   CommentInputTextFocused,
@@ -15,7 +16,6 @@ import SendButton from '../../assets/submit-comment.svg';
 import LinkIcon from '../../assets/comment-link-icon.svg';
 import api from '../../services/api';
 import secureStorage from '../../services/secureStorage';
-import { AxiosError } from 'axios';
 
 export default function CommentInputTextCustom({
   onChangeText,

@@ -323,9 +323,7 @@ describe('Notification', () => {
 
     mockedApi.delete.mockResolvedValue({});
 
-    const { findByTestId } = render(
-      <Notification navigation={{ navigate: mockedNavigate }} />,
-    );
+    const { findByTestId } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
     const optionsMenu = await findByTestId(`options-menu-${notifToDelete.id}`);
     fireEvent.press(optionsMenu);
@@ -402,7 +400,3 @@ describe('Notification', () => {
     expect(mockedNavigate).toHaveBeenCalledWith('Home');
   });
 });
-
-
-
-

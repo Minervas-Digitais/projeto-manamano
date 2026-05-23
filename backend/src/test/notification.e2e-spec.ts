@@ -9,11 +9,7 @@ import { NotificationType } from '@prisma/client';
 import request from 'supertest';
 import { AuthService } from 'src/auth/auth.service';
 import { NotificationService } from 'src/notification/notification.service';
-import {
-  createGroup,
-  createUserWithToken,
-  getNotificationId,
-} from './test-helpers';
+import { createGroup, createUserWithToken, getNotificationId } from './test-helpers';
 import { NOTIFICATION_MESSAGES } from 'src/messages/notification.messages';
 import Expo from 'expo-server-sdk';
 
@@ -58,10 +54,7 @@ describe('Notification', () => {
       sysRole: 'ADMIN',
     });
     const senderResult = await createUserWithToken(prismaService, authService);
-    const recipientResult = await createUserWithToken(
-      prismaService,
-      authService,
-    );
+    const recipientResult = await createUserWithToken(prismaService, authService);
 
     user = userResult.user;
     admin = adminResult.user;
@@ -286,10 +279,7 @@ describe('Notification', () => {
 
   describe('getNotificationsForUser', () => {
     it('deve retornar todas as notificações do usuário', async () => {
-      const notifications = [
-        { body: 'bodyTeste1' },
-        { body: 'bodyTeste2' },
-      ].map((n) => ({
+      const notifications = [{ body: 'bodyTeste1' }, { body: 'bodyTeste2' }].map((n) => ({
         senderId: sender.id,
         recipientId: recipient.id,
         body: n.body,
@@ -318,19 +308,13 @@ describe('Notification', () => {
       });
 
       const bodies = result.map((n: any) => n.body);
-      expect(bodies).toEqual(
-        expect.arrayContaining(['bodyTeste1', 'bodyTeste2']),
-      );
+      expect(bodies).toEqual(expect.arrayContaining(['bodyTeste1', 'bodyTeste2']));
     });
   });
 
   describe('markAsRead', () => {
     it('Deve marcar uma notificacao como lida', async () => {
-      const notificationId = await getNotificationId(
-        prismaService,
-        sender.id,
-        sender.id,
-      );
+      const notificationId = await getNotificationId(prismaService, sender.id, sender.id);
 
       const response = await request(app.getHttpServer())
         .patch(`/notifications/${notificationId}`)
@@ -354,11 +338,7 @@ describe('Notification', () => {
 
   describe('deleteNotification', () => {
     it('Deve deletar uma notificacao', async () => {
-      const notificationId = await getNotificationId(
-        prismaService,
-        sender.id,
-        sender.id,
-      );
+      const notificationId = await getNotificationId(prismaService, sender.id, sender.id);
 
       const response = await request(app.getHttpServer())
         .delete(`/notifications/${notificationId}`)
@@ -674,12 +654,7 @@ describe('Notification', () => {
     it('deve retornar undefined se erro ocorrer', async () => {
       validatorMock.validateUserExists.mockRejectedValueOnce(new Error('fail'));
 
-      const result = await service.sendPushNotification(
-        'sender',
-        'user',
-        'title',
-        'body',
-      );
+      const result = await service.sendPushNotification('sender', 'user', 'title', 'body');
 
       expect(result).toBeUndefined();
     });
@@ -693,12 +668,7 @@ describe('Notification', () => {
 
       jest.spyOn(Expo, 'isExpoPushToken').mockReturnValue(true);
 
-      const result = await service.sendPushNotification(
-        'sender',
-        'user',
-        'title',
-        'body',
-      );
+      const result = await service.sendPushNotification('sender', 'user', 'title', 'body');
 
       expect(result).toEqual({ skipped: true });
     });
@@ -719,9 +689,7 @@ describe('Notification', () => {
     });
 
     it('deve retornar 401 sem token', async () => {
-      const res = await request(app.getHttpServer()).get(
-        '/notifications/notification-settings',
-      );
+      const res = await request(app.getHttpServer()).get('/notifications/notification-settings');
 
       expect(res.status).toBe(401);
     });

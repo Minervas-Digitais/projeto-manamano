@@ -319,8 +319,3 @@ describe('NewPost Page', () => {
     expect(await findByText('Data inválida')).toBeTruthy();
   });
 });
-
-
-
-
-

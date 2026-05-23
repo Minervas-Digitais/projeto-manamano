@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useRoute } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import Toast from 'react-native-toast-message';
 import Post from '../pages/Post/Post';
 import api from '../services/api';
-import { useRoute } from '@react-navigation/native';
 
 jest.mock('../context/SavedPostsContext', () => ({
   useSavedPosts: () => ({
@@ -240,8 +240,6 @@ jest.mock('react-native-toast-message', () => {
   };
 });
 
-import Toast from 'react-native-toast-message';
-
 const Stack = createStackNavigator();
 const renderWithNavigation = () =>
   render(
@@ -257,7 +255,7 @@ const renderWithNavigation = () =>
 
 describe('About', () => {
   beforeAll(() => {
-    //ignora os erros do act e causados pelo proprio teste
+    // ignora os erros do act e causados pelo proprio teste
     jest.spyOn(console, 'error').mockImplementation((msg) => {
       const mensagensIgnoradas = [
         'Erro ao buscar publicação',
@@ -447,8 +445,3 @@ describe('About', () => {
     });
   });
 });
-
-
-
-
-

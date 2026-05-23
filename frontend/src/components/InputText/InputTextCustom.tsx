@@ -73,6 +73,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 5,
     color: '#5e6366',
-    //outlineStyle: 'none',
+    // outlineStyle: 'none',
   },
 });

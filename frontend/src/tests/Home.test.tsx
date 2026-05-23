@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { View } from 'react-native';
 import Home from '../pages/Home/Home';
 import api from '../services/api';
 import storage from '../services/secureStorage';
-import { View } from 'react-native';
 
 // Mocks
 const mockedNavigate = jest.fn();
@@ -270,8 +270,3 @@ describe('Home Page', () => {
     expect(await findByText('Conteúdo do primeiro post.')).toBeTruthy();
   });
 });
-
-
-
-
-

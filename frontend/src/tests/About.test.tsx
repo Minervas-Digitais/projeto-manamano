@@ -51,6 +51,3 @@ describe('About', () => {
     expect(getByText('Nicolas Bastos')).toBeTruthy();
   });
 });
-
-
-

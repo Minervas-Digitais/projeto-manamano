@@ -78,28 +78,19 @@ export class PostController {
   @Patch(':id')
   @UseGuards(RolesGuard)
   @Roles(RoleType.ADMIN)
-  update(
-    @Param('id') id: string,
-    @Body() updatePostDto: UpdatePostDto,
-  ): Promise<SerializedPost> {
+  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto): Promise<SerializedPost> {
     return this.postService.update(id, updatePostDto);
   }
 
   @HttpCode(201)
   @Patch('save/:postId')
-  async savePost(
-    @Param('postId') postId: string,
-    @User('id') userId: string,
-  ): Promise<any> {
+  async savePost(@Param('postId') postId: string, @User('id') userId: string): Promise<any> {
     return this.postService.savePost(userId, postId);
   }
 
   @HttpCode(201)
   @Patch('unsave/:postId')
-  async removeSavedPost(
-    @Param('postId') postId: string,
-    @User('id') userId: string,
-  ): Promise<any> {
+  async removeSavedPost(@Param('postId') postId: string, @User('id') userId: string): Promise<any> {
     return this.postService.removeSavedPost(userId, postId);
   }
 
@@ -125,9 +116,7 @@ export class PostController {
 
   @HttpCode(200)
   @Get('group/pinned/:groupId')
-  async getPinnedPosts(
-    @Param('groupId') groupId: string,
-  ): Promise<SerializedPost[]> {
+  async getPinnedPosts(@Param('groupId') groupId: string): Promise<SerializedPost[]> {
     return this.postService.getPinnedPosts(groupId);
   }
 

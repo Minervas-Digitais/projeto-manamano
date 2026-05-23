@@ -93,7 +93,7 @@ export default function EditProfile() {
       console.error('Error saving user data:', error);
       if (error.response && error.response.data) {
         console.error('Error response from API:', error.response.data);
-        Alert.alert('Failed to save data: ' + (error.response.data.message || 'Unknown error'));
+        Alert.alert(`Failed to save data: ${error.response.data.message || 'Unknown error'}`);
       } else {
         Alert.alert('There was an error saving your changes. Please try again.');
       }

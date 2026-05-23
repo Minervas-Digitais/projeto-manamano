@@ -48,36 +48,30 @@ describe('AuthController (e2e)', () => {
   });
 
   it('deve retornar 404 se o usuário não existir', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({
-        email: 'naoexiste@example.com',
-        password: 'qualquer',
-      });
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'naoexiste@example.com',
+      password: 'qualquer',
+    });
 
     expect(response.status).toBe(404);
     expect(response.body.message).toBe('Usuário não encontrado.');
   });
 
   it('deve retornar 401 se a senha estiver incorreta', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({
-        email: user.email,
-        password: 'senhaerrada',
-      });
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      email: user.email,
+      password: 'senhaerrada',
+    });
 
     expect(response.status).toBe(401);
     expect(response.body.message).toBe('Senha incorreta.');
   });
 
   it('deve retornar 400 se dto inválido', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({
-        email: 'email-invalido',
-        password: '',
-      });
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'email-invalido',
+      password: '',
+    });
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');

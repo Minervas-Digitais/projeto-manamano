@@ -2,7 +2,10 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { Alert } from 'react-native';
 import Search from '../pages/Search/Search';
+
+import Profile from '../pages/Profile/Profile';
 
 jest.mock('../context/SavedPostsContext', () => ({
   useSavedPosts: () => ({
@@ -117,8 +120,6 @@ jest.mock('../pages/Profile/Profile', () => {
   return () => null;
 });
 
-import Profile from '../pages/Profile/Profile';
-
 const Stack = createStackNavigator();
 const renderWithNavigation = () =>
   render(
@@ -131,8 +132,6 @@ const renderWithNavigation = () =>
   );
 
 (global as any).alert = jest.fn();
-
-import { Alert } from 'react-native';
 
 jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
   const confirmButton = buttons?.find((btn) => btn.text === 'Sim');

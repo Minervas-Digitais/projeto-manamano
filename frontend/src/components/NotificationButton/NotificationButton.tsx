@@ -1,4 +1,5 @@
 import React from 'react';
+import { Pressable } from 'react-native';
 import {
   ButtonImage,
   ConfigNotifText,
@@ -9,7 +10,6 @@ import EllipseB from '../../assets/ellipse-confignotf.svg';
 import EllipseW from '../../assets/ellipsew.svg';
 import Rect from '../../assets/rect-confignotif.svg';
 import RectActv from '../../assets/rectactv-confignotif.svg';
-import { Pressable } from 'react-native';
 
 export default function NotificationButton({ text, font, isActive, onToggle }: any) {
   return (

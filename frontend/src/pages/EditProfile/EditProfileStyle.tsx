@@ -1,6 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
+
 const { width, height } = Dimensions.get('window');
 
 export const BlueBackground = styled.View`

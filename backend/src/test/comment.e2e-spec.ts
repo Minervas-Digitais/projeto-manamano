@@ -146,9 +146,7 @@ describe('Comment (e2e)', () => {
     });
 
     it('deve retornar 401 sem token', async () => {
-      const res = await request(app.getHttpServer()).delete(
-        `/comment/${post.id}`,
-      );
+      const res = await request(app.getHttpServer()).delete(`/comment/${post.id}`);
       expect(res.status).toBe(401);
       expect(res.body.message).toBe('Unauthorized');
     });

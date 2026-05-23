@@ -150,7 +150,6 @@ para abrir o aplicativo no Android Emulator.
 
 O projeto utiliza EAS Build para geração dos APKs Android.
 
-
 ## EAS Build
 
 ### 1. Instalar EAS CLI
@@ -158,7 +157,6 @@ O projeto utiliza EAS Build para geração dos APKs Android.
 ```bash
 npm install -g eas-cli
 ```
-
 
 ### 2. Login no Expo
 
