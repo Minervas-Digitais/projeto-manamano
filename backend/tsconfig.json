@@ -21,7 +21,7 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "isolatedModules": true,
+    "isolatedModules": true
   },
   "include": ["src", "src/**/*.spec.ts", "src/**/*.e2e-spec.ts"]
 }
