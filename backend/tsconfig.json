@@ -9,7 +9,6 @@
     "lib": ["ES2023"],
     "target": "es2022",
 
-    "rootDir": "./src",
     "outDir": "./dist",
 
     "baseUrl": "./",
@@ -23,8 +22,6 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "isolatedModules": true,
-
-    "ignoreDeprecations": "6.0"
   },
   "include": ["src", "src/**/*.spec.ts", "src/**/*.e2e-spec.ts"]
 }
