@@ -12,8 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { TextInputMask } from 'react-native-masked-text';
 import { useFocusEffect } from '@react-navigation/native';
 import { AxiosError } from 'axios';
-import secureStorage from '../../services/secureStorage';
-import localStorage from '../../services/localStorage';
+import { useAuth } from '../../context/auth/useAuth';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
 import { useSideMenu } from '../../context/SideMenuContext';
 import {
@@ -60,6 +59,7 @@ export default function EditProfile() {
   });
   const { width, height } = Dimensions.get('window');
   const defaultAvatar = require('../../assets/user-profile.png');
+  const { accessToken, loggedId } = useAuth();
   const onSubmit = async (data: any) => {
     try {
       console.log('Form submitted with data:', data);
@@ -71,11 +71,8 @@ export default function EditProfile() {
         data.birthday = formattedBirthday;
       }
 
-      const token = await secureStorage.getItem('accessToken');
-      const userId = await secureStorage.getItem('loggedId');
-
-      if (!token || !userId) {
-        console.log('Missing token or user ID.');
+      if (!accessToken || !loggedId) {
+        console.log('Missing access token or user ID.');
         Alert.alert('No access token or user ID found. Please sign in again.');
         return;
       }
@@ -83,7 +80,7 @@ export default function EditProfile() {
       console.log('Sending request to API...');
       const response = await api.patch('/user', data, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -135,10 +132,7 @@ export default function EditProfile() {
           type: file.mimeType || 'image/jpeg',
         };
 
-        const token = await secureStorage.getItem('accessToken');
-        const userId = await secureStorage.getItem('loggedId');
-
-        if (!token || !userId) {
+        if (!accessToken || !loggedId) {
           Toast.show({
             type: 'error',
             text1: 'Você precisa estar logado para atualizar a imagem.',
@@ -152,7 +146,7 @@ export default function EditProfile() {
         const response = await api.patch('/user/profile-picture', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         });
 
@@ -189,15 +183,11 @@ export default function EditProfile() {
 
   useFocusEffect(() => {
     const fetchUserData = async () => {
-      const token = await secureStorage.getItem('accessToken');
-
-      if (token) {
+      if (accessToken && loggedId) {
         try {
-          const userId = await secureStorage.getItem('loggedId');
-
-          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+          const imageResponse = await api.get(`/user/${loggedId}/profile-picture`, {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
             responseType: 'arraybuffer',
           });
@@ -217,14 +207,11 @@ export default function EditProfile() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const token = await secureStorage.getItem('accessToken');
-      const userId = await secureStorage.getItem('loggedId');
-
-      if (token && userId) {
+      if (accessToken && loggedId) {
         try {
-          const response = await api.get(`/user/${userId}`, {
+          const response = await api.get(`/user/${loggedId}`, {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           });
 
@@ -261,7 +248,7 @@ export default function EditProfile() {
     };
 
     fetchUser();
-  }, [profileImageData, setValue]);
+  }, [profileImageData, setValue, accessToken]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),

@@ -27,7 +27,7 @@ import { GroupPageTabs } from '../GroupPage/GroupPageStyle';
 import PostCard from '../../components/PostCard/PostCard';
 import { useSideMenu } from '../../context/SideMenuContext';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 import LocationIcon from '../../assets/location-icon.svg';
 import ShareWhiteIcon from '../../assets/share-white-icon.svg';
 import MenuIcon from '../../assets/menu-white-icon.svg';
@@ -46,6 +46,7 @@ export default function VisitorProfile({ navigation }: any) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<any>(null);
+  const { accessToken } = useAuth();
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -80,7 +81,6 @@ export default function VisitorProfile({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
       if (!accessToken || !userId) {
         setLoading(false);
         return;
@@ -119,7 +119,7 @@ export default function VisitorProfile({ navigation }: any) {
     };
 
     fetchData();
-  }, [userId]);
+  }, [userId, accessToken]);
 
   if (!fontsLoaded || loading) {
     return (
@@ -169,16 +169,14 @@ export default function VisitorProfile({ navigation }: any) {
   }
 
   const getUserProfileImage = async () => {
-    const token = await secureStorage.getItem('accessToken');
-
-    if (!token) {
+    if (!accessToken) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         responseType: 'arraybuffer',
       });

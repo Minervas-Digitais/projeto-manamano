@@ -5,7 +5,7 @@ import { useFonts } from 'expo-font';
 import Toast from 'react-native-toast-message';
 import NotificationButton from '../../components/NotificationButton/NotificationButton';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function ConfigNotification() {
@@ -20,16 +20,16 @@ export default function ConfigNotification() {
     muteSystem: false,
     muteGroups: false,
   });
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
       if (accessToken) {
         setAccessTokenState(accessToken);
       }
     };
     fetchData();
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessTokenState) return;

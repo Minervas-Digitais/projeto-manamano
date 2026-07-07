@@ -12,7 +12,7 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 import api from '../../services/api';
 import IconPassword from '../../assets/lock-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
@@ -22,11 +22,10 @@ export default function ChangePassword() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [loggedIdState, setLoggedIdState] = useState('');
   const [accessTokenState, setAccessTokenState] = useState('');
+  const { accessToken, loggedId } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
       if (loggedId && accessToken) {
         setAccessTokenState(accessToken);
         setLoggedIdState(loggedId);
@@ -34,7 +33,7 @@ export default function ChangePassword() {
     };
 
     fetchData();
-  }, []);
+  }, [accessToken, loggedId]);
 
   const {
     control,
