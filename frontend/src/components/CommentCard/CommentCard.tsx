@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 import { PostDate, PostUpperPart, ProfileImage, ProfileName } from '../../pages/Post/PostStyle';
 import { CommentText, CommentTextContainer } from './CommentCardStyle';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 
 const defaultAvatar = require('../../assets/user-profile.png');
 
@@ -19,6 +19,7 @@ interface CommentCardProps {
 
 export default function CommentCard({ fullName, createdAt, input, userId }: CommentCardProps) {
   const [profileImage, setProfileImage] = useState<any>(defaultAvatar);
+  const { accessToken } = useAuth();
 
   const [fontsLoaded] = useFonts({
     // eslint-disable-next-line global-require
@@ -33,13 +34,12 @@ export default function CommentCard({ fullName, createdAt, input, userId }: Comm
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const fetchProfileImage = async () => {
-      const token = await secureStorage.getItem('accessToken');
-      if (!token || !userId) return;
+      if (!accessToken || !userId) return;
 
       try {
         const response = await api.get(`/user/${userId}/profile-picture`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           responseType: 'arraybuffer',
         });

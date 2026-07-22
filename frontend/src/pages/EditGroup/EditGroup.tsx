@@ -17,12 +17,13 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import secureStorage from '../../services/secureStorage';
 import localStorage from '../../services/localStorage';
 import api from '../../services/api';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function EditGroup({ navigation }: any) {
+  const { accessToken } = useAuth();
   const [accessTokenState, setAccessTokenState] = useState('');
   const [groupId, setGroupId] = useState('');
   const [groupName, setGroupName] = useState('');
@@ -30,7 +31,6 @@ export default function EditGroup({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
       const groupIdAux = localStorage.getString('groupId');
 
       if (accessToken && groupIdAux) {

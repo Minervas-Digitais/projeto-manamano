@@ -25,7 +25,6 @@ import CommentCard from '../../components/CommentCard/CommentCard';
 import CommentInputTextCustom from '../../components/CommentInput/CommentInputText';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
-import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import DotsMenuIcon from '../../assets/dots-menu-icon.svg';
@@ -34,6 +33,7 @@ import { useSavedPosts } from '../../context/SavedPostsContext';
 import SaveIcon from '../../assets/save-icon.svg';
 import SavedIcon from '../../assets/saved-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 const { width } = Dimensions.get('window');
 const defaultAvatar = require('../../assets/user-profile.png');
@@ -66,10 +66,9 @@ interface Archive {
 
 export default function Post() {
   const route = useRoute();
+  const { accessToken, loggedId } = useAuth();
   const { postId } = route.params as { postId: string };
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const [loggedIdState, setLoggedIdState] = useState('');
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [post, setPost] = useState<Post | null>(null);
   const [postUser, setPostUser] = useState<User | null>(null);
@@ -83,32 +82,27 @@ export default function Post() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-      if (loggedId && accessToken) {
-        setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
-        api
-          .get(`/user/${loggedId}`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          })
-          .then((res) => setUserName(res.data.fullName))
-          .catch((err) => {
-            console.error('Erro ao buscar nome do usuário logado:', err);
-            setUserName('Usuário');
-          });
-      }
+      if (!loggedId || !accessToken) return;
+      api
+        .get(`/user/${loggedId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        .then((res) => setUserName(res.data.fullName))
+        .catch((err) => {
+          console.error('Erro ao buscar nome do usuário logado:', err);
+          setUserName('Usuário');
+        });
     };
     fetchData();
-  }, []);
+  }, [loggedId, accessToken]);
 
   useEffect(() => {
-    if (!accessTokenState) return;
+    if (!accessToken) return;
     const fetchPost = async () => {
       try {
         console.log(postId);
         const response = await api.get(`post/${postId}`, {
-          headers: { Authorization: `Bearer ${accessTokenState}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         setPost(response.data);
         setRecipientId(response.data.userId);
@@ -122,15 +116,15 @@ export default function Post() {
       }
     };
     fetchPost();
-  }, [accessTokenState, postId]);
+  }, [accessToken, postId]);
 
   useEffect(() => {
-    if (!accessTokenState || !post?.userId) return;
+    if (!accessToken || !post?.userId) return;
 
     const fetchUserAndImage = async () => {
       try {
         const responseUser = await api.get(`/user/${post.userId}`, {
-          headers: { Authorization: `Bearer ${accessTokenState}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         const userData: User = responseUser.data;
         setPostUser(userData);
@@ -144,14 +138,14 @@ export default function Post() {
     };
 
     fetchUserAndImage();
-  }, [accessTokenState, post?.userId]);
+  }, [accessToken, post?.userId]);
 
   useEffect(() => {
-    if (!accessTokenState) return;
+    if (!accessToken) return;
     const fetchArchives = async () => {
       try {
         const response = await api.get(`archives/post/${postId}`, {
-          headers: { Authorization: `Bearer ${accessTokenState}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         setPostArchives(response.data);
       } catch (error) {
@@ -163,10 +157,10 @@ export default function Post() {
       }
     };
     fetchArchives();
-  }, [accessTokenState, postId]);
+  }, [accessToken, postId]);
 
   useEffect(() => {
-    if (!accessTokenState || !post?.Comment?.length) return;
+    if (!accessToken || !post?.Comment?.length) return;
     const fetchCommentUsers = async () => {
       try {
         const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
@@ -174,7 +168,7 @@ export default function Post() {
           uniqueUserIds.map(async (userId) => {
             const response = await api.get(`/user/${userId}`, {
               headers: {
-                Authorization: `Bearer ${accessTokenState}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             });
             return { userId, data: response.data };
@@ -195,7 +189,7 @@ export default function Post() {
     };
 
     fetchCommentUsers();
-  }, [accessTokenState, post?.Comment]);
+  }, [accessToken, post?.Comment]);
   const postDate = post?.createdAt ? new Date(post.createdAt) : null;
   const formattedDate =
     postDate && isValid(postDate)
@@ -203,12 +197,12 @@ export default function Post() {
       : '';
 
   const getUserProfileImage = async (userId: string): Promise<any> => {
-    if (!accessTokenState) {
+    if (!accessToken) {
       return defaultAvatar;
     }
     try {
       const response = await api.get(`/user/${userId}/profile-picture`, {
-        headers: { Authorization: `Bearer ${accessTokenState}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
         responseType: 'arraybuffer',
       });
       const imageStr = Buffer.from(response.data, 'binary').toString('base64');
@@ -237,17 +231,17 @@ export default function Post() {
         },
         {
           headers: {
-            Authorization: `Bearer ${accessTokenState}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         },
       );
 
       const groupResponse = await api.get(`/group/${idGroup}`, {
         headers: {
-          Authorization: `Bearer ${accessTokenState}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
-      if (post && post.userId !== loggedIdState) {
+      if (post && post.userId !== loggedId) {
         const groupNameFromApi = groupResponse.data.name;
         console.log({
           senderName: userName,
@@ -267,7 +261,7 @@ export default function Post() {
           },
           {
             headers: {
-              Authorization: `Bearer ${accessTokenState}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           },
         );
@@ -338,7 +332,7 @@ export default function Post() {
         style={{
           backgroundColor: '#f2f6fa',
           height: '100%',
-          display: loggedIdState && accessTokenState ? 'flex' : 'none',
+          display: loggedId && accessToken ? 'flex' : 'none',
         }}>
         {modalOptions ? (
           <ModalOptions

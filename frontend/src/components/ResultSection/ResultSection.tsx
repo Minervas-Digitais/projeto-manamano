@@ -17,8 +17,8 @@ import PostItem from '../PostItem/PostItem';
 import api from '../../services/api';
 import TrashCan from '../../assets/trash-can.svg';
 import DeleteOneConfirmation from '../DeleteOneConfirmation/DeleteOneConfirmation';
-import secureStorage from '../../services/secureStorage';
 import { RootStackParamList } from '../../navigation/types';
+import { useAuth } from '../../context/auth/useAuth';
 
 interface User {
   id: string;
@@ -44,7 +44,6 @@ interface Post {
 interface ResultSectionProps {
   searchText: string;
   saveRecentUser: (user: { id: string; name: string; avatar: any }) => void;
-  accessToken: string;
   admin: boolean;
 }
 
@@ -57,9 +56,9 @@ interface DataState {
 export default function ResultSection({
   searchText,
   saveRecentUser,
-  accessToken,
   admin,
 }: ResultSectionProps) {
+  const { accessToken, loggedId } = useAuth();
   const [selectedSection, setSelectedSection] = useState('');
   const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });
   const [deleteModal, setDeleteModal] = useState({
@@ -68,7 +67,6 @@ export default function ResultSection({
     id: '',
   });
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const [loggedId, setLoggedId] = useState<string | null>(null);
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
   const defaultAvatar = require('../../assets/user-profile.png');
@@ -80,24 +78,15 @@ export default function ResultSection({
 
   const [userAvatars, setUserAvatars] = useState<Record<string, any>>({});
 
-  useEffect(() => {
-    const loadLoggedId = async () => {
-      const id = await secureStorage.getItem('loggedId');
-      setLoggedId(id);
-    };
-    loadLoggedId();
-  }, []);
-
   const getUserProfileImage = async (userId: string) => {
-    const token = await secureStorage.getItem('accessToken');
-    if (!token) {
+    if (!accessToken) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         responseType: 'arraybuffer',
       });

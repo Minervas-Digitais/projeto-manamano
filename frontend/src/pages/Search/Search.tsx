@@ -26,8 +26,8 @@ import {
 import ResultSection from '../../components/ResultSection/ResultSection';
 import Lupa from '../../assets/lupa-search.svg';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 const storage = new MMKV();
 
@@ -42,27 +42,24 @@ export default function Search() {
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
-
+  const { accessToken, loggedId } = useAuth();
   const [searchText, setSearchText] = useState<string>('');
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
   const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
 
   const avatar = require('../../assets/user-profile.png');
 
   const getUserProfileImage = async (userId: string) => {
-    const token = await secureStorage.getItem('accessToken');
-
-    if (!token) {
+    if (!accessToken) {
       return avatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         responseType: 'arraybuffer',
       });
@@ -84,25 +81,21 @@ export default function Search() {
 
   useEffect(() => {
     const fetchUserRole = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
 
-      if (accessToken && loggedId) {
-        setAccessTokenState(accessToken);
+      if (!accessToken || !loggedId) return;
 
-        try {
-          const res = await api.get(`/user/${loggedId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
+      try {
+        const res = await api.get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
 
-          if (res.data?.sysRole === 'ADMIN') {
-            setIsAdmin(true);
-          }
-        } catch {
-          setIsAdmin(false);
+        if (res.data?.sysRole === 'ADMIN') {
+          setIsAdmin(true);
         }
+      } catch {
+        setIsAdmin(false);
       }
     };
 
@@ -187,11 +180,11 @@ export default function Search() {
             />
           </SearchInputWrapper>
 
-          {debouncedSearchText.length > 0 && accessTokenState ? (
+          {debouncedSearchText.length > 0 && accessToken ? (
             <ResultSection
               searchText={debouncedSearchText}
               saveRecentUser={saveRecentUser}
-              accessToken={accessTokenState}
+              accessToken={accessToken}
               admin={isAdmin}
             />
           ) : (

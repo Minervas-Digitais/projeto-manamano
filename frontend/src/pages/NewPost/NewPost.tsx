@@ -24,12 +24,12 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
 import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 import AttachmentIcon from '../../assets/add-attachment-icon.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export const validateDateInternal = (dateRef: React.RefObject<any>) => {
   const inputDate = dateRef.current ? new Date(dateRef.current.getRawValue()) : new Date();
@@ -77,13 +77,12 @@ export default function NewPost({ navigation }: any) {
     name: string;
     type: string;
   }
+  const { accessToken, loggedId } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
   const [filterPosts, setFilterPosts] = useState('Geral');
   const dateRef = useRef<any>(null);
   const hourRef = useRef<any>(null);
-  const [loggedIdState, setLoggedIdState] = useState('');
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [visibility, setVisibility] = useState<Record<number, boolean>>({});
   const handleClick = (id: number) => {
     setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
@@ -99,23 +98,12 @@ export default function NewPost({ navigation }: any) {
     setSelectedCategoryType(selectedCategory ? selectedCategory.type : null);
   }, [filterPosts, categories]);
   useEffect(() => {
-    const loadUserData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-      if (loggedId && accessToken) {
-        setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
-      }
-    };
-    loadUserData();
-  }, []);
-  useEffect(() => {
-    if (!accessTokenState) return;
+    if (!accessToken) return;
     const fetchCategories = async () => {
       try {
         const response = await api.get(`/category/group/${groupId}`, {
           headers: {
-            Authorization: `Bearer ${accessTokenState}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         });
         setCategories(response.data);
@@ -128,7 +116,7 @@ export default function NewPost({ navigation }: any) {
       }
     };
     fetchCategories();
-  }, [accessTokenState, groupId]);
+  }, [accessToken, groupId]);
   const {
     control,
     handleSubmit,
@@ -160,7 +148,7 @@ export default function NewPost({ navigation }: any) {
           },
           {
             headers: {
-              Authorization: `Bearer ${accessTokenState}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           },
         );
@@ -179,7 +167,7 @@ export default function NewPost({ navigation }: any) {
               },
               {
                 headers: {
-                  Authorization: `Bearer ${accessTokenState}`,
+                  Authorization: `Bearer ${accessToken}`,
                 },
               },
             );
@@ -217,7 +205,7 @@ export default function NewPost({ navigation }: any) {
           },
           {
             headers: {
-              Authorization: `Bearer ${accessTokenState}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           },
         );
@@ -296,7 +284,7 @@ export default function NewPost({ navigation }: any) {
         style={{
           backgroundColor: '#f2f6fa',
           height: '100%',
-          display: loggedIdState && accessTokenState ? 'flex' : 'none',
+          display: loggedId && accessToken ? 'flex' : 'none',
         }}>
         <NewPostContainer>
           <GroupPageCategoryContainer>

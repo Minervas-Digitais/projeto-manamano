@@ -21,6 +21,7 @@ import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAll
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 import NoNotification from '../../assets/no-notification-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export interface IUser {
   id: string;
@@ -52,12 +53,10 @@ export interface INotification {
 
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');
-
+  const { accessToken, loggedId } = useAuth();
   const [notification, setNotification] = useState<INotification[]>([]);
   const [display, setDisplay] = useState(false);
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [userInfo, setUserInfo] = useState<IUser | null>(null);
-  const [loggedIdState, setLoggedIdState] = useState('');
   const [admin, setAdmin] = useState(false);
   const [deleteModal, setDeleteModal] = useState({
     visible: false,
@@ -65,29 +64,25 @@ export default function Notification({ navigation }: any) {
   });
 
   const fetchNotifications = useCallback(async () => {
-    const loggedId = await secureStorage.getItem('loggedId');
-    const accessToken = await secureStorage.getItem('accessToken');
-    if (loggedId && accessToken) {
-      setAccessTokenState(accessToken);
-      setLoggedIdState(loggedId);
-      api
-        .get('/notifications/user', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-        .then((res) => setNotification(res.data))
-        .catch((err) => console.log(err));
-    }
+    if (!loggedId || !accessToken) return;
+    api
+      .get('/notifications/user', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      .then((res) => setNotification(res.data))
+      .catch((err) => console.log(err));
+    
   }, []);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
-      if (loggedIdState && accessTokenState) {
+      if (loggedId && accessToken) {
         try {
-          const response = await api.get(`/user/${loggedIdState}`, {
+          const response = await api.get(`/user/${loggedId}`, {
             headers: {
-              Authorization: `Bearer ${accessTokenState}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           });
 
@@ -106,7 +101,7 @@ export default function Notification({ navigation }: any) {
     };
 
     fetchUserInfo();
-  }, [loggedIdState, accessTokenState]);
+  }, [loggedId, accessToken]);
   useEffect(() => {
     // fetchNotifications();
     const interval = setInterval(fetchNotifications, 1000);
@@ -137,7 +132,7 @@ export default function Notification({ navigation }: any) {
         {},
         {
           headers: {
-            Authorization: `Bearer ${accessTokenState}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         },
       )
@@ -163,7 +158,7 @@ export default function Notification({ navigation }: any) {
     try {
       await api.delete(`/notifications/${deleteModal.notifId}`, {
         headers: {
-          Authorization: `Bearer ${accessTokenState}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
       setNotification((prev) => prev.filter((n: any) => n.id !== deleteModal.notifId));

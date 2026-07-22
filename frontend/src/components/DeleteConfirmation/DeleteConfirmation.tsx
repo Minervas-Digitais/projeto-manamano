@@ -11,12 +11,13 @@ import {
   DeleteConfirmationContainer,
 } from './DeleteConfirmationStyle';
 import { ModalOptionsNotificationText } from '../ModalOptionsNotification/ModalOptionsNotificationStyle';
-import secureStorage from '../../services/secureStorage';
 import localStorage from '../../services/localStorage';
 import api from '../../services/api';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function DeleteConfirmation({ text }: any) {
   const current = localStorage.getString('displayNotif');
+  const { accessToken } = useAuth();
 
   const [shouldDisplay, setShouldDisplay] = useState(current);
 
@@ -25,7 +26,6 @@ export default function DeleteConfirmation({ text }: any) {
   });
   const optionsDelete = async () => {
     const id = localStorage.getString('idNotif');
-    const accessToken = await secureStorage.getItem('accessToken');
 
     api
       .delete(`notifications/${id}`, {
