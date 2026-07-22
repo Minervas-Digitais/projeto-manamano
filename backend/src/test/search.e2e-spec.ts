@@ -79,7 +79,7 @@ describe('SearchController', () => {
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('data');
       expect(response.body).toHaveProperty('meta');
-      
+
       expect(response.body.data).toHaveProperty('users');
       expect(response.body.data).toHaveProperty('groups');
       expect(response.body.data).toHaveProperty('posts');
