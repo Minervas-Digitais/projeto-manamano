@@ -77,25 +77,28 @@ describe('SearchController', () => {
         .send(searchDto);
 
       expect(response.status).toBe(201);
-      expect(response.body).toHaveProperty('users');
-      expect(response.body).toHaveProperty('groups');
-      expect(response.body).toHaveProperty('posts');
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('meta');
+      
+      expect(response.body.data).toHaveProperty('users');
+      expect(response.body.data).toHaveProperty('groups');
+      expect(response.body.data).toHaveProperty('posts');
 
-      expect(response.body.users.length).toBeGreaterThan(0);
-      expect(response.body.groups.length).toBeGreaterThan(0);
-      expect(response.body.posts.length).toBeGreaterThan(0);
+      expect(response.body.data.users.length).toBeGreaterThan(0);
+      expect(response.body.data.groups.length).toBeGreaterThan(0);
+      expect(response.body.data.posts.length).toBeGreaterThan(0);
 
       const searchTerm = searchDto.input.toLowerCase();
 
-      response.body.users.forEach((u) => {
+      response.body.data.users.forEach((u) => {
         expect(u.fullName.toLowerCase()).toContain(searchTerm);
       });
 
-      response.body.groups.forEach((g) => {
+      response.body.data.groups.forEach((g) => {
         expect(g.name.toLowerCase()).toContain(searchTerm);
       });
 
-      response.body.posts.forEach((p) => {
+      response.body.data.posts.forEach((p) => {
         const title = p.title?.toLowerCase() ?? '';
         const input = p.input?.toLowerCase() ?? '';
         expect(title.includes(searchTerm) || input.includes(searchTerm)).toBe(true);
@@ -119,14 +122,14 @@ describe('SearchController', () => {
       expect(response.body.message).toBe('Unauthorized');
     });
 
-    it('deve retornar 400 se input estiver vazio', async () => {
+    it('deve retornar 400 se a página informada for menor que 1', async () => {
       const response = await request(app.getHttpServer())
         .post('/search')
         .set('Authorization', 'Bearer ' + userToken)
-        .send({ input: '' });
+        .send({ page: 0 });
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toEqual(['input should not be empty']);
+      expect(response.body.message).toContain('page must not be less than 1');
     });
   });
 
@@ -141,9 +144,10 @@ describe('SearchController', () => {
         .send(searchDto);
 
       expect(response.status).toBe(200);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('fullName');
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data[0]).toHaveProperty('fullName');
     });
 
     it('deve retornar resultados de pesquisa para grupos', async () => {
@@ -156,9 +160,9 @@ describe('SearchController', () => {
         .send(searchDto);
 
       expect(response.status).toBe(200);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('name');
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data[0]).toHaveProperty('name');
     });
 
     it('deve retornar resultados de pesquisa para posts', async () => {
@@ -171,9 +175,9 @@ describe('SearchController', () => {
         .send(searchDto);
 
       expect(response.status).toBe(200);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('title');
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data[0]).toHaveProperty('title');
     });
 
     it('deve retornar 401 se token for inválido', async () => {
@@ -189,8 +193,8 @@ describe('SearchController', () => {
       expect(response.body.message).toBe('Unauthorized');
     });
 
-    it('deve retornar 400 se input estiver vazio', async () => {
-      const searchDto = { input: '' };
+    it('deve retornar 400 se o limite de paginação for inválido', async () => {
+      const searchDto = { limit: -5 };
       const filter = 'users';
 
       const response = await request(app.getHttpServer())
@@ -199,7 +203,7 @@ describe('SearchController', () => {
         .send(searchDto);
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toEqual(['input should not be empty']);
+      expect(response.body.message).toContain('limit must not be less than 1');
     });
 
     it('deve retornar 400 se filtro for inválido', async () => {

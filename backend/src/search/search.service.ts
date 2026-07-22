@@ -10,103 +10,157 @@ import { omitHash } from 'src/utils/user.util';
 export class SearchService {
   constructor(private prismaService: PrismaService) {}
 
-  async search(createSearchDto: CreateSearchDto): Promise<{
-    users: Omit<User, 'hash'>[];
-    groups: Group[];
-    posts: Post[];
-  }> {
-    const [users, groups, posts] = await Promise.all([
+  async search(createSearchDto: CreateSearchDto) {
+    const { input = '', page = 1, limit = 10 } = createSearchDto;
+    const skip = (page - 1) * limit;
+
+    const [users, groups, posts, totalUsers, totalGroups, totalPosts] = await Promise.all([
       this.prismaService.user.findMany({
         where: {
           fullName: {
-            contains: createSearchDto.input,
+            contains: input,
             mode: 'insensitive',
           },
         },
-        take: 5,
+        skip,
+        take: Number(limit),
       }),
       this.prismaService.group.findMany({
         where: {
           name: {
-            contains: createSearchDto.input,
+            contains: input,
             mode: 'insensitive',
           },
         },
-        take: 5,
+        skip,
+        take: Number(limit),
       }),
       this.prismaService.post.findMany({
         where: {
           OR: [
             {
               title: {
-                contains: createSearchDto.input,
+                contains: input,
                 mode: 'insensitive',
               },
             },
             {
               input: {
-                contains: createSearchDto.input,
+                contains: input,
                 mode: 'insensitive',
               },
             },
           ],
         },
-        take: 5,
+        skip,
+        take: Number(limit),
+      }),
+      this.prismaService.user.count({
+        where: { fullName: { contains: input, mode: 'insensitive' } },
+      }),
+      this.prismaService.group.count({
+        where: { name: { contains: input, mode: 'insensitive' } },
+      }),
+      this.prismaService.post.count({
+        where: {
+          OR: [
+            { title: { contains: input, mode: 'insensitive' } },
+            { input: { contains: input, mode: 'insensitive' } },
+          ],
+        },
       }),
     ]);
 
+    const total = totalUsers + totalGroups + totalPosts;
+
     return {
-      users: users.map(omitHash),
-      groups,
-      posts,
+      data: {
+        users: users.map(omitHash),
+        groups,
+        posts,
+      },
+      meta: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
-  async searchByFilter(
-    createSearchDto: CreateSearchDto,
-    filter: SearchFilter,
-  ): Promise<Omit<User, 'hash'>[] | Group[] | Post[]> {
+  async searchByFilter(createSearchDto: CreateSearchDto, filter: SearchFilter) {
+    const { input = '', page = 1, limit = 10 } = createSearchDto;
+    const skip = (page - 1) * limit;
+
+    let data: Omit<User, 'hash'>[] | Group[] | Post[];
+    let total = 0;
+
     switch (filter) {
       case SearchFilter.USERS:
-        const users = await this.prismaService.user.findMany({
-          where: {
-            fullName: {
-              contains: createSearchDto.input,
-              mode: 'insensitive',
+        const [users, totalUsersCount] = await Promise.all([
+          this.prismaService.user.findMany({
+            where: {
+              fullName: { contains: input, mode: 'insensitive' },
             },
-          },
-        });
-        return users.map(omitHash);
+            skip,
+            take: Number(limit),
+          }),
+          this.prismaService.user.count({
+            where: { fullName: { contains: input, mode: 'insensitive' } },
+          }),
+        ]);
+        data = users.map(omitHash);
+        total = totalUsersCount;
+        break;
+
       case SearchFilter.GROUPS:
-        return await this.prismaService.group.findMany({
-          where: {
-            name: {
-              contains: createSearchDto.input,
-              mode: 'insensitive',
+        const [groups, totalGroupsCount] = await Promise.all([
+          this.prismaService.group.findMany({
+            where: {
+              name: { contains: input, mode: 'insensitive' },
             },
-          },
-        });
+            skip,
+            take: Number(limit),
+          }),
+          this.prismaService.group.count({
+            where: { name: { contains: input, mode: 'insensitive' } },
+          }),
+        ]);
+        data = groups;
+        total = totalGroupsCount;
+        break;
+
       case SearchFilter.POSTS:
-        return await this.prismaService.post.findMany({
-          where: {
-            OR: [
-              {
-                title: {
-                  contains: createSearchDto.input,
-                  mode: 'insensitive',
-                },
-              },
-              {
-                input: {
-                  contains: createSearchDto.input,
-                  mode: 'insensitive',
-                },
-              },
-            ],
-          },
-        });
+        const wherePost = {
+          OR: [
+            { title: { contains: input, mode: 'insensitive' as const } },
+            { input: { contains: input, mode: 'insensitive' as const } },
+          ],
+        };
+        const [posts, totalPostsCount] = await Promise.all([
+          this.prismaService.post.findMany({
+            where: wherePost,
+            skip,
+            take: Number(limit),
+          }),
+          this.prismaService.post.count({ where: wherePost }),
+        ]);
+        data = posts;
+        total = totalPostsCount;
+        break;
+
       default:
         throw new BadRequestException(SEARCH_MESSAGES.INVALID_FILTER);
     }
+
+    return {
+      data,
+      meta: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }
