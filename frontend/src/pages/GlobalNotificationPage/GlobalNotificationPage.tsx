@@ -7,7 +7,6 @@ import { useRoute } from '@react-navigation/native';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import { GlobalNotificationContainer } from './GlobalNotificationPageStyle';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
