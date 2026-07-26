@@ -6,7 +6,7 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import { Image, TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import { AxiosError } from 'axios';
