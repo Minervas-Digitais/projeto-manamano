@@ -109,7 +109,7 @@ export default function GroupPage({ navigation }: any) {
         setRefreshing(false);
       }
     },
-    [groupId, loading, hasMore],
+    [groupId, loading, hasMore, accessToken],
   );
 
   const getSavedPosts = useCallback(async () => {
@@ -123,7 +123,7 @@ export default function GroupPage({ navigation }: any) {
     } catch (err) {
       console.error('Erro ao buscar posts salvos:', err);
     }
-  }, []);
+  }, [accessToken]);
 
   const loadMorePosts = () => {
     if (!loading && hasMore) {
@@ -165,7 +165,7 @@ export default function GroupPage({ navigation }: any) {
     } catch (error) {
       console.error('Error fetching group categories:', error);
     }
-  }, [groupId]);
+  }, [groupId, accessToken]);
 
   const getGroupArchives = useCallback(async () => {
     if (!accessToken || !groupId) {
@@ -186,7 +186,7 @@ export default function GroupPage({ navigation }: any) {
         setArchives([]);
       }
     }
-  }, [groupId]);
+  }, [groupId, accessToken]);
 
   const getUserProfileImage = async (userId: string) => {
     if (!accessToken) {
@@ -239,7 +239,7 @@ export default function GroupPage({ navigation }: any) {
 
       setUserRole('MEMBER'); // Default para membro
     }
-  }, [groupId]);
+  }, [groupId, accessToken, loggedId]);
 
   useEffect(() => {
     getGroupPosts(1, true);
