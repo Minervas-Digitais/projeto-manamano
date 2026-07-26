@@ -85,7 +85,6 @@ export default function ModalOptionsNotification({
     }
 
     if (type !== 'header' && admin) {
-      const accessToken = localStorage.getString('accessToken');
       if (!accessToken) return;
 
       api
