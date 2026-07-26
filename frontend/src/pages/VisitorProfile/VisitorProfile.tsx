@@ -12,7 +12,6 @@ import { useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as Clipboard from 'expo-clipboard';
 import Toast from 'react-native-toast-message';
-import { AxiosError } from 'axios';
 import {
   ProfileContainerButtons,
   ProfileContainerInfo,
