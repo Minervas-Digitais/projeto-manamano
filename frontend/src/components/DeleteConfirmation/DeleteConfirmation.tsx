@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
-import React, { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import React, { useState } from 'react';
+import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   DeleteConfirmationButton,
@@ -35,7 +35,7 @@ export default function DeleteConfirmation({ text }: any) {
       })
       .then(() => {
         localStorage.delete('displayNotif');
-        setShouldDisplay(false);
+        setShouldDisplay(undefined);
       })
       .catch((err) => console.log('Erro ao deletar a notificação:', err));
   };
@@ -43,7 +43,7 @@ export default function DeleteConfirmation({ text }: any) {
   if (!fontsLoaded) return null;
 
   return (
-    <DeleteConfirmationContainer display={current}>
+    <DeleteConfirmationContainer display={shouldDisplay}>
       <DeleteConfirmationCardContainer>
         <View>
           <ModalOptionsNotificationText font="inter-regular" color="#515151">
@@ -60,7 +60,7 @@ export default function DeleteConfirmation({ text }: any) {
           <DeleteConfirmationButton
             onPress={() => {
               localStorage.delete('displayNotif');
-              setShouldDisplay(false);
+              setShouldDisplay(undefined);
             }}>
             <ModalOptionsNotificationText font="inter-regular" color="#515151">
               Cancelar
