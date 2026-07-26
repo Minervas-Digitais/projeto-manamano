@@ -100,7 +100,7 @@ export default function Home({ navigation }: any) {
 
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [accessToken, loggedId]);
 
   const loadPosts = useCallback(
     async (pageNumber: number, token: string, isInitial: boolean = false) => {
@@ -215,7 +215,7 @@ export default function Home({ navigation }: any) {
       };
 
       fetchUserData();
-    }, []),
+    }, [accessToken, loggedId]),
   );
 
   const getUserProfileImage = async (userId: string) => {
