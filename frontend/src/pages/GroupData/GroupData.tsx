@@ -104,7 +104,7 @@ export default function GroupData({ navigation }: any) {
     };
 
     fetchData();
-  }, []);
+  }, [accessToken, loggedId, groupId]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
