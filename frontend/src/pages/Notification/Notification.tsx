@@ -72,7 +72,6 @@ export default function Notification({ navigation }: any) {
       })
       .then((res) => setNotification(res.data))
       .catch((err) => console.log(err));
-    
   }, [accessToken, loggedId]);
 
   useEffect(() => {

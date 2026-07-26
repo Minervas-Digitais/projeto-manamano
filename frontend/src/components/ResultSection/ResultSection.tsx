@@ -53,11 +53,7 @@ interface DataState {
   posts: Post[];
 }
 
-export default function ResultSection({
-  searchText,
-  saveRecentUser,
-  admin,
-}: ResultSectionProps) {
+export default function ResultSection({ searchText, saveRecentUser, admin }: ResultSectionProps) {
   const { accessToken, loggedId } = useAuth();
   const [selectedSection, setSelectedSection] = useState('');
   const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });

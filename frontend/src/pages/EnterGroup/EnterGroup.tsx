@@ -19,7 +19,6 @@ export default function EnterGroup({ navigation }: any) {
     formState: { errors },
   } = useForm({});
   const onSubmit = async (data: any) => {
-
     if (!accessToken) {
       console.error('Token do usuário não encontrado.');
       return;

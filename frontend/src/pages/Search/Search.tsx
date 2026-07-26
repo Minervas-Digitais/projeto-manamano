@@ -81,7 +81,6 @@ export default function Search() {
 
   useEffect(() => {
     const fetchUserRole = async () => {
-
       if (!accessToken || !loggedId) return;
 
       try {
