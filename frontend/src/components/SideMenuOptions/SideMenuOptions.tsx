@@ -50,7 +50,7 @@ export default function SideMenuOptions({
     } catch (err) {
       console.error('Erro ao carregar notificações', err);
     }
-  }, [type]);
+  }, [type, loggedId, accessToken]);
 
   useFocusEffect(
     useCallback(() => {
