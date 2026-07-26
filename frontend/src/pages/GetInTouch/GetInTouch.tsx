@@ -2,7 +2,7 @@
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, View } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
