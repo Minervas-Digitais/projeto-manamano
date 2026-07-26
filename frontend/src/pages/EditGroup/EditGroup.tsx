@@ -24,7 +24,6 @@ import { useAuth } from '../../context/auth/useAuth';
 
 export default function EditGroup({ navigation }: any) {
   const { accessToken } = useAuth();
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [groupId, setGroupId] = useState('');
   const [groupName, setGroupName] = useState('');
   const [descriptionGroup, setDescriptionGroup] = useState('');
@@ -34,7 +33,6 @@ export default function EditGroup({ navigation }: any) {
       const groupIdAux = localStorage.getString('groupId');
 
       if (accessToken && groupIdAux) {
-        setAccessTokenState(accessToken);
         setGroupId(groupIdAux);
 
         api
@@ -50,7 +48,7 @@ export default function EditGroup({ navigation }: any) {
       }
     };
     fetchData();
-  }, []);
+  }, [accessToken]);
 
   const {
     control,
@@ -84,17 +82,16 @@ export default function EditGroup({ navigation }: any) {
   }
 
   const onSubmit = (data: any) => {
-    if (accessTokenState && groupId) {
+    if (accessToken && groupId) {
       api.patch(
         `/group/${groupId}`,
         { name: data.name, description: data.description },
         {
           headers: {
-            Authorization: `Bearer ${accessTokenState}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         },
       );
-      // .then((res) => console.log(JSON.stringify(res)));
 
       navigation.navigate('GroupPage', { groupId, groupName });
     }
