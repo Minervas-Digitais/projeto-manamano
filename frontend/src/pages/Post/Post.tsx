@@ -26,12 +26,9 @@ import CommentInputTextCustom from '../../components/CommentInput/CommentInputTe
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
 import api from '../../services/api';
-import { toastConfig } from '../GlobalNotificationPage/GlobalNotificationPageStyle';
 import DotsMenuIcon from '../../assets/dots-menu-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import { useSavedPosts } from '../../context/SavedPostsContext';
-import SaveIcon from '../../assets/save-icon.svg';
-import SavedIcon from '../../assets/saved-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
 
