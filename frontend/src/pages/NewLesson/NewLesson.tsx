@@ -14,12 +14,12 @@ import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import { LinkPart, NewLessonContainer } from './NewLessonStyle';
 import ArchiveCard from '../../components/ArchiveCard/ArchiveCard';
-import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 import LinkIcon from '../../assets/input-link-icon.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 interface InputRef {
   getRawValue: () => string;
@@ -28,8 +28,8 @@ interface InputRef {
 
 export default function NewLesson({ navigation }: any) {
   const route = useRoute();
+  const { accessToken } = useAuth();
   const { groupId } = route.params as { groupId: string };
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [files, setFiles] = useState<
     { id: number; name: string; uri: string; mimeType?: string }[]
@@ -44,12 +44,12 @@ export default function NewLesson({ navigation }: any) {
     });
   };
   useEffect(() => {
-    if (!accessTokenState) return;
+    if (!accessToken) return;
     const fetchCategories = async () => {
       try {
         const response = await api.get(`/category/group/${groupId}`, {
           headers: {
-            Authorization: `Bearer ${accessTokenState}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         });
         setCategories(response.data);
@@ -61,17 +61,8 @@ export default function NewLesson({ navigation }: any) {
       }
     };
     fetchCategories();
-  }, [accessTokenState, groupId]);
+  }, [accessToken, groupId]);
 
-  useEffect(() => {
-    const loadAuthData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      if (accessToken) {
-        setAccessTokenState(accessToken);
-      }
-    };
-    loadAuthData();
-  }, []);
   function formatDate(date: string): string {
     const [day, month, year] = date.split('/');
     return `${year}-${month}-${day}`;
@@ -103,7 +94,7 @@ export default function NewLesson({ navigation }: any) {
         },
         {
           headers: {
-            Authorization: `Bearer ${accessTokenState}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         },
       );
@@ -122,7 +113,7 @@ export default function NewLesson({ navigation }: any) {
             },
             {
               headers: {
-                Authorization: `Bearer ${accessTokenState}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             },
           );

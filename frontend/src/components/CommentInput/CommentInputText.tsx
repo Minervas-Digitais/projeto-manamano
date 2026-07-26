@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable } from 'react-native';
 import { Buffer } from 'buffer';
-import { AxiosError } from 'axios';
 import {
   CommentInputText,
   CommentInputTextFocused,
@@ -15,7 +14,7 @@ import {
 import SendButton from '../../assets/submit-comment.svg';
 import LinkIcon from '../../assets/comment-link-icon.svg';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function CommentInputTextCustom({
   onChangeText,
@@ -27,21 +26,19 @@ export default function CommentInputTextCustom({
 }: any) {
   const defaultAvatar = require('../../assets/user-profile.png');
   const [profileImage, setProfileImage] = useState<any>(defaultAvatar);
+  const { accessToken, loggedId } = useAuth();
 
   useEffect(() => {
     const fetchProfileImage = async () => {
-      const userId = await secureStorage.getItem('loggedId');
-      const token = await secureStorage.getItem('accessToken');
-
-      if (!userId || !token) {
+      if (!loggedId || !accessToken) {
         setProfileImage(defaultAvatar);
         return;
       }
 
       try {
-        const response = await api.get(`/user/${userId}/profile-picture`, {
+        const response = await api.get(`/user/${loggedId}/profile-picture`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           responseType: 'arraybuffer',
         });
@@ -56,7 +53,7 @@ export default function CommentInputTextCustom({
     };
 
     fetchProfileImage();
-  }, [defaultAvatar]);
+  }, [accessToken, defaultAvatar, loggedId]);
 
   return (
     <CommentInputTextContainer>

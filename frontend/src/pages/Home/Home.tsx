@@ -30,7 +30,6 @@ import {
   PostCardSpaceBetween,
 } from '../../components/PostCard/PostCardStyle';
 import PostCard from '../../components/PostCard/PostCard';
-import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import MenuIcon from '../../assets/menu-white-icon.svg';
 import LupaIcon from '../../assets/lupa-white-icon.svg';
@@ -43,9 +42,8 @@ const POSTS_PER_PAGE = 15;
 
 export default function Home({ navigation }: any) {
   const { toggleMenu } = useSideMenu();
+  const { accessToken, loggedId } = useAuth();
   const defaultAvatar = require('../../assets/user-profile.png');
-  const [loggedIdState, setLoggedIdState] = useState('');
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [fullName, setFullName] = useState('');
   const [groups, setGroups] = useState<any[]>([]);
   const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
@@ -62,52 +60,47 @@ export default function Home({ navigation }: any) {
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
 
-  const { accessToken, loggedId } = useAuth();
-
   useEffect(() => {
     const fetchData = async () => {
-      if (loggedId && accessToken) {
-        setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
+      if (!loggedId || !accessToken) return;
 
-        // Buscar informações do usuário
-        api
-          .get(`/user/${loggedId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
+      // Buscar informações do usuário
+      api
+        .get(`/user/${loggedId}`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => setFullName(res.data.fullName))
+        .catch(() => setFullName('Usuário'));
+
+      // Buscar grupos (sem posts)
+      api
+        .get('participant/groups/', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+        .then((res) => {
+          // Remover posts dos grupos pois vamos buscá-los separadamente
+          const groupsWithoutPosts = (res.data || []).map((group: any) => ({
+            ...group,
+            group: {
+              ...group.group,
+              Post: [],
             },
-          })
-          .then((res) => setFullName(res.data.fullName))
-          .catch(() => setFullName('Usuário'));
+          }));
+          setGroups(groupsWithoutPosts);
+        })
+        .catch(() => setGroups([]));
 
-        // Buscar grupos (sem posts)
-        api
-          .get('participant/groups/', {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-          .then((res) => {
-            // Remover posts dos grupos pois vamos buscá-los separadamente
-            const groupsWithoutPosts = (res.data || []).map((group: any) => ({
-              ...group,
-              group: {
-                ...group.group,
-                Post: [],
-              },
-            }));
-            setGroups(groupsWithoutPosts);
-          })
-          .catch(() => setGroups([]));
-
-        // Carregar primeira página de posts
-        loadPosts(1, accessToken, true);
-      }
+      // Carregar primeira página de posts
+      loadPosts(1, accessToken, true);
     };
 
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [accessToken, loggedId]);
 
   const loadPosts = useCallback(
     async (pageNumber: number, token: string, isInitial: boolean = false) => {
@@ -196,23 +189,19 @@ export default function Home({ navigation }: any) {
   );
 
   const handleLoadMore = useCallback(() => {
-    if (!loading && hasMore && accessTokenState && loggedIdState) {
-      loadPosts(page + 1, accessTokenState);
+    if (!loading && hasMore && accessToken && loggedId) {
+      loadPosts(page + 1, accessToken);
     }
-  }, [loading, hasMore, page, accessTokenState, loggedIdState, loadPosts]);
+  }, [loading, hasMore, page, accessToken, loggedId, loadPosts]);
 
   useFocusEffect(
     useCallback(() => {
       const fetchUserData = async () => {
-        const token = await secureStorage.getItem('accessToken');
-
-        if (token) {
+        if (accessToken && loggedId) {
           try {
-            const userId = await secureStorage.getItem('loggedId');
-
-            const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
+            const imageResponse = await api.get(`/user/${loggedId}/profile-picture`, {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${accessToken}`,
               },
               responseType: 'arraybuffer',
             });
@@ -226,20 +215,18 @@ export default function Home({ navigation }: any) {
       };
 
       fetchUserData();
-    }, []),
+    }, [accessToken, loggedId]),
   );
 
   const getUserProfileImage = async (userId: string) => {
-    const token = await secureStorage.getItem('accessToken');
-
-    if (!token) {
+    if (!accessToken) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         responseType: 'arraybuffer',
       });
@@ -311,7 +298,7 @@ export default function Home({ navigation }: any) {
   };
 
   return (
-    <HomePageBlue style={{ display: loggedIdState && accessTokenState ? 'flex' : 'none' }}>
+    <HomePageBlue style={{ display: loggedId && accessToken ? 'flex' : 'none' }}>
       <StatusBar />
       <HomeContainerInfo>
         <PostCardSpaceBetween>

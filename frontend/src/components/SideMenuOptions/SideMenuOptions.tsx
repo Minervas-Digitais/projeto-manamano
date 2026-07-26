@@ -6,7 +6,7 @@ import {
   SideMenuOptionsButtonsContainer,
   SideMenuOptionsButtonsText,
 } from './SideMenuOptionsStyle';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 import api from '../../services/api';
 
 interface Notification {
@@ -34,12 +34,10 @@ export default function SideMenuOptions({
   onPress,
 }: SideMenuOptionsProps) {
   const [hasUnread, setHasUnread] = useState(false);
+  const { accessToken, loggedId } = useAuth();
 
   const loadNotifications = useCallback(async () => {
     if (type !== 'notification') return;
-
-    const loggedId = await secureStorage.getItem('loggedId');
-    const accessToken = await secureStorage.getItem('accessToken');
 
     if (!loggedId || !accessToken) return;
 
@@ -52,7 +50,7 @@ export default function SideMenuOptions({
     } catch (err) {
       console.error('Erro ao carregar notificações', err);
     }
-  }, [type]);
+  }, [type, loggedId, accessToken]);
 
   useFocusEffect(
     useCallback(() => {

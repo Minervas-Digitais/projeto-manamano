@@ -2,33 +2,20 @@
 import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, View } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { RedText, SemiBoldRedText } from './GetInTouchStyle';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
-import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function GetInTouch() {
-  const [loggedIdState, setLoggedIdState] = useState('');
-  const [accessTokenState, setAccessTokenState] = useState('');
-  useEffect(() => {
-    const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-      if (loggedId && accessToken) {
-        setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const { accessToken, loggedId } = useAuth();
   const {
     control,
     handleSubmit,
@@ -44,7 +31,7 @@ export default function GetInTouch() {
         },
         {
           headers: {
-            Authorization: `Bearer ${accessTokenState}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         },
       );
@@ -69,7 +56,7 @@ export default function GetInTouch() {
         style={{
           flex: 1,
           backgroundColor: '#f2f6fa',
-          display: loggedIdState && accessTokenState ? 'flex' : 'none',
+          display: loggedId && accessToken ? 'flex' : 'none',
         }}>
         <SignInForm>
           <SignInInputContainer style={{ gap: 30 }}>

@@ -1,5 +1,5 @@
 /* eslint-disable global-require */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { TouchableOpacity, Text, View, ScrollView } from 'react-native';
 import { useFonts } from 'expo-font';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
@@ -13,15 +13,15 @@ import {
   AddCategoryButton,
   ContentContainer,
 } from './CreateGroupStyle';
-import secureStorage from '../../services/secureStorage';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
 import { RootStackParamList } from '../../navigation/types';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function CreateGroup() {
+  const { accessToken } = useAuth();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
@@ -31,14 +31,6 @@ export default function CreateGroup() {
   const [newCategory, setNewCategory] = useState('');
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
-
-  useEffect(() => {
-    const fetchToken = async () => {
-      const token = await secureStorage.getItem('accessToken');
-      if (token) setAccessToken(token);
-    };
-    fetchToken();
-  }, []);
 
   const handleAddCategory = () => {
     if (newCategory.trim() && !categories.includes(newCategory.trim())) {

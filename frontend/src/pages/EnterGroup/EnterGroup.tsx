@@ -8,18 +8,17 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function EnterGroup({ navigation }: any) {
+  const { accessToken } = useAuth();
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({});
   const onSubmit = async (data: any) => {
-    const accessToken = await secureStorage.getItem('accessToken');
-
     if (!accessToken) {
       console.error('Token do usuário não encontrado.');
       return;

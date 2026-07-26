@@ -18,23 +18,22 @@ import {
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import GroupMembers from '../../components/GroupMembers/GroupMembers';
-import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import NotificationIcon from '../../assets/notification-icon.svg';
 import EditIcon from '../../assets/edit-icon.svg';
 import TrashCan from '../../assets/trash-can.svg';
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function GroupData({ navigation }: any) {
   const route = useRoute();
+  const { accessToken, loggedId } = useAuth();
   const { height: screenHeight } = Dimensions.get('window');
 
   const { groupId } = route.params as { groupId: string };
   const duckPhoto = require('../../assets/duck.png');
   const [groupInfo, setGroupInfo] = useState<any>();
   const [groupParticipant, setGroupParticipant] = useState<any>();
-  const [loggedIdState, setLoggedIdState] = useState('');
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [userRole, setUserRole] = useState<string>('MEMBER');
   const [loggedUserParticipantRole, setLoggedUserParticipantRole] = useState<string>('MEMBER');
   const [deleteModal, setDeleteModal] = useState({
@@ -62,13 +61,7 @@ export default function GroupData({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-
       if (groupId && accessToken && loggedId) {
-        setLoggedIdState(loggedId);
-        setAccessTokenState(accessToken);
-
         api
           .get(`/group/${groupId}`, {
             headers: {
@@ -111,7 +104,7 @@ export default function GroupData({ navigation }: any) {
     };
 
     fetchData();
-  }, []);
+  }, [accessToken, loggedId, groupId]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -126,7 +119,7 @@ export default function GroupData({ navigation }: any) {
     api
       .delete(`/participant/group/${groupId}`, {
         headers: {
-          Authorization: `Bearer ${accessTokenState}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       })
       .then((res) => {
@@ -135,7 +128,7 @@ export default function GroupData({ navigation }: any) {
   }
 
   const handleDeleteParticipant = async (participantUserId: string) => {
-    if (participantUserId !== loggedIdState) {
+    if (participantUserId !== loggedId) {
       Toast.show({
         type: 'error',
         text1: 'Ação indisponível',
@@ -147,14 +140,14 @@ export default function GroupData({ navigation }: any) {
     try {
       await api.delete(`/participant/group/${groupId}`, {
         headers: {
-          Authorization: `Bearer ${accessTokenState}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
       // Recarregar participantes após remoção
       const response = await api.get(`/participant/group/${groupId}`, {
         headers: {
-          Authorization: `Bearer ${accessTokenState}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
       setGroupParticipant(response.data);

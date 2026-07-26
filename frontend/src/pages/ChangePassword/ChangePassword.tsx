@@ -4,7 +4,6 @@
 import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
-import { useEffect, useState } from 'react';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
 import Toast from 'react-native-toast-message';
@@ -12,29 +11,15 @@ import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 import api from '../../services/api';
 import IconPassword from '../../assets/lock-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function ChangePassword() {
+  const { loggedId, accessToken } = useAuth();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const [loggedIdState, setLoggedIdState] = useState('');
-  const [accessTokenState, setAccessTokenState] = useState('');
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      const loggedId = await secureStorage.getItem('loggedId');
-      if (loggedId && accessToken) {
-        setAccessTokenState(accessToken);
-        setLoggedIdState(loggedId);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   const {
     control,
@@ -53,7 +38,7 @@ export default function ChangePassword() {
         },
         {
           headers: {
-            Authorization: `Bearer ${accessTokenState}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         },
       );
@@ -87,7 +72,7 @@ export default function ChangePassword() {
         style={{
           flex: 1,
           backgroundColor: '#f2f6fa',
-          display: loggedIdState && accessTokenState ? 'flex' : 'none',
+          display: loggedId && accessToken ? 'flex' : 'none',
         }}>
         <SignInForm>
           <SignInInputContainer>

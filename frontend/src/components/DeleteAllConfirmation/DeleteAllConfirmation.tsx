@@ -11,12 +11,13 @@ import {
   DeleteConfirmationContainer,
 } from './DeleteAllConfirmationStyle';
 import { ModalOptionsNotificationText } from '../ModalOptionsNotification/ModalOptionsNotificationStyle';
-import secureStorage from '../../services/secureStorage';
 import localStorage from '../../services/localStorage';
 import api from '../../services/api';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function DeleteConfirmation({ text, display }: any) {
   const [shouldDisplay, setShouldDisplay] = useState(display);
+  const { accessToken } = useAuth();
 
   useEffect(() => {
     setShouldDisplay(display);
@@ -27,8 +28,6 @@ export default function DeleteConfirmation({ text, display }: any) {
   });
 
   const optionsDelete = async () => {
-    const accessToken = await secureStorage.getItem('accessToken');
-
     if (!accessToken) {
       console.log('Erro ao deletar todas as notificações: token ausente');
       return;

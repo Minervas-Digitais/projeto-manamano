@@ -5,15 +5,15 @@ import { useFonts } from 'expo-font';
 import Toast from 'react-native-toast-message';
 import NotificationButton from '../../components/NotificationButton/NotificationButton';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function ConfigNotification() {
+  const { accessToken } = useAuth();
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
   });
 
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
     disablePopup: false,
@@ -22,22 +22,12 @@ export default function ConfigNotification() {
   });
 
   useEffect(() => {
-    const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      if (accessToken) {
-        setAccessTokenState(accessToken);
-      }
-    };
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (!accessTokenState) return;
+    if (!accessToken) return;
     const fetchPostUser = async () => {
       try {
         const response = await api.get('notifications/notification-settings', {
           headers: {
-            Authorization: `Bearer ${accessTokenState}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         });
 
@@ -54,7 +44,7 @@ export default function ConfigNotification() {
       }
     };
     fetchPostUser();
-  }, [accessTokenState]);
+  }, [accessToken]);
 
   const handleToggle = async (key: keyof typeof settings) => {
     const newSettings = { ...settings, [key]: !settings[key] };
@@ -62,7 +52,7 @@ export default function ConfigNotification() {
 
     try {
       await api.patch('/notifications/notification-settings', newSettings, {
-        headers: { Authorization: `Bearer ${accessTokenState}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
     } catch (error) {
       Toast.show({

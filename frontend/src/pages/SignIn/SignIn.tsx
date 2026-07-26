@@ -15,7 +15,6 @@ import IconEmail from '../../assets/e-mail-icon.svg';
 import IconPassword from '../../assets/lock-icon.svg';
 import ManaManoLogo from '../../assets/logo-boas-vindas.svg';
 import { registerForPushNotificationsAsync } from '../../hooks/useNotification';
-import secureStorage from '../../services/secureStorage';
 import { useAuth } from '../../context/auth/useAuth';
 
 export default function SignIn({ navigation }: any) {

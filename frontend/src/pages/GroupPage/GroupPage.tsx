@@ -40,11 +40,12 @@ import EventCard from '../../components/EventCard/EventCard';
 import GroupArchives from '../../components/GroupArchives/GroupArchives';
 import NotificationIcon from '../../assets/notification-icon.svg';
 import AddPostIcon from '../../assets/add-post-icon.svg';
-import secureStorage from '../../services/secureStorage';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function GroupPage({ navigation }: any) {
   const route = useRoute();
+  const { accessToken, loggedId } = useAuth();
   const { groupId } = route.params as { groupId: string };
   const { groupName } = route.params as { groupName: string };
   const defaultAvatar = require('../../assets/user-profile.png');
@@ -77,14 +78,13 @@ export default function GroupPage({ navigation }: any) {
     async (pageNum: number, refresh = false) => {
       if (loading || (!hasMore && !refresh)) return;
 
-      const token = await secureStorage.getItem('accessToken');
-      if (!token || !groupId) return;
+      if (!accessToken || !groupId) return;
 
       try {
         setLoading(true);
 
         const response = await api.get(`/post/group/${groupId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
           params: {
             page: pageNum,
             limit: POSTS_PER_PAGE,
@@ -109,24 +109,21 @@ export default function GroupPage({ navigation }: any) {
         setRefreshing(false);
       }
     },
-    [groupId, loading, hasMore],
+    [groupId, loading, hasMore, accessToken],
   );
 
   const getSavedPosts = useCallback(async () => {
-    const token = await secureStorage.getItem('accessToken');
-    if (!token) return;
+    if (!accessToken) return;
 
     try {
       const response = await api.get('/post/saved', {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
-
-      console.log(response.data);
       setSavedPosts(response.data.map((post: any) => post.id));
     } catch (err) {
       console.error('Erro ao buscar posts salvos:', err);
     }
-  }, []);
+  }, [accessToken]);
 
   const loadMorePosts = () => {
     if (!loading && hasMore) {
@@ -155,31 +152,29 @@ export default function GroupPage({ navigation }: any) {
   };
 
   const getGroupCategory = useCallback(async () => {
-    const token = await secureStorage.getItem('accessToken');
-    if (!token || !groupId) {
+    if (!accessToken || !groupId) {
       console.error('Access token or Group ID is missing.');
       return;
     }
     try {
       const response = await api.get(`/category/group/${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const filteredData = response.data.filter((category: any) => category.name !== 'Aulas');
       setCategories(filteredData);
     } catch (error) {
       console.error('Error fetching group categories:', error);
     }
-  }, [groupId]);
+  }, [groupId, accessToken]);
 
   const getGroupArchives = useCallback(async () => {
-    const token = await secureStorage.getItem('accessToken');
-    if (!token || !groupId) {
+    if (!accessToken || !groupId) {
       console.error('Access token or Group ID is missing.');
       return;
     }
     try {
       const response = await api.get(`/archives/group/${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       setArchives(response.data);
     } catch (error: any) {
@@ -191,19 +186,17 @@ export default function GroupPage({ navigation }: any) {
         setArchives([]);
       }
     }
-  }, [groupId]);
+  }, [groupId, accessToken]);
 
   const getUserProfileImage = async (userId: string) => {
-    const token = await secureStorage.getItem('accessToken');
-
-    if (!token) {
+    if (!accessToken) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         responseType: 'arraybuffer',
       });
@@ -217,15 +210,13 @@ export default function GroupPage({ navigation }: any) {
   };
 
   const getUserRoleInGroup = useCallback(async () => {
-    const token = await secureStorage.getItem('accessToken');
-    const loggedId = await secureStorage.getItem('loggedId');
-    if (!token || !groupId || !loggedId) {
+    if (!accessToken || !groupId || !loggedId) {
       console.error('Access token, Group ID or User ID is missing.');
       return;
     }
     try {
       const response = await api.get(`/participant/group/${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       const currentUserParticipant = Array.isArray(response.data)
@@ -248,7 +239,7 @@ export default function GroupPage({ navigation }: any) {
 
       setUserRole('MEMBER'); // Default para membro
     }
-  }, [groupId]);
+  }, [groupId, accessToken, loggedId]);
 
   useEffect(() => {
     getGroupPosts(1, true);
@@ -317,12 +308,9 @@ export default function GroupPage({ navigation }: any) {
   }
 
   const fixActions = async (id: string, isPinned: boolean) => {
-    const token = await secureStorage.getItem('accessToken');
-    const loggedId = await secureStorage.getItem('loggedId');
-
     try {
       const url = isPinned ? `/post/unpin/${id}` : `/post/pin/${id}`;
-      await api.patch(url, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await api.patch(url, {}, { headers: { Authorization: `Bearer ${accessToken}` } });
 
       if (!isPinned) {
         await api.post(
@@ -336,7 +324,7 @@ export default function GroupPage({ navigation }: any) {
           },
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           },
         );

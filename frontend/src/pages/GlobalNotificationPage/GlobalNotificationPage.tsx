@@ -7,13 +7,14 @@ import { useRoute } from '@react-navigation/native';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import { GlobalNotificationContainer } from './GlobalNotificationPageStyle';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function GlobalNotificationPage({ navigation }: any) {
   const route = useRoute();
+  const { accessToken } = useAuth();
   const { id, body } = route.params as { id: string; body?: string };
   const {
     control,
@@ -21,35 +22,31 @@ export default function GlobalNotificationPage({ navigation }: any) {
     formState: { errors },
     setValue,
   } = useForm({});
-  const [accessTokenState, setAccessTokenState] = useState('');
   const [existingNotification, setExistingNotification] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = await secureStorage.getItem('accessToken');
-      if (accessToken) {
-        setAccessTokenState(accessToken);
+      if (!accessToken || !body) return;
 
-        if (body) {
-          api
-            .get('/notifications/user', {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            })
-            .then((response) => {
-              const notification = response.data.find((notif: any) => notif.id === id);
-              if (notification) {
-                setExistingNotification(notification);
-                setValue('input', notification.body);
-              }
-            });
-        }
+      if (body) {
+        api
+          .get('/notifications/user', {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          .then((response) => {
+            const notification = response.data.find((notif: any) => notif.id === id);
+            if (notification) {
+              setExistingNotification(notification);
+              setValue('input', notification.body);
+            }
+          });
       }
     };
 
     fetchData();
-  }, [body, id, setValue]);
+  }, [accessToken, body, id, setValue]);
 
   const onSubmit = async (data: any) => {
     try {
@@ -61,7 +58,7 @@ export default function GlobalNotificationPage({ navigation }: any) {
           },
           {
             headers: {
-              Authorization: `Bearer ${accessTokenState}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           },
         );
@@ -78,7 +75,7 @@ export default function GlobalNotificationPage({ navigation }: any) {
           },
           {
             headers: {
-              Authorization: `Bearer ${accessTokenState}`,
+              Authorization: `Bearer ${accessToken}`,
             },
           },
         );

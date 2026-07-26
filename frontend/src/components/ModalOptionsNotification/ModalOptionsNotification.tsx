@@ -12,12 +12,12 @@ import {
   ModalOptionsNotificationText,
 } from './ModalOptionsNotificationStyle';
 import api from '../../services/api';
-import secureStorage from '../../services/secureStorage';
 import localStorage from '../../services/localStorage';
 import DeleteConfirmation from '../DeleteAllConfirmation/DeleteAllConfirmation';
 import CheckRead from '../../assets/check-read-icon.svg';
 import Trash from '../../assets/trash-red-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
+import { useAuth } from '../../context/auth/useAuth';
 
 export default function ModalOptionsNotification({
   type,
@@ -31,6 +31,7 @@ export default function ModalOptionsNotification({
   const [displayConfirm, setDisplayConfirm] = useState(display ?? false);
   const [displayDelete, setDisplayDelete] = useState(false);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const { accessToken, loggedId } = useAuth();
 
   useEffect(() => {
     setDisplayConfirm(display);
@@ -43,9 +44,6 @@ export default function ModalOptionsNotification({
   if (!fontsLoaded) return null;
 
   const optionsMarkAsRead = async () => {
-    const accessToken = await secureStorage.getItem('accessToken');
-    const loggedId = await secureStorage.getItem('loggedId');
-
     if (!accessToken) return;
 
     if (type === 'header' && loggedId && !admin) {
@@ -87,7 +85,6 @@ export default function ModalOptionsNotification({
     }
 
     if (type !== 'header' && admin) {
-      const accessToken = localStorage.getString('accessToken');
       if (!accessToken) return;
 
       api

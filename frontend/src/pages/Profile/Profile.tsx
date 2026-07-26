@@ -6,11 +6,11 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
 import { useFonts } from 'expo-font';
-import { Image, TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import { AxiosError } from 'axios';
-import secureStorage from '../../services/secureStorage';
+import { useAuth } from '../../context/auth/useAuth';
 import { district } from './ProfileData'; // Adjust the path based on your folder structure
 import {
   ProfileContainerButtons,
@@ -64,6 +64,8 @@ export default function Profile({ navigation, route }: any) {
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
   const [profileImage, setProfileImage] = useState<any>(null);
 
+  const { accessToken, loggedId } = useAuth();
+
   useEffect(() => {
     if (route?.params?.initialTab === 'saved') {
       setMyPostsSelect(false);
@@ -75,15 +77,13 @@ export default function Profile({ navigation, route }: any) {
   useFocusEffect(
     React.useCallback(() => {
       const fetchUserData = async () => {
-        const token = await secureStorage.getItem('accessToken');
-
-        if (token) {
+        if (accessToken && loggedId) {
           try {
-            const userId = await secureStorage.getItem('loggedId');
+            const userId = loggedId;
 
             const { data } = await api.get(`/user/${userId}`, {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             });
 
@@ -95,7 +95,7 @@ export default function Profile({ navigation, route }: any) {
             try {
               const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
                 headers: {
-                  Authorization: `Bearer ${token}`,
+                  Authorization: `Bearer ${accessToken}`,
                 },
                 responseType: 'arraybuffer',
               });
@@ -111,7 +111,7 @@ export default function Profile({ navigation, route }: any) {
               try {
                 const { data: postData } = await api.get(`/post/${userId}/posts`, {
                   headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${accessToken}`,
                   },
                 });
 
@@ -131,7 +131,7 @@ export default function Profile({ navigation, route }: any) {
             const fetchSavedPosts = async () => {
               try {
                 const { data } = await api.get('/post/saved', {
-                  headers: { Authorization: `Bearer ${token}` },
+                  headers: { Authorization: `Bearer ${accessToken}` },
                   params: { all: true },
                 });
                 if (Array.isArray(data?.data)) {
@@ -164,7 +164,7 @@ export default function Profile({ navigation, route }: any) {
       };
 
       fetchUserData();
-    }, []),
+    }, [accessToken, loggedId]),
   );
 
   const [fontsLoaded] = useFonts({
@@ -182,16 +182,14 @@ export default function Profile({ navigation, route }: any) {
     district.find((item) => item.value === String(neighborhood))?.label || 'Unknown';
 
   const getUserProfileImage = async (userId: string) => {
-    const token = await secureStorage.getItem('accessToken');
-
-    if (!token) {
+    if (!accessToken) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         responseType: 'arraybuffer',
       });
