@@ -12,13 +12,13 @@ import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader
 import { useAuth } from '../../context/auth/useAuth';
 
 export default function EnterGroup({ navigation }: any) {
+  const { accessToken } = useAuth();
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({});
   const onSubmit = async (data: any) => {
-    const { accessToken } = useAuth();
 
     if (!accessToken) {
       console.error('Token do usuário não encontrado.');
