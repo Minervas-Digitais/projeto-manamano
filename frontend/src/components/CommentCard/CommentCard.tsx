@@ -22,16 +22,11 @@ export default function CommentCard({ fullName, createdAt, input, userId }: Comm
   const { accessToken } = useAuth();
 
   const [fontsLoaded] = useFonts({
-    // eslint-disable-next-line global-require
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
     'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
   });
-  if (!fontsLoaded) {
-    return undefined;
-  }
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     const fetchProfileImage = async () => {
       if (!accessToken || !userId) return;
@@ -54,7 +49,7 @@ export default function CommentCard({ fullName, createdAt, input, userId }: Comm
     };
 
     fetchProfileImage();
-  }, [userId]);
+  }, [userId, accessToken]);
 
   if (!fontsLoaded) return null;
 
