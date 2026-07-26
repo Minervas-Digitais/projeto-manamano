@@ -100,7 +100,7 @@ export default function Search() {
     };
 
     fetchUserRole();
-  }, []);
+  }, [accessToken, loggedId]);
 
   const saveRecentUser = async (user: { id: string; name: string }) => {
     const image = await getUserProfileImage(user.id);
