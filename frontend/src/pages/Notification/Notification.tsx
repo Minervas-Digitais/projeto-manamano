@@ -12,7 +12,6 @@ import {
 } from './NotificationStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import NotificationCard from '../../components/NotificationCard/NotificationCard';
-import storage from '../../services/localStorage';
 import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import ModalOptionsNotification from '../../components/ModalOptionsNotification/ModalOptionsNotification';
@@ -74,7 +73,7 @@ export default function Notification({ navigation }: any) {
       .then((res) => setNotification(res.data))
       .catch((err) => console.log(err));
     
-  }, []);
+  }, [accessToken, loggedId]);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
