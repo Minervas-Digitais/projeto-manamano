@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable } from 'react-native';
 import { Buffer } from 'buffer';
-import { AxiosError } from 'axios';
 import {
   CommentInputText,
   CommentInputTextFocused,
@@ -54,7 +53,7 @@ export default function CommentInputTextCustom({
     };
 
     fetchProfileImage();
-  }, [defaultAvatar]);
+  }, [accessToken, defaultAvatar, loggedId]);
 
   return (
     <CommentInputTextContainer>
