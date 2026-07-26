@@ -28,7 +28,7 @@ interface InputRef {
 
 export default function NewLesson({ navigation }: any) {
   const route = useRoute();
-  const { accessToken, loggedId } = useAuth();
+  const { accessToken } = useAuth();
   const { groupId } = route.params as { groupId: string };
   const [categories, setCategories] = useState<any[]>([]);
   const [files, setFiles] = useState<
