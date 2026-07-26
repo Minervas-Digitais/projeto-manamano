@@ -1,5 +1,5 @@
 /* eslint-disable global-require */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { TouchableOpacity, Text, View, ScrollView } from 'react-native';
 import { useFonts } from 'expo-font';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
