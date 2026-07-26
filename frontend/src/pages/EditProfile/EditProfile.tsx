@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import React, { useRef, useState, useEffect } from 'react';
 import { TouchableOpacity, View, Dimensions, Alert } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
-import { format, set } from 'date-fns';
+import { format } from 'date-fns';
 import { Buffer } from 'buffer';
 import * as DocumentPicker from 'expo-document-picker';
 import Toast from 'react-native-toast-message';
@@ -11,7 +11,6 @@ import Toast from 'react-native-toast-message';
 import { StatusBar } from 'expo-status-bar';
 import { TextInputMask } from 'react-native-masked-text';
 import { useFocusEffect } from '@react-navigation/native';
-import { AxiosError } from 'axios';
 import { useAuth } from '../../context/auth/useAuth';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
 import { useSideMenu } from '../../context/SideMenuContext';
@@ -248,7 +247,7 @@ export default function EditProfile() {
     };
 
     fetchUser();
-  }, [profileImageData, setValue, accessToken]);
+  }, [profileImageData, setValue, accessToken, loggedId]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
