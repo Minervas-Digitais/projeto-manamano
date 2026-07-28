@@ -1,7 +1,6 @@
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { useFonts } from 'expo-font';
 import Toast from 'react-native-toast-message';
 import NotificationButton from '../../components/NotificationButton/NotificationButton';
 import api from '../../services/api';
@@ -10,10 +9,6 @@ import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader
 
 export default function ConfigNotification() {
   const { accessToken } = useAuth();
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
     disablePopup: false,
@@ -64,7 +59,7 @@ export default function ConfigNotification() {
     }
   };
 
-  if (!fontsLoaded || loading) {
+  if (loading) {
     return <></>;
   }
 

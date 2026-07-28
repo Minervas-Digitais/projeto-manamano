@@ -8,7 +8,6 @@
 /* eslint-disable react/jsx-indent */
 /* eslint-disable implicit-arrow-linebreak */
 import React, { useEffect, useState, useCallback } from 'react';
-import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, ActivityIndicator, ScrollView } from 'react-native';
 import { MMKV } from 'react-native-mmkv';
 import { Buffer } from 'buffer';
@@ -55,10 +54,6 @@ export default function Home({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -238,10 +233,6 @@ export default function Home({ navigation }: any) {
       return defaultAvatar;
     }
   };
-
-  if (!fontsLoaded) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
 
   function formatRelativeDate(postDate: string): string {
     const currentDate = new Date();

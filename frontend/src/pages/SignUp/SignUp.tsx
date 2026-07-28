@@ -4,7 +4,6 @@
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Text, View, StyleSheet, StatusBar, Alert as RNAlert } from 'react-native';
-import { useFonts } from 'expo-font';
 import { isAxiosError } from 'axios';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { SignUpContainer, SignUpInputContainer, SignUpForm } from './SignUpStyle';
@@ -53,14 +52,6 @@ export default function SignUp({ navigation }: any) {
       showAlert('Erro ao criar usuário.');
     }
   };
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-
-  if (!fontsLoaded) {
-    return undefined;
-  }
 
   return (
     <SignUpContainer>

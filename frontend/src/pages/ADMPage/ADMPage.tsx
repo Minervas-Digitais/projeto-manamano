@@ -1,5 +1,4 @@
 /* eslint-disable global-require */
-import { useFonts } from 'expo-font';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
@@ -21,13 +20,6 @@ import { RootStackParamList } from '../../navigation/types';
 export default function ADMPage() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
   return (
     <ADMBlueBackground>
       <StatusBar backgroundColor="white" />

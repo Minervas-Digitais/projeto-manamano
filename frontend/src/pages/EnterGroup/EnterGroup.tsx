@@ -1,5 +1,4 @@
 import React from 'react';
-import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
@@ -67,13 +66,6 @@ export default function EnterGroup({ navigation }: any) {
     }
   };
 
-  const [fontsLoaded] = useFonts({
-    // eslint-disable-next-line global-require
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Entrar em Grupo' }}>
       <View style={{ flex: 1, backgroundColor: '#f2f6fa' }}>

@@ -1,7 +1,6 @@
 /* eslint-disable global-require */
 import React, { useState } from 'react';
 import { TouchableOpacity, Text, View, ScrollView } from 'react-native';
-import { useFonts } from 'expo-font';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import {
@@ -22,11 +21,6 @@ import { useAuth } from '../../context/auth/useAuth';
 export default function CreateGroup() {
   const { accessToken } = useAuth();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-  });
-
   const [categories, setCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [groupName, setGroupName] = useState('');
@@ -128,10 +122,6 @@ export default function CreateGroup() {
     }
     navigation.goBack();
   };
-
-  if (!fontsLoaded) {
-    return null;
-  }
 
   return (
     <ScreenWithHeader headerProps={{ menu: true, font: 'inter-bold', text: 'Criar Grupo' }}>

@@ -3,7 +3,6 @@
 /* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
-import { useFonts } from 'expo-font';
 import { Buffer } from 'buffer';
 import {
   StyleSheet,
@@ -67,12 +66,6 @@ export default function GroupPage({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
 
   const POSTS_PER_PAGE = 10;
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-    'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
-  });
 
   const getGroupPosts = useCallback(
     async (pageNum: number, refresh = false) => {
@@ -248,10 +241,6 @@ export default function GroupPage({ navigation }: any) {
     getUserRoleInGroup();
     getSavedPosts();
   }, [getGroupCategory, getGroupArchives, getUserRoleInGroup, getSavedPosts]);
-
-  if (!fontsLoaded) {
-    return undefined;
-  }
 
   const fileCategory = [
     { categoryName: 'Fotos' },

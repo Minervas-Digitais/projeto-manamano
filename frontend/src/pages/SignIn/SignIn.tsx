@@ -2,7 +2,6 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { useFonts } from 'expo-font';
 import { StatusBar, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import Toast from 'react-native-toast-message';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
@@ -63,13 +62,6 @@ export default function SignIn({ navigation }: any) {
       });
     }
   };
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
 
   return (
     <SignInContainer>

@@ -1,5 +1,4 @@
 /* eslint-disable global-require */
-import { useFonts } from 'expo-font';
 import React, { useEffect, useRef, useState } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
 import { ScrollView, View, Dimensions } from 'react-native';
@@ -219,14 +218,6 @@ export default function NewLesson({ navigation }: any) {
       });
     }
   };
-  const [fontsLoaded] = useFonts({
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-    'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
   const { width } = Dimensions.get('window');
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Publicação' }}>

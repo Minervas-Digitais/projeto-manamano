@@ -2,7 +2,6 @@
 /* eslint-disable array-callback-return */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
-import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, Dimensions } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
@@ -105,15 +104,6 @@ export default function GroupData({ navigation }: any) {
 
     fetchData();
   }, [accessToken, loggedId, groupId]);
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
 
   function handleRemoveParticipant() {
     api
