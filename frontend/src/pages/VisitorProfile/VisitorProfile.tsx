@@ -5,7 +5,6 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
-import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, StyleSheet, ActivityIndicator, Text, Share } from 'react-native';
 import { Buffer } from 'buffer';
 import { useRoute } from '@react-navigation/native';
@@ -46,11 +45,6 @@ export default function VisitorProfile({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<any>(null);
   const { accessToken } = useAuth();
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-  });
 
   const copyToClipboard = async (text: string, message: string) => {
     if (text) {
@@ -120,7 +114,7 @@ export default function VisitorProfile({ navigation }: any) {
     fetchData();
   }, [userId, accessToken]);
 
-  if (!fontsLoaded || loading) {
+  if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator testID="activity-indicator" size="large" color="#170e49" />

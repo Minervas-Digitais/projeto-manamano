@@ -5,7 +5,6 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
-import { useFonts } from 'expo-font';
 import { TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
@@ -167,13 +166,6 @@ export default function Profile({ navigation, route }: any) {
     }, [accessToken, loggedId]),
   );
 
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
   // Split the fullName to display the first two names
   const fullNameSplit = fullName.split(' ');
   const displayName =

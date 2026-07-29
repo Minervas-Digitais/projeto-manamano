@@ -1,5 +1,4 @@
 /* eslint-disable global-require */
-import { useFonts } from 'expo-font';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRoute } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
@@ -270,14 +269,6 @@ export default function NewPost({ navigation }: any) {
       });
     }
   };
-  const [fontsLoaded] = useFonts({
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-    'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Publicação' }}>
       <View

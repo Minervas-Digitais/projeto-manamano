@@ -1,7 +1,6 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { View } from 'react-native';
-import { useFonts } from 'expo-font';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import SideMenuOptions from '../../components/SideMenuOptions/SideMenuOptions';
 import IconLock from '../../assets/lock-licon.svg';
@@ -12,12 +11,6 @@ import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader
 
 export default function Config() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Configurações' }}>
       <View style={{ backgroundColor: '#F2F6FA', flex: 1 }}>

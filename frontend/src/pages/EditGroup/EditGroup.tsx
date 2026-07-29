@@ -9,7 +9,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
-import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 import { EditGroupContainer, EditGroupForm, EditGroupPage } from './EditGroupStyle';
@@ -73,13 +72,6 @@ export default function EditGroup({ navigation }: any) {
     setValue('name', EditGroupData.name);
     setValue('description', EditGroupData.description);
   }, [EditGroupData.name, EditGroupData.description, setValue]);
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
 
   const onSubmit = (data: any) => {
     if (accessToken && groupId) {

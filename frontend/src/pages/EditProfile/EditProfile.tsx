@@ -1,5 +1,4 @@
 /* eslint-disable global-require */
-import { useFonts } from 'expo-font';
 import React, { useRef, useState, useEffect } from 'react';
 import { TouchableOpacity, View, Dimensions, Alert } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
@@ -248,13 +247,6 @@ export default function EditProfile() {
 
     fetchUser();
   }, [profileImageData, setValue, accessToken, loggedId]);
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
 
   return (
     <BlueBackground>

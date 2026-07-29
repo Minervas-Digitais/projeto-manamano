@@ -1,7 +1,6 @@
 /* eslint-disable import/no-duplicates */
 /* eslint-disable global-require */
 /* eslint-disable react/jsx-closing-bracket-location */
-import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
@@ -57,14 +56,6 @@ export default function ChangePassword() {
       });
     }
   };
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-
-  if (!fontsLoaded) {
-    return undefined;
-  }
 
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Mudar Senha' }}>

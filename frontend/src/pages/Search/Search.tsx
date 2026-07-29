@@ -14,7 +14,6 @@ import {
   Dimensions,
 } from 'react-native';
 import { Buffer } from 'buffer';
-import { useFonts } from 'expo-font';
 import { MMKV } from 'react-native-mmkv';
 import {
   PageContainer,
@@ -38,10 +37,6 @@ interface User {
 }
 
 export default function Search() {
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-  });
   const { accessToken, loggedId } = useAuth();
   const [searchText, setSearchText] = useState<string>('');
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
@@ -131,10 +126,6 @@ export default function Search() {
     },
     [timeoutId],
   );
-
-  if (!fontsLoaded) {
-    return null;
-  }
 
   const handleSearchChange = (text: string) => {
     setSearchText(text);

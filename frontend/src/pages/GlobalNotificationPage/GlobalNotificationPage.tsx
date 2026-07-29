@@ -1,4 +1,3 @@
-import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import React, { useEffect, useState } from 'react';
@@ -97,13 +96,6 @@ export default function GlobalNotificationPage({ navigation }: any) {
     }
   };
 
-  const [fontsLoaded] = useFonts({
-    // eslint-disable-next-line global-require
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
   return (
     <ScreenWithHeader
       headerProps={{ font: 'inter-bold', text: body ? 'Editar Comunicado' : 'Comunicado' }}>

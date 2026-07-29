@@ -1,6 +1,5 @@
 /* eslint-disable global-require */
 import React from 'react';
-import { useFonts } from 'expo-font';
 import { AboutContainer, AboutPage } from './AboutStyle';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
 import DevMemberCard from '../../components/DevMemberCard/DevMemberCard';
@@ -16,14 +15,6 @@ export default function About() {
   const guilhermeSobreiraDev = require('../../assets/guilherme-sobreira.png');
   const thiagoBarcellosDev = require('../../assets/thiago-barcellos.jpg');
 
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-semiBold': require('../../fonts/Inter-SemiBold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
   const devMembers: any = [
     {
       name: 'Rayane Domingos',

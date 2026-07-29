@@ -2,7 +2,6 @@
 import React, { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useFonts } from 'expo-font'; // Add this import if missing
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
 import AddButton from '../../components/AddButton/AddButton';
@@ -15,10 +14,6 @@ import { useAuth } from '../../context/auth/useAuth';
 
 export default function Groups() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Use navigation instance
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-
   const { accessToken, loggedId } = useAuth();
 
   const [showPopup, setShowPopup] = useState(false);
@@ -62,10 +57,6 @@ export default function Groups() {
       fetchData();
     }, []),
   );
-
-  if (!fontsLoaded) {
-    return null; // Avoid returning undefined; return null instead
-  }
 
   const handleAddButtonPress = () => {
     // Check if user has permission: role INSTRUCTOR or sysRole MODERATOR or ADMIN

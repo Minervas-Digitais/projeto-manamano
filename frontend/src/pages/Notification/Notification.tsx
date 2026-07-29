@@ -1,7 +1,6 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { useFonts } from 'expo-font';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   ConfigNotificationContainer,
@@ -113,11 +112,6 @@ export default function Notification({ navigation }: any) {
       secureStorage.removeItem('displayNotif').catch(console.error);
     }, [fetchNotifications]),
   );
-
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) return null;
 
   const onPressActions = (body: string, id: string, type: string, idContent?: string) => {
     secureStorage.setItem('body', body).catch(console.error);

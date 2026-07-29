@@ -1,5 +1,4 @@
 /* eslint-disable global-require */
-import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, View } from 'react-native';
 import React from 'react';
@@ -42,14 +41,6 @@ export default function GetInTouch() {
     }
   };
 
-  const [fontsLoaded] = useFonts({
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-    'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-  });
-  if (!fontsLoaded) {
-    return undefined;
-  }
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Fale Conosco' }}>
       <View

@@ -1,7 +1,6 @@
 /* eslint-disable import/no-duplicates */
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
-import { useFonts } from 'expo-font';
 import { Controller, useForm } from 'react-hook-form';
 import { Dimensions, Pressable, ScrollView, View, Share } from 'react-native';
 import { format, isValid } from 'date-fns';
@@ -286,12 +285,6 @@ export default function Post() {
     }
   };
 
-  const [fontsLoaded] = useFonts({
-    'inter-bold': require('../../fonts/Inter-Bold.ttf'),
-    'inter-regular': require('../../fonts/Inter-Regular.ttf'),
-    'inter-semibold': require('../../fonts/Inter-SemiBold.ttf'),
-  });
-
   const { savedPostIds, savePost, unsavePost } = useSavedPosts();
   const isSaved = savedPostIds.has(postId);
 
@@ -312,10 +305,6 @@ export default function Post() {
       console.error('Erro ao compartilhar:', error);
     }
   };
-
-  if (!fontsLoaded) {
-    return undefined;
-  }
 
   return (
     <ScreenWithHeader
