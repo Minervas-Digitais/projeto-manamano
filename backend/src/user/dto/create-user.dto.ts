@@ -40,8 +40,4 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   bio: string;
-
-  @IsArray()
-  @IsOptional()
-  savedPost: string[];
 }

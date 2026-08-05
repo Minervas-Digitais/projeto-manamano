@@ -32,7 +32,6 @@ export interface IUser {
   expertise?: string;
   enterprise?: string;
   bio?: string;
-  savedPost?: string[];
   createdAt: string;
   updatedAt: string;
   sysRole: 'ADMIN' | 'USER' | string;
