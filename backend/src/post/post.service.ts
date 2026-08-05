@@ -173,42 +173,68 @@ export class PostService {
   }
 
   async savePost(userId: string, postId: string): Promise<Omit<User, 'hash'>> {
-    const user = await this.validator.validateUserExists(userId);
+    await this.validator.validateUserExists(userId);
     const post = await this.validator.validatePostExists(postId);
 
     if (post.userId === userId) {
       throw new ForbiddenException(POST_MESSAGES.CANNOT_SAVE_OWN);
     }
 
-    if (user.savedPost.includes(postId)) {
+    const savedPost = await this.prismaService.savedPost.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (savedPost) {
       throw new ConflictException(POST_MESSAGES.ALREADY_SAVED);
     }
 
-    const updatedUser = await this.prismaService.user.update({
-      where: { id: userId },
+    await this.prismaService.savedPost.create({
       data: {
-        savedPost: {
-          push: postId,
-        },
+        userId,
+        postId,
       },
+    });
+
+    const updatedUser = await this.prismaService.user.findUniqueOrThrow({
+      where: { id: userId },
     });
 
     return omitHash(updatedUser);
   }
 
   async removeSavedPost(userId: string, postId: string): Promise<Omit<User, 'hash'>> {
-    const user = await this.validator.validateUserExists(userId);
+    await this.validator.validateUserExists(userId);
     await this.validator.validatePostExists(postId);
 
-    if (!user.savedPost.includes(postId)) {
+    const savedPost = await this.prismaService.savedPost.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (!savedPost) {
       throw new NotFoundException(POST_MESSAGES.POST_NOT_SAVED);
     }
 
-    const updatedUser = await this.prismaService.user.update({
-      where: { id: userId },
-      data: {
-        savedPost: user.savedPost.filter((id) => id !== postId),
+    await this.prismaService.savedPost.delete({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
       },
+    });
+
+    const updatedUser = await this.prismaService.user.findUniqueOrThrow({
+      where: { id: userId },
     });
 
     return omitHash(updatedUser);
@@ -317,53 +343,29 @@ export class PostService {
     userId: string,
     pagination: PaginationDto,
     all = false,
-  ): Promise<PaginatedResponseDto<SerializedPost> | SerializedPost[]> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-      select: { savedPost: true },
+  ): Promise<SerializedPost[]> {
+    await this.validator.validateUserExists(userId);
+
+    const savedPosts = await this.prismaService.savedPost.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        post: {
+          include: postInclude,
+        },
+      },
+      orderBy: {
+        savedAt: 'desc',
+      },
+      ...(all
+        ? {}
+        : {
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+          }),
     });
 
-    if (!user) {
-      throw new NotFoundException(POST_MESSAGES.USER_NOT_FOUND);
-    }
-
-    if (all) {
-      if (user.savedPost.length === 0) {
-        return [];
-      }
-      const posts = await this.prismaService.post.findMany({
-        where: { id: { in: user.savedPost } },
-        include: postInclude,
-        orderBy: { createdAt: 'desc' },
-      });
-      return posts.map(this.serializePost);
-    }
-
-    const page = pagination.page ?? 1;
-    const limit = pagination.limit ?? DEFAULT_POST_LIMIT;
-
-    if (limit > MAX_LIMIT) {
-      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
-    }
-
-    const total = user.savedPost.length;
-    const paginatedIds = user.savedPost.slice((page - 1) * limit, page * limit);
-
-    if (paginatedIds.length === 0) {
-      return new PaginatedResponseDto([], total, { page, limit });
-    }
-
-    const posts = await this.prismaService.post.findMany({
-      where: { id: { in: paginatedIds } },
-      include: postInclude,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const ordered = paginatedIds.map((id) => posts.find((p) => p.id === id)).filter(Boolean);
-
-    return new PaginatedResponseDto((ordered as any[]).map(this.serializePost), total, {
-      page,
-      limit,
-    });
+    return savedPosts.map((savedPost) => this.serializePost(savedPost.post));
   }
 }

@@ -14,7 +14,7 @@ model User {
   email                 String         @unique
   phone                 String         @unique
   hash                  String
-  savedPost             String[]
+  savedPost             SavedPost[]
   birthday              DateTime?
   ethnicity             String?
   neighborhood          String?
@@ -98,6 +98,7 @@ model Post {
   group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   archives    Archive[]
+  savedPost   SavedPost[]
 }
 
 model Comment {
@@ -164,6 +165,18 @@ model AppVersion {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SavedPost {
+  userId   String
+  postId   String
+  savedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
 }
 
 enum PostType {

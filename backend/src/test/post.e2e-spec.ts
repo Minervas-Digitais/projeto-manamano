@@ -332,6 +332,7 @@ describe('Posts', () => {
       const userRes = await createUserWithToken(prismaService, authService, {
         fullName: 'Test User',
       });
+
       userToken = userRes.token;
 
       const response = await request(app.getHttpServer())
@@ -339,7 +340,17 @@ describe('Posts', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(201);
-      expect(response.body.savedPost).toContain(post.id);
+
+      const saved = await prismaService.savedPost.findUnique({
+        where: {
+          userId_postId: {
+            userId: userRes.user.id,
+            postId: post.id,
+          },
+        },
+      });
+
+      expect(saved).not.toBeNull();
     });
 
     it('deve retornar 403 ao tentar salvar próprio post (branch CANNOT_SAVE_OWN)', async () => {
@@ -386,6 +397,7 @@ describe('Posts', () => {
       const userRes = await createUserWithToken(prismaService, authService, {
         fullName: 'Test User',
       });
+
       userToken = userRes.token;
 
       await request(app.getHttpServer())
@@ -397,7 +409,17 @@ describe('Posts', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(201);
-      expect(response.body.savedPost).not.toContain(post.id);
+
+      const saved = await prismaService.savedPost.findUnique({
+        where: {
+          userId_postId: {
+            userId: userRes.user.id,
+            postId: post.id,
+          },
+        },
+      });
+
+      expect(saved).toBeNull();
     });
 
     it('deve retornar 404 ao tentar remover post não salvo (branch POST_NOT_SAVED)', async () => {
