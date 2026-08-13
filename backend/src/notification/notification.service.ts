@@ -244,7 +244,7 @@ export class NotificationService {
     await this.validator.ensureUserIsNotificationSender(id, userId);
 
     const updateData = Object.fromEntries(
-      Object.entries(data).filter(([_, value]) => value !== undefined),
+      Object.entries(data).filter(([, value]) => value !== undefined),
     );
 
     return this.prisma.notification.update({
@@ -291,7 +291,7 @@ export class NotificationService {
     id: string,
     dto: UpdateNotificationSettingsDto,
   ): Promise<Omit<User, 'hash'>> {
-    if (Object.keys(dto).length === 0) {
+    if (Object.values(dto).every((value) => value === undefined)) {
       throw new BadRequestException(NOTIFICATION_MESSAGES.NO_SETTINGS_TO_UPDATE);
     }
 
