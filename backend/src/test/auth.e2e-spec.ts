@@ -2,12 +2,14 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AuthModule } from 'src/auth/auth.module';
+import { AuthService } from 'src/auth/auth.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { createUser } from './test-helpers';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let auth: AuthService;
 
   let user: any;
 
@@ -27,6 +29,7 @@ describe('AuthController (e2e)', () => {
     await app.init();
 
     prisma = moduleFixture.get(PrismaService);
+    auth = moduleFixture.get(AuthService);
 
     user = await createUser(prisma);
   });
@@ -81,5 +84,34 @@ describe('AuthController (e2e)', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('Bad Request');
+  });
+
+  it('deve retornar 401 ao fazer logout sem token', async () => {
+    const response = await request(app.getHttpServer()).post('/auth/logout');
+
+    expect(response.status).toBe(401);
+  });
+
+  it('deve invalidar apenas o refresh token do usuário autenticado', async () => {
+    const { accessToken } = await auth.login({ email: user.email, password: 'password123' });
+
+    const victim = await createUser(prisma);
+    await auth.login({ email: victim.email, password: 'password123' });
+
+    const victimBefore = await prisma.user.findUnique({ where: { id: victim.id } });
+    expect(victimBefore.refreshToken).not.toBeNull();
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ userId: victim.id });
+
+    expect(response.status).toBe(201);
+
+    const userAfter = await prisma.user.findUnique({ where: { id: user.id } });
+    expect(userAfter.refreshToken).toBeNull();
+
+    const victimAfter = await prisma.user.findUnique({ where: { id: victim.id } });
+    expect(victimAfter.refreshToken).not.toBeNull();
   });
 });
