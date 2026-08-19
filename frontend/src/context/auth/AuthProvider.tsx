@@ -59,10 +59,14 @@ export function AuthProvider({ children }: any) {
   }
 
   async function logout() {
-    const refreshToken = await SecureStore.getItemAsync('refreshToken');
-
     try {
-      await api.post('/auth/logout', { refreshToken });
+      await api.post(
+        '/auth/logout',
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
     } catch (err) {
       /* empty */
     }

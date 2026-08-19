@@ -6,7 +6,6 @@ import { LoginDto } from './dto/login.dto';
 import { AuthEntity } from './entity/auth.entity';
 import { RefreshDto } from './dto/refresh.dto';
 import { BASE_MESSAGES } from 'src/messages/base.messages';
-import { LogoutDto } from './dto/logout.dto';
 
 const ACCESS_TOKEN_EXPIRATION: string = '15m';
 const REFRESH_TOKEN_EXPIRATION: string = '7d';
@@ -103,9 +102,9 @@ export class AuthService {
     }
   }
 
-  async logout(logoutDto: LogoutDto) {
+  async logout(userId: string) {
     await this.prismaService.user.update({
-      where: { id: logoutDto.userId },
+      where: { id: userId },
       data: { refreshToken: null },
     });
 
