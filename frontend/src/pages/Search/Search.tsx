@@ -114,7 +114,9 @@ export default function Search() {
     storage.set('recentUsers', JSON.stringify(updatedUsers));
   };
 
-  const handleAvatarPress = () => {};
+  const handleAvatarPress = (userId?: string) => {
+    console.log(`Avatar clicked: ${userId}`);
+  };
 
   const screenWidth = Dimensions.get('window').width;
 
@@ -174,7 +176,6 @@ export default function Search() {
             <ResultSection
               searchText={debouncedSearchText}
               saveRecentUser={saveRecentUser}
-              accessToken={accessToken}
               admin={isAdmin}
             />
           ) : (
