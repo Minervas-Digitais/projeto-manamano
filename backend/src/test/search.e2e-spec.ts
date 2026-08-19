@@ -11,7 +11,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { GroupModule } from 'src/group/group.module';
 import { AuthService } from 'src/auth/auth.service';
 import { SEARCH_MESSAGES } from 'src/messages/search.messages';
-import { createCategory, createGroup, createPost, createUserWithToken } from './test-helpers';
+import {
+  createCategory,
+  createGroup,
+  createPost,
+  createUser,
+  createUserWithToken,
+} from './test-helpers';
 
 describe('SearchController', () => {
   let app: INestApplication;
@@ -102,6 +108,92 @@ describe('SearchController', () => {
       });
     });
 
+    it('deve retornar metadados de paginação com valores padrão', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/search')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test' });
+
+      expect(response.status).toBe(201);
+      expect(response.body.pagination).toEqual({
+        page: 1,
+        limit: 5,
+        users: { page: 1, limit: 5, total: 1, totalPages: 1, hasMore: false },
+        groups: { page: 1, limit: 5, total: 1, totalPages: 1, hasMore: false },
+        posts: { page: 1, limit: 5, total: 1, totalPages: 1, hasMore: false },
+      });
+    });
+
+    it('deve respeitar page e limit', async () => {
+      for (let i = 0; i < 7; i++) {
+        await createUser(prismaService, { fullName: `Test User ${i}` });
+      }
+
+      const response = await request(app.getHttpServer())
+        .post('/search')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test', page: 1, limit: 3 });
+
+      expect(response.status).toBe(201);
+      expect(response.body.users.length).toBe(3);
+      expect(response.body.pagination).toEqual({
+        page: 1,
+        limit: 3,
+        users: { page: 1, limit: 3, total: 8, totalPages: 3, hasMore: true },
+        groups: { page: 1, limit: 3, total: 1, totalPages: 1, hasMore: false },
+        posts: { page: 1, limit: 3, total: 1, totalPages: 1, hasMore: false },
+      });
+
+      const pageTwo = await request(app.getHttpServer())
+        .post('/search')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test', page: 3, limit: 3 });
+
+      expect(pageTwo.status).toBe(201);
+      expect(pageTwo.body.users.length).toBe(2);
+      expect(pageTwo.body.pagination.users).toEqual({
+        page: 3,
+        limit: 3,
+        total: 8,
+        totalPages: 3,
+        hasMore: false,
+      });
+    });
+
+    it('deve retornar arrays vazios em página além do limite', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/search')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test', page: 2, limit: 5 });
+
+      expect(response.status).toBe(201);
+      expect(response.body.users).toEqual([]);
+      expect(response.body.groups).toEqual([]);
+      expect(response.body.posts).toEqual([]);
+      expect(response.body.pagination.users.total).toBe(1);
+      expect(response.body.pagination.users.hasMore).toBe(false);
+    });
+
+    it('deve retornar 400 se page for menor que 1', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/search')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test', page: 0 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('page must not be less than 1');
+    });
+
+    it('deve retornar 400 se limit exceder o máximo', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/search')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test', limit: 51 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('limit must not be greater than 50');
+    });
+
     it('deve retornar 401 se não enviar token', async () => {
       const response = await request(app.getHttpServer()).post('/search').send({ input: 'Test' });
 
@@ -131,7 +223,7 @@ describe('SearchController', () => {
   });
 
   describe('searchByFilter()', () => {
-    it('deve retornar resultados de pesquisa para usuários', async () => {
+    it('deve retornar resultados de pesquisa para usuários com metadados de paginação', async () => {
       const searchDto = { input: 'Test' };
       const filter = 'users';
 
@@ -141,9 +233,18 @@ describe('SearchController', () => {
         .send(searchDto);
 
       expect(response.status).toBe(200);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('fullName');
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('meta');
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data[0]).toHaveProperty('fullName');
+      expect(response.body.meta).toEqual({
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+        hasMore: false,
+      });
     });
 
     it('deve retornar resultados de pesquisa para grupos', async () => {
@@ -156,9 +257,9 @@ describe('SearchController', () => {
         .send(searchDto);
 
       expect(response.status).toBe(200);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('name');
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data[0]).toHaveProperty('name');
     });
 
     it('deve retornar resultados de pesquisa para posts', async () => {
@@ -171,9 +272,50 @@ describe('SearchController', () => {
         .send(searchDto);
 
       expect(response.status).toBe(200);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0]).toHaveProperty('title');
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data[0]).toHaveProperty('title');
+    });
+
+    it('deve respeitar page e limit na busca por filtro', async () => {
+      for (let i = 0; i < 5; i++) {
+        await createUser(prismaService, { fullName: `Test User ${i}` });
+      }
+
+      const response = await request(app.getHttpServer())
+        .post('/search/filter/users')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test', page: 1, limit: 2 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.length).toBe(2);
+      expect(response.body.meta).toEqual({
+        page: 1,
+        limit: 2,
+        total: 6,
+        totalPages: 3,
+        hasMore: true,
+      });
+
+      const lastPage = await request(app.getHttpServer())
+        .post('/search/filter/users')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test', page: 3, limit: 2 });
+
+      expect(lastPage.status).toBe(200);
+      expect(lastPage.body.data.length).toBe(2);
+      expect(lastPage.body.meta.hasMore).toBe(false);
+    });
+
+    it('deve retornar 400 se page/limit forem inválidos na busca por filtro', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/search/filter/users')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test', page: 0, limit: 51 });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('page must not be less than 1');
+      expect(response.body.message).toContain('limit must not be greater than 50');
     });
 
     it('deve retornar 401 se token for inválido', async () => {
