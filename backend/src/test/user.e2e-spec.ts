@@ -42,7 +42,13 @@ describe('User', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
     await app.init();
 
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
@@ -88,6 +94,18 @@ describe('User', () => {
 
     it('deve retornar erro 400 se faltar campos obrigatorios', async () => {
       const response = await request(app.getHttpServer()).post('/user').send({});
+
+      expect(response.status).toBe(400);
+    });
+
+    it('deve rejeitar mass assignment de sysRole, hash e refreshToken no cadastro', async () => {
+      const userDto = makeUserDto({
+        sysRole: RoleType.ADMIN,
+        hash: 'hash-invadido',
+        refreshToken: 'refresh-invadido',
+      });
+
+      const response = await request(app.getHttpServer()).post('/user').send(userDto);
 
       expect(response.status).toBe(400);
     });
@@ -193,7 +211,7 @@ describe('User', () => {
       expect(response.body.fullName).toBe(updateDto.fullName);
     });
 
-    it('deve retornar erro 401 caso o token for invalido', async () => {
+    it('deve retornar erro 400 caso o token for invalido', async () => {
       const updateDto: UpdateUserDto = {
         fullName: 'Usuario Atualizado',
       };
@@ -205,6 +223,56 @@ describe('User', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('deve rejeitar mass assignment de campos sensiveis (sysRole, hash, refreshToken)', async () => {
+      const { user, token } = await createUserWithToken(prismaService, authService);
+
+      const before = await prismaService.user.findUnique({
+        where: { id: user.id },
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch('/user')
+        .set('Authorization', 'Bearer ' + token)
+        .send({
+          fullName: 'Invadido',
+          sysRole: RoleType.ADMIN,
+          hash: 'hash-invadido',
+          refreshToken: 'refresh-invadido',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('sysRole'),
+          expect.stringContaining('hash'),
+          expect.stringContaining('refreshToken'),
+        ]),
+      );
+
+      const storedUser = await prismaService.user.findUnique({
+        where: { id: user.id },
+      });
+      expect(storedUser.fullName).toBe(user.fullName);
+      expect(storedUser.sysRole).toBe(before.sysRole);
+      expect(storedUser.hash).toBe(before.hash);
+      expect(storedUser.refreshToken).toBe(before.refreshToken);
+    });
+
+    it('deve rejeitar campos nao permitidos mesmo junto de campos validos', async () => {
+      const { token } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer())
+        .patch('/user')
+        .set('Authorization', 'Bearer ' + token)
+        .send({
+          fullName: 'Nome Valido',
+          disablePopup: true,
+          pushNotifToken: 'token-invadido',
+        });
+
+      expect(response.status).toBe(400);
     });
   });
 
@@ -410,7 +478,7 @@ describe('User', () => {
 
   describe('updateProfilePicture()', () => {
     it('deve atualizar foto de perfil', async () => {
-      const { user, token } = await createUserWithToken(prismaService, authService);
+      const { token } = await createUserWithToken(prismaService, authService);
 
       const file = createMockFile();
 
