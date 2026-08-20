@@ -34,12 +34,10 @@ export default function EditGroup({ navigation }: any) {
       if (loggedId && groupIdAux) {
         setGroupId(groupIdAux);
 
-        api
-          .get(`/group/${groupIdAux}`)
-          .then((res) => {
-            setGroupName(res.data.name);
-            setDescriptionGroup(res.data.description);
-          });
+        api.get(`/group/${groupIdAux}`).then((res) => {
+          setGroupName(res.data.name);
+          setDescriptionGroup(res.data.description);
+        });
       }
     };
     fetchData();

@@ -61,11 +61,9 @@ export default function GroupData({ navigation }: any) {
   useEffect(() => {
     const fetchData = async () => {
       if (groupId && loggedId) {
-        api
-          .get(`/group/${groupId}`)
-          .then((res) => {
-            setGroupInfo(res.data);
-          });
+        api.get(`/group/${groupId}`).then((res) => {
+          setGroupInfo(res.data);
+        });
 
         api
           .get(`/user/${loggedId}`)
@@ -76,17 +74,15 @@ export default function GroupData({ navigation }: any) {
             console.error('Erro ao buscar dados do usuário:', err);
           });
 
-        api
-          .get(`/participant/group/${groupId}`)
-          .then((res) => {
-            setGroupParticipant(res.data);
-            const loggedUserParticipant = res.data.find(
-              (participant: any) => participant.userId === loggedId,
-            );
-            if (loggedUserParticipant) {
-              setLoggedUserParticipantRole(loggedUserParticipant.role);
-            }
-          });
+        api.get(`/participant/group/${groupId}`).then((res) => {
+          setGroupParticipant(res.data);
+          const loggedUserParticipant = res.data.find(
+            (participant: any) => participant.userId === loggedId,
+          );
+          if (loggedUserParticipant) {
+            setLoggedUserParticipantRole(loggedUserParticipant.role);
+          }
+        });
       }
     };
 
@@ -94,11 +90,9 @@ export default function GroupData({ navigation }: any) {
   }, [loggedId, groupId]);
 
   function handleRemoveParticipant() {
-    api
-      .delete(`/participant/group/${groupId}`)
-      .then((res) => {
-        navigation.navigate('Home');
-      });
+    api.delete(`/participant/group/${groupId}`).then(() => {
+      navigation.navigate('Home');
+    });
   }
 
   const handleDeleteParticipant = async (participantUserId: string) => {

@@ -28,15 +28,13 @@ export default function GlobalNotificationPage({ navigation }: any) {
       if (!loggedId || !body) return;
 
       if (body) {
-        api
-          .get('/notifications/user')
-          .then((response) => {
-            const notification = response.data.find((notif: any) => notif.id === id);
-            if (notification) {
-              setExistingNotification(notification);
-              setValue('input', notification.body);
-            }
-          });
+        api.get('/notifications/user').then((response) => {
+          const notification = response.data.find((notif: any) => notif.id === id);
+          if (notification) {
+            setExistingNotification(notification);
+            setValue('input', notification.body);
+          }
+        });
       }
     };
 
