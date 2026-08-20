@@ -107,7 +107,9 @@ export default function Search() {
     storage.set('recentUsers', JSON.stringify(updatedUsers));
   };
 
-  const handleAvatarPress = () => {};
+  const handleAvatarPress = (userId?: string) => {
+    console.log(`Avatar clicked: ${userId}`);
+  };
 
   const screenWidth = Dimensions.get('window').width;
 
