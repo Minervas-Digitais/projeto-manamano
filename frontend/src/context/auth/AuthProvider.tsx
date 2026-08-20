@@ -25,21 +25,11 @@ export function AuthProvider({ children }: any) {
     const { accessToken, refreshToken, loggedId } = response.data;
 
     await authStore.setSession({ accessToken, refreshToken, loggedId });
-
-    return accessToken;
   }
 
   async function logout() {
-    const { accessToken } = authStore.getState();
-
     try {
-      await api.post(
-        '/auth/logout',
-        {},
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        },
-      );
+      await api.post('/auth/logout');
     } catch (err) {
       /* empty */
     }
@@ -49,13 +39,12 @@ export function AuthProvider({ children }: any) {
 
   const value = useMemo(
     () => ({
-      accessToken: state.accessToken,
       loggedId: state.loggedId,
       isLoading: state.isLoading,
       login,
       logout,
     }),
-    [state.accessToken, state.loggedId, state.isLoading],
+    [state.loggedId, state.isLoading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
