@@ -62,7 +62,7 @@ interface Archive {
 
 export default function Post() {
   const route = useRoute();
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const { postId } = route.params as { postId: string };
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [isFocused, setIsFocused] = useState(false);
@@ -78,11 +78,9 @@ export default function Post() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!loggedId || !accessToken) return;
+      if (!loggedId) return;
       api
-        .get(`/user/${loggedId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        .get(`/user/${loggedId}`)
         .then((res) => setUserName(res.data.fullName))
         .catch((err) => {
           console.error('Erro ao buscar nome do usuário logado:', err);
@@ -90,16 +88,14 @@ export default function Post() {
         });
     };
     fetchData();
-  }, [loggedId, accessToken]);
+  }, [loggedId]);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!loggedId) return;
     const fetchPost = async () => {
       try {
         console.log(postId);
-        const response = await api.get(`post/${postId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const response = await api.get(`post/${postId}`);
         setPost(response.data);
         setRecipientId(response.data.userId);
         setIdGroup(response.data.groupId);
@@ -112,16 +108,14 @@ export default function Post() {
       }
     };
     fetchPost();
-  }, [accessToken, postId]);
+  }, [loggedId, postId]);
 
   useEffect(() => {
-    if (!accessToken || !post?.userId) return;
+    if (!loggedId || !post?.userId) return;
 
     const fetchUserAndImage = async () => {
       try {
-        const responseUser = await api.get(`/user/${post.userId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const responseUser = await api.get(`/user/${post.userId}`);
         const userData: User = responseUser.data;
         setPostUser(userData);
 
@@ -134,15 +128,13 @@ export default function Post() {
     };
 
     fetchUserAndImage();
-  }, [accessToken, post?.userId]);
+  }, [loggedId, post?.userId]);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!loggedId) return;
     const fetchArchives = async () => {
       try {
-        const response = await api.get(`archives/post/${postId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const response = await api.get(`archives/post/${postId}`);
         setPostArchives(response.data);
       } catch (error) {
         console.error('Erro ao buscar arquivos do post', error);
@@ -153,20 +145,16 @@ export default function Post() {
       }
     };
     fetchArchives();
-  }, [accessToken, postId]);
+  }, [loggedId, postId]);
 
   useEffect(() => {
-    if (!accessToken || !post?.Comment?.length) return;
+    if (!loggedId || !post?.Comment?.length) return;
     const fetchCommentUsers = async () => {
       try {
         const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
         const usersData = await Promise.all(
           uniqueUserIds.map(async (userId) => {
-            const response = await api.get(`/user/${userId}`, {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            });
+            const response = await api.get(`/user/${userId}`);
             return { userId, data: response.data };
           }),
         );
@@ -185,7 +173,7 @@ export default function Post() {
     };
 
     fetchCommentUsers();
-  }, [accessToken, post?.Comment]);
+  }, [loggedId, post?.Comment]);
   const postDate = post?.createdAt ? new Date(post.createdAt) : null;
   const formattedDate =
     postDate && isValid(postDate)
@@ -193,12 +181,11 @@ export default function Post() {
       : '';
 
   const getUserProfileImage = async (userId: string): Promise<any> => {
-    if (!accessToken) {
+    if (!loggedId) {
       return defaultAvatar;
     }
     try {
       const response = await api.get(`/user/${userId}/profile-picture`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
         responseType: 'arraybuffer',
       });
       const imageStr = Buffer.from(response.data, 'binary').toString('base64');
@@ -219,24 +206,12 @@ export default function Post() {
   } = useForm({});
   const onSubmit = async (data: any) => {
     try {
-      const response = await api.post(
-        '/comment',
-        {
-          content: data.input,
-          postId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
-
-      const groupResponse = await api.get(`/group/${idGroup}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+      const response = await api.post('/comment', {
+        content: data.input,
+        postId,
       });
+
+      const groupResponse = await api.get(`/group/${idGroup}`);
       if (post && post.userId !== loggedId) {
         const groupNameFromApi = groupResponse.data.name;
         console.log({
@@ -246,21 +221,13 @@ export default function Post() {
           type: 'COMMENT',
           body: '',
         });
-        await api.post(
-          '/notifications',
-          {
-            senderName: userName,
-            recipientId,
-            groupName: groupNameFromApi,
-            type: 'COMMENT',
-            body: '',
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
+        await api.post('/notifications', {
+          senderName: userName,
+          recipientId,
+          groupName: groupNameFromApi,
+          type: 'COMMENT',
+          body: '',
+        });
       }
       Toast.show({
         type: 'success',
@@ -318,7 +285,7 @@ export default function Post() {
         style={{
           backgroundColor: '#f2f6fa',
           height: '100%',
-          display: loggedId && accessToken ? 'flex' : 'none',
+          display: loggedId ? 'flex' : 'none',
         }}>
         {modalOptions ? (
           <ModalOptions

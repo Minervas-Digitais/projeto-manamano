@@ -41,7 +41,7 @@ const POSTS_PER_PAGE = 15;
 
 export default function Home({ navigation }: any) {
   const { toggleMenu } = useSideMenu();
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const defaultAvatar = require('../../assets/user-profile.png');
   const [fullName, setFullName] = useState('');
   const [groups, setGroups] = useState<any[]>([]);
@@ -57,25 +57,17 @@ export default function Home({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!loggedId || !accessToken) return;
+      if (!loggedId) return;
 
       // Buscar informações do usuário
       api
-        .get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
+        .get(`/user/${loggedId}`)
         .then((res) => setFullName(res.data.fullName))
         .catch(() => setFullName('Usuário'));
 
       // Buscar grupos (sem posts)
       api
-        .get('participant/groups/', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
+        .get('participant/groups/')
         .then((res) => {
           // Remover posts dos grupos pois vamos buscá-los separadamente
           const groupsWithoutPosts = (res.data || []).map((group: any) => ({
@@ -90,15 +82,15 @@ export default function Home({ navigation }: any) {
         .catch(() => setGroups([]));
 
       // Carregar primeira página de posts
-      loadPosts(1, accessToken, true);
+      loadPosts(1, true);
     };
 
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, loggedId]);
+  }, [loggedId]);
 
   const loadPosts = useCallback(
-    async (pageNumber: number, token: string, isInitial: boolean = false) => {
+    async (pageNumber: number, isInitial: boolean = false) => {
       if (loading) return;
 
       setLoading(true);
@@ -109,9 +101,6 @@ export default function Home({ navigation }: any) {
           params: {
             page: pageNumber,
             limit: POSTS_PER_PAGE,
-          },
-          headers: {
-            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -124,11 +113,7 @@ export default function Home({ navigation }: any) {
         // Fallback: Se a rota não existir (404), usar a rota antiga
         if (error?.response?.status === 404) {
           try {
-            const fallbackResponse = await api.get('participant/groups/', {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
+            const fallbackResponse = await api.get('participant/groups/');
 
             // Extrair e paginar posts manualmente
             const allGroups = fallbackResponse.data || [];
@@ -184,20 +169,17 @@ export default function Home({ navigation }: any) {
   );
 
   const handleLoadMore = useCallback(() => {
-    if (!loading && hasMore && accessToken && loggedId) {
-      loadPosts(page + 1, accessToken);
+    if (!loading && hasMore && loggedId) {
+      loadPosts(page + 1);
     }
-  }, [loading, hasMore, page, accessToken, loggedId, loadPosts]);
+  }, [loading, hasMore, page, loggedId, loadPosts]);
 
   useFocusEffect(
     useCallback(() => {
       const fetchUserData = async () => {
-        if (accessToken && loggedId) {
+        if (loggedId) {
           try {
             const imageResponse = await api.get(`/user/${loggedId}/profile-picture`, {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
               responseType: 'arraybuffer',
             });
             const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
@@ -210,19 +192,16 @@ export default function Home({ navigation }: any) {
       };
 
       fetchUserData();
-    }, [accessToken, loggedId]),
+    }, [loggedId]),
   );
 
   const getUserProfileImage = async (userId: string) => {
-    if (!accessToken) {
+    if (!loggedId) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
         responseType: 'arraybuffer',
       });
 
@@ -289,7 +268,7 @@ export default function Home({ navigation }: any) {
   };
 
   return (
-    <HomePageBlue style={{ display: loggedId && accessToken ? 'flex' : 'none' }}>
+    <HomePageBlue style={{ display: loggedId ? 'flex' : 'none' }}>
       <StatusBar />
       <HomeContainerInfo>
         <PostCardSpaceBetween>

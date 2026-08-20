@@ -17,7 +17,7 @@ import { useAuth } from '../../context/auth/useAuth';
 
 export default function DeleteConfirmation({ text, display }: any) {
   const [shouldDisplay, setShouldDisplay] = useState(display);
-  const { accessToken } = useAuth();
+  const { loggedId } = useAuth();
 
   useEffect(() => {
     setShouldDisplay(display);
@@ -28,17 +28,13 @@ export default function DeleteConfirmation({ text, display }: any) {
   });
 
   const optionsDelete = async () => {
-    if (!accessToken) {
+    if (!loggedId) {
       console.log('Erro ao deletar todas as notificações: token ausente');
       return;
     }
 
     try {
-      await api.delete('/notifications/user', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      await api.delete('/notifications/user');
       localStorage.delete('displayNotif');
       localStorage.delete('header');
       setShouldDisplay(false);

@@ -1,13 +1,9 @@
 import api from '../api';
 
 export default {
-  async getDetails(token: string) {
+  async getDetails() {
     try {
-      const response = await api.get('/private/getDetails', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get('/private/getDetails');
       return response;
     } catch (e) {
       console.error(e);

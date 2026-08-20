@@ -13,7 +13,7 @@ import { useAuth } from '../../context/auth/useAuth';
 
 export default function GlobalNotificationPage({ navigation }: any) {
   const route = useRoute();
-  const { accessToken } = useAuth();
+  const { loggedId } = useAuth();
   const { id, body } = route.params as { id: string; body?: string };
   const {
     control,
@@ -25,15 +25,11 @@ export default function GlobalNotificationPage({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!accessToken || !body) return;
+      if (!loggedId || !body) return;
 
       if (body) {
         api
-          .get('/notifications/user', {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
+          .get('/notifications/user')
           .then((response) => {
             const notification = response.data.find((notif: any) => notif.id === id);
             if (notification) {
@@ -45,39 +41,23 @@ export default function GlobalNotificationPage({ navigation }: any) {
     };
 
     fetchData();
-  }, [accessToken, body, id, setValue]);
+  }, [loggedId, body, id, setValue]);
 
   const onSubmit = async (data: any) => {
     try {
       if (body && existingNotification) {
-        await api.patch(
-          `/notifications/update/${id}`,
-          {
-            body: data.input,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
+        await api.patch(`/notifications/update/${id}`, {
+          body: data.input,
+        });
         Toast.show({
           type: 'success',
           text1: 'Comunicado atualizado com sucesso!',
         });
       } else {
-        await api.post(
-          '/notifications/global',
-          {
-            type: 'WARNING',
-            body: data.input,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
+        await api.post('/notifications/global', {
+          type: 'WARNING',
+          body: data.input,
+        });
         Toast.show({
           type: 'success',
           text1: 'Comunicado enviado com sucesso!',

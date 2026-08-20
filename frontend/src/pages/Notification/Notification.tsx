@@ -51,7 +51,7 @@ export interface INotification {
 
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const [notification, setNotification] = useState<INotification[]>([]);
   const [display, setDisplay] = useState(false);
   const [userInfo, setUserInfo] = useState<IUser | null>(null);
@@ -62,26 +62,18 @@ export default function Notification({ navigation }: any) {
   });
 
   const fetchNotifications = useCallback(async () => {
-    if (!loggedId || !accessToken) return;
+    if (!loggedId) return;
     api
-      .get('/notifications/user', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
+      .get('/notifications/user')
       .then((res) => setNotification(res.data))
       .catch((err) => console.log(err));
-  }, [accessToken, loggedId]);
+  }, [loggedId]);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
-      if (loggedId && accessToken) {
+      if (loggedId) {
         try {
-          const response = await api.get(`/user/${loggedId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
+          const response = await api.get(`/user/${loggedId}`);
 
           const userData: IUser = response.data;
           setUserInfo(userData);
@@ -98,7 +90,7 @@ export default function Notification({ navigation }: any) {
     };
 
     fetchUserInfo();
-  }, [loggedId, accessToken]);
+  }, [loggedId]);
   useEffect(() => {
     // fetchNotifications();
     const interval = setInterval(fetchNotifications, 1000);
@@ -119,15 +111,7 @@ export default function Notification({ navigation }: any) {
       prev?.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
     );
     api
-      .patch(
-        `/notifications/${id}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      )
+      .patch(`/notifications/${id}`, {})
       // .then((res) => console.log(JSON.stringify(res.data)))
       .catch((err) => console.log('Erro ao atualizar a notificação:', err));
 
@@ -148,11 +132,7 @@ export default function Notification({ navigation }: any) {
   // Function to confirm deletion
   const handleConfirmDelete = async () => {
     try {
-      await api.delete(`/notifications/${deleteModal.notifId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      await api.delete(`/notifications/${deleteModal.notifId}`);
       setNotification((prev) => prev.filter((n: any) => n.id !== deleteModal.notifId));
       Alert.alert('Sucesso', 'Notificação excluída com sucesso!');
     } catch (error: any) {

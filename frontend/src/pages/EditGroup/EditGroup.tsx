@@ -22,7 +22,7 @@ import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader
 import { useAuth } from '../../context/auth/useAuth';
 
 export default function EditGroup({ navigation }: any) {
-  const { accessToken } = useAuth();
+  const { loggedId } = useAuth();
   const [groupId, setGroupId] = useState('');
   const [groupName, setGroupName] = useState('');
   const [descriptionGroup, setDescriptionGroup] = useState('');
@@ -31,15 +31,11 @@ export default function EditGroup({ navigation }: any) {
     const fetchData = async () => {
       const groupIdAux = localStorage.getString('groupId');
 
-      if (accessToken && groupIdAux) {
+      if (loggedId && groupIdAux) {
         setGroupId(groupIdAux);
 
         api
-          .get(`/group/${groupIdAux}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
+          .get(`/group/${groupIdAux}`)
           .then((res) => {
             setGroupName(res.data.name);
             setDescriptionGroup(res.data.description);
@@ -47,7 +43,7 @@ export default function EditGroup({ navigation }: any) {
       }
     };
     fetchData();
-  }, [accessToken]);
+  }, [loggedId]);
 
   const {
     control,
@@ -74,16 +70,11 @@ export default function EditGroup({ navigation }: any) {
   }, [EditGroupData.name, EditGroupData.description, setValue]);
 
   const onSubmit = (data: any) => {
-    if (accessToken && groupId) {
-      api.patch(
-        `/group/${groupId}`,
-        { name: data.name, description: data.description },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
+    if (loggedId && groupId) {
+      api.patch(`/group/${groupId}`, {
+        name: data.name,
+        description: data.description,
+      });
 
       navigation.navigate('GroupPage', { groupId, groupName });
     }

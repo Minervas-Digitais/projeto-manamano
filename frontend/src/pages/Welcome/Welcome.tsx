@@ -17,7 +17,7 @@ import { useAuth } from '../../context/auth/useAuth';
 import api from '../../services/api';
 
 export default function WelcomeScreen({ navigation }: any) {
-  const { accessToken, isLoading, loggedId } = useAuth();
+  const { isLoading, loggedId } = useAuth();
 
   useEffect(() => {
     async function checkAppVersion() {
@@ -35,7 +35,7 @@ export default function WelcomeScreen({ navigation }: any) {
     }
 
     const checkAuth = async () => {
-      if (loggedId && accessToken) {
+      if (loggedId) {
         navigation.reset({
           index: 0,
           routes: [{ name: 'Home' }],
@@ -45,7 +45,7 @@ export default function WelcomeScreen({ navigation }: any) {
 
     checkAppVersion();
     checkAuth();
-  }, [navigation, loggedId, accessToken]);
+  }, [navigation, loggedId]);
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),

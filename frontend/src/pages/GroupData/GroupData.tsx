@@ -26,7 +26,7 @@ import { useAuth } from '../../context/auth/useAuth';
 
 export default function GroupData({ navigation }: any) {
   const route = useRoute();
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const { height: screenHeight } = Dimensions.get('window');
 
   const { groupId } = route.params as { groupId: string };
@@ -60,23 +60,15 @@ export default function GroupData({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (groupId && accessToken && loggedId) {
+      if (groupId && loggedId) {
         api
-          .get(`/group/${groupId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
+          .get(`/group/${groupId}`)
           .then((res) => {
             setGroupInfo(res.data);
           });
 
         api
-          .get(`/user/${loggedId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
+          .get(`/user/${loggedId}`)
           .then((res) => {
             setUserRole(res.data.sysRole);
           })
@@ -85,11 +77,7 @@ export default function GroupData({ navigation }: any) {
           });
 
         api
-          .get(`/participant/group/${groupId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
+          .get(`/participant/group/${groupId}`)
           .then((res) => {
             setGroupParticipant(res.data);
             const loggedUserParticipant = res.data.find(
@@ -103,15 +91,11 @@ export default function GroupData({ navigation }: any) {
     };
 
     fetchData();
-  }, [accessToken, loggedId, groupId]);
+  }, [loggedId, groupId]);
 
   function handleRemoveParticipant() {
     api
-      .delete(`/participant/group/${groupId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
+      .delete(`/participant/group/${groupId}`)
       .then((res) => {
         navigation.navigate('Home');
       });
@@ -128,18 +112,10 @@ export default function GroupData({ navigation }: any) {
     }
 
     try {
-      await api.delete(`/participant/group/${groupId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      await api.delete(`/participant/group/${groupId}`);
 
       // Recarregar participantes após remoção
-      const response = await api.get(`/participant/group/${groupId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await api.get(`/participant/group/${groupId}`);
       setGroupParticipant(response.data);
       setDeleteModal({ visible: false, participantId: '', participantName: '' });
     } catch (error) {

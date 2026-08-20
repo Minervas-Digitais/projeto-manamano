@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import secureStorage from '../services/secureStorage';
 import api from '../services/api';
+import { useAuth } from './auth/useAuth';
 
 type SavedPostsContextType = {
   savedPostIds: Set<string>;
@@ -15,35 +15,27 @@ type SavedPostsProviderProps = {
 };
 
 export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
+  const { loggedId } = useAuth();
   const [savedPostIds, setSavedPostIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchSavedPosts = async () => {
-      try {
-        const token = await secureStorage.getItem('accessToken');
-        if (!token) return;
+      if (!loggedId) return;
 
-        const response = await api.get('/post/saved?all=true', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      try {
+        const response = await api.get('/post/saved?all=true');
         setSavedPostIds(new Set(response.data.map((p: any) => p.id)));
       } catch (error) {
         console.error('Erro ao buscar posts salvos:', error);
       }
     };
     fetchSavedPosts();
-  }, []);
+  }, [loggedId]);
 
   const savePost = async (postId: string) => {
     setSavedPostIds((prev) => new Set(prev).add(postId));
     try {
-      const token = await secureStorage.getItem('accessToken');
-      if (!token) return;
-      await api.patch(
-        `/post/save/${postId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await api.patch(`/post/save/${postId}`);
       console.log('Post salvo com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar post:', error);
@@ -62,13 +54,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
       return newSet;
     });
     try {
-      const token = await secureStorage.getItem('accessToken');
-      if (!token) return;
-      await api.patch(
-        `/post/unsave/${postId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await api.patch(`/post/unsave/${postId}`);
       console.log('Post removido dos salvos!');
     } catch (error) {
       console.error('Erro ao remover post dos salvos:', error);

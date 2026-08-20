@@ -8,7 +8,7 @@ import { useAuth } from '../../context/auth/useAuth';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function ConfigNotification() {
-  const { accessToken } = useAuth();
+  const { loggedId } = useAuth();
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState({
     disablePopup: false,
@@ -17,14 +17,10 @@ export default function ConfigNotification() {
   });
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!loggedId) return;
     const fetchPostUser = async () => {
       try {
-        const response = await api.get('notifications/notification-settings', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        const response = await api.get('notifications/notification-settings');
 
         setSettings(response.data);
         setLoading(false);
@@ -39,16 +35,14 @@ export default function ConfigNotification() {
       }
     };
     fetchPostUser();
-  }, [accessToken]);
+  }, [loggedId]);
 
   const handleToggle = async (key: keyof typeof settings) => {
     const newSettings = { ...settings, [key]: !settings[key] };
     setSettings(newSettings);
 
     try {
-      await api.patch('/notifications/notification-settings', newSettings, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      await api.patch('/notifications/notification-settings', newSettings);
     } catch (error) {
       Toast.show({
         type: 'error',

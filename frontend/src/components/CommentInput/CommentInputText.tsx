@@ -26,20 +26,17 @@ export default function CommentInputTextCustom({
 }: any) {
   const defaultAvatar = require('../../assets/user-profile.png');
   const [profileImage, setProfileImage] = useState<any>(defaultAvatar);
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
 
   useEffect(() => {
     const fetchProfileImage = async () => {
-      if (!loggedId || !accessToken) {
+      if (!loggedId) {
         setProfileImage(defaultAvatar);
         return;
       }
 
       try {
         const response = await api.get(`/user/${loggedId}/profile-picture`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
           responseType: 'arraybuffer',
         });
 
@@ -53,7 +50,7 @@ export default function CommentInputTextCustom({
     };
 
     fetchProfileImage();
-  }, [accessToken, defaultAvatar, loggedId]);
+  }, [defaultAvatar, loggedId]);
 
   return (
     <CommentInputTextContainer>

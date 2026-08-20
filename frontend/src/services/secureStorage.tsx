@@ -32,15 +32,6 @@ const secureStorage = {
       throw error;
     }
   },
-
-  async clearAuth(): Promise<void> {
-    try {
-      await SecureStore.deleteItemAsync('accessToken');
-    } catch {}
-    try {
-      await SecureStore.deleteItemAsync('loggedId');
-    } catch {}
-  },
 };
 
 export default secureStorage;

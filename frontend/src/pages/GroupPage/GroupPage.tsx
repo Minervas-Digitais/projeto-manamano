@@ -44,7 +44,7 @@ import { useAuth } from '../../context/auth/useAuth';
 
 export default function GroupPage({ navigation }: any) {
   const route = useRoute();
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const { groupId } = route.params as { groupId: string };
   const { groupName } = route.params as { groupName: string };
   const defaultAvatar = require('../../assets/user-profile.png');
@@ -71,13 +71,12 @@ export default function GroupPage({ navigation }: any) {
     async (pageNum: number, refresh = false) => {
       if (loading || (!hasMore && !refresh)) return;
 
-      if (!accessToken || !groupId) return;
+      if (!loggedId || !groupId) return;
 
       try {
         setLoading(true);
 
         const response = await api.get(`/post/group/${groupId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
           params: {
             page: pageNum,
             limit: POSTS_PER_PAGE,
@@ -102,21 +101,19 @@ export default function GroupPage({ navigation }: any) {
         setRefreshing(false);
       }
     },
-    [groupId, loading, hasMore, accessToken],
+    [groupId, loading, hasMore, loggedId],
   );
 
   const getSavedPosts = useCallback(async () => {
-    if (!accessToken) return;
+    if (!loggedId) return;
 
     try {
-      const response = await api.get('/post/saved', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const response = await api.get('/post/saved');
       setSavedPosts(response.data.map((post: any) => post.id));
     } catch (err) {
       console.error('Erro ao buscar posts salvos:', err);
     }
-  }, [accessToken]);
+  }, [loggedId]);
 
   const loadMorePosts = () => {
     if (!loading && hasMore) {
@@ -145,30 +142,26 @@ export default function GroupPage({ navigation }: any) {
   };
 
   const getGroupCategory = useCallback(async () => {
-    if (!accessToken || !groupId) {
+    if (!loggedId || !groupId) {
       console.error('Access token or Group ID is missing.');
       return;
     }
     try {
-      const response = await api.get(`/category/group/${groupId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const response = await api.get(`/category/group/${groupId}`);
       const filteredData = response.data.filter((category: any) => category.name !== 'Aulas');
       setCategories(filteredData);
     } catch (error) {
       console.error('Error fetching group categories:', error);
     }
-  }, [groupId, accessToken]);
+  }, [groupId, loggedId]);
 
   const getGroupArchives = useCallback(async () => {
-    if (!accessToken || !groupId) {
+    if (!loggedId || !groupId) {
       console.error('Access token or Group ID is missing.');
       return;
     }
     try {
-      const response = await api.get(`/archives/group/${groupId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const response = await api.get(`/archives/group/${groupId}`);
       setArchives(response.data);
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -179,18 +172,15 @@ export default function GroupPage({ navigation }: any) {
         setArchives([]);
       }
     }
-  }, [groupId, accessToken]);
+  }, [groupId, loggedId]);
 
   const getUserProfileImage = async (userId: string) => {
-    if (!accessToken) {
+    if (!loggedId) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
         responseType: 'arraybuffer',
       });
 
@@ -203,14 +193,12 @@ export default function GroupPage({ navigation }: any) {
   };
 
   const getUserRoleInGroup = useCallback(async () => {
-    if (!accessToken || !groupId || !loggedId) {
+    if (!groupId || !loggedId) {
       console.error('Access token, Group ID or User ID is missing.');
       return;
     }
     try {
-      const response = await api.get(`/participant/group/${groupId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const response = await api.get(`/participant/group/${groupId}`);
 
       const currentUserParticipant = Array.isArray(response.data)
         ? response.data.find((participant: any) => participant.userId === loggedId)
@@ -232,7 +220,7 @@ export default function GroupPage({ navigation }: any) {
 
       setUserRole('MEMBER'); // Default para membro
     }
-  }, [groupId, accessToken, loggedId]);
+  }, [groupId, loggedId]);
 
   useEffect(() => {
     getGroupPosts(1, true);
@@ -299,24 +287,16 @@ export default function GroupPage({ navigation }: any) {
   const fixActions = async (id: string, isPinned: boolean) => {
     try {
       const url = isPinned ? `/post/unpin/${id}` : `/post/pin/${id}`;
-      await api.patch(url, {}, { headers: { Authorization: `Bearer ${accessToken}` } });
+      await api.patch(url);
 
       if (!isPinned) {
-        await api.post(
-          '/notifications',
-          {
-            groupId,
-            groupName,
-            type: 'FIXED',
-            body: '',
-            idContent: id,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
+        await api.post('/notifications', {
+          groupId,
+          groupName,
+          type: 'FIXED',
+          body: '',
+          idContent: id,
+        });
       }
 
       getGroupPosts(1, true);

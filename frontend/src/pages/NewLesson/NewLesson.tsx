@@ -27,7 +27,7 @@ interface InputRef {
 
 export default function NewLesson({ navigation }: any) {
   const route = useRoute();
-  const { accessToken } = useAuth();
+  const { loggedId } = useAuth();
   const { groupId } = route.params as { groupId: string };
   const [categories, setCategories] = useState<any[]>([]);
   const [files, setFiles] = useState<
@@ -43,14 +43,10 @@ export default function NewLesson({ navigation }: any) {
     });
   };
   useEffect(() => {
-    if (!accessToken) return;
+    if (!loggedId) return;
     const fetchCategories = async () => {
       try {
-        const response = await api.get(`/category/group/${groupId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        const response = await api.get(`/category/group/${groupId}`);
         setCategories(response.data);
       } catch (error) {
         Toast.show({
@@ -60,7 +56,7 @@ export default function NewLesson({ navigation }: any) {
       }
     };
     fetchCategories();
-  }, [accessToken, groupId]);
+  }, [loggedId, groupId]);
 
   function formatDate(date: string): string {
     const [day, month, year] = date.split('/');
@@ -79,43 +75,27 @@ export default function NewLesson({ navigation }: any) {
     try {
       const formattedDate = formatDate(data.date);
       const datetimeISO = new Date(`${formattedDate}T${data.hour}:00`).toISOString();
-      const response = await api.post(
-        '/post',
-        {
-          type: 'CLASS',
-          input: data.input,
-          categoryId: selectedCategory.id,
-          groupId,
-          schedule: datetimeISO,
-          title: data.title,
-          urlLive: data.link,
-          urlRecorded: data.vod,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
+      const response = await api.post('/post', {
+        type: 'CLASS',
+        input: data.input,
+        categoryId: selectedCategory.id,
+        groupId,
+        schedule: datetimeISO,
+        title: data.title,
+        urlLive: data.link,
+        urlRecorded: data.vod,
+      });
       const { id } = response.data;
       await Promise.all(
         files.map(async (file) => {
-          await api.post(
-            '/archives',
-            {
-              name: file.name,
-              mimeType: file.mimeType,
-              groupId,
-              contentBase64: file.uri,
-              type: file.mimeType,
-              postId: id,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            },
-          );
+          await api.post('/archives', {
+            name: file.name,
+            mimeType: file.mimeType,
+            groupId,
+            contentBase64: file.uri,
+            type: file.mimeType,
+            postId: id,
+          });
         }),
       );
       Toast.show({
