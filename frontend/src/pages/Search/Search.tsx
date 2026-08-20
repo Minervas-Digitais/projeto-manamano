@@ -37,7 +37,7 @@ interface User {
 }
 
 export default function Search() {
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const [searchText, setSearchText] = useState<string>('');
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
   const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -47,15 +47,12 @@ export default function Search() {
   const avatar = require('../../assets/user-profile.png');
 
   const getUserProfileImage = async (userId: string) => {
-    if (!accessToken) {
+    if (!loggedId) {
       return avatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
         responseType: 'arraybuffer',
       });
 
@@ -76,14 +73,10 @@ export default function Search() {
 
   useEffect(() => {
     const fetchUserRole = async () => {
-      if (!accessToken || !loggedId) return;
+      if (!loggedId) return;
 
       try {
-        const res = await api.get(`/user/${loggedId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        const res = await api.get(`/user/${loggedId}`);
 
         if (res.data?.sysRole === 'ADMIN') {
           setIsAdmin(true);
@@ -94,7 +87,7 @@ export default function Search() {
     };
 
     fetchUserRole();
-  }, [accessToken, loggedId]);
+  }, [loggedId]);
 
   const saveRecentUser = async (user: { id: string; name: string }) => {
     const image = await getUserProfileImage(user.id);
@@ -172,7 +165,7 @@ export default function Search() {
             />
           </SearchInputWrapper>
 
-          {debouncedSearchText.length > 0 && accessToken ? (
+          {debouncedSearchText.length > 0 && loggedId ? (
             <ResultSection
               searchText={debouncedSearchText}
               saveRecentUser={saveRecentUser}

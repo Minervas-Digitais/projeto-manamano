@@ -27,7 +27,7 @@ export default function SignIn({ navigation }: any) {
 
   const onSubmit = async (data: any) => {
     try {
-      const accessToken = await login(data.email, data.password);
+      await login(data.email, data.password);
 
       // Tentar registrar notificações push (não bloqueia o login se falhar)
       try {
@@ -35,15 +35,7 @@ export default function SignIn({ navigation }: any) {
 
         if (pushToken) {
           try {
-            await api.post(
-              '/notifications/register-token',
-              { pushNotifToken: pushToken },
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              },
-            );
+            await api.post('/notifications/register-token', { pushNotifToken: pushToken });
           } catch (error) {
             console.error('Erro ao enviar push token para o backend:', error);
           }

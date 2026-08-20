@@ -67,7 +67,7 @@ interface PaginationMeta {
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function ResultSection({ searchText, saveRecentUser, admin }: ResultSectionProps) {
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const [selectedSection, setSelectedSection] = useState<keyof DataState | ''>('');
   const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });
   const [page, setPage] = useState(1);
@@ -91,15 +91,12 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   const [userAvatars, setUserAvatars] = useState<Record<string, any>>({});
 
   const getUserProfileImage = async (userId: string) => {
-    if (!accessToken) {
+    if (!loggedId) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
         responseType: 'arraybuffer',
       });
 
@@ -113,21 +110,13 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
 
   // Função para buscar dados do servidor
   const fetchSearch = useCallback(async (): Promise<void> => {
-    if (!accessToken) {
-      console.error('No access token available.');
+    if (!loggedId) {
+      console.error('No user logged in.');
       return;
     }
 
     try {
-      const response = await api.post(
-        '/search',
-        { input: searchText },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
+      const response = await api.post('/search', { input: searchText });
 
       const json = response.data;
       setData({
@@ -138,25 +127,21 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
     } catch (error) {
       console.error('Error fetching data:', error);
     }
-  }, [accessToken, searchText]);
+  }, [loggedId, searchText]);
 
   const fetchFiltered = useCallback(
     async (section: keyof DataState, pageNumber: number): Promise<void> => {
-      if (!accessToken) {
-        console.error('No access token available.');
+      if (!loggedId) {
+        console.error('No user logged in.');
         return;
       }
 
       try {
-        const response = await api.post(
-          `/search/filter/${section}`,
-          { input: searchText, page: pageNumber, limit: DEFAULT_PAGE_SIZE },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
+        const response = await api.post(`/search/filter/${section}`, {
+          input: searchText,
+          page: pageNumber,
+          limit: DEFAULT_PAGE_SIZE,
+        });
 
         const { data: items, meta }: { data: (User | Group | Post)[]; meta: PaginationMeta } =
           response.data;
@@ -171,7 +156,7 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
         console.error('Error fetching data:', error);
       }
     },
-    [accessToken, searchText],
+    [loggedId, searchText],
   );
 
   const handleLoadMore = (section: keyof DataState): void => {
@@ -183,11 +168,7 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   // Delete user
   const onPressUser = async (userId: string) => {
     try {
-      await api.delete(`/user/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      await api.delete(`/user/${userId}`);
 
       Alert.alert('Sucesso', 'Usuário deletado com sucesso!');
 
@@ -203,11 +184,7 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   // Delete group
   const onPressGroup = async (groupId: string) => {
     try {
-      await api.delete(`/group/${groupId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      await api.delete(`/group/${groupId}`);
 
       Alert.alert('Sucesso', 'Grupo deletado com sucesso!');
 
@@ -223,11 +200,7 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   // Delete post
   const onPressPost = async (postId: string) => {
     try {
-      await api.delete(`/post/${postId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      await api.delete(`/post/${postId}`);
 
       Alert.alert('Sucesso', 'Publicação deletada com sucesso!');
 
@@ -256,17 +229,13 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   }, [selectedSection, fetchFiltered]);
 
   const fetchUserName = async (userId: string): Promise<string> => {
-    if (!accessToken) {
-      console.error('No access token available.');
+    if (!loggedId) {
+      console.error('No user logged in.');
       return 'Nome não encontrado';
     }
 
     try {
-      const response = await api.get(`/user/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await api.get(`/user/${userId}`);
 
       const user = response.data;
       const fullName = user.fullName.split(' ');
@@ -278,17 +247,13 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   };
 
   const fetchNumComments = async (postId: string): Promise<number> => {
-    if (!accessToken) {
-      console.error('No access token available.');
+    if (!loggedId) {
+      console.error('No user logged in.');
       return 0;
     }
 
     try {
-      const response = await api.get(`/post/${postId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await api.get(`/post/${postId}`);
 
       const postDetails = response.data;
       return postDetails.Comment ? postDetails.Comment.length : 0;
@@ -355,7 +320,7 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
     }
   };
 
-  if (!fontsLoaded || !accessToken) {
+  if (!fontsLoaded || !loggedId) {
     return null;
   }
 

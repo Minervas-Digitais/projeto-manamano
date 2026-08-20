@@ -57,7 +57,7 @@ export default function EditProfile() {
   });
   const { width, height } = Dimensions.get('window');
   const defaultAvatar = require('../../assets/user-profile.png');
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const onSubmit = async (data: any) => {
     try {
       console.log('Form submitted with data:', data);
@@ -69,18 +69,14 @@ export default function EditProfile() {
         data.birthday = formattedBirthday;
       }
 
-      if (!accessToken || !loggedId) {
+      if (!loggedId) {
         console.log('Missing access token or user ID.');
         Alert.alert('No access token or user ID found. Please sign in again.');
         return;
       }
 
       console.log('Sending request to API...');
-      const response = await api.patch('/user', data, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await api.patch('/user', data);
 
       console.log('API response:', response.data);
       Alert.alert('Changes saved successfully!');
@@ -130,7 +126,7 @@ export default function EditProfile() {
           type: file.mimeType || 'image/jpeg',
         };
 
-        if (!accessToken || !loggedId) {
+        if (!loggedId) {
           Toast.show({
             type: 'error',
             text1: 'Você precisa estar logado para atualizar a imagem.',
@@ -144,7 +140,6 @@ export default function EditProfile() {
         const response = await api.patch('/user/profile-picture', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${accessToken}`,
           },
         });
 
@@ -181,12 +176,9 @@ export default function EditProfile() {
 
   useFocusEffect(() => {
     const fetchUserData = async () => {
-      if (accessToken && loggedId) {
+      if (loggedId) {
         try {
           const imageResponse = await api.get(`/user/${loggedId}/profile-picture`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
             responseType: 'arraybuffer',
           });
 
@@ -205,13 +197,9 @@ export default function EditProfile() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (accessToken && loggedId) {
+      if (loggedId) {
         try {
-          const response = await api.get(`/user/${loggedId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
+          const response = await api.get(`/user/${loggedId}`);
 
           const userData = response.data;
 
@@ -246,7 +234,7 @@ export default function EditProfile() {
     };
 
     fetchUser();
-  }, [profileImageData, setValue, accessToken, loggedId]);
+  }, [profileImageData, setValue, loggedId]);
 
   return (
     <BlueBackground>

@@ -26,7 +26,7 @@ import { useAuth } from '../../context/auth/useAuth';
 
 export default function GroupData({ navigation }: any) {
   const route = useRoute();
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const { height: screenHeight } = Dimensions.get('window');
 
   const { groupId } = route.params as { groupId: string };
@@ -60,23 +60,13 @@ export default function GroupData({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (groupId && accessToken && loggedId) {
-        api
-          .get(`/group/${groupId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-          .then((res) => {
-            setGroupInfo(res.data);
-          });
+      if (groupId && loggedId) {
+        api.get(`/group/${groupId}`).then((res) => {
+          setGroupInfo(res.data);
+        });
 
         api
-          .get(`/user/${loggedId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
+          .get(`/user/${loggedId}`)
           .then((res) => {
             setUserRole(res.data.sysRole);
           })
@@ -84,37 +74,25 @@ export default function GroupData({ navigation }: any) {
             console.error('Erro ao buscar dados do usuário:', err);
           });
 
-        api
-          .get(`/participant/group/${groupId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-          .then((res) => {
-            setGroupParticipant(res.data);
-            const loggedUserParticipant = res.data.find(
-              (participant: any) => participant.userId === loggedId,
-            );
-            if (loggedUserParticipant) {
-              setLoggedUserParticipantRole(loggedUserParticipant.role);
-            }
-          });
+        api.get(`/participant/group/${groupId}`).then((res) => {
+          setGroupParticipant(res.data);
+          const loggedUserParticipant = res.data.find(
+            (participant: any) => participant.userId === loggedId,
+          );
+          if (loggedUserParticipant) {
+            setLoggedUserParticipantRole(loggedUserParticipant.role);
+          }
+        });
       }
     };
 
     fetchData();
-  }, [accessToken, loggedId, groupId]);
+  }, [loggedId, groupId]);
 
   function handleRemoveParticipant() {
-    api
-      .delete(`/participant/group/${groupId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-      .then((res) => {
-        navigation.navigate('Home');
-      });
+    api.delete(`/participant/group/${groupId}`).then(() => {
+      navigation.navigate('Home');
+    });
   }
 
   const handleDeleteParticipant = async (participantUserId: string) => {
@@ -128,18 +106,10 @@ export default function GroupData({ navigation }: any) {
     }
 
     try {
-      await api.delete(`/participant/group/${groupId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      await api.delete(`/participant/group/${groupId}`);
 
       // Recarregar participantes após remoção
-      const response = await api.get(`/participant/group/${groupId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const response = await api.get(`/participant/group/${groupId}`);
       setGroupParticipant(response.data);
       setDeleteModal({ visible: false, participantId: '', participantName: '' });
     } catch (error) {

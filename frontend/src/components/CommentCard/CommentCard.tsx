@@ -19,7 +19,7 @@ interface CommentCardProps {
 
 export default function CommentCard({ fullName, createdAt, input, userId }: CommentCardProps) {
   const [profileImage, setProfileImage] = useState<any>(defaultAvatar);
-  const { accessToken } = useAuth();
+  const { loggedId } = useAuth();
 
   const [fontsLoaded] = useFonts({
     'inter-bold': require('../../fonts/Inter-Bold.ttf'),
@@ -29,13 +29,10 @@ export default function CommentCard({ fullName, createdAt, input, userId }: Comm
 
   useEffect(() => {
     const fetchProfileImage = async () => {
-      if (!accessToken || !userId) return;
+      if (!loggedId || !userId) return;
 
       try {
         const response = await api.get(`/user/${userId}/profile-picture`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
           responseType: 'arraybuffer',
         });
 
@@ -49,7 +46,7 @@ export default function CommentCard({ fullName, createdAt, input, userId }: Comm
     };
 
     fetchProfileImage();
-  }, [userId, accessToken]);
+  }, [userId, loggedId]);
 
   if (!fontsLoaded) return null;
 

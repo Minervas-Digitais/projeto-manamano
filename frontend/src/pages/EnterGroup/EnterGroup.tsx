@@ -11,14 +11,14 @@ import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader
 import { useAuth } from '../../context/auth/useAuth';
 
 export default function EnterGroup({ navigation }: any) {
-  const { accessToken } = useAuth();
+  const { loggedId } = useAuth();
   const {
     control,
     handleSubmit,
     formState: { errors },
   } = useForm({});
   const onSubmit = async (data: any) => {
-    if (!accessToken) {
+    if (!loggedId) {
       console.error('Token do usuário não encontrado.');
       return;
     }
@@ -29,11 +29,7 @@ export default function EnterGroup({ navigation }: any) {
         inviteCode: data.inviteCode,
       };
 
-      const resp = await api.post('/participant', participantData, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      const resp = await api.post('/participant', participantData);
 
       console.log('Participante adicionado com sucesso:', resp.data);
       Toast.show({

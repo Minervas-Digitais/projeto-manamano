@@ -63,7 +63,7 @@ export default function Profile({ navigation, route }: any) {
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
   const [profileImage, setProfileImage] = useState<any>(null);
 
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
 
   useEffect(() => {
     if (route?.params?.initialTab === 'saved') {
@@ -76,15 +76,11 @@ export default function Profile({ navigation, route }: any) {
   useFocusEffect(
     React.useCallback(() => {
       const fetchUserData = async () => {
-        if (accessToken && loggedId) {
+        if (loggedId) {
           try {
             const userId = loggedId;
 
-            const { data } = await api.get(`/user/${userId}`, {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            });
+            const { data } = await api.get(`/user/${userId}`);
 
             setFullName(data.fullName);
             setNeighborhood(data.neighborhood);
@@ -93,9 +89,6 @@ export default function Profile({ navigation, route }: any) {
 
             try {
               const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
                 responseType: 'arraybuffer',
               });
 
@@ -108,11 +101,7 @@ export default function Profile({ navigation, route }: any) {
 
             const fetchUserPosts = async () => {
               try {
-                const { data: postData } = await api.get(`/post/${userId}/posts`, {
-                  headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                  },
-                });
+                const { data: postData } = await api.get(`/post/${userId}/posts`);
 
                 // Backend agora retorna formato paginado: { data, meta }
                 if (Array.isArray(postData?.data)) {
@@ -130,7 +119,6 @@ export default function Profile({ navigation, route }: any) {
             const fetchSavedPosts = async () => {
               try {
                 const { data } = await api.get('/post/saved', {
-                  headers: { Authorization: `Bearer ${accessToken}` },
                   params: { all: true },
                 });
                 if (Array.isArray(data?.data)) {
@@ -163,7 +151,7 @@ export default function Profile({ navigation, route }: any) {
       };
 
       fetchUserData();
-    }, [accessToken, loggedId]),
+    }, [loggedId]),
   );
 
   // Split the fullName to display the first two names
@@ -174,15 +162,12 @@ export default function Profile({ navigation, route }: any) {
     district.find((item) => item.value === String(neighborhood))?.label || 'Unknown';
 
   const getUserProfileImage = async (userId: string) => {
-    if (!accessToken) {
+    if (!loggedId) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
         responseType: 'arraybuffer',
       });
 

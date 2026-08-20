@@ -19,7 +19,7 @@ import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader
 import { useAuth } from '../../context/auth/useAuth';
 
 export default function CreateGroup() {
-  const { accessToken } = useAuth();
+  const { loggedId } = useAuth();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [categories, setCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
@@ -38,24 +38,16 @@ export default function CreateGroup() {
   };
 
   const createCategory = async (name: string, type: string, groupId: string) => {
-    if (!accessToken) {
+    if (!loggedId) {
       return Promise.reject(new Error('Access token is missing.'));
     }
 
     try {
-      const response = await api.post(
-        '/category',
-        {
-          name,
-          type,
-          groupId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
+      const response = await api.post('/category', {
+        name,
+        type,
+        groupId,
+      });
 
       return response.data;
     } catch (error) {
@@ -73,7 +65,7 @@ export default function CreateGroup() {
       return;
     }
 
-    if (!accessToken) {
+    if (!loggedId) {
       Toast.show({
         type: 'error',
         text1: 'Erro',
@@ -83,18 +75,10 @@ export default function CreateGroup() {
     }
 
     try {
-      const groupResponse = await api.post(
-        '/group',
-        {
-          name: groupName,
-          description: groupDescription,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
+      const groupResponse = await api.post('/group', {
+        name: groupName,
+        description: groupDescription,
+      });
 
       const groupData = groupResponse.data;
       const groupId = groupData.id;

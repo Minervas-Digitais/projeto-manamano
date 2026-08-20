@@ -13,11 +13,9 @@ import {
 import { ModalOptionsNotificationText } from '../ModalOptionsNotification/ModalOptionsNotificationStyle';
 import localStorage from '../../services/localStorage';
 import api from '../../services/api';
-import { useAuth } from '../../context/auth/useAuth';
 
 export default function DeleteConfirmation({ text }: any) {
   const current = localStorage.getString('displayNotif');
-  const { accessToken } = useAuth();
 
   const [shouldDisplay, setShouldDisplay] = useState(current);
 
@@ -28,11 +26,7 @@ export default function DeleteConfirmation({ text }: any) {
     const id = localStorage.getString('idNotif');
 
     api
-      .delete(`notifications/${id}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
+      .delete(`notifications/${id}`)
       .then(() => {
         localStorage.delete('displayNotif');
         setShouldDisplay(undefined);

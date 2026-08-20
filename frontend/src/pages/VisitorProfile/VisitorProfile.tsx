@@ -44,7 +44,7 @@ export default function VisitorProfile({ navigation }: any) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<any>(null);
-  const { accessToken } = useAuth();
+  const { loggedId } = useAuth();
 
   const copyToClipboard = async (text: string, message: string) => {
     if (text) {
@@ -74,27 +74,20 @@ export default function VisitorProfile({ navigation }: any) {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!accessToken || !userId) {
+      if (!loggedId || !userId) {
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        const userResponse = await api.get(`/user/${userId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const userResponse = await api.get(`/user/${userId}`);
         setUser(userResponse.data);
-        const userPostsResponse = await api.get(`/post/${userId}/posts`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const userPostsResponse = await api.get(`/post/${userId}/posts`);
         const postsResponse = userPostsResponse.data;
         setPosts(Array.isArray(postsResponse) ? postsResponse : postsResponse?.data || []);
         try {
           const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
             responseType: 'arraybuffer',
           });
           const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
@@ -112,7 +105,7 @@ export default function VisitorProfile({ navigation }: any) {
     };
 
     fetchData();
-  }, [userId, accessToken]);
+  }, [userId, loggedId]);
 
   if (loading) {
     return (
@@ -162,15 +155,12 @@ export default function VisitorProfile({ navigation }: any) {
   }
 
   const getUserProfileImage = async () => {
-    if (!accessToken) {
+    if (!loggedId) {
       return defaultAvatar;
     }
 
     try {
       const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
         responseType: 'arraybuffer',
       });
 

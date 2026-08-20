@@ -17,7 +17,7 @@ import { RootStackParamList } from '../../navigation/types';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
 export default function ChangePassword() {
-  const { loggedId, accessToken } = useAuth();
+  const { loggedId } = useAuth();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const {
@@ -29,18 +29,10 @@ export default function ChangePassword() {
 
   const onSubmit = async (data: any) => {
     try {
-      await api.patch(
-        '/user/change-password',
-        {
-          oldPassword: data.oldpassword,
-          newPassword: data.newpassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
+      await api.patch('/user/change-password', {
+        oldPassword: data.oldpassword,
+        newPassword: data.newpassword,
+      });
       Toast.show({
         type: 'success',
         text1: 'Sucesso',
@@ -63,7 +55,7 @@ export default function ChangePassword() {
         style={{
           flex: 1,
           backgroundColor: '#f2f6fa',
-          display: loggedId && accessToken ? 'flex' : 'none',
+          display: loggedId ? 'flex' : 'none',
         }}>
         <SignInForm>
           <SignInInputContainer>

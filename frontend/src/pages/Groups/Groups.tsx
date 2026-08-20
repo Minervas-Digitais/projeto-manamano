@@ -14,7 +14,7 @@ import { useAuth } from '../../context/auth/useAuth';
 
 export default function Groups() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Use navigation instance
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
 
   const [showPopup, setShowPopup] = useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -23,13 +23,9 @@ export default function Groups() {
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
-        if (loggedId && accessToken) {
+        if (loggedId) {
           api
-            .get('participant/groups/', {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            })
+            .get('participant/groups/')
             .then((res: any) => {
               setGroups(res.data);
             })
@@ -40,13 +36,9 @@ export default function Groups() {
         console.log(groups);
 
         // Fetch user information to check the "tipo"
-        if (accessToken) {
+        if (loggedId) {
           try {
-            const { data: fetchedUserData } = await api.get(`/user/${loggedId}`, {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            });
+            const { data: fetchedUserData } = await api.get(`/user/${loggedId}`);
             setUserData(fetchedUserData);
           } catch (error) {
             console.error('Error fetching user data:', error);

@@ -14,7 +14,7 @@ import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader
 import { useAuth } from '../../context/auth/useAuth';
 
 export default function GetInTouch() {
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const {
     control,
     handleSubmit,
@@ -22,18 +22,10 @@ export default function GetInTouch() {
   } = useForm({});
   const onSubmit = async (data: any) => {
     try {
-      const response = await api.post(
-        '/mail',
-        {
-          subject: data.subject,
-          text: data.getintouch,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
-      );
+      const response = await api.post('/mail', {
+        subject: data.subject,
+        text: data.getintouch,
+      });
       Alert.alert('Mensagem enviada com sucesso!');
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
@@ -47,7 +39,7 @@ export default function GetInTouch() {
         style={{
           flex: 1,
           backgroundColor: '#f2f6fa',
-          display: loggedId && accessToken ? 'flex' : 'none',
+          display: loggedId ? 'flex' : 'none',
         }}>
         <SignInForm>
           <SignInInputContainer style={{ gap: 30 }}>

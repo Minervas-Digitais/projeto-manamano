@@ -76,7 +76,7 @@ export default function NewPost({ navigation }: any) {
     name: string;
     type: string;
   }
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
   const [filterPosts, setFilterPosts] = useState('Geral');
@@ -97,14 +97,10 @@ export default function NewPost({ navigation }: any) {
     setSelectedCategoryType(selectedCategory ? selectedCategory.type : null);
   }, [filterPosts, categories]);
   useEffect(() => {
-    if (!accessToken) return;
+    if (!loggedId) return;
     const fetchCategories = async () => {
       try {
-        const response = await api.get(`/category/group/${groupId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        const response = await api.get(`/category/group/${groupId}`);
         setCategories(response.data);
       } catch (error) {
         console.error('Erro ao buscar categorias', error);
@@ -115,7 +111,7 @@ export default function NewPost({ navigation }: any) {
       }
     };
     fetchCategories();
-  }, [accessToken, groupId]);
+  }, [loggedId, groupId]);
   const {
     control,
     handleSubmit,
@@ -137,39 +133,23 @@ export default function NewPost({ navigation }: any) {
     const categoryId = selectedCategory.id;
     if (selectedCategoryType !== 'EVENT') {
       try {
-        const response = await api.post(
-          '/post',
-          {
-            type: 'NORMAL',
-            input: data.input,
-            categoryId,
-            groupId,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
+        const response = await api.post('/post', {
+          type: 'NORMAL',
+          input: data.input,
+          categoryId,
+          groupId,
+        });
         const { id } = response.data;
         await Promise.all(
           files.map(async (file) => {
-            await api.post(
-              '/archives',
-              {
-                name: file.name,
-                mimeType: file.mimeType,
-                groupId,
-                contentBase64: file.uri,
-                type: file.mimeType,
-                postId: id,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              },
-            );
+            await api.post('/archives', {
+              name: file.name,
+              mimeType: file.mimeType,
+              groupId,
+              contentBase64: file.uri,
+              type: file.mimeType,
+              postId: id,
+            });
           }),
         );
         Toast.show({
@@ -192,22 +172,14 @@ export default function NewPost({ navigation }: any) {
       const formattedDate = formatDate(data.date);
       const datetimeISO = `${formattedDate}T${data.hour}:00.000Z`;
       try {
-        await api.post(
-          '/post',
-          {
-            type: 'EVENT',
-            input: data.input,
-            categoryId,
-            groupId,
-            schedule: datetimeISO,
-            title: data.title,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          },
-        );
+        await api.post('/post', {
+          type: 'EVENT',
+          input: data.input,
+          categoryId,
+          groupId,
+          schedule: datetimeISO,
+          title: data.title,
+        });
         Toast.show({
           type: 'success',
           text1: 'Publicação enviada com sucesso!',
@@ -275,7 +247,7 @@ export default function NewPost({ navigation }: any) {
         style={{
           backgroundColor: '#f2f6fa',
           height: '100%',
-          display: loggedId && accessToken ? 'flex' : 'none',
+          display: loggedId ? 'flex' : 'none',
         }}>
         <NewPostContainer>
           <GroupPageCategoryContainer>

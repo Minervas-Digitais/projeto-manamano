@@ -31,7 +31,7 @@ export default function ModalOptionsNotification({
   const [displayConfirm, setDisplayConfirm] = useState(display ?? false);
   const [displayDelete, setDisplayDelete] = useState(false);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
 
   useEffect(() => {
     setDisplayConfirm(display);
@@ -44,17 +44,11 @@ export default function ModalOptionsNotification({
   if (!fontsLoaded) return null;
 
   const optionsMarkAsRead = async () => {
-    if (!accessToken) return;
+    if (!loggedId) return;
 
     if (type === 'header' && loggedId && !admin) {
       api
-        .patch(
-          'notifications/user/',
-          {},
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          },
-        )
+        .patch('notifications/user/')
         .then((res) => console.log(JSON.stringify(res.data)))
         .catch((err) => console.log('Erro ao atualizar as notificações:', err));
     } else if (type === 'header' && admin) {
@@ -65,13 +59,7 @@ export default function ModalOptionsNotification({
       setDisplayConfirm(false);
     } else {
       api
-        .patch(
-          `notifications/${id}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          },
-        )
+        .patch(`notifications/${id}`)
         .then((res) => console.log(JSON.stringify(res.data)))
         .catch((err) => console.log('Erro ao atualizar a notificação:', err));
       setDisplayConfirm(false);
@@ -85,12 +73,10 @@ export default function ModalOptionsNotification({
     }
 
     if (type !== 'header' && admin) {
-      if (!accessToken) return;
+      if (!loggedId) return;
 
       api
-        .delete(`notifications/${id}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        .delete(`notifications/${id}`)
         .then(() => {
           setDisplayConfirm(false);
           Toast.show({

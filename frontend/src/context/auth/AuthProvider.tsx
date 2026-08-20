@@ -1,45 +1,20 @@
 /* eslint-disable import/prefer-default-export */
-import React, { useEffect, useMemo, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
-import api from '../../services/api';
+import React, { useEffect, useMemo, useSyncExternalStore } from 'react';
+import api, { refreshAccessToken } from '../../services/api';
+import authStore from '../../store/authStore';
 import { AuthContext } from './AuthContext';
 
 export function AuthProvider({ children }: any) {
-  const [token, setToken] = useState<string | null>(null); // AccessToken
-  const [isLoading, setIsLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
+  const state = useSyncExternalStore(authStore.subscribe, authStore.getState);
 
   useEffect(() => {
-    loadSession();
+    (async () => {
+      const hasStoredSession = await authStore.loadSession();
+      if (hasStoredSession) {
+        await refreshAccessToken();
+      }
+    })();
   }, []);
-
-  async function loadSession() {
-    const refreshToken = await SecureStore.getItemAsync('refreshToken');
-    const storedId = await SecureStore.getItemAsync('loggedId');
-
-    if (!refreshToken) {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const response = await api.post('/auth/refresh', {
-        refreshToken,
-      });
-
-      setToken(response.data.accessToken);
-      setUserId(storedId);
-
-      await SecureStore.setItemAsync('refreshToken', response.data.refreshToken);
-    } catch (err) {
-      await SecureStore.deleteItemAsync('refreshToken');
-      await SecureStore.deleteItemAsync('loggedId');
-      setToken(null);
-      setUserId(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   async function login(email: string, password: string) {
     const response = await api.post('/auth/login', {
@@ -49,44 +24,27 @@ export function AuthProvider({ children }: any) {
 
     const { accessToken, refreshToken, loggedId } = response.data;
 
-    setToken(accessToken);
-    setUserId(loggedId);
-
-    await SecureStore.setItemAsync('refreshToken', refreshToken);
-    await SecureStore.setItemAsync('loggedId', loggedId);
-
-    return accessToken;
+    await authStore.setSession({ accessToken, refreshToken, loggedId });
   }
 
   async function logout() {
     try {
-      await api.post(
-        '/auth/logout',
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      await api.post('/auth/logout');
     } catch (err) {
       /* empty */
     }
 
-    await SecureStore.deleteItemAsync('refreshToken');
-    await SecureStore.deleteItemAsync('loggedId');
-
-    setToken(null);
-    setUserId(null);
+    await authStore.clearSession();
   }
 
   const value = useMemo(
     () => ({
-      accessToken: token,
-      loggedId: userId,
-      isLoading,
+      loggedId: state.loggedId,
+      isLoading: state.isLoading,
       login,
       logout,
     }),
-    [token, isLoading, userId],
+    [state.loggedId, state.isLoading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

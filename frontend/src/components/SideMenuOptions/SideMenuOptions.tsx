@@ -34,23 +34,21 @@ export default function SideMenuOptions({
   onPress,
 }: SideMenuOptionsProps) {
   const [hasUnread, setHasUnread] = useState(false);
-  const { accessToken, loggedId } = useAuth();
+  const { loggedId } = useAuth();
 
   const loadNotifications = useCallback(async () => {
     if (type !== 'notification') return;
 
-    if (!loggedId || !accessToken) return;
+    if (!loggedId) return;
 
     try {
-      const res = await api.get<Notification[]>('notifications/user/', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      const res = await api.get<Notification[]>('notifications/user/');
       const hasUnreadNotifications = res.data.some((n) => !n.isRead);
       setHasUnread(hasUnreadNotifications);
     } catch (err) {
       console.error('Erro ao carregar notificações', err);
     }
-  }, [type, loggedId, accessToken]);
+  }, [type, loggedId]);
 
   useFocusEffect(
     useCallback(() => {
