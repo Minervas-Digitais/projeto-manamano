@@ -8,6 +8,9 @@ import {
   Avatar,
   Card,
   Container,
+  LoadMoreDivider,
+  LoadMoreSection,
+  LoadMoreText,
   Name,
   Section,
   SectionTitle,
@@ -53,10 +56,23 @@ interface DataState {
   posts: Post[];
 }
 
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+const DEFAULT_PAGE_SIZE = 10;
+
 export default function ResultSection({ searchText, saveRecentUser, admin }: ResultSectionProps) {
   const { accessToken, loggedId } = useAuth();
-  const [selectedSection, setSelectedSection] = useState('');
+  const [selectedSection, setSelectedSection] = useState<keyof DataState | ''>('');
   const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [deleteModal, setDeleteModal] = useState({
     visible: false,
     type: '', // 'user', 'group', or 'post'
@@ -96,8 +112,36 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   };
 
   // Função para buscar dados do servidor
-  const fetchData = useCallback(
-    async (url: string, sectionKey?: keyof DataState): Promise<void> => {
+  const fetchSearch = useCallback(async (): Promise<void> => {
+    if (!accessToken) {
+      console.error('No access token available.');
+      return;
+    }
+
+    try {
+      const response = await api.post(
+        '/search',
+        { input: searchText },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      const json = response.data;
+      setData({
+        users: json.users ?? [],
+        groups: json.groups ?? [],
+        posts: json.posts ?? [],
+      });
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }, [accessToken, searchText]);
+
+  const fetchFiltered = useCallback(
+    async (section: keyof DataState, pageNumber: number): Promise<void> => {
       if (!accessToken) {
         console.error('No access token available.');
         return;
@@ -105,8 +149,8 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
 
       try {
         const response = await api.post(
-          url,
-          { input: searchText },
+          `/search/filter/${section}`,
+          { input: searchText, page: pageNumber, limit: DEFAULT_PAGE_SIZE },
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -114,22 +158,27 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
           },
         );
 
-        const json = response.data;
-        const parsedData = { users: [], groups: [], posts: [] };
+        const { data: items, meta }: { data: (User | Group | Post)[]; meta: PaginationMeta } =
+          response.data;
 
-        if (sectionKey) {
-          parsedData[sectionKey] = json;
-        } else {
-          Object.assign(parsedData, json);
-        }
-
-        setData(parsedData);
+        setData((prevData) => ({
+          ...prevData,
+          [section]: pageNumber === 1 ? items : [...prevData[section], ...items],
+        }));
+        setPage(meta?.page ?? pageNumber);
+        setHasMore(meta?.hasMore ?? false);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
     },
     [accessToken, searchText],
   );
+
+  const handleLoadMore = (section: keyof DataState): void => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    fetchFiltered(section, page + 1).finally(() => setIsLoadingMore(false));
+  };
 
   // Delete user
   const onPressUser = async (userId: string) => {
@@ -196,16 +245,15 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   };
   useEffect(() => {
     if (searchText && !selectedSection) {
-      fetchData('/search');
+      fetchSearch();
     }
-  }, [searchText, selectedSection, fetchData]);
+  }, [searchText, selectedSection, fetchSearch]);
 
   useEffect(() => {
     if (selectedSection) {
-      const url = `/search/filter/${selectedSection.toLowerCase()}`;
-      fetchData(url, selectedSection as keyof DataState);
+      fetchFiltered(selectedSection, 1);
     }
-  }, [selectedSection, fetchData]);
+  }, [selectedSection, fetchFiltered]);
 
   const fetchUserName = async (userId: string): Promise<string> => {
     if (!accessToken) {
@@ -272,9 +320,12 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
     }
   }, [data.users]);
 
-  const handleFilterPress = (section: string): void => {
+  const handleFilterPress = (section: keyof DataState): void => {
     const newSection = selectedSection === section ? '' : section;
     setData({ users: [], groups: [], posts: [] });
+    setPage(1);
+    setHasMore(false);
+    setIsLoadingMore(false);
     setSelectedSection(newSection);
   };
 
@@ -293,6 +344,17 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
     setDeleteModal({ visible: false, type: '', id: '' });
   };
 
+  const getDeleteModalText = () => {
+    switch (deleteModal.type) {
+      case 'user':
+        return 'Tem certeza que deseja excluir este usuário?';
+      case 'group':
+        return 'Tem certeza que deseja excluir este grupo?';
+      default:
+        return 'Tem certeza que deseja excluir esta publicação?';
+    }
+  };
+
   if (!fontsLoaded || !accessToken) {
     return null;
   }
@@ -301,13 +363,7 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
     <>
       <DeleteOneConfirmation
         visible={deleteModal.visible}
-        text={
-          deleteModal.type === 'user'
-            ? 'Tem certeza que deseja excluir este usuário?'
-            : deleteModal.type === 'group'
-              ? 'Tem certeza que deseja excluir este grupo?'
-              : 'Tem certeza que deseja excluir esta publicação?'
-        }
+        text={getDeleteModalText()}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteModal({ visible: false, type: '', id: '' })}
       />
@@ -448,6 +504,17 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
                   </StyledButton>
                 </View>
               )}
+              {selectedSection === 'users' && hasMore && (
+                <LoadMoreSection>
+                  <LoadMoreDivider />
+                  <StyledButton
+                    testID="carregar-mais-pessoas"
+                    onPress={() => handleLoadMore('users')}
+                    disabled={isLoadingMore}>
+                    <LoadMoreText>{isLoadingMore ? 'Carregando...' : 'Carregar mais'}</LoadMoreText>
+                  </StyledButton>
+                </LoadMoreSection>
+              )}
             </Section>
           )}
 
@@ -518,6 +585,17 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
                   </StyledButton>
                 </View>
               )}
+              {selectedSection === 'groups' && hasMore && (
+                <LoadMoreSection>
+                  <LoadMoreDivider />
+                  <StyledButton
+                    testID="carregar-mais-grupos"
+                    onPress={() => handleLoadMore('groups')}
+                    disabled={isLoadingMore}>
+                    <LoadMoreText>{isLoadingMore ? 'Carregando...' : 'Carregar mais'}</LoadMoreText>
+                  </StyledButton>
+                </LoadMoreSection>
+              )}
             </Section>
           )}
 
@@ -585,6 +663,17 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
                     </Text>
                   </StyledButton>
                 </View>
+              )}
+              {selectedSection === 'posts' && hasMore && (
+                <LoadMoreSection>
+                  <LoadMoreDivider />
+                  <StyledButton
+                    testID="carregar-mais-publicacoes"
+                    onPress={() => handleLoadMore('posts')}
+                    disabled={isLoadingMore}>
+                    <LoadMoreText>{isLoadingMore ? 'Carregando...' : 'Carregar mais'}</LoadMoreText>
+                  </StyledButton>
+                </LoadMoreSection>
               )}
             </Section>
           )}

@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Alert } from 'react-native';
 import Search from '../pages/Search/Search';
+import api from '../services/api';
 
 import Profile from '../pages/Profile/Profile';
 
@@ -28,6 +29,23 @@ jest.mock('../services/secureStorage', () => ({
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
+}));
+
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({
+    accessToken: 'fake-token',
+    loggedId: '1',
+  }),
+}));
+
+jest.mock('../context/SideMenuContext', () => ({
+  SideMenuProvider: ({ children }: any) => children,
+  useSideMenu: () => ({
+    isOpen: false,
+    openMenu: jest.fn(),
+    closeMenu: jest.fn(),
+    toggleMenu: jest.fn(),
+  }),
 }));
 
 const setMock = jest.fn();
@@ -75,29 +93,46 @@ jest.mock('../services/api', () => ({
         });
       }
       if (url === '/search/filter/users') {
+        if (body.page === 2) {
+          return Promise.resolve({
+            data: {
+              data: [{ id: '4', fullName: 'Maria Silva' }],
+              meta: { page: 2, limit: 10, total: 15, totalPages: 2, hasMore: false },
+            },
+          });
+        }
         return Promise.resolve({
-          data: [{ id: '1', fullName: 'João Silva' }],
+          data: {
+            data: [{ id: '1', fullName: 'João Silva' }],
+            meta: { page: 1, limit: 10, total: 15, totalPages: 2, hasMore: true },
+          },
         });
       }
       if (url === '/search/filter/groups') {
         return Promise.resolve({
-          data: [{ id: '2', name: 'Grupo React' }],
+          data: {
+            data: [{ id: '2', name: 'Grupo React' }],
+            meta: { page: 1, limit: 10, total: 1, totalPages: 1, hasMore: false },
+          },
         });
       }
       if (url === '/search/filter/posts') {
         return Promise.resolve({
-          data: [
-            {
-              id: '3',
-              userId: '1',
-              groupId: '2',
-              nameUser: 'João',
-              input: 'Oi',
-              numComments: 0,
-              createdAt: new Date().toISOString(),
-              originGroup: 'Grupo React',
-            },
-          ],
+          data: {
+            data: [
+              {
+                id: '3',
+                userId: '1',
+                groupId: '2',
+                nameUser: 'João',
+                input: 'Oi',
+                numComments: 0,
+                createdAt: new Date().toISOString(),
+                originGroup: 'Grupo React',
+              },
+            ],
+            meta: { page: 1, limit: 10, total: 1, totalPages: 1, hasMore: false },
+          },
         });
       }
 
@@ -115,6 +150,8 @@ jest.mock('../services/api', () => ({
     delete: jest.fn(() => Promise.resolve({ data: {} })),
   },
 }));
+
+const mockedApi = jest.mocked(api);
 
 jest.mock('../pages/Profile/Profile', () => {
   return () => null;
@@ -268,6 +305,57 @@ describe('Search', () => {
       });
     });
 
+    it('exibe o botão Carregar mais quando existem mais resultados', async () => {
+      const { getByPlaceholderText, getByText, findByTestId, getByTestId } = renderWithNavigation();
+
+      fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
+
+      await waitFor(() => expect(getByText('Filtros')).toBeTruthy(), { timeout: 3000 });
+
+      fireEvent.press(getByTestId('filtro-pessoas'));
+
+      expect(await findByTestId('carregar-mais-pessoas')).toBeTruthy();
+    });
+
+    it('carrega a próxima página e adiciona os novos resultados aos existentes', async () => {
+      const { getByPlaceholderText, getByText, getByTestId, findByTestId } = renderWithNavigation();
+
+      fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
+
+      await waitFor(() => expect(getByText('Filtros')).toBeTruthy(), { timeout: 3000 });
+
+      fireEvent.press(getByTestId('filtro-pessoas'));
+
+      expect(await findByTestId('user-card-1')).toBeTruthy();
+
+      fireEvent.press(getByTestId('carregar-mais-pessoas'));
+
+      await waitFor(() => {
+        expect(api.post).toHaveBeenCalledWith(
+          '/search/filter/users',
+          { input: 'joão', page: 2, limit: 10 },
+          { headers: { Authorization: 'Bearer fake-token' } },
+        );
+      });
+
+      expect(await findByTestId('user-card-4')).toBeTruthy();
+      expect(getByTestId('user-card-1')).toBeTruthy();
+    });
+
+    it('não exibe o botão Carregar mais quando não há mais resultados', async () => {
+      const { getByPlaceholderText, getByText, getByTestId, findByTestId, queryByTestId } =
+        renderWithNavigation();
+
+      fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
+
+      await waitFor(() => expect(getByText('Filtros')).toBeTruthy(), { timeout: 3000 });
+
+      fireEvent.press(getByTestId('filtro-grupos'));
+
+      expect(await findByTestId('group-card-2')).toBeTruthy();
+      expect(queryByTestId('carregar-mais-grupos')).toBeNull();
+    });
+
     it('chama handleAvatarPress com id correto ao clicar no avatar', async () => {
       const { getByPlaceholderText, findByTestId } = renderWithNavigation();
       fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
@@ -300,8 +388,8 @@ describe('Search', () => {
   describe('Usuario ADMIN', () => {
     beforeEach(() => {
       // Ajusta o mock para retornar usuário ADMIN só aqui
-      const api = require('../services/api').default;
-      api.get.mockImplementation((url: string) => {
+
+      mockedApi.get.mockImplementation((url: string) => {
         if (url.startsWith('/user/')) {
           return Promise.resolve({ data: { fullName: 'João Silva', sysRole: 'ADMIN' } });
         }
@@ -322,8 +410,6 @@ describe('Search', () => {
     });
 
     it('exclui um usuário ao clicar no botão lixeira e confirma', async () => {
-      const api = require('../services/api').default;
-
       const { getByPlaceholderText, findByTestId, getByText } = renderWithNavigation();
 
       fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
@@ -357,8 +443,6 @@ describe('Search', () => {
     });
 
     it('exclui um grupo ao clicar no botão lixeira e confirma', async () => {
-      const api = require('../services/api').default;
-
       const { getByPlaceholderText, findByTestId, getByText } = renderWithNavigation();
 
       fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
@@ -392,8 +476,6 @@ describe('Search', () => {
     });
 
     it('exclui uma publicação ao clicar no botão lixeira e confirma', async () => {
-      const api = require('../services/api').default;
-
       const { getByPlaceholderText, findByTestId, getByText } = renderWithNavigation();
 
       fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
@@ -427,8 +509,6 @@ describe('Search', () => {
     });
 
     it('não exclui o usuário se clicar em "Não" no alerta de confirmação', async () => {
-      const api = require('../services/api').default;
-
       const { getByPlaceholderText, findByTestId, getByText } = renderWithNavigation();
 
       fireEvent.changeText(getByPlaceholderText('Pesquisar'), 'joão');
