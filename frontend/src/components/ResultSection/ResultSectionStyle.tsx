@@ -35,7 +35,7 @@ export const SectionTitle = styled.Text`
 export const Card = styled.View`
   flex-direction: row;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   justify-content: space-between;
   padding-right: 20px;
 `;
@@ -55,13 +55,30 @@ export const Name = styled.Text<{ fontColor?: string; fontFamily?: string }>`
 `;
 
 export const StyledButton = styled.TouchableOpacity`
-  background-color: #ffffff;
+  background-color: #f2f6fa;
   border-radius: 8px;
   margin-top: 15px;
+  margin-bottom: 10px;
   align-items: center;
 `;
 
 export const ButtonText = styled.Text`
   font-size: 16px;
   color: #333;
+`;
+
+export const LoadMoreSection = styled.View`
+  margin-top: 0px;
+`;
+
+export const LoadMoreDivider = styled.View`
+  border-bottom-width: 1px;
+  border-bottom-color: #e0e0e0;
+`;
+
+export const LoadMoreText = styled.Text`
+  font-size: 12px;
+  font-weight: bold;
+  font-family: inter-bold;
+  color: #3f3d3d;
 `;
