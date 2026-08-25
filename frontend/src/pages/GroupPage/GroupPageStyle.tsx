@@ -45,17 +45,18 @@ export const GroupPageCategoryContainer = styled.View`
   width: 100%;
   gap: 15px;
   padding: 0px 0px 0px 25px;
+  margin-right: 25px;
 `;
 
-export const GroupPageCategoryList = styled.View`
-  display: flex;
-  flex-direction: row;
+export const GroupPageCategoryList = styled.ScrollView.attrs({
+  horizontal: true,
+  showsHorizontalScrollIndicator: false,
+  contentContainerStyle: {
+    paddingRight: 25,
+    gap: 17,
+  },
+})`
   width: 100%;
-  padding-right: 25px;
-  padding-bottom: 25px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  gap: 17px;
 `;
 
 export const GroupPagePostList = styled.View`
