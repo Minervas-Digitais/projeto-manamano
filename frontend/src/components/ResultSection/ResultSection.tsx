@@ -510,7 +510,7 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
                         groupName: group.name,
                       });
                     }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
                       <Avatar source={defaultAvatar} testID={`group-avatar-${group.id}`} />
                       <Name
                         fontFamily="inter-regular"
