@@ -43,15 +43,19 @@ export const ProfileTextContainer = styled.View`
   padding: 0px 25px 0px 25px;
 `;
 
-export const ProfilePostsContainer = styled.View`
-  display: flex;
-  overflow-y: auto;
-  flex-direction: column;
-  width: 100%;
+export const ProfilePostsContainer = styled.ScrollView`
   flex: 1;
-  gap: 30px;
-  padding: 25px 25px 25px 30px;
+  width: 100%;
 `;
+
+export const ProfilePostsContent = styled.View`
+  padding-top: 25px;
+  padding-right: 25px;
+  padding-bottom: 25px;
+  padding-left: 30px;
+  gap: 30px;
+`;
+
 export const ProfileWhite = styled.ScrollView.attrs(() => ({
   contentContainerStyle: {
     paddingTop: 25,

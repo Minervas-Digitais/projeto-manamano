@@ -19,6 +19,7 @@ import {
   ProfileTabsContainer,
   ProfileTextContainer,
   ProfilePostsContainer,
+  ProfilePostsContent,
 } from './ProfileStyle';
 import { HomePageBlue, HomePageWhite } from '../Home/HomeStyle';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
@@ -31,6 +32,8 @@ import MenuIcon from '../../assets/menu-white-icon.svg';
 import Pen from '../../assets/pen-icon.svg';
 import Business from '../../assets/business-icon.svg';
 import api from '../../services/api';
+
+const defaultAvatar = require('../../assets/user-profile.png');
 
 export default function Profile({ navigation, route }: any) {
   const [profileId, setProfileId] = useState(1);
@@ -56,8 +59,6 @@ export default function Profile({ navigation, route }: any) {
   const [myPostsSelect, setMyPostsSelect] = useState(true);
   const [savedPostsSelect, setSavedPostsSelect] = useState(false);
   const [filterPosts, setFilterPosts] = useState('userPosts');
-
-  const defaultAvatar = require('../../assets/user-profile.png');
 
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
@@ -118,13 +119,13 @@ export default function Profile({ navigation, route }: any) {
 
             const fetchSavedPosts = async () => {
               try {
-                const { data } = await api.get('/post/saved', {
+                const { data: savedPostsData } = await api.get('/post/saved', {
                   params: { all: true },
                 });
-                if (Array.isArray(data?.data)) {
-                  setSavedPosts(data.data);
-                } else if (Array.isArray(data)) {
-                  setSavedPosts(data);
+                if (Array.isArray(savedPostsData?.data)) {
+                  setSavedPosts(savedPostsData.data);
+                } else if (Array.isArray(savedPostsData)) {
+                  setSavedPosts(savedPostsData);
                 } else {
                   setSavedPosts([]);
                 }
@@ -258,9 +259,29 @@ export default function Profile({ navigation, route }: any) {
           </ProfileTabsContainer>
         </GroupPageTabs>
         <ProfilePostsContainer>
-          {filterPosts === 'userPosts' ? (
-            userPosts?.length > 0 ? (
-              userPosts?.map((item: any) => (
+          <ProfilePostsContent>
+            {filterPosts === 'userPosts' ? (
+              userPosts?.length > 0 ? (
+                userPosts?.map((item: any) => (
+                  <PostCard
+                    key={item.id}
+                    nameUser={item.nameUser}
+                    userId={item.userId}
+                    getUserProfileImage={getUserProfileImage}
+                    postContent={item.input}
+                    numComments={item.numComments}
+                    date={item.createdAt}
+                    share
+                    postId={item.id}
+                  />
+                ))
+              ) : (
+                <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
+                  Nenhuma Publicação encontrada
+                </Text>
+              )
+            ) : savedPosts?.length > 0 ? (
+              savedPosts?.map((item: any) => (
                 <PostCard
                   key={item.id}
                   nameUser={item.nameUser}
@@ -270,34 +291,16 @@ export default function Profile({ navigation, route }: any) {
                   numComments={item.numComments}
                   date={item.createdAt}
                   share
+                  saved
                   postId={item.id}
                 />
               ))
             ) : (
               <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
-                Nenhuma Publicação encontrada
+                Nenhuma Publicação salva
               </Text>
-            )
-          ) : savedPosts?.length > 0 ? (
-            savedPosts?.map((item: any) => (
-              <PostCard
-                key={item.id}
-                nameUser={item.nameUser}
-                userId={item.userId}
-                getUserProfileImage={getUserProfileImage}
-                postContent={item.input}
-                numComments={item.numComments}
-                date={item.createdAt}
-                share
-                saved
-                postId={item.id}
-              />
-            ))
-          ) : (
-            <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
-              Nenhuma Publicação salva
-            </Text>
-          )}
+            )}
+          </ProfilePostsContent>
         </ProfilePostsContainer>
       </HomePageWhite>
     </HomePageBlue>
