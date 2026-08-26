@@ -22,7 +22,7 @@ export default function GetInTouch() {
   } = useForm({});
   const onSubmit = async (data: any) => {
     try {
-      const response = await api.post('/mail', {
+      await api.post('/mail', {
         subject: data.subject,
         text: data.getintouch,
       });
@@ -80,7 +80,7 @@ export default function GetInTouch() {
               backColor="#160E47"
               fontColor="white"
               text="Enviar"
-              rightIcon={ArrowIcon}
+              rightIcon={<ArrowIcon />}
             />
             <RedText font="inter-regular">
               * Sua mensagem será
