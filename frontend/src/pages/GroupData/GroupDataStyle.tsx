@@ -7,7 +7,7 @@ const { height } = Dimensions.get('window');
 export const GroupDataPage = styled.View`
   display: flex;
   flex: 1;
-  margin-bottom: 15px;
+  background-color: #f2f6fa;
 `;
 
 export const GroupDataScrollView = styled.ScrollView`
@@ -37,10 +37,12 @@ export const GroupDataContainerInfo = styled.View<{ size?: any }>`
   gap: 20px;
 `;
 
-export const GroupDataScrollContent = styled.View<{ size?: any; gap?: any }>`
+export const GroupDataScrollContent = styled.View`
   width: 100%;
-  height: ${(prop) => prop.size};
-  overflow: auto;
+`;
+
+export const GroupDataScrollContentInner = styled.View<{ gap?: any }>`
+  width: 100%;
   gap: ${(prop) => prop.gap};
 `;
 
@@ -50,5 +52,8 @@ export const GroupDataLine = styled.View`
 `;
 
 export const GroupDataButtonView = styled.View`
-  padding: 0px 25px 50px 25px;
+  padding: 16px 25px 25px 25px;
+  background-color: #f2f6fa;
+  border-top-width: 1px;
+  border-top-color: #d9d9d9;
 `;
