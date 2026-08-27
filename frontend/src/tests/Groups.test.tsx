@@ -24,7 +24,6 @@ jest.mock('@react-navigation/native', () => {
 });
 
 jest.mock('expo-linear-gradient', () => {
-  const { View } = require('react-native');
   return {
     LinearGradient: (props: any) => <View {...props} />,
   };

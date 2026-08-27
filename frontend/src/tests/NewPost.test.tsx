@@ -1,11 +1,12 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import Toast from 'react-native-toast-message';
+import * as DocumentPicker from 'expo-document-picker';
 import api from '../services/api';
 import storage from '../services/secureStorage';
 import NewPost from '../pages/NewPost/NewPost';
 
-const originalGetDocumentAsync = require('expo-document-picker').getDocumentAsync;
+jest.mock('expo-document-picker');
 
 // MOCKS
 jest.mock('expo-font', () => ({
@@ -220,7 +221,7 @@ describe('NewPost Page', () => {
   });
 
   it('should show toast error if file picking fails', async () => {
-    require('expo-document-picker').getDocumentAsync.mockImplementationOnce(() => {
+    jest.mocked(DocumentPicker.getDocumentAsync).mockImplementationOnce(() => {
       throw new Error('fail');
     });
     const { getByTestId, findByText } = render(<NewPost />);
@@ -231,12 +232,10 @@ describe('NewPost Page', () => {
     await waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
     });
-    // Restaure o mock original para não afetar outros testes
-    require('expo-document-picker').getDocumentAsync.mockImplementation(originalGetDocumentAsync);
   });
 
   it('should show toast error if no file is picked', async () => {
-    require('expo-document-picker').getDocumentAsync.mockResolvedValueOnce({ assets: [] });
+    jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValueOnce({ assets: [] });
     const { getByTestId, findByText } = render(<NewPost />);
     // Aguarde a categoria "Geral" aparecer
     await findByText('Geral');

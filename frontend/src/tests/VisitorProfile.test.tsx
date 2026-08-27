@@ -1,7 +1,8 @@
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import * as Clipboard from 'expo-clipboard';
-import { Share } from 'react-native';
+import Toast from 'react-native-toast-message';
+import { Share, View } from 'react-native';
 import VisitorProfile from '../pages/VisitorProfile/VisitorProfile';
 import api from '../services/api';
 
@@ -22,7 +23,6 @@ jest.mock('react-native/Libraries/Share/Share', () => ({
 
 jest.mock('react-native-toast-message', () => {
   const MockToast = () => {
-    const { View } = require('react-native');
     return <View testID="mock-toast" />;
   };
 
@@ -32,12 +32,10 @@ jest.mock('react-native-toast-message', () => {
 });
 
 jest.mock('../components/SideMenu/SideMenu', () => (props: any) => {
-  const { View } = require('react-native');
   return <View testID="mock-sidemenu" {...props} />;
 });
 
 jest.mock('../components/PostCard/PostCard', () => (props: any) => {
-  const { View } = require('react-native');
   return <View testID="mock-postcard" {...props} />;
 });
 
@@ -222,7 +220,6 @@ describe('VisitorProfile', () => {
     fireEvent.press(emailButton);
 
     await waitFor(() => {
-      const Toast = require('react-native-toast-message');
       expect(Toast.show).toHaveBeenCalledWith({
         type: 'success',
         text1: 'Email copiado!',
