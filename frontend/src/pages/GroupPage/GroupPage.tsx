@@ -199,13 +199,9 @@ export default function GroupPage({ navigation }: any) {
       return;
     }
     try {
-      const response = await api.get(`/participant/group/${groupId}`);
+      const response = await api.get(`/participant/group/${groupId}/me`);
 
-      const currentUserParticipant = Array.isArray(response.data)
-        ? response.data.find((participant: any) => participant.userId === loggedId)
-        : null;
-
-      setUserRole(currentUserParticipant?.role || 'MEMBER');
+      setUserRole(response.data.role);
     } catch (error: unknown) {
       if (error && typeof error === 'object' && (error as AxiosError).isAxiosError) {
         const axiosError = error as AxiosError;
@@ -548,7 +544,7 @@ export default function GroupPage({ navigation }: any) {
             </ScrollView>
           )}
         </GroupPageContent>
-        {(muralSelect || (classesSelect && (userRole === 'ADMIN' || userRole === 'MODERATOR'))) && (
+        {(muralSelect || (classesSelect && userRole === 'INSTRUCTOR')) && (
           <GroupPageAddPostButton>
             <TouchableOpacity
               onPress={() => {
