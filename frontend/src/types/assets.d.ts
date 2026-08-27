@@ -7,5 +7,5 @@ declare module '*.svg' {
 }
 
 declare global {
-  var alert: jest.Mock;
+  let alert: jest.Mock;
 }

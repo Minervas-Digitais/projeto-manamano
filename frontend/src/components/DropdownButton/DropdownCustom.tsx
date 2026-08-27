@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import { useFonts } from 'expo-font';
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Dropdown } from 'react-native-element-dropdown';
@@ -13,7 +13,7 @@ export default function DropdownComponent({ data, label, onChange, value }: any)
   if (!fontsLoaded) {
     return undefined;
   }
-  const renderItem = (item) => (
+  const renderItem = (item: { label: string; value: string }) => (
     <View style={styles.item}>
       <Text style={styles.textItem}>{item.label}</Text>
       {item.value === value}

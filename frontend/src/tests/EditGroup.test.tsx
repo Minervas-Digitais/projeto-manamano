@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { View, Text } from 'react-native';
 import EditGroup from '../pages/EditGroup/EditGroup';
 import api from '../services/api';
 import storage from '../services/secureStorage';
@@ -35,7 +36,6 @@ jest.mock('../services/localStorage', () => ({
 
 jest.mock('../components/HeaderCustom/HeaderCustom', () => {
   function MockHeaderCustom({ text }: any) {
-    const { Text, View } = require('react-native');
     return (
       <View testID="header-custom">
         <Text>{text}</Text>

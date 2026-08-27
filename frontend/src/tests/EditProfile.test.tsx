@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, Button, TextInput } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { NavigationContainer } from '@react-navigation/native';
 import EditProfile from '../pages/EditProfile/EditProfile';
@@ -28,7 +28,6 @@ jest.mock('expo-document-picker', () => ({
 
 jest.mock('../components/BigInputText/BigInputText', () =>
   jest.fn(({ label, value, onChangeText, ...rest }) => {
-    const { TextInput } = require('react-native');
     return (
       <TextInput
         value={value}
@@ -43,7 +42,6 @@ jest.mock('../components/BigInputText/BigInputText', () =>
 
 jest.mock('../components/InputText/InputTextCustom', () =>
   jest.fn(({ label, value, onChangeText, type, innerRef, ...rest }) => {
-    const { TextInput } = require('react-native');
     const props = {
       value,
       onChangeText,
@@ -63,7 +61,6 @@ jest.mock('../components/InputText/InputTextCustom', () =>
 
 jest.mock('../components/DropdownButton/DropdownCustom', () =>
   jest.fn(({ label, value, onChange }) => {
-    const { Button } = require('react-native');
     return <Button title={`${label}: ${value}`} onPress={() => onChange('mock-selection')} />;
   }),
 );

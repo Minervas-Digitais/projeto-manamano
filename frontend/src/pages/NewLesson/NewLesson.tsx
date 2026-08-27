@@ -243,7 +243,9 @@ export default function NewLesson({ navigation }: any) {
                     imageIcon={<CalendarIcon />}
                     type="datetime"
                     options={{ format: 'DD/MM/YYYY' }}
-                    innerRef={(value: any) => (dateRef.current = value)}
+                    innerRef={(input: any) => {
+                      dateRef.current = input;
+                    }}
                   />
                 )}
               />
@@ -266,7 +268,9 @@ export default function NewLesson({ navigation }: any) {
                     imageIcon={null}
                     type="datetime"
                     options={{ format: 'HH:mm' }}
-                    innerRef={(value: null) => (hourRef.current = value)}
+                    innerRef={(input: null) => {
+                      hourRef.current = input;
+                    }}
                   />
                 )}
               />

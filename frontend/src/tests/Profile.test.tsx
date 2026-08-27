@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { Text } from 'react-native';
 import Profile from '../pages/Profile/Profile';
 import api from '../services/api';
 import storage from '../services/secureStorage';
@@ -27,7 +28,6 @@ jest.mock('../assets/business-icon.svg', () => 'Business');
 // Componente PostCard mockado
 jest.mock('../components/PostCard/PostCard', () => {
   return ({ nameUser, postContent }: any) => {
-    const { Text } = require('react-native');
     return (
       <>
         <Text>{nameUser}</Text>

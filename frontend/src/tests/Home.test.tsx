@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { View } from 'react-native';
+import { TouchableOpacity, View, Text } from 'react-native';
 import Home from '../pages/Home/Home';
 import api from '../services/api';
 import storage from '../services/secureStorage';
@@ -42,9 +42,6 @@ jest.mock('../components/SideMenu/SideMenu', () => {
 });
 
 jest.mock('../components/PostCard/PostCard', () => {
-  const React = require('react');
-  const { TouchableOpacity, Text } = require('react-native');
-
   return function MockPostCard({ postContent, onPressPost, postId }: any) {
     return (
       <TouchableOpacity onPress={onPressPost} testID={`post-card-${postId || 'unknown'}`}>

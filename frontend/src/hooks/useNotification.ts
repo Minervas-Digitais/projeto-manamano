@@ -9,14 +9,9 @@ export function useNotifications() {
   const responseListener = useRef<Subscription | null>(null);
 
   useEffect(() => {
-    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
-      console.log('Notificação recebida:', notification);
-    });
+    notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      console.log('Resposta à notificação:', response);
-    });
-
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {});
     return () => {
       if (notificationListener.current)
         Notifications.removeNotificationSubscription(notificationListener.current);

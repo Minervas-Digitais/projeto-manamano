@@ -1,7 +1,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
 import { NotificationPageContainer } from './NotificationPageStyle';
 import {
   NotificationTextContainerWarning,

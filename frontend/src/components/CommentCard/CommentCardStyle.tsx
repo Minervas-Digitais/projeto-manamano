@@ -2,7 +2,7 @@
 import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export const CommentTextContainer = styled.View`
   left: 50px;

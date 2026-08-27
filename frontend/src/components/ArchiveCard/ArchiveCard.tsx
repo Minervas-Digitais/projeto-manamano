@@ -82,10 +82,7 @@ export default function ArchiveCard({
   if (!fontsLoaded) {
     return undefined;
   }
-  const addArchive = require('../../assets/add-archive.svg');
-  const removeArchive = require('../../assets/remove-archive.svg');
-  const noArchive = require('../../assets/paperclip.svg');
-  const magnifyingGlass = require('../../assets/magnifying-glass.svg');
+
   return (
     <View>
       {archive ? (

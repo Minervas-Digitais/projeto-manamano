@@ -2,7 +2,7 @@
 /* eslint-disable global-require */
 /* eslint-disable react/jsx-one-expression-per-line */
 import React, { useState } from 'react';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   NotificationContainer,
@@ -15,7 +15,6 @@ import {
   NotificationTextContainerWarning,
   NotificationTextGreyWarning,
 } from './NotificationCardStyle';
-import { PostCardTag } from '../PostCard/PostCardStyle';
 import ModalOptionsNotification from '../ModalOptionsNotification/ModalOptionsNotification';
 import MegaPhone from '../../assets/megaphone-icon.svg';
 import Fixed from '../../assets/fixed-icon.svg';
@@ -30,7 +29,6 @@ export default function NotificationCard({
   type,
   body,
   isread,
-  confirm,
   idNotif,
   admin,
 }: any) {

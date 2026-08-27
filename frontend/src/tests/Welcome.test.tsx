@@ -1,5 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import Welcome from '../pages/Welcome/Welcome';
 import storage from '../services/secureStorage';
 
@@ -17,7 +18,6 @@ jest.mock('expo-font', () => ({
 }));
 
 jest.mock('../components/ButtonCustom/ButtonCustom', () => {
-  const { TouchableOpacity, Text } = require('react-native');
   return ({ onPress, text }: { onPress: () => void; text: string }) => (
     <TouchableOpacity onPress={onPress}>
       <Text>{text}</Text>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import PostCard from '../PostCard/PostCard';
 import { RootStackParamList } from '../../navigation/types';

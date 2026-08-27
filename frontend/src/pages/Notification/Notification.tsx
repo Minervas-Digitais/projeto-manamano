@@ -15,7 +15,6 @@ import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
 import ModalOptionsNotification from '../../components/ModalOptionsNotification/ModalOptionsNotification';
 import DotsMenuIcon from '../../assets/dots-menu-big.svg';
-import DeleteConfirmation from '../../components/DeleteAllConfirmation/DeleteAllConfirmation';
 import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/DeleteOneConfirmation';
 import NoNotification from '../../assets/no-notification-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
@@ -54,7 +53,6 @@ export default function Notification({ navigation }: any) {
   const { loggedId } = useAuth();
   const [notification, setNotification] = useState<INotification[]>([]);
   const [display, setDisplay] = useState(false);
-  const [userInfo, setUserInfo] = useState<IUser | null>(null);
   const [admin, setAdmin] = useState(false);
   const [deleteModal, setDeleteModal] = useState({
     visible: false,
@@ -76,7 +74,6 @@ export default function Notification({ navigation }: any) {
           const response = await api.get(`/user/${loggedId}`);
 
           const userData: IUser = response.data;
-          setUserInfo(userData);
 
           if (userData.sysRole === 'ADMIN') {
             setAdmin(true);
@@ -119,7 +116,6 @@ export default function Notification({ navigation }: any) {
       navigation.navigate('NotificationPage');
     }
     if (type !== 'WARNING') {
-      console.log(idContent);
       navigation.navigate('Post', { postId: idContent });
     }
   };

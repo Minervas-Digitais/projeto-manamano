@@ -358,8 +358,6 @@ export class NotificationService {
       ];
 
       const tickets = await this.expo.sendPushNotificationsAsync(messages);
-      tickets.forEach((ticket) => console.log(ticket));
-
       return tickets;
     } catch (err) {
       console.warn(`Erro ao enviar push para ${userId}:`, err.message);

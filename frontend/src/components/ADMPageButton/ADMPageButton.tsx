@@ -1,7 +1,6 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
-import { Image } from 'react-native';
 import { ADMButtonContainer, ADMButtonGradient, ADMButtonText } from './ADMPageButtonStyle';
 
 export default function ADMPageButton({ fontColor, text, onPress, border, icon }: any) {

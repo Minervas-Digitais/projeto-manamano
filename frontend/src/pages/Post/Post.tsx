@@ -41,7 +41,7 @@ interface Comment {
   createdAt: string;
 }
 
-interface Post {
+interface PostInterface {
   id: string;
   input: string;
   userId: string;
@@ -66,7 +66,7 @@ export default function Post() {
   const { postId } = route.params as { postId: string };
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [isFocused, setIsFocused] = useState(false);
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<PostInterface | null>(null);
   const [postUser, setPostUser] = useState<User | null>(null);
   const [postUserImage, setPostUserImage] = useState<any>(defaultAvatar);
   const [commentUsers, setCommentUsers] = useState<Record<string, User>>({});
@@ -94,7 +94,6 @@ export default function Post() {
     if (!loggedId) return;
     const fetchPost = async () => {
       try {
-        console.log(postId);
         const response = await api.get(`post/${postId}`);
         setPost(response.data);
         setRecipientId(response.data.userId);
@@ -206,7 +205,7 @@ export default function Post() {
   } = useForm({});
   const onSubmit = async (data: any) => {
     try {
-      const response = await api.post('/comment', {
+      await api.post('/comment', {
         content: data.input,
         postId,
       });
@@ -214,13 +213,6 @@ export default function Post() {
       const groupResponse = await api.get(`/group/${idGroup}`);
       if (post && post.userId !== loggedId) {
         const groupNameFromApi = groupResponse.data.name;
-        console.log({
-          senderName: userName,
-          recipientId,
-          groupName: groupNameFromApi,
-          type: 'COMMENT',
-          body: '',
-        });
         await api.post('/notifications', {
           senderName: userName,
           recipientId,
@@ -343,7 +335,7 @@ export default function Post() {
               {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
               {Array.isArray(post?.Comment) && post.Comment.length > 0 ? (
                 post?.Comment.map((item: any) => {
-                  const formattedDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
+                  const commentDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
                     locale: ptBR,
                   });
                   const commentUser = commentUsers[item.userId];
@@ -352,7 +344,7 @@ export default function Post() {
                       key={item.id}
                       fullName={commentUser?.fullName || 'Usuário desconhecido'}
                       input={item.content}
-                      createdAt={formattedDate}
+                      createdAt={commentDate}
                       userId={item.userId}
                     />
                   );

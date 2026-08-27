@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import authStore from '../store/authStore';
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
-  _retry?: boolean;
+  retry?: boolean;
 };
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -53,7 +53,7 @@ api.interceptors.request.use((config) => {
   const { accessToken } = authStore.getState();
 
   if (accessToken && !config.headers.Authorization) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+    config.headers.set('Authorization', `Bearer ${accessToken}`);
   }
 
   return config;
@@ -69,12 +69,12 @@ api.interceptors.response.use(
       !originalRequest ||
       status !== 401 ||
       isAuthEndpoint(originalRequest.url) ||
-      originalRequest._retry
+      originalRequest.retry
     ) {
       return Promise.reject(error);
     }
 
-    originalRequest._retry = true;
+    originalRequest.retry = true;
 
     const newAccessToken = await refreshAccessToken();
 

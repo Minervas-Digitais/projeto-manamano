@@ -3,6 +3,7 @@ import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { NavigationContainer, useRoute } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
+import { View } from 'react-native';
 import Post from '../pages/Post/Post';
 import api from '../services/api';
 
@@ -222,9 +223,6 @@ jest.mock('../services/secureStorage', () => ({
 
 // Mock do Toast
 jest.mock('react-native-toast-message', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-
   const show = jest.fn();
   const hide = jest.fn();
 

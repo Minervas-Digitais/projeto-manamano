@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
-import React, { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import React from 'react';
+import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   DeleteConfirmationButton,
@@ -10,7 +10,6 @@ import {
   DeleteConfirmationCardContainer,
   DeleteConfirmationContainer,
 } from './DeleteOneConfirmationStyle';
-import localStorage from '../../services/localStorage';
 import { ModalOptionsNotificationText } from '../ModalOptionsNotification/ModalOptionsNotificationStyle';
 
 export default function DeleteOneConfirmation({

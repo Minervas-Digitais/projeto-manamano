@@ -1,5 +1,4 @@
 import styled from 'styled-components/native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 // eslint-disable-next-line import/prefer-default-export
 export const GroupButtonContainer = styled.TouchableOpacity`

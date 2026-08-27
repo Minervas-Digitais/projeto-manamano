@@ -3,10 +3,13 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
+import { View } from 'react-native';
+import * as fs from 'fs';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import storage from '../services/secureStorage';
 import NewLesson from '../pages/NewLesson/NewLesson';
 import api from '../services/api';
-
-const fs = require('fs');
 
 // Mock fonts
 jest.mock('expo-font', () => ({
@@ -49,15 +52,12 @@ jest.mock('expo-document-picker', () => ({
 
 // Mock SVGs importados como componentes React vazios
 jest.mock('../../assets/arrow-icon.svg', () => {
-  const React = require('react');
   return () => null;
 });
 jest.mock('../../assets/input-link-icon.svg', () => {
-  const React = require('react');
   return () => null;
 });
 jest.mock('../../assets/calendar-icon.svg', () => {
-  const React = require('react');
   return () => null;
 });
 
@@ -113,8 +113,6 @@ jest.mock('../services/api', () => {
 
 // Mock Toast
 jest.mock('react-native-toast-message', () => {
-  const React = require('react');
-  const { View } = require('react-native');
   const show = jest.fn();
   const hide = jest.fn();
 
@@ -187,12 +185,9 @@ describe('NewLesson', () => {
   });
 
   it('deve chamar picker ao clicar em adicionar arquivo', async () => {
-    const DocumentPicker = require('expo-document-picker');
+    jest.mocked(FileSystem.readAsStringAsync).mockResolvedValueOnce('base64-mockado');
 
-    const FileSystem = require('expo-file-system');
-    FileSystem.readAsStringAsync.mockResolvedValueOnce('base64-mockado');
-
-    DocumentPicker.getDocumentAsync.mockResolvedValue({
+    jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValue({
       assets: [{ name: 'arquivo.pdf', uri: 'file://arquivo.pdf', mimeType: 'application/pdf' }],
     });
 
@@ -204,10 +199,7 @@ describe('NewLesson', () => {
   });
 
   it('envia o formulário corretamente com dados válidos', async () => {
-    const DocumentPicker = require('expo-document-picker');
-
-    const FileSystem = require('expo-file-system');
-    FileSystem.readAsStringAsync.mockResolvedValueOnce('base64-mockado');
+    jest.mocked(FileSystem.readAsStringAsync).mockResolvedValueOnce('base64-mockado');
     const { getByTestId, findByTestId } = renderWithNavigation();
 
     await waitFor(() => {
@@ -233,10 +225,7 @@ describe('NewLesson', () => {
   });
 
   it('remove um arquivo ao clicar no card', async () => {
-    const DocumentPicker = require('expo-document-picker');
-
-    const FileSystem = require('expo-file-system');
-    FileSystem.readAsStringAsync.mockResolvedValueOnce('base64-mockado');
+    jest.mocked(FileSystem.readAsStringAsync).mockResolvedValueOnce('base64-mockado');
     const { debug, getByTestId, findByTestId, queryByTestId } = renderWithNavigation();
 
     fireEvent.press(getByTestId('btn-add-file'));
@@ -250,8 +239,9 @@ describe('NewLesson', () => {
   });
 
   it('mostra erro ao falhar na seleção de arquivos', async () => {
-    const DocumentPicker = require('expo-document-picker');
-    DocumentPicker.getDocumentAsync.mockRejectedValueOnce(new Error('Falha ao selecionar'));
+    jest
+      .mocked(DocumentPicker.getDocumentAsync)
+      .mockRejectedValueOnce(new Error('Falha ao selecionar'));
 
     const { getByTestId } = renderWithNavigation();
 
@@ -268,8 +258,7 @@ describe('NewLesson', () => {
   });
 
   it('mostra erro ao não selecionar nenhum arquivo', async () => {
-    const DocumentPicker = require('expo-document-picker');
-    DocumentPicker.getDocumentAsync.mockResolvedValueOnce({ assets: [] });
+    jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValueOnce({ assets: [] });
 
     const { getByTestId } = renderWithNavigation();
 
@@ -286,8 +275,10 @@ describe('NewLesson', () => {
   });
 
   it('mostra erro se categoria "Aulas" não for encontrada', async () => {
-    const apiMock = require('../services/api').default;
-    apiMock.get.mockResolvedValueOnce({ data: [{ id: '1', name: 'Outros' }] });
+    jest.mocked(api.get).mockResolvedValueOnce({
+      data: [{ id: '1', name: 'Outros' }],
+    });
+    jest.mocked(api.get).mockResolvedValueOnce({ data: [{ id: '1', name: 'Outros' }] });
 
     const { getByTestId } = renderWithNavigation();
 
@@ -335,8 +326,10 @@ describe('NewLesson', () => {
   });
 
   it('exibe erro quando a API falha ao enviar dados da aulaa', async () => {
-    const apiMock = require('../services/api').default;
-    apiMock.post.mockRejectedValueOnce(new Error('Erro na API'));
+    jest.mocked(api.get).mockResolvedValueOnce({
+      data: [{ id: '1', name: 'Outros' }],
+    });
+    jest.mocked(api.post).mockRejectedValueOnce(new Error('Erro na API'));
 
     const { getByTestId } = renderWithNavigation();
 
@@ -355,20 +348,22 @@ describe('NewLesson', () => {
   });
 
   it('exibe erro quando ocorre exceção ao criar aula após obter categoria', async () => {
-    const apiMock = require('../services/api').default;
+    jest.mocked(api.get).mockResolvedValueOnce({
+      data: [{ id: '1', name: 'Outros' }],
+    });
 
-    apiMock.get.mockResolvedValueOnce({
+    jest.mocked(api.get).mockResolvedValueOnce({
       data: [{ id: '1', name: 'Aulas' }],
     });
 
-    apiMock.post.mockImplementationOnce(() => {
+    jest.mocked(api.post).mockImplementationOnce(() => {
       throw new Error('Erro simulado ao criar aula');
     });
 
     const { getByTestId } = renderWithNavigation();
 
     await waitFor(() => {
-      expect(apiMock.get).toHaveBeenCalledWith(`/category/group/123`, expect.anything());
+      expect(jest.mocked(api.get)).toHaveBeenCalledWith(`/category/group/123`, expect.anything());
     });
 
     fireEvent.changeText(getByTestId('input-title'), 'Título Teste');
@@ -391,17 +386,18 @@ describe('NewLesson', () => {
   });
 
   it('mostra erro se falhar ao buscar categorias', async () => {
-    const apiMock = require('../services/api').default;
+    jest.mocked(api.get).mockResolvedValueOnce({
+      data: [{ id: '1', name: 'Outros' }],
+    });
 
-    apiMock.get.mockImplementation((url: string) => {
+    jest.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/category/group/123') {
         return Promise.reject(new Error('Erro ao buscar categorias'));
       }
       return Promise.resolve({ data: [] });
     });
 
-    const storageMock = require('../services/secureStorage').default;
-    storageMock.getItem.mockImplementation(async (key: string) => {
+    jest.mocked(storage.getItem).mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'fake-user-id';
       return null;
