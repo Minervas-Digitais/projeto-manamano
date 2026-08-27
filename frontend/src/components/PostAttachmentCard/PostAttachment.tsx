@@ -4,7 +4,6 @@ import { useFonts } from 'expo-font';
 import { Pressable, View, Alert, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
-import * as IntentLauncher from 'expo-intent-launcher';
 import * as Sharing from 'expo-sharing';
 
 import {
@@ -72,7 +71,7 @@ export default function PostAttachment({ archive, text, file }: any) {
         }
 
         // cria apenas o asset — NÃO chama createAlbumAsync
-        const asset = await MediaLibrary.createAssetAsync(tempUri);
+        await MediaLibrary.createAssetAsync(tempUri);
         // asset salvo; o sistema colocará na galeria padrão (Recents, Camera Roll etc.)
         Alert.alert('Sucesso', 'Imagem/Vídeo salvo na galeria!');
         return;

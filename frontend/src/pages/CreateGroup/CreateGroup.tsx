@@ -82,7 +82,6 @@ export default function CreateGroup() {
 
       const groupData = groupResponse.data;
       const groupId = groupData.id;
-      const { inviteCode } = groupData;
 
       Toast.show({
         type: 'success',

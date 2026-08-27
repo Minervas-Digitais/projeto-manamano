@@ -55,7 +55,7 @@ export default function EditProfile() {
     },
     mode: 'onSubmit',
   });
-  const { width, height } = Dimensions.get('window');
+  const { width } = Dimensions.get('window');
   const defaultAvatar = require('../../assets/user-profile.png');
   const { loggedId } = useAuth();
   const onSubmit = async (data: any) => {
@@ -63,10 +63,12 @@ export default function EditProfile() {
       console.log('Form submitted with data:', data);
 
       // Convert birthday to ISO string (if it's not already)
-      if (data.birthday) {
-        const [day, month, year] = data.birthday.split('/');
-        const formattedBirthday = new Date(`${year}-${month}-${day}`).toISOString();
-        data.birthday = formattedBirthday;
+      const formattedData = { ...data };
+
+      if (formattedData.birthday) {
+        const [day, month, year] = formattedData.birthday.split('/');
+
+        formattedData.birthday = new Date(`${year}-${month}-${day}`).toISOString();
       }
 
       if (!loggedId) {
@@ -90,10 +92,9 @@ export default function EditProfile() {
       }
     }
   };
-  const cpfInputRef = useRef(null);
   const phoneInputRef = useRef<TextInputMask | null>(null);
 
-  const validatePhoneNumber = (value: string) => {
+  const validatePhoneNumber = () => {
     if (phoneInputRef.current) {
       // Ser visto com mais cuidado!!!
       const rawValue = (phoneInputRef.current as any).getRawValue();
@@ -268,7 +269,9 @@ export default function EditProfile() {
                 label="Telefone"
                 imageIcon={null}
                 type="cel-phone"
-                innerRef={(value: TextInputMask) => (phoneInputRef.current = value)}
+                innerRef={(input: TextInputMask) => {
+                  phoneInputRef.current = input;
+                }}
               />
             )}
             rules={{
@@ -426,8 +429,8 @@ export default function EditProfile() {
                   console.log('handleSubmit called with data:', data);
                   onSubmit(data); // Directly call onSubmit after handleSubmit
                 },
-                (errors) => {
-                  const errorMessages = Object.values(errors)
+                (validationErrors) => {
+                  const errorMessages = Object.values(validationErrors)
                     .map((error) => error.message)
                     .join('\n');
 
@@ -437,7 +440,7 @@ export default function EditProfile() {
                     Alert.alert('A submissão falhou por erros desconhecidos.');
                   }
 
-                  console.log('Form submission failed due to validation errors:', errors);
+                  console.log('Form submission failed due to validation errors:', validationErrors);
                 },
               )}
               backColor="#32936F"

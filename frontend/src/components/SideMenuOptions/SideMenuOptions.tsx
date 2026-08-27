@@ -1,6 +1,5 @@
 /* eslint-disable global-require */
 import React, { useState, useCallback } from 'react';
-import { Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   SideMenuOptionsButtonsContainer,

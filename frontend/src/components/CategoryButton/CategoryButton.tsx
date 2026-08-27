@@ -1,7 +1,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable no-unneeded-ternary */
 /* eslint-disable global-require */
-import React, { useState } from 'react';
+import React from 'react';
 import { useFonts } from 'expo-font';
 import { CategoryButtonContainer } from './CategoryButtonStyle';
 import { GroupDataText } from '../../pages/GroupData/GroupDataStyle';
