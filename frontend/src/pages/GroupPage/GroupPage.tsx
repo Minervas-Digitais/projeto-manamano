@@ -25,6 +25,7 @@ import {
   GroupPageContent,
   GroupPageLessonsContainer,
   GroupPageListFixPost,
+  GroupPagePinnedCardWrapper,
   GroupPagePostList,
   GroupPageTabs,
   GroupPageTabsContainer,
@@ -388,21 +389,22 @@ export default function GroupPage({ navigation }: any) {
                     .map((item: any) => {
                       if (item.type === 'NORMAL') {
                         return (
-                          <PostCard
-                            key={item.id}
-                            userId={item.userId}
-                            nameUser={item.nameUser}
-                            getUserProfileImage={getUserProfileImage}
-                            postContent={item.input}
-                            numComments={item.numComments}
-                            date={formatRelativeDate(item.createdAt)}
-                            onPressFix={() => fixActions(item.id, item.isPinned)}
-                            onPressPost={() => onPressPostAction(item.id)}
-                            dotsMenu
-                            fix
-                            isSaved={savedPosts.includes(item.id)}
-                            postId={item.id}
-                          />
+                          <GroupPagePinnedCardWrapper key={item.id}>
+                            <PostCard
+                              userId={item.userId}
+                              nameUser={item.nameUser}
+                              getUserProfileImage={getUserProfileImage}
+                              postContent={item.input}
+                              numComments={item.numComments}
+                              date={formatRelativeDate(item.createdAt)}
+                              onPressFix={() => fixActions(item.id, item.isPinned)}
+                              onPressPost={() => onPressPostAction(item.id)}
+                              dotsMenu
+                              fix
+                              isSaved={savedPosts.includes(item.id)}
+                              postId={item.id}
+                            />
+                          </GroupPagePinnedCardWrapper>
                         );
                       }
                       return null;
