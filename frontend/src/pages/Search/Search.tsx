@@ -107,9 +107,7 @@ export default function Search() {
     storage.set('recentUsers', JSON.stringify(updatedUsers));
   };
 
-  const handleAvatarPress = (userId?: string) => {
-    console.log(`Avatar clicked: ${userId}`);
-  };
+  const handleAvatarPress = () => {};
 
   const screenWidth = Dimensions.get('window').width;
 
@@ -198,7 +196,7 @@ export default function Search() {
                       style={{ alignItems: 'center', marginRight: 20 }}
                       testID={`usuario-${user.name.toLowerCase().replace(/\s/g, '-')}`}>
                       <TouchableOpacity
-                        onPress={() => handleAvatarPress(user.id)}
+                        onPress={() => handleAvatarPress()}
                         testID={`touchable-avatar-image-${user.id}`}>
                         <Image
                           source={user.avatar || avatar}
@@ -213,7 +211,7 @@ export default function Search() {
                       {nameParts.length >= 2 ? (
                         <View>
                           <TouchableOpacity
-                            onPress={() => handleAvatarPress(user.id)}
+                            onPress={() => handleAvatarPress()}
                             testID={`touchable-avatar-name1-${user.id}`}>
                             <Text
                               style={{
@@ -236,7 +234,7 @@ export default function Search() {
                       ) : (
                         <View>
                           <TouchableOpacity
-                            onPress={() => handleAvatarPress(user.id)}
+                            onPress={() => handleAvatarPress()}
                             testID={`touchable-avatar-name-${user.id}`}>
                             <Text
                               style={{

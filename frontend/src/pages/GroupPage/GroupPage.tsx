@@ -548,7 +548,6 @@ export default function GroupPage({ navigation }: any) {
           <GroupPageAddPostButton>
             <TouchableOpacity
               onPress={() => {
-                console.log('groupId no GroupPage', groupId);
                 if (classesSelect) {
                   navigation.navigate('NewLesson', { groupId });
                 } else {

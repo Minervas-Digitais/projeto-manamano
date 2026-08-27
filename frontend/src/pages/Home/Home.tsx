@@ -322,7 +322,6 @@ export default function Home({ navigation }: any) {
                         groupName: item.group.name,
                       });
                       storageHome.set('groupId', item.groupId);
-                      console.log(`groupId home: ${item.groupId}`);
                     }}
                     groupId={item.groupId}
                     groupName={item.group.name}

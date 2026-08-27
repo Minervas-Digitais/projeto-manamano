@@ -94,7 +94,6 @@ export default function Post() {
     if (!loggedId) return;
     const fetchPost = async () => {
       try {
-        console.log(postId);
         const response = await api.get(`post/${postId}`);
         setPost(response.data);
         setRecipientId(response.data.userId);
@@ -214,13 +213,6 @@ export default function Post() {
       const groupResponse = await api.get(`/group/${idGroup}`);
       if (post && post.userId !== loggedId) {
         const groupNameFromApi = groupResponse.data.name;
-        console.log({
-          senderName: userName,
-          recipientId,
-          groupName: groupNameFromApi,
-          type: 'COMMENT',
-          body: '',
-        });
         await api.post('/notifications', {
           senderName: userName,
           recipientId,
