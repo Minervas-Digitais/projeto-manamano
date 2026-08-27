@@ -278,8 +278,6 @@ describe('Notification', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     mockedApi.get.mockImplementation(async (url: string) => {
-      if (url.includes('notifications/user')) {
-      }
       if (url.includes('/user/')) {
         return Promise.reject(new Error('Falha ao buscar usuário'));
       }

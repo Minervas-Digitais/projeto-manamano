@@ -1,7 +1,6 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { mocked } from 'jest-mock';
 import GroupData from '../pages/GroupData/GroupData';
 import api from '../services/api';
 import storage from '../services/secureStorage';
@@ -30,8 +29,8 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => mockRoute,
 }));
 
-const mockedApi = mocked(api);
-const mockedStorage = mocked(storage);
+const mockedApi = jest.mocked(api);
+const mockedStorage = jest.mocked(storage);
 
 describe('GroupData', () => {
   const mockGroupInfo = {
