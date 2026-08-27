@@ -333,7 +333,14 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
         onCancel={() => setDeleteModal({ visible: false, type: '', id: '' })}
       />
       <Container>
-        <View style={{ paddingLeft: 10, paddingRight: 10 }}>
+        <View
+          style={{
+            paddingLeft: 10,
+            paddingRight: 10,
+            paddingBottom: 10,
+            borderBottomWidth: 1,
+            borderBottomColor: '#E0E0E0',
+          }}>
           <Text
             style={{
               fontSize: 12,
@@ -510,7 +517,7 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
                         groupName: group.name,
                       });
                     }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
                       <Avatar source={defaultAvatar} testID={`group-avatar-${group.id}`} />
                       <Name
                         fontFamily="inter-regular"

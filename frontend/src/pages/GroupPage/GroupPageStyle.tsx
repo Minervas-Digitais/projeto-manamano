@@ -1,4 +1,5 @@
 /* eslint-disable import/prefer-default-export */
+import { Dimensions } from 'react-native';
 import styled from 'styled-components/native';
 
 export const GroupPageContainer = styled.View`
@@ -29,14 +30,23 @@ export const GroupPageContent = styled.View`
   flex: 1;
 `;
 
-export const GroupPageListFixPost = styled.View`
-  display: flex;
+export const GroupPageListFixPost = styled.ScrollView.attrs({
+  horizontal: true,
+  showsHorizontalScrollIndicator: false,
+  nestedScrollEnabled: true,
+  contentContainerStyle: {
+    gap: 12,
+    paddingHorizontal: 25,
+    paddingVertical: 25,
+  },
+})`
   width: 100%;
-  flex-direction: row;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 25px;
-  gap: 10px;
+  flex-grow: 0;
+`;
+
+export const GroupPagePinnedCardWrapper = styled.View`
+  width: ${Dimensions.get('window').width * 0.85}px;
+  flex-shrink: 0;
 `;
 
 export const GroupPageCategoryContainer = styled.View`
@@ -45,17 +55,19 @@ export const GroupPageCategoryContainer = styled.View`
   width: 100%;
   gap: 15px;
   padding: 0px 0px 0px 25px;
+  margin-right: 25px;
+  margin-bottom: 25px;
 `;
 
-export const GroupPageCategoryList = styled.View`
-  display: flex;
-  flex-direction: row;
+export const GroupPageCategoryList = styled.ScrollView.attrs({
+  horizontal: true,
+  showsHorizontalScrollIndicator: false,
+  contentContainerStyle: {
+    paddingRight: 25,
+    gap: 17,
+  },
+})`
   width: 100%;
-  padding-right: 25px;
-  padding-bottom: 25px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  gap: 17px;
 `;
 
 export const GroupPagePostList = styled.View`
