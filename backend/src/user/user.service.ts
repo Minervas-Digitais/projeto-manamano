@@ -46,7 +46,6 @@ export class UserService {
       email: createUserDto.email,
       phone: createUserDto.phone,
       hash: hashedPassword,
-      savedPost: [],
       birthday: createUserDto.birthday,
       ethnicity: createUserDto.ethnicity,
       neighborhood: createUserDto.neighborhood,

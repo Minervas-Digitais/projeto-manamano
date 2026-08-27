@@ -331,6 +331,7 @@ describe('Posts', () => {
       const userRes = await createUserWithToken(prismaService, authService, {
         fullName: 'Test User',
       });
+
       userToken = userRes.token;
 
       const response = await request(app.getHttpServer())
@@ -338,7 +339,17 @@ describe('Posts', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(201);
-      expect(response.body.savedPost).toContain(post.id);
+
+      const saved = await prismaService.savedPost.findUnique({
+        where: {
+          userId_postId: {
+            userId: userRes.user.id,
+            postId: post.id,
+          },
+        },
+      });
+
+      expect(saved).not.toBeNull();
     });
 
     it('deve retornar erro 401 se token inválido ou ausente', async () => {
@@ -356,6 +367,7 @@ describe('Posts', () => {
       const userRes = await createUserWithToken(prismaService, authService, {
         fullName: 'Test User',
       });
+
       userToken = userRes.token;
 
       await request(app.getHttpServer())
@@ -367,7 +379,17 @@ describe('Posts', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(201);
-      expect(response.body.savedPost).not.toContain(post.id);
+
+      const saved = await prismaService.savedPost.findUnique({
+        where: {
+          userId_postId: {
+            userId: userRes.user.id,
+            postId: post.id,
+          },
+        },
+      });
+
+      expect(saved).toBeNull();
     });
 
     it('deve retornar erro 401 se token JWT for inválido', async () => {
