@@ -1,9 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, PostType, Prisma } from '@prisma/client';
+import { NotificationType, PostType, Prisma, UserRole } from '@prisma/client';
 import { POST_MESSAGES } from '../messages/post.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
@@ -146,20 +146,50 @@ export class PostService {
     return this.serializePost(post);
   }
 
-  async update(id: string, updatePostDto: UpdatePostDto): Promise<SerializedPost> {
-    await this.validator.validatePostExists(id);
+  async update(
+    callerId: string,
+    postId: string,
+    updatePostDto: UpdatePostDto,
+  ): Promise<SerializedPost> {
+    const existing = await this.validator.validatePostExists(postId);
+
+    const groupIdToCheck = existing.groupId;
+
+    const callerParticipant = await this.prismaService.participant.findFirst({
+      where: {
+        userId: callerId,
+        groupId: groupIdToCheck,
+      },
+    });
+
+    if (!callerParticipant || callerParticipant.role !== UserRole.INSTRUCTOR) {
+      throw new ForbiddenException(POST_MESSAGES.UNAUTHORIZED_ACCESS);
+    }
+
     const updated = await this.prismaService.post.update({
-      where: { id },
+      where: { id: postId },
       data: updatePostDto,
       include: postInclude,
     });
     return this.serializePost(updated);
   }
 
-  async remove(id: string): Promise<SerializedPost> {
-    await this.validator.validatePostExists(id);
+  async remove(callerId: string, postId: string): Promise<SerializedPost> {
+    const postData = await this.validator.validatePostExists(postId);
+
+    const callerParticipant = await this.prismaService.participant.findFirst({
+      where: {
+        userId: callerId,
+        groupId: postData.groupId,
+      },
+    });
+
+    if (!callerParticipant || callerParticipant.role !== UserRole.INSTRUCTOR) {
+      throw new ForbiddenException(POST_MESSAGES.UNAUTHORIZED_ACCESS);
+    }
+
     const deleted = await this.prismaService.post.delete({
-      where: { id },
+      where: { id: postId },
       include: postInclude,
     });
     return this.serializePost(deleted);

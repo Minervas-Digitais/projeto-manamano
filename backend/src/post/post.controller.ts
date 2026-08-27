@@ -51,18 +51,18 @@ export class PostController {
 
   @HttpCode(201)
   @Patch(':id')
-  @UseGuards(RolesGuard)
-  @Roles(RoleType.ADMIN)
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto): Promise<SerializedPost> {
-    return this.postService.update(id, updatePostDto);
+  update(
+    @User('id') userId: string,
+    @Param('id') id: string,
+    @Body() updatePostDto: UpdatePostDto,
+  ): Promise<SerializedPost> {
+    return this.postService.update(userId, id, updatePostDto);
   }
 
   @HttpCode(200)
   @Delete(':id')
-  @UseGuards(RolesGuard)
-  @Roles(RoleType.ADMIN)
-  remove(@Param('id') id: string): Promise<SerializedPost> {
-    return this.postService.remove(id);
+  remove(@User('id') userId: string, @Param('id') id: string): Promise<SerializedPost> {
+    return this.postService.remove(userId, id);
   }
 
   @HttpCode(201)

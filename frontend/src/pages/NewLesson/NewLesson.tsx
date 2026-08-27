@@ -28,7 +28,18 @@ interface InputRef {
 export default function NewLesson({ navigation }: any) {
   const route = useRoute();
   const { loggedId } = useAuth();
-  const { groupId } = route.params as { groupId: string };
+  const { groupId, editData } = route.params as {
+    groupId: string;
+    editData?: {
+      id: string;
+      title: string;
+      date: string | Date;
+      urlLive: string;
+      urlVOD: string;
+      input: string;
+    };
+  };
+  const isEditMode = !!editData;
   const [categories, setCategories] = useState<any[]>([]);
   const [files, setFiles] = useState<
     { id: number; name: string; uri: string; mimeType?: string }[]
@@ -62,6 +73,25 @@ export default function NewLesson({ navigation }: any) {
     const [day, month, year] = date.split('/');
     return `${year}-${month}-${day}`;
   }
+
+  const getInitialValues = () => {
+    if (!isEditMode || !editData) return {};
+    const d = new Date(editData.date);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear());
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return {
+      title: editData.title,
+      date: `${day}/${month}/${year}`,
+      hour: `${hours}:${minutes}`,
+      link: editData.urlLive,
+      vod: editData.urlVOD,
+      input: editData.input,
+    };
+  };
+
   const onSubmit = async (data: any) => {
     const selectedCategory = categories.find((category) => category.name === 'Aulas');
 
@@ -75,33 +105,64 @@ export default function NewLesson({ navigation }: any) {
     try {
       const formattedDate = formatDate(data.date);
       const datetimeISO = new Date(`${formattedDate}T${data.hour}:00`).toISOString();
-      const response = await api.post('/post', {
-        type: 'CLASS',
-        input: data.input,
-        categoryId: selectedCategory.id,
-        groupId,
-        schedule: datetimeISO,
-        title: data.title,
-        urlLive: data.link,
-        urlRecorded: data.vod,
-      });
-      const { id } = response.data;
-      await Promise.all(
-        files.map(async (file) => {
-          await api.post('/archives', {
-            name: file.name,
-            mimeType: file.mimeType,
-            groupId,
-            contentBase64: file.uri,
-            type: file.mimeType,
-            postId: id,
-          });
-        }),
-      );
-      Toast.show({
-        type: 'success',
-        text1: 'Aula criada com sucesso!',
-      });
+
+      if (isEditMode && editData) {
+        await api.patch(`/post/${editData.id}`, {
+          title: data.title,
+          input: data.input,
+          schedule: datetimeISO,
+          urlLive: data.link,
+          urlRecorded: data.vod,
+          groupId,
+        });
+
+        await Promise.all(
+          files.map(async (file) => {
+            await api.post('/archives', {
+              name: file.name,
+              mimeType: file.mimeType,
+              groupId,
+              contentBase64: file.uri,
+              type: file.mimeType,
+              postId: editData.id,
+            });
+          }),
+        );
+
+        Toast.show({
+          type: 'success',
+          text1: 'Aula atualizada com sucesso!',
+        });
+      } else {
+        const response = await api.post('/post', {
+          type: 'CLASS',
+          input: data.input,
+          categoryId: selectedCategory.id,
+          groupId,
+          schedule: datetimeISO,
+          title: data.title,
+          urlLive: data.link,
+          urlRecorded: data.vod,
+        });
+        const { id } = response.data;
+        await Promise.all(
+          files.map(async (file) => {
+            await api.post('/archives', {
+              name: file.name,
+              mimeType: file.mimeType,
+              groupId,
+              contentBase64: file.uri,
+              type: file.mimeType,
+              postId: id,
+            });
+          }),
+        );
+        Toast.show({
+          type: 'success',
+          text1: 'Aula criada com sucesso!',
+        });
+      }
+
       setFiles([]);
       setTimeout(() => {
         navigation.goBack();
@@ -111,7 +172,9 @@ export default function NewLesson({ navigation }: any) {
       console.error('Erro ao enviar post:', error);
       Toast.show({
         type: 'error',
-        text1: 'Erro ao criar aula. Tente novamente mais tarde.',
+        text1: isEditMode
+          ? 'Erro ao atualizar aula.'
+          : 'Erro ao criar aula. Tente novamente mais tarde.',
       });
     }
   };
@@ -123,7 +186,9 @@ export default function NewLesson({ navigation }: any) {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm({});
+  } = useForm<any>({
+    defaultValues: getInitialValues() as any,
+  });
   const validateDate = () => {
     if (!dateRef.current) return 'Data inválida';
     const inputDate = new Date(dateRef.current.getRawValue());
@@ -200,7 +265,8 @@ export default function NewLesson({ navigation }: any) {
   };
   const { width } = Dimensions.get('window');
   return (
-    <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Publicação' }}>
+    <ScreenWithHeader
+      headerProps={{ font: 'inter-bold', text: isEditMode ? 'Editar aula' : 'Publicação' }}>
       <ScrollView
         style={{ backgroundColor: '#f2f6fa', minHeight: '100%' }}
         contentContainerStyle={{ minHeight: '100%' }}>
@@ -328,7 +394,7 @@ export default function NewLesson({ navigation }: any) {
                 />
               )}
             />
-            {errors.description && <ErrorWarning errorText="Campo obrigatório" />}
+            {(errors as any).input && <ErrorWarning errorText="Campo obrigatório" />}
             <ScrollView
               showsHorizontalScrollIndicator={false}
               horizontal
@@ -353,7 +419,7 @@ export default function NewLesson({ navigation }: any) {
               onPress={handleSubmit(onSubmit)}
               backColor="#160E47"
               fontColor="white"
-              text="Publicar"
+              text={isEditMode ? 'Salvar' : 'Publicar'}
               rightIcon={<ArrowIcon />}
             />
           </LinkPart>
