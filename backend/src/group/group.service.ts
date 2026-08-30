@@ -17,7 +17,6 @@ const defaultCategories = [
 
 @Injectable()
 export class GroupService {
-  /* c8 ignore next 4 */
   constructor(
     private prismaService: PrismaService,
     private readonly validator: ValidatorService,

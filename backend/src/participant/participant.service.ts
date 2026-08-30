@@ -11,6 +11,9 @@ import { UpdateParticipantRoleDto } from './dto/update-participant.dto';
 import { Participant, RoleType, UserRole } from '@prisma/client';
 import { PARTICIPANT_MESSAGES } from 'src/messages/participant.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
+import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
+import { PaginationDto } from 'src/common/pagination/pagination-dto';
+import { BASE_MESSAGES } from 'src/messages/base.messages';
 
 export interface PostWithCommentsCount {
   id: string;
@@ -101,12 +104,29 @@ export class ParticipantService {
     });
   }
 
-  async findAll(): Promise<Participant[]> {
-    const participants = await this.prismaService.participant.findMany();
+  async findAll(pagination: PaginationDto): Promise<PaginatedResponseDto<Participant>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 20;
+    const skip = (page - 1) * limit;
+
+    const maxLimit = 20;
+
+    if (limit > maxLimit) {
+      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(maxLimit));
+    }
+
+    const [participants, total] = await Promise.all([
+      this.prismaService.participant.findMany({
+        skip,
+        take: limit,
+      }),
+      this.prismaService.participant.count(),
+    ]);
+
     if (participants.length === 0) {
       throw new NotFoundException(PARTICIPANT_MESSAGES.EMPTY_GROUP);
     }
-    return participants;
+    return new PaginatedResponseDto(participants, total, pagination);
   }
 
   async findUserGroups(userId: string): Promise<GroupWithDetails[]> {
@@ -143,29 +163,22 @@ export class ParticipantService {
     const allPostIds = groups.flatMap((g) => g.group.posts.map((p) => p.id));
     const allGroupIds = groups.map((g) => g.groupId);
 
-    const commentCounts = await this.prismaService.comment.groupBy({
-      by: ['postId'],
-      _count: true,
-      where: {
-        postId: {
-          in: allPostIds,
-        },
-      },
-    });
+    const [commentCounts, participantCounts] = await Promise.all([
+      this.prismaService.comment.groupBy({
+        by: ['postId'],
+        _count: true,
+        where: { postId: { in: allPostIds } },
+      }),
+      this.prismaService.participant.groupBy({
+        by: ['groupId'],
+        _count: true,
+        where: { groupId: { in: allGroupIds } },
+      }),
+    ]);
 
     const commentCountMap = new Map<string, number>(
       commentCounts.map((item) => [item.postId, item._count]),
     );
-
-    const participantCounts = await this.prismaService.participant.groupBy({
-      by: ['groupId'],
-      _count: true,
-      where: {
-        groupId: {
-          in: allGroupIds,
-        },
-      },
-    });
 
     const participantCountMap = new Map<string, number>(
       participantCounts.map((item) => [item.groupId, item._count]),
@@ -191,139 +204,112 @@ export class ParticipantService {
     return groupsWithCounts;
   }
 
-  async findUserGroupsPostsPaginated(userId: string, page: number = 1, limit: number = 15) {
-    try {
-      // Buscar os grupos do usuário (sem posts)
-      const userGroups = await this.prismaService.participant.findMany({
-        where: { userId },
-        select: {
-          groupId: true,
-          role: true,
-          group: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      });
+  async findUserGroupsPostsPaginated(
+    userId: string,
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<any>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 15;
+    const skip = (page - 1) * limit;
 
-      if (userGroups.length === 0) {
-        return {
-          posts: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-            totalPages: 0,
-            hasMore: false,
-          },
-        };
-      }
+    const maxLimit = 20;
+    if (limit > maxLimit) {
+      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(maxLimit));
+    }
 
-      const groupIds = userGroups.map((group) => group.groupId);
+    const userGroups = await this.prismaService.participant.findMany({
+      where: { userId },
+      select: {
+        groupId: true,
+        role: true,
+        group: { select: { name: true } },
+      },
+    });
 
-      // Contar total de posts nos grupos do usuário
-      const totalPosts = await this.prismaService.post.count({
-        where: {
-          groupId: {
-            in: groupIds,
-          },
-        },
-      });
+    if (userGroups.length === 0) {
+      return new PaginatedResponseDto([], 0, { page, limit });
+    }
 
-      // Buscar posts paginados com suas informações
-      const posts = await this.prismaService.post.findMany({
-        where: {
-          groupId: {
-            in: groupIds,
-          },
-        },
+    const groupIds = userGroups.map((g) => g.groupId);
+
+    const [totalPosts, posts] = await Promise.all([
+      this.prismaService.post.count({
+        where: { groupId: { in: groupIds } },
+      }),
+      this.prismaService.post.findMany({
+        where: { groupId: { in: groupIds } },
         select: {
           id: true,
           title: true,
           input: true,
           createdAt: true,
           groupId: true,
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-            },
-          },
-          group: {
-            select: {
-              name: true,
-            },
-          },
+          user: { select: { id: true, fullName: true } },
+          group: { select: { name: true } },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        skip: (page - 1) * limit,
+        orderBy: { createdAt: 'desc' },
+        skip,
         take: limit,
-      });
+      }),
+    ]);
 
-      // Adicionar contagem de comentários para cada post
-      const postsWithCommentsCount = await Promise.all(
-        posts.map(async (post) => {
-          const commentsCount = await this.prismaService.comment.count({
-            where: { postId: post.id },
-          });
-          return {
-            ...post,
-            commentsCount,
-          };
-        }),
-      );
+    const postsWithCommentsCount = await Promise.all(
+      posts.map(async (post) => {
+        const commentsCount = await this.prismaService.comment.count({
+          where: { postId: post.id },
+        });
+        return { ...post, commentsCount };
+      }),
+    );
 
-      const totalPages = Math.ceil(totalPosts / limit);
-
-      return {
-        posts: postsWithCommentsCount,
-        pagination: {
-          page,
-          limit,
-          total: totalPosts,
-          totalPages,
-          hasMore: page < totalPages,
-        },
-      };
-    } catch (error) {
-      throw error;
-    }
+    return new PaginatedResponseDto(postsWithCommentsCount, totalPosts, { page, limit });
   }
 
-  async findUsersInGroup(groupId: string, callerId: string): Promise<UserInGroup[]> {
-    await this.validator.validateGroupExists(groupId);
-    const callerUser = await this.validator.validateUserExists(callerId);
+  async findUsersInGroup(
+    groupId: string,
+    callerId: string,
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<UserInGroup>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 20;
+    const skip = (page - 1) * limit;
 
-    const callerParticipant = await this.prismaService.participant.findUnique({
-      where: { userId_groupId: { userId: callerId, groupId } },
-    });
+    const maxLimit = 20;
+    if (limit > maxLimit) {
+      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(maxLimit));
+    }
+
+    const [callerUser, callerParticipant] = await Promise.all([
+      this.validator.validateUserExists(callerId),
+      this.prismaService.participant.findUnique({
+        where: { userId_groupId: { userId: callerId, groupId } },
+      }),
+    ]);
+    await this.validator.validateGroupExists(groupId);
 
     // Quem chamou a rota deve ser ou ADMIN ou deve pertencer ao grupo
     if (callerUser.sysRole != RoleType.ADMIN && !callerParticipant) {
       throw new ForbiddenException(PARTICIPANT_MESSAGES.UNAUTHORIZED_ACCESS);
     }
 
-    const users = await this.prismaService.participant.findMany({
-      where: {
-        groupId,
-      },
-      select: {
-        role: true,
-        userId: true,
-        user: {
-          select: {
-            fullName: true,
-          },
+    const [users, total] = await Promise.all([
+      this.prismaService.participant.findMany({
+        where: { groupId },
+        select: {
+          role: true,
+          userId: true,
+          user: { select: { fullName: true } },
         },
-      },
-    });
+        skip,
+        take: limit,
+      }),
+      this.prismaService.participant.count({ where: { groupId } }),
+    ]);
+
     if (users.length === 0) {
       throw new NotFoundException(PARTICIPANT_MESSAGES.NO_USERS_IN_GROUP);
     }
-    return users;
+    return new PaginatedResponseDto<UserInGroup>(users as UserInGroup[], total, pagination);
   }
 
   async findOne(userId: string, groupId: string): Promise<Participant> {
