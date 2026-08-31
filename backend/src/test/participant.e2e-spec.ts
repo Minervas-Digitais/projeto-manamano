@@ -152,7 +152,7 @@ describe('Participant (E2E)', () => {
   });
 
   describe('findAll', () => {
-    it('ADMIN deve conseguir listar participants', async () => {
+    it('ADMIN deve conseguir listar participants paginado', async () => {
       await createParticipant(prisma, {
         userId: instructor.id,
         groupId: group.id,
@@ -164,10 +164,55 @@ describe('Participant (E2E)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
-      expect(res.body[0]).toHaveProperty('userId');
-      expect(res.body[0]).toHaveProperty('groupId');
-      expect(res.body[0]).toHaveProperty('role');
+      expect(res.body).toHaveProperty('data');
+      expect(res.body).toHaveProperty('meta');
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data[0]).toHaveProperty('userId');
+      expect(res.body.data[0]).toHaveProperty('groupId');
+      expect(res.body.data[0]).toHaveProperty('role');
+      expect(res.body.meta).toMatchObject({
+        total: expect.any(Number),
+        page: 1,
+        limit: 20,
+        lastPage: expect.any(Number),
+      });
+    });
+
+    it('deve respeitar paginação page e limit', async () => {
+      await createParticipant(prisma, {
+        userId: instructor.id,
+        groupId: group.id,
+        role: UserRole.INSTRUCTOR,
+      });
+      await createParticipant(prisma, {
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/participant?page=1&limit=1')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.length).toBe(1);
+      expect(res.body.meta.page).toBe(1);
+      expect(res.body.meta.limit).toBe(1);
+    });
+
+    it('deve retornar 400 quando limit excede máximo', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/participant?page=1&limit=21')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 para paginação inválida', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/participant?page=0&limit=10')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(400);
     });
 
     it('usuário comum NÃO deve conseguir (403)', async () => {
@@ -179,7 +224,6 @@ describe('Participant (E2E)', () => {
     });
 
     it('deve retornar 404 se não houver participants', async () => {
-      // limpa tudo
       await prisma.participant.deleteMany();
 
       const res = await request(app.getHttpServer())
@@ -198,7 +242,7 @@ describe('Participant (E2E)', () => {
   });
 
   describe('findUsersInGroup', () => {
-    it('membro do grupo deve conseguir', async () => {
+    it('membro do grupo deve conseguir paginado', async () => {
       await createParticipant(prisma, {
         userId: user.id,
         groupId: group.id,
@@ -210,16 +254,19 @@ describe('Participant (E2E)', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body).toHaveProperty('data');
+      expect(res.body).toHaveProperty('meta');
+      expect(res.body.data.length).toBeGreaterThan(0);
 
-      const first = res.body[0];
+      const first = res.body.data[0];
       expect(first).toHaveProperty('userId');
       expect(first).toHaveProperty('role');
       expect(first).toHaveProperty('user');
       expect(first.user).toHaveProperty('fullName');
+      expect(res.body.meta).toMatchObject({ page: 1, limit: 20 });
     });
 
-    it('ADMIN deve conseguir mesmo fora do grupo', async () => {
+    it('ADMIN deve conseguir mesmo fora do grupo paginado', async () => {
       await createParticipant(prisma, {
         userId: instructor.id,
         groupId: group.id,
@@ -231,6 +278,53 @@ describe('Participant (E2E)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
+      expect(res.body.data.length).toBeGreaterThan(0);
+    });
+
+    it('deve respeitar paginação', async () => {
+      await createParticipant(prisma, {
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
+      await createParticipant(prisma, {
+        userId: instructor.id,
+        groupId: group.id,
+        role: UserRole.INSTRUCTOR,
+      });
+
+      const res = await request(app.getHttpServer())
+        .get(`/participant/group/${group.id}/users?page=1&limit=1`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.length).toBe(1);
+      expect(res.body.meta.page).toBe(1);
+      expect(res.body.meta.limit).toBe(1);
+    });
+
+    it('deve retornar 400 quando limit excede máximo', async () => {
+      await createParticipant(prisma, {
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
+      const res = await request(app.getHttpServer())
+        .get(`/participant/group/${group.id}/users?page=1&limit=21`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 para paginação inválida', async () => {
+      await createParticipant(prisma, {
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
+      const res = await request(app.getHttpServer())
+        .get(`/participant/group/${group.id}/users?page=0&limit=10`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
     });
 
     it('usuário fora do grupo deve ser bloqueado (403)', async () => {
@@ -251,7 +345,6 @@ describe('Participant (E2E)', () => {
     });
 
     it('deve retornar 404 se não houver participantes no grupo', async () => {
-      // remove o instructor que vem do beforeEach
       await prisma.participant.deleteMany({
         where: { groupId: group.id },
       });
@@ -346,19 +439,15 @@ describe('Participant (E2E)', () => {
   });
 
   describe('findUserGroupsPosts', () => {
-    it('deve retornar posts paginados dos grupos do usuário', async () => {
-      // user entra no grupo
+    it('deve retornar posts paginados dos grupos do usuário (PaginatedResponseDto)', async () => {
       await createParticipant(prisma, {
         userId: user.id,
         groupId: group.id,
         role: UserRole.STUDENT,
       });
 
-      const category = await createCategory(prisma, {
-        groupId: group.id,
-      });
+      const category = await createCategory(prisma, { groupId: group.id });
 
-      // cria vários posts
       const posts = await Promise.all([
         createPost(prisma, {
           title: 'Post 1',
@@ -380,19 +469,10 @@ describe('Participant (E2E)', () => {
         }),
       ]);
 
-      // adiciona comentários em um post
       await prisma.comment.createMany({
         data: [
-          {
-            content: 'comentário 1',
-            postId: posts[0].id,
-            userId: user.id,
-          },
-          {
-            content: 'comentário 2',
-            postId: posts[0].id,
-            userId: user.id,
-          },
+          { content: 'comentário 1', postId: posts[0].id, userId: user.id },
+          { content: 'comentário 2', postId: posts[0].id, userId: user.id },
         ],
       });
 
@@ -401,32 +481,25 @@ describe('Participant (E2E)', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
-
-      expect(res.body).toHaveProperty('posts');
-      expect(res.body).toHaveProperty('pagination');
-
-      expect(res.body.posts.length).toBe(2); // limit=2
-
-      expect(res.body.pagination).toEqual(
+      expect(res.body).toHaveProperty('data');
+      expect(res.body).toHaveProperty('meta');
+      expect(res.body.data.length).toBe(2);
+      expect(res.body.meta).toEqual(
         expect.objectContaining({
           page: 1,
           limit: 2,
           total: 3,
-          totalPages: 2,
-          hasMore: true,
+          lastPage: 2,
         }),
       );
 
-      // valida estrutura de um post
-      const post = res.body.posts[0];
-
+      const post = res.body.data[0];
       expect(post).toHaveProperty('id');
       expect(post).toHaveProperty('title');
       expect(post).toHaveProperty('input');
       expect(post).toHaveProperty('commentsCount');
       expect(post).toHaveProperty('user');
       expect(post).toHaveProperty('group');
-
       expect(post.user).toHaveProperty('fullName');
       expect(post.group).toHaveProperty('name');
     });
@@ -438,10 +511,7 @@ describe('Participant (E2E)', () => {
         role: UserRole.STUDENT,
       });
 
-      const category = await createCategory(prisma, {
-        groupId: group.id,
-      });
-
+      const category = await createCategory(prisma, { groupId: group.id });
       const post = await createPost(prisma, {
         title: 'Post com comments',
         userId: user.id,
@@ -461,28 +531,22 @@ describe('Participant (E2E)', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
-
-      const found = res.body.posts.find((p) => p.id === post.id);
-
+      const found = res.body.data.find((p: any) => p.id === post.id);
       expect(found.commentsCount).toBe(2);
     });
 
-    it('deve retornar vazio se usuário não estiver em grupos', async () => {
+    it('deve retornar vazio paginado se usuário não estiver em grupos', async () => {
       const res = await request(app.getHttpServer())
         .get('/participant/groups/posts')
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
-
-      expect(res.body).toEqual({
-        posts: [],
-        pagination: {
-          page: 1,
-          limit: 15,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta).toEqual({
+        page: 1,
+        limit: 15,
+        total: 0,
+        lastPage: 0,
       });
     });
 
@@ -493,11 +557,7 @@ describe('Participant (E2E)', () => {
         role: UserRole.STUDENT,
       });
 
-      const category = await createCategory(prisma, {
-        groupId: group.id,
-      });
-
-      // cria 3 posts
+      const category = await createCategory(prisma, { groupId: group.id });
       await Promise.all([
         createPost(prisma, {
           title: 'Post 1',
@@ -524,14 +584,32 @@ describe('Participant (E2E)', () => {
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
+      expect(res.body.data.length).toBe(1);
+      expect(res.body.meta.page).toBe(2);
+      expect(res.body.meta.lastPage).toBe(2);
+    });
 
-      expect(res.body.posts.length).toBe(1); // sobra 1 na página 2
-      expect(res.body.pagination.hasMore).toBe(false);
+    it('deve retornar 400 quando limit excede máximo', async () => {
+      await createParticipant(prisma, {
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
+      const res = await request(app.getHttpServer())
+        .get('/participant/groups/posts?page=1&limit=21')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 para paginação inválida', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/participant/groups/posts?page=0&limit=10')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
     });
 
     it('deve retornar 401 sem token', async () => {
       const res = await request(app.getHttpServer()).get('/participant/groups/posts');
-
       expect(res.status).toBe(401);
     });
   });

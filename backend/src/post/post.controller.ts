@@ -18,17 +18,9 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { RoleType } from '@prisma/client';
 import { User } from 'src/user/user.decorator';
-
-interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasMore: boolean;
-  };
-}
+import { PaginationDto } from 'src/common/pagination/pagination-dto';
+import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
+import { SavedPostsQueryDto } from './dto/saved-posts-query.dto';
 
 @Controller('post')
 @UseGuards(JwtAuthGuard)
@@ -55,17 +47,11 @@ export class PostController {
   @Get('saved')
   async getSavedPosts(
     @User('id') userId: string,
-    @Query('page') page = '1',
-    @Query('limit') limit = '10',
-    @Query('all') all = 'false',
-  ): Promise<SerializedPost[]> {
-    const isAll = all === 'true';
-    return this.postService.getSavedPosts(
-      userId,
-      isAll ? undefined : Number(page),
-      isAll ? undefined : Number(limit),
-      isAll,
-    );
+    @Query() query: SavedPostsQueryDto,
+  ): Promise<PaginatedResponseDto<SerializedPost> | SerializedPost[]> {
+    const isAll = query.all === 'true';
+    const pagination: PaginationDto = { page: query.page, limit: query.limit };
+    return this.postService.getSavedPosts(userId, pagination, isAll);
   }
 
   @HttpCode(200)
@@ -124,38 +110,26 @@ export class PostController {
   @Get('group/:groupId')
   async getGroupPosts(
     @Param('groupId') groupId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ): Promise<PaginatedResponse<SerializedPost>> {
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 10;
-
-    return this.postService.getGroupPosts(groupId, pageNum, limitNum);
+    @Query() pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<SerializedPost>> {
+    return this.postService.getGroupPosts(groupId, pagination);
   }
 
   @HttpCode(200)
   @Get('category/:categoryId')
   async getCategoryPosts(
     @Param('categoryId') categoryId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ): Promise<PaginatedResponse<SerializedPost>> {
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 10;
-
-    return this.postService.getCategoryPosts(categoryId, pageNum, limitNum);
+    @Query() pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<SerializedPost>> {
+    return this.postService.getCategoryPosts(categoryId, pagination);
   }
 
   @HttpCode(200)
   @Get(':id/posts')
   async findUserPosts(
     @Param('id') id: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ): Promise<PaginatedResponse<SerializedPost>> {
-    const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 10;
-
-    return this.postService.getUserPosts(id, pageNum, limitNum);
+    @Query() pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<SerializedPost>> {
+    return this.postService.getUserPosts(id, pagination);
   }
 }

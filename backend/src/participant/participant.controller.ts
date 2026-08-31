@@ -18,6 +18,8 @@ import { Participant, RoleType } from '@prisma/client';
 import { User } from 'src/user/user.decorator';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
+import { PaginationDto } from 'src/common/pagination/pagination-dto';
+import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
 
 @Controller('participant')
 @UseGuards(JwtAuthGuard)
@@ -37,8 +39,8 @@ export class ParticipantController {
   @UseGuards(RolesGuard)
   @Roles(RoleType.ADMIN)
   @Get()
-  findAll(): Promise<Participant[]> {
-    return this.participantService.findAll();
+  findAll(@Query() pagination: PaginationDto): Promise<PaginatedResponseDto<Participant>> {
+    return this.participantService.findAll(pagination);
   }
 
   @HttpCode(200)
@@ -46,8 +48,9 @@ export class ParticipantController {
   findUsersInGroup(
     @Param('groupId') groupId: string,
     @User('id') callerId: string,
-  ): Promise<UserInGroup[]> {
-    return this.participantService.findUsersInGroup(groupId, callerId);
+    @Query() pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<UserInGroup>> {
+    return this.participantService.findUsersInGroup(groupId, callerId, pagination);
   }
 
   @HttpCode(200)
@@ -61,12 +64,9 @@ export class ParticipantController {
   @UseGuards(JwtAuthGuard)
   findUserGroupsPosts(
     @User('id') userId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    const pageNumber = page ? parseInt(page, 10) : 1;
-    const limitNumber = limit ? parseInt(limit, 10) : 15;
-    return this.participantService.findUserGroupsPostsPaginated(userId, pageNumber, limitNumber);
+    @Query() pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<any>> {
+    return this.participantService.findUserGroupsPostsPaginated(userId, pagination);
   }
 
   @HttpCode(200)

@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -17,6 +18,8 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Group } from '@prisma/client';
 import { User } from 'src/user/user.decorator';
+import { PaginationDto } from 'src/common/pagination/pagination-dto';
+import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
 
 @Controller('group')
 @UseGuards(JwtAuthGuard)
@@ -33,8 +36,8 @@ export class GroupController {
   @Get()
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  findAll(): Promise<Group[]> {
-    return this.groupService.findAll();
+  findAll(@Query() pagination: PaginationDto): Promise<PaginatedResponseDto<Group>> {
+    return this.groupService.findAll(pagination);
   }
 
   @HttpCode(200)
