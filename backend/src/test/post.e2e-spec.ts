@@ -9,6 +9,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { PostModule } from 'src/post/post.module';
 import { CreatePostDto } from 'src/post/dto/create-post.dto';
 import { POST_MESSAGES } from 'src/messages/post.messages';
+import { BASE_MESSAGES } from 'src/messages/base.messages';
 import { createCategory, createGroup, createPost, createUserWithToken } from './test-helpers';
 import { PostType } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
@@ -48,7 +49,7 @@ describe('Posts', () => {
     })
       .overrideProvider(NotificationService)
       .useValue({
-        createNotification: async () => {}, // para a criação de notificações
+        createNotification: async () => {},
       })
       .compile();
 
@@ -341,6 +342,35 @@ describe('Posts', () => {
       expect(response.body.savedPost).toContain(post.id);
     });
 
+    it('deve retornar 403 ao tentar salvar próprio post (branch CANNOT_SAVE_OWN)', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/post/save/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe(POST_MESSAGES.CANNOT_SAVE_OWN);
+    });
+
+    it('deve retornar 409 ao tentar salvar post já salvo (branch ALREADY_SAVED)', async () => {
+      const other = await createUserWithToken(prismaService, authService);
+      const otherPost = await createPost(prismaService, {
+        title: 'Outro',
+        input: 'Outro',
+        userId: other.user.id,
+        groupId: group.id,
+        categoryId: category.id,
+      });
+      await request(app.getHttpServer())
+        .patch(`/post/save/${otherPost.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+      const second = await request(app.getHttpServer())
+        .patch(`/post/save/${otherPost.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(second.status).toBe(409);
+      expect(second.body.message).toBe(POST_MESSAGES.ALREADY_SAVED);
+    });
+
     it('deve retornar erro 401 se token inválido ou ausente', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/post/save/${post.id}`)
@@ -370,6 +400,15 @@ describe('Posts', () => {
       expect(response.body.savedPost).not.toContain(post.id);
     });
 
+    it('deve retornar 404 ao tentar remover post não salvo (branch POST_NOT_SAVED)', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/post/unsave/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe(POST_MESSAGES.POST_NOT_SAVED);
+    });
+
     it('deve retornar erro 401 se token JWT for inválido', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/post/unsave/${post.id}`)
@@ -388,6 +427,18 @@ describe('Posts', () => {
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('isPinned', true);
+    });
+
+    it('deve retornar 404 quando já está fixado (branch POST_PINNED_STATUS_UNCHANGED)', async () => {
+      await request(app.getHttpServer())
+        .patch(`/post/pin/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+      const second = await request(app.getHttpServer())
+        .patch(`/post/pin/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(second.status).toBe(404);
+      expect(second.body.message).toBe(POST_MESSAGES.POST_PINNED_STATUS_UNCHANGED);
     });
 
     it('deve retornar 404 ao tentar fixar post inexistente', async () => {
@@ -423,6 +474,15 @@ describe('Posts', () => {
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('isPinned', false);
+    });
+
+    it('deve retornar 404 quando já está desfixado (branch UNCHANGED)', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/post/unpin/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe(POST_MESSAGES.POST_PINNED_STATUS_UNCHANGED);
     });
 
     it('deve retornar 404 ao tentar desfixar post inexistente', async () => {
@@ -489,97 +549,512 @@ describe('Posts', () => {
     });
   });
 
-  describe('getGroupPosts', () => {
-    it('deve retornar todos os posts do grupo em ordem decrescente de criação', async () => {
+  describe('getGroupPosts (paginado com DTO global)', () => {
+    it('deve retornar todos os posts do grupo em ordem decrescente (PaginatedResponseDto)', async () => {
       const response = await request(app.getHttpServer())
         .get(`/post/group/${group.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(200);
-
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('meta');
       const { data, meta } = response.body;
-
       expect(Array.isArray(data)).toBe(true);
       expect(data.length).toBeGreaterThan(0);
-
-      data.forEach((post) => {
-        expect(post.groupId).toBe(group.id);
+      data.forEach((p) => expect(p.groupId).toBe(group.id));
+      expect(meta).toMatchObject({
+        page: 1,
+        limit: 10,
+        total: expect.any(Number),
+        lastPage: expect.any(Number),
       });
+    });
 
-      expect(meta).toHaveProperty('page');
-      expect(meta).toHaveProperty('limit');
-      expect(meta).toHaveProperty('total');
+    it('deve respeitar query page e limit', async () => {
+      for (let i = 0; i < 4; i++) {
+        await createPost(prismaService, {
+          title: `Extra ${i}`,
+          input: 'Conteúdo',
+          userId: user.id,
+          groupId: group.id,
+          categoryId: category.id,
+        });
+      }
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=1&limit=2`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.length).toBe(2);
+      expect(res.body.meta.page).toBe(1);
+      expect(res.body.meta.limit).toBe(2);
+      expect(res.body.meta.total).toBe(5);
+      expect(res.body.meta.lastPage).toBe(3);
+    });
+
+    it('deve retornar segunda página sem sobreposição', async () => {
+      for (let i = 0; i < 4; i++) {
+        await createPost(prismaService, {
+          title: `Extra ${i}`,
+          input: 'Conteúdo',
+          userId: user.id,
+          groupId: group.id,
+          categoryId: category.id,
+        });
+      }
+      const p1 = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=1&limit=2`)
+        .set('Authorization', `Bearer ${userToken}`);
+      const p2 = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=2&limit=2`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(p1.body.meta.page).toBe(1);
+      expect(p2.body.meta.page).toBe(2);
+      const ids1 = p1.body.data.map((p: any) => p.id);
+      const ids2 = p2.body.data.map((p: any) => p.id);
+      expect(ids1.some((id: string) => ids2.includes(id))).toBe(false);
+    });
+
+    it('deve usar valores padrão quando sem query (page=1, limit=10)', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.body.meta.page).toBe(1);
+      expect(res.body.meta.limit).toBe(10);
+    });
+
+    it('deve aplicar limit padrão quando apenas page é informado', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=1`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.body.meta.limit).toBe(10);
+    });
+
+    it('deve aplicar page padrão quando apenas limit é informado', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?limit=2`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.body.meta.page).toBe(1);
+      expect(res.body.meta.limit).toBe(2);
+    });
+
+    it('deve aceitar limit=20 (máximo)', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?limit=20&page=1`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.meta.limit).toBe(20);
+    });
+
+    it('deve retornar 200 com data vazia quando página além do total', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=999&limit=10`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.total).toBeGreaterThanOrEqual(1);
+      expect(res.body.meta.lastPage).toBe(Math.ceil(res.body.meta.total / 10));
+    });
+
+    it('deve retornar 400 para page=0', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=0&limit=10`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 para limit=0', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=1&limit=0`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 para limit=-5', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=1&limit=-5`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 para page negativo', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=-1&limit=5`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 para valores não numéricos', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=abc&limit=xyz`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 para page float', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=1.5&limit=10`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 para limit float', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=1&limit=2.5`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 quando limit excede máximo (21)', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=1&limit=21`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe(BASE_MESSAGES.EXCEEDED_LIMIT(20));
+    });
+
+    it('deve retornar 400 para query param extra não permitido', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${group.id}?page=1&limit=10&unknown=1`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
     });
 
     it('deve retornar 401 se o token for inválido', async () => {
       const response = await request(app.getHttpServer())
         .get(`/post/group/${group.id}`)
         .set('Authorization', 'Bearer ');
-
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Unauthorized');
     });
   });
 
-  describe('getCategoryPosts', () => {
-    it('deve retornar os posts da categoria em ordem decrescente de criação', async () => {
+  describe('getCategoryPosts (paginado com DTO global)', () => {
+    it('deve retornar os posts da categoria em ordem decrescente (PaginatedResponseDto)', async () => {
       const response = await request(app.getHttpServer())
         .get(`/post/category/${category.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(200);
-
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('meta');
       const { data, meta } = response.body;
-
       expect(Array.isArray(data)).toBe(true);
       expect(data.length).toBeGreaterThan(0);
-
-      data.forEach((post) => {
-        expect(post.categoryId).toBe(category.id);
+      data.forEach((p) => expect(p.categoryId).toBe(category.id));
+      expect(meta).toMatchObject({
+        page: 1,
+        limit: 10,
+        total: expect.any(Number),
+        lastPage: expect.any(Number),
       });
+    });
 
-      expect(meta).toHaveProperty('page');
-      expect(meta).toHaveProperty('limit');
+    it('deve respeitar query page e limit', async () => {
+      for (let i = 0; i < 4; i++) {
+        await createPost(prismaService, {
+          title: `Cat ${i}`,
+          input: 'Conteúdo',
+          userId: user.id,
+          groupId: group.id,
+          categoryId: category.id,
+        });
+      }
+      const res = await request(app.getHttpServer())
+        .get(`/post/category/${category.id}?page=1&limit=2`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.body.data.length).toBe(2);
+      expect(res.body.meta.total).toBe(5);
+      expect(res.body.meta.lastPage).toBe(3);
+    });
+
+    it('deve retornar 400 para paginação inválida', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/category/${category.id}?page=0&limit=10`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 quando limit excede máximo', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/category/${category.id}?page=1&limit=21`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe(BASE_MESSAGES.EXCEEDED_LIMIT(20));
     });
 
     it('deve retornar 401 se o token for inválido', async () => {
       const response = await request(app.getHttpServer())
         .get(`/post/category/${category.id}`)
         .set('Authorization', 'Bearer ');
-
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Unauthorized');
     });
   });
 
-  describe('findUserPosts', () => {
-    it('deve retornar os posts do usuário em ordem decrescente', async () => {
+  describe('findUserPosts (paginado com DTO global)', () => {
+    it('deve retornar os posts do usuário em ordem decrescente (PaginatedResponseDto)', async () => {
       const response = await request(app.getHttpServer())
         .get(`/post/${user.id}/posts`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(200);
-
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('meta');
       const { data, meta } = response.body;
-
       expect(Array.isArray(data)).toBe(true);
       expect(data.length).toBeGreaterThan(0);
-
-      data.forEach((post) => {
-        expect(post.userId).toBe(user.id);
+      data.forEach((p) => expect(p.userId).toBe(user.id));
+      expect(meta).toMatchObject({
+        page: 1,
+        limit: 10,
+        total: expect.any(Number),
+        lastPage: expect.any(Number),
       });
+    });
 
-      expect(meta).toHaveProperty('page');
-      expect(meta).toHaveProperty('limit');
+    it('deve respeitar query page e limit', async () => {
+      for (let i = 0; i < 4; i++) {
+        await createPost(prismaService, {
+          title: `User ${i}`,
+          input: 'Conteúdo',
+          userId: user.id,
+          groupId: group.id,
+          categoryId: category.id,
+        });
+      }
+      const res = await request(app.getHttpServer())
+        .get(`/post/${user.id}/posts?page=1&limit=2`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.body.data.length).toBe(2);
+      expect(res.body.meta.lastPage).toBe(3);
+    });
+
+    it('deve retornar 400 para paginação inválida', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/${user.id}/posts?page=0&limit=10`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 quando limit excede máximo', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/post/${user.id}/posts?page=1&limit=21`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe(BASE_MESSAGES.EXCEEDED_LIMIT(20));
     });
 
     it('deve retornar 401 se o token for inválido', async () => {
       const response = await request(app.getHttpServer())
         .get(`/post/${user.id}/posts`)
         .set('Authorization', 'Bearer ');
-
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Unauthorized');
+    });
+  });
+
+  describe('getSavedPosts (paginado com DTO global)', () => {
+    it('deve retornar posts salvos paginados (PaginatedResponseDto)', async () => {
+      const extras = [];
+      for (let i = 0; i < 3; i++) {
+        extras.push(
+          await createPost(prismaService, {
+            title: `Saved ${i}`,
+            input: 'Conteúdo',
+            userId: user.id,
+            groupId: group.id,
+            categoryId: category.id,
+          }),
+        );
+      }
+      const owner = await createUserWithToken(prismaService, authService);
+      const postToSave = await createPost(prismaService, {
+        title: 'Outro',
+        input: 'Outro',
+        userId: owner.user.id,
+        groupId: group.id,
+        categoryId: category.id,
+      });
+      await request(app.getHttpServer())
+        .patch(`/post/save/${postToSave.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+      await request(app.getHttpServer())
+        .patch(`/post/save/${extras[0].id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const res = await request(app.getHttpServer())
+        .get('/post/saved?page=1&limit=10')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('data');
+      expect(res.body).toHaveProperty('meta');
+      expect(res.body.meta).toMatchObject({ page: 1, limit: 10 });
+    });
+
+    it('deve retornar todos com all=true como array (compatibilidade)', async () => {
+      const owner = await createUserWithToken(prismaService, authService);
+      const p = await createPost(prismaService, {
+        title: 'All',
+        input: 'All',
+        userId: owner.user.id,
+        groupId: group.id,
+        categoryId: category.id,
+      });
+      await request(app.getHttpServer())
+        .patch(`/post/save/${p.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+      const res = await request(app.getHttpServer())
+        .get('/post/saved?all=true')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('deve respeitar paginação page/limit no saved', async () => {
+      const owner = await createUserWithToken(prismaService, authService);
+      const ids = [];
+      for (let i = 0; i < 5; i++) {
+        const p = await createPost(prismaService, {
+          title: `S ${i}`,
+          input: 'x',
+          userId: owner.user.id,
+          groupId: group.id,
+          categoryId: category.id,
+        });
+        ids.push(p.id);
+        await request(app.getHttpServer())
+          .patch(`/post/save/${p.id}`)
+          .set('Authorization', `Bearer ${userToken}`);
+      }
+      const res = await request(app.getHttpServer())
+        .get('/post/saved?page=1&limit=2')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.length).toBe(2);
+      expect(res.body.meta.total).toBe(5);
+      expect(res.body.meta.lastPage).toBe(3);
+    });
+
+    it('deve retornar 400 para paginação inválida no saved', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/post/saved?page=0&limit=10')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 quando limit excede máximo no saved', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/post/saved?page=1&limit=21')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe(BASE_MESSAGES.EXCEEDED_LIMIT(20));
+    });
+
+    it('deve retornar 401 sem token no saved', async () => {
+      const res = await request(app.getHttpServer()).get('/post/saved');
+      expect(res.status).toBe(401);
+    });
+
+    it('deve retornar [] com all=true quando nenhum salvo (branch all+empty)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/post/saved?all=true')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it('deve retornar PaginatedResponseDto vazio quando nenhum salvo e paginado (branch paginatedIds empty)', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/post/saved?page=1&limit=10')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta).toEqual({ total: 0, page: 1, limit: 10, lastPage: 0 });
+    });
+
+    it('deve retornar data vazio quando página além do total no saved (branch slice vazio)', async () => {
+      const owner = await createUserWithToken(prismaService, authService);
+      const p = await createPost(prismaService, {
+        title: 'Single',
+        input: 'x',
+        userId: owner.user.id,
+        groupId: group.id,
+        categoryId: category.id,
+      });
+      await request(app.getHttpServer())
+        .patch(`/post/save/${p.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+      const res = await request(app.getHttpServer())
+        .get('/post/saved?page=999&limit=10')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.total).toBe(1);
+      expect(res.body.meta.lastPage).toBe(1);
+    });
+
+    it('deve garantir ordem correta dos posts salvos paginados (branch ordered)', async () => {
+      const owner = await createUserWithToken(prismaService, authService);
+      const created = [];
+      for (let i = 0; i < 3; i++) {
+        const p = await createPost(prismaService, {
+          title: `Ord ${i}`,
+          input: 'x',
+          userId: owner.user.id,
+          groupId: group.id,
+          categoryId: category.id,
+        });
+        created.push(p.id);
+        await request(app.getHttpServer())
+          .patch(`/post/save/${p.id}`)
+          .set('Authorization', `Bearer ${userToken}`);
+      }
+      const res = await request(app.getHttpServer())
+        .get('/post/saved?page=1&limit=10')
+        .set('Authorization', `Bearer ${userToken}`);
+      const returnedIds = res.body.data.map((d: any) => d.id);
+      created.forEach((id) => expect(returnedIds).toContain(id));
+      expect(returnedIds.length).toBe(3);
+    });
+  });
+
+  describe('getGroupPosts - branching extra', () => {
+    it('deve retornar PaginatedResponseDto vazio quando grupo sem posts (branch total 0)', async () => {
+      const emptyGroup = await createGroup(prismaService, { name: 'Vazio' });
+      const res = await request(app.getHttpServer())
+        .get(`/post/group/${emptyGroup.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta).toEqual({ total: 0, page: 1, limit: 10, lastPage: 0 });
+    });
+  });
+
+  describe('getCategoryPosts - branching extra', () => {
+    it('deve retornar vazio quando categoria sem posts (branch total 0)', async () => {
+      const emptyCat = await createCategory(prismaService, {
+        groupId: group.id,
+        name: 'Cat Vazia',
+      });
+      const res = await request(app.getHttpServer())
+        .get(`/post/category/${emptyCat.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.total).toBe(0);
+      expect(res.body.meta.lastPage).toBe(0);
+    });
+  });
+
+  describe('findUserPosts - branching extra', () => {
+    it('deve retornar vazio quando usuário sem posts (branch total 0)', async () => {
+      const other = await createUserWithToken(prismaService, authService);
+      const res = await request(app.getHttpServer())
+        .get(`/post/${other.user.id}/posts`)
+        .set('Authorization', `Bearer ${other.token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.total).toBe(0);
     });
   });
 });

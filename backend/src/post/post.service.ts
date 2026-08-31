@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -12,6 +13,12 @@ import { NotificationType, PostType, Prisma, User } from '@prisma/client';
 import { POST_MESSAGES } from '../messages/post.messages';
 import { omitHash } from 'src/utils/user.util';
 import { ValidatorService } from 'src/common/validators/validator.service';
+import { PaginationDto } from 'src/common/pagination/pagination-dto';
+import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
+import { BASE_MESSAGES } from 'src/messages/base.messages';
+
+const MAX_LIMIT = 20;
+const DEFAULT_POST_LIMIT = 10;
 
 const postInclude: Prisma.PostInclude = {
   Comment: {
@@ -228,137 +235,89 @@ export class PostService {
     return posts.map(this.serializePost);
   }
 
-  async getGroupPosts(groupId: string, page: number = 1, limit: number = 10) {
+  async getGroupPosts(
+    groupId: string,
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<SerializedPost>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? DEFAULT_POST_LIMIT;
     const skip = (page - 1) * limit;
-    const posts = await this.prismaService.post.findMany({
-      where: { groupId },
-      include: postInclude,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take: limit,
-    });
 
-    const total = await this.prismaService.post.count({
-      where: { groupId },
-    });
-
-    if (!posts || posts.length === 0) {
-      return {
-        data: [],
-        meta: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
-      };
+    if (limit > MAX_LIMIT) {
+      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
     }
 
-    return {
-      data: posts.map(this.serializePost),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasMore: skip + posts.length < total,
-      },
-    };
+    const [posts, total] = await Promise.all([
+      this.prismaService.post.findMany({
+        where: { groupId },
+        include: postInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prismaService.post.count({ where: { groupId } }),
+    ]);
+
+    return new PaginatedResponseDto(posts.map(this.serializePost), total, { page, limit });
   }
 
-  async getCategoryPosts(categoryId: string, page: number = 1, limit: number = 10) {
+  async getCategoryPosts(
+    categoryId: string,
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<SerializedPost>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? DEFAULT_POST_LIMIT;
     const skip = (page - 1) * limit;
 
-    const posts = await this.prismaService.post.findMany({
-      where: { categoryId },
-      include: postInclude,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take: limit,
-    });
-
-    const total = await this.prismaService.post.count({
-      where: { categoryId },
-    });
-
-    if (!posts || posts.length === 0) {
-      return {
-        data: [],
-        meta: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
-      };
+    if (limit > MAX_LIMIT) {
+      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
     }
 
-    return {
-      data: posts.map(this.serializePost),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasMore: skip + posts.length < total,
-      },
-    };
+    const [posts, total] = await Promise.all([
+      this.prismaService.post.findMany({
+        where: { categoryId },
+        include: postInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prismaService.post.count({ where: { categoryId } }),
+    ]);
+
+    return new PaginatedResponseDto(posts.map(this.serializePost), total, { page, limit });
   }
 
-  async getUserPosts(userId: string, page: number = 1, limit: number = 10) {
+  async getUserPosts(
+    userId: string,
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<SerializedPost>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? DEFAULT_POST_LIMIT;
     const skip = (page - 1) * limit;
 
-    const posts = await this.prismaService.post.findMany({
-      where: { userId },
-      include: postInclude,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      skip,
-      take: limit,
-    });
-
-    const total = await this.prismaService.post.count({
-      where: { userId },
-    });
-
-    if (!posts || posts.length === 0) {
-      return {
-        data: [],
-        meta: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0,
-          hasMore: false,
-        },
-      };
+    if (limit > MAX_LIMIT) {
+      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
     }
 
-    return {
-      data: posts.map(this.serializePost),
-      meta: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasMore: skip + posts.length < total,
-      },
-    };
+    const [posts, total] = await Promise.all([
+      this.prismaService.post.findMany({
+        where: { userId },
+        include: postInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prismaService.post.count({ where: { userId } }),
+    ]);
+
+    return new PaginatedResponseDto(posts.map(this.serializePost), total, { page, limit });
   }
 
   async getSavedPosts(
     userId: string,
-    page = 1,
-    pageSize = 10,
+    pagination: PaginationDto,
     all = false,
-  ): Promise<SerializedPost[]> {
+  ): Promise<PaginatedResponseDto<SerializedPost> | SerializedPost[]> {
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
       select: { savedPost: true },
@@ -368,20 +327,43 @@ export class PostService {
       throw new NotFoundException(POST_MESSAGES.USER_NOT_FOUND);
     }
 
-    const postIds = all
-      ? user.savedPost
-      : user.savedPost.slice((page - 1) * pageSize, page * pageSize);
+    if (all) {
+      if (user.savedPost.length === 0) {
+        return [];
+      }
+      const posts = await this.prismaService.post.findMany({
+        where: { id: { in: user.savedPost } },
+        include: postInclude,
+        orderBy: { createdAt: 'desc' },
+      });
+      return posts.map(this.serializePost);
+    }
 
-    if (postIds.length === 0) {
-      return [];
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? DEFAULT_POST_LIMIT;
+
+    if (limit > MAX_LIMIT) {
+      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
+    }
+
+    const total = user.savedPost.length;
+    const paginatedIds = user.savedPost.slice((page - 1) * limit, page * limit);
+
+    if (paginatedIds.length === 0) {
+      return new PaginatedResponseDto([], total, { page, limit });
     }
 
     const posts = await this.prismaService.post.findMany({
-      where: { id: { in: postIds } },
+      where: { id: { in: paginatedIds } },
       include: postInclude,
       orderBy: { createdAt: 'desc' },
     });
 
-    return posts.map(this.serializePost);
+    const ordered = paginatedIds.map((id) => posts.find((p) => p.id === id)).filter(Boolean);
+
+    return new PaginatedResponseDto((ordered as any[]).map(this.serializePost), total, {
+      page,
+      limit,
+    });
   }
 }
