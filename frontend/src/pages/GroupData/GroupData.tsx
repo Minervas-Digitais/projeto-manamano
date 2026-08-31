@@ -2,7 +2,7 @@
 /* eslint-disable array-callback-return */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View, ActivityIndicator, Text } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import {
@@ -32,9 +32,12 @@ export default function GroupData({ navigation }: any) {
   const { groupId } = route.params as { groupId: string };
   const duckPhoto = require('../../assets/duck.png');
   const [groupInfo, setGroupInfo] = useState<any>();
-  const [groupParticipant, setGroupParticipant] = useState<any>();
+  const [groupParticipant, setGroupParticipant] = useState<any>([]);
   const [userRole, setUserRole] = useState<string>('MEMBER');
   const [loggedUserParticipantRole, setLoggedUserParticipantRole] = useState<string>('MEMBER');
+  const [membersPage, setMembersPage] = useState(1);
+  const [hasMoreMembers, setHasMoreMembers] = useState(true);
+  const [loadingMoreMembers, setLoadingMoreMembers] = useState(false);
   const [deleteModal, setDeleteModal] = useState({
     visible: false,
     participantId: '',
@@ -64,7 +67,6 @@ export default function GroupData({ navigation }: any) {
         api.get(`/group/${groupId}`).then((res) => {
           setGroupInfo(res.data);
         });
-
         api
           .get(`/user/${loggedId}`)
           .then((res) => {
@@ -74,15 +76,25 @@ export default function GroupData({ navigation }: any) {
             console.error('Erro ao buscar dados do usuário:', err);
           });
 
-        api.get(`/participant/group/${groupId}`).then((res) => {
-          setGroupParticipant(res.data);
-          const loggedUserParticipant = res.data.find(
-            (participant: any) => participant.userId === loggedId,
-          );
-          if (loggedUserParticipant) {
-            setLoggedUserParticipantRole(loggedUserParticipant.role);
-          }
-        });
+        api
+          .get(`/participant/group/${groupId}/users`, { params: { page: 1, limit: 20 } })
+          .then((res) => {
+            const data = res.data.data ?? res.data;
+            const meta = res.data.meta;
+            setGroupParticipant(Array.isArray(data) ? data : []);
+            if (meta) {
+              setHasMoreMembers(meta.page < meta.lastPage);
+              setMembersPage(meta.page ?? 1);
+            } else {
+              setHasMoreMembers(false);
+            }
+            const loggedUserParticipant = (Array.isArray(data) ? data : []).find(
+              (participant: any) => participant.userId === loggedId,
+            );
+            if (loggedUserParticipant) {
+              setLoggedUserParticipantRole(loggedUserParticipant.role);
+            }
+          });
       }
     };
 
@@ -109,18 +121,49 @@ export default function GroupData({ navigation }: any) {
       await api.delete(`/participant/group/${groupId}`);
 
       // Recarregar participantes após remoção
-      const response = await api.get(`/participant/group/${groupId}`);
-      setGroupParticipant(response.data);
+      const response = await api.get(`/participant/group/${groupId}/users`, {
+        params: { page: 1, limit: 20 },
+      });
+      const data = response.data.data ?? response.data;
+      const meta = response.data.meta;
+      setGroupParticipant(Array.isArray(data) ? data : []);
+      if (meta) {
+        setHasMoreMembers(meta.page < meta.lastPage);
+        setMembersPage(1);
+      }
       setDeleteModal({ visible: false, participantId: '', participantName: '' });
     } catch (error) {
       console.error('Erro ao remover participante:', error);
     }
   };
 
+  const handleLoadMoreMembers = async () => {
+    if (loadingMoreMembers || !hasMoreMembers) return;
+    setLoadingMoreMembers(true);
+    try {
+      const nextPage = membersPage + 1;
+      const res = await api.get(`/participant/group/${groupId}/users`, {
+        params: { page: nextPage, limit: 20 },
+      });
+      const data = res.data.data ?? res.data;
+      const meta = res.data.meta;
+      setGroupParticipant((prev: any[]) => [...prev, ...(Array.isArray(data) ? data : [])]);
+      if (meta) {
+        setHasMoreMembers(meta.page < meta.lastPage);
+        setMembersPage(meta.page ?? nextPage);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar mais membros:', e);
+    } finally {
+      setLoadingMoreMembers(false);
+    }
+  };
+
   const canRemoveParticipants = (): boolean =>
     userRole === 'ADMIN' ||
     loggedUserParticipantRole === 'ADMIN' ||
-    loggedUserParticipantRole === 'MODERATOR';
+    loggedUserParticipantRole === 'MODERATOR' ||
+    loggedUserParticipantRole === 'INSTRUCTOR';
 
   return (
     <ScreenWithHeader
@@ -166,7 +209,7 @@ export default function GroupData({ navigation }: any) {
                 </GroupDataText>
                 {groupParticipant?.length > 0 ? (
                   groupParticipant?.map((item: any) => {
-                    if (item.role !== 'MEMBER') {
+                    if (item.role === 'INSTRUCTOR') {
                       return (
                         <View
                           key={item.userId}
@@ -207,7 +250,7 @@ export default function GroupData({ navigation }: any) {
                 </GroupDataText>
                 {groupParticipant?.length > 0 ? (
                   groupParticipant?.map((item: any) => {
-                    if (item.role === 'MEMBER') {
+                    if (item.role === 'STUDENT' || item.role === 'MEMBER') {
                       return (
                         <View
                           key={item.userId}
@@ -242,6 +285,25 @@ export default function GroupData({ navigation }: any) {
                   <GroupDataText color="#515151" font="inter-regular" size="12">
                     Vazio...
                   </GroupDataText>
+                )}
+                {hasMoreMembers && (
+                  <TouchableOpacity
+                    onPress={handleLoadMoreMembers}
+                    disabled={loadingMoreMembers}
+                    style={{
+                      backgroundColor: '#EF4036',
+                      padding: 12,
+                      borderRadius: 8,
+                      marginTop: 16,
+                      alignItems: 'center',
+                      opacity: loadingMoreMembers ? 0.6 : 1,
+                    }}>
+                    {loadingMoreMembers ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={{ color: '#fff', fontFamily: 'inter-bold' }}>Carregar mais</Text>
+                    )}
+                  </TouchableOpacity>
                 )}
               </GroupDataScrollContentInner>
             </GroupDataScrollContent>

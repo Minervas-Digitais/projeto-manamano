@@ -60,8 +60,9 @@ interface PaginationMeta {
   page: number;
   limit: number;
   total: number;
-  totalPages: number;
-  hasMore: boolean;
+  totalPages?: number;
+  lastPage?: number;
+  hasMore?: boolean;
 }
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -137,11 +138,12 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
       }
 
       try {
-        const response = await api.post(`/search/filter/${section}`, {
-          input: searchText,
-          page: pageNumber,
-          limit: DEFAULT_PAGE_SIZE,
-        });
+        const response = await api.post(
+          `/search/filter/${section}?page=${pageNumber}&limit=${DEFAULT_PAGE_SIZE}`,
+          {
+            input: searchText,
+          },
+        );
 
         const { data: items, meta }: { data: (User | Group | Post)[]; meta: PaginationMeta } =
           response.data;
@@ -150,8 +152,12 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
           ...prevData,
           [section]: pageNumber === 1 ? items : [...prevData[section], ...items],
         }));
-        setPage(meta?.page ?? pageNumber);
-        setHasMore(meta?.hasMore ?? false);
+        const currentPage = meta?.page ?? pageNumber;
+        const hasMoreValue = meta
+          ? (meta.hasMore ?? (meta.lastPage !== undefined ? currentPage < meta.lastPage : false))
+          : false;
+        setPage(currentPage);
+        setHasMore(hasMoreValue);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
