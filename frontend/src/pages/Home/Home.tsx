@@ -104,14 +104,12 @@ export default function Home({ navigation }: any) {
           },
         });
 
-        // Suporte para novo DTO global {data, meta:{lastPage}} e legado {posts, pagination:{hasMore}}
-        const newPosts = response.data.data ?? response.data.posts ?? [];
-        const meta = response.data.meta ?? response.data.pagination;
-        const hasMoreValue = meta ? (meta.hasMore ?? meta.page < meta.lastPage) : false;
+        const { data: newPosts, meta } = response.data;
+        const hasMoreValue = meta.page < meta.lastPage;
 
         setPosts((prevPosts) => (pageNumber === 1 ? newPosts : [...prevPosts, ...newPosts]));
         setHasMore(hasMoreValue);
-        setPage(meta?.page ?? pageNumber);
+        setPage(meta.page);
       } catch (error: any) {
         // Fallback: Se a rota não existir (404), usar a rota antiga
         if (error?.response?.status === 404) {

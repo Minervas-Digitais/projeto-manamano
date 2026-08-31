@@ -111,20 +111,10 @@ export default function Profile({ navigation, route }: any) {
                 const { data: postData } = await api.get(`/post/${userId}/posts`, {
                   params: { page, limit: 10 },
                 });
-                const items = Array.isArray(postData?.data)
-                  ? postData.data
-                  : Array.isArray(postData)
-                    ? postData
-                    : [];
-                const meta = postData?.meta;
+                const { data: items, meta } = postData;
                 setUserPosts((prev) => (page === 1 ? items : [...prev, ...items]));
-                if (meta) {
-                  setHasMoreUserPosts(meta.hasMore ?? meta.page < meta.lastPage);
-                  setUserPostsPage(meta.page ?? page);
-                } else {
-                  setHasMoreUserPosts(items.length === 10);
-                  setUserPostsPage(page);
-                }
+                setHasMoreUserPosts(meta.page < meta.lastPage);
+                setUserPostsPage(meta.page);
               } catch (error) {
                 console.error('Error fetching posts:', error);
               }
@@ -135,21 +125,10 @@ export default function Profile({ navigation, route }: any) {
                 const { data: savedPostsData } = await api.get('/post/saved', {
                   params: { page, limit: 10 },
                 });
-                const items = Array.isArray(savedPostsData?.data)
-                  ? savedPostsData.data
-                  : Array.isArray(savedPostsData)
-                    ? savedPostsData
-                    : [];
-                const meta = savedPostsData?.meta;
+                const { data: items, meta } = savedPostsData;
                 setSavedPosts((prev) => (page === 1 ? items : [...prev, ...items]));
-                if (meta) {
-                  setHasMoreSavedPosts(meta.hasMore ?? meta.page < meta.lastPage);
-                  setSavedPostsPage(meta.page ?? page);
-                } else {
-                  // fallback para all=true legado que retorna array sem meta
-                  setHasMoreSavedPosts(false);
-                  setSavedPostsPage(1);
-                }
+                setHasMoreSavedPosts(meta.page < meta.lastPage);
+                setSavedPostsPage(meta.page);
               } catch (error) {
                 console.error('Error fetching saved posts:', error);
               }
@@ -184,20 +163,10 @@ export default function Profile({ navigation, route }: any) {
       const { data: postData } = await api.get(`/post/${loggedId}/posts`, {
         params: { page: nextPage, limit: 10 },
       });
-      const items = Array.isArray(postData?.data)
-        ? postData.data
-        : Array.isArray(postData)
-          ? postData
-          : [];
-      const meta = postData?.meta;
+      const { data: items, meta } = postData;
       setUserPosts((prev) => [...prev, ...items]);
-      if (meta) {
-        setHasMoreUserPosts(meta.hasMore ?? meta.page < meta.lastPage);
-        setUserPostsPage(meta.page ?? nextPage);
-      } else {
-        setHasMoreUserPosts(items.length === 10);
-        setUserPostsPage(nextPage);
-      }
+      setHasMoreUserPosts(meta.page < meta.lastPage);
+      setUserPostsPage(meta.page);
     } catch (error) {
       console.error('Error loading more posts:', error);
     } finally {
@@ -213,19 +182,10 @@ export default function Profile({ navigation, route }: any) {
       const { data: savedPostsData } = await api.get('/post/saved', {
         params: { page: nextPage, limit: 10 },
       });
-      const items = Array.isArray(savedPostsData?.data)
-        ? savedPostsData.data
-        : Array.isArray(savedPostsData)
-          ? savedPostsData
-          : [];
-      const meta = savedPostsData?.meta;
+      const { data: items, meta } = savedPostsData;
       setSavedPosts((prev) => [...prev, ...items]);
-      if (meta) {
-        setHasMoreSavedPosts(meta.hasMore ?? meta.page < meta.lastPage);
-        setSavedPostsPage(meta.page ?? nextPage);
-      } else {
-        setHasMoreSavedPosts(false);
-      }
+      setHasMoreSavedPosts(meta.page < meta.lastPage);
+      setSavedPostsPage(meta.page);
     } catch (error) {
       console.error('Error loading more saved posts:', error);
     } finally {

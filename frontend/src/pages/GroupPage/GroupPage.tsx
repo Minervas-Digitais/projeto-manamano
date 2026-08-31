@@ -93,13 +93,9 @@ export default function GroupPage({ navigation }: any) {
             limit: POSTS_PER_PAGE,
           },
         });
-
-        const newPosts = response.data.data ?? response.data.posts ?? [];
-        const meta = response.data.meta ?? response.data.pagination;
-        const moreAvailable = meta
-          ? (meta.hasMore ?? meta.page < meta.lastPage)
-          : newPosts.length === POSTS_PER_PAGE;
-        const currentPage = meta?.page ?? pageNum;
+        const { data: newPosts, meta } = response.data;
+        const moreAvailable = meta.page < meta.lastPage;
+        const currentPage = meta.page;
 
         if (refresh) {
           setPosts(newPosts);

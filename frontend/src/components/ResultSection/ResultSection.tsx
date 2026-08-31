@@ -60,9 +60,7 @@ interface PaginationMeta {
   page: number;
   limit: number;
   total: number;
-  totalPages?: number;
-  lastPage?: number;
-  hasMore?: boolean;
+  lastPage: number;
 }
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -152,12 +150,8 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
           ...prevData,
           [section]: pageNumber === 1 ? items : [...prevData[section], ...items],
         }));
-        const currentPage = meta?.page ?? pageNumber;
-        const hasMoreValue = meta
-          ? (meta.hasMore ?? (meta.lastPage !== undefined ? currentPage < meta.lastPage : false))
-          : false;
-        setPage(currentPage);
-        setHasMore(hasMoreValue);
+        setPage(meta.page);
+        setHasMore(meta.page < meta.lastPage);
       } catch (error) {
         console.error('Error fetching data:', error);
       }

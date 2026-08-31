@@ -89,13 +89,10 @@ export default function VisitorProfile({ navigation }: any) {
         const userPostsResponse = await api.get(`/post/${userId}/posts`, {
           params: { page: 1, limit: 10 },
         });
-        const postsResponse = userPostsResponse.data;
-        const items = Array.isArray(postsResponse) ? postsResponse : postsResponse?.data || [];
-        const meta = postsResponse?.meta;
+        const { data: items, meta } = userPostsResponse.data;
         setPosts(items);
-        if (meta) setHasMore(meta.hasMore ?? meta.page < meta.lastPage);
-        else setHasMore(items.length === 10);
-        setPage(1);
+        setHasMore(meta.page < meta.lastPage);
+        setPage(meta.page);
         try {
           const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
             responseType: 'arraybuffer',
@@ -123,17 +120,10 @@ export default function VisitorProfile({ navigation }: any) {
     try {
       const nextPage = page + 1;
       const res = await api.get(`/post/${userId}/posts`, { params: { page: nextPage, limit: 10 } });
-      const data = res.data;
-      const items = Array.isArray(data) ? data : data?.data || [];
-      const meta = data?.meta;
+      const { data: items, meta } = res.data;
       setPosts((prev) => [...prev, ...items]);
-      if (meta) {
-        setHasMore(meta.hasMore ?? meta.page < meta.lastPage);
-        setPage(meta.page ?? nextPage);
-      } else {
-        setHasMore(items.length === 10);
-        setPage(nextPage);
-      }
+      setHasMore(meta.page < meta.lastPage);
+      setPage(meta.page);
     } catch (e) {
       console.error('Erro ao carregar mais posts:', e);
     } finally {

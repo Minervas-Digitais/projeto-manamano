@@ -307,7 +307,7 @@ export default function NewLesson({ navigation }: any) {
                   onChangeText={onChange}
                   value={value}
                   label="Aula gravada"
-                  imageIcon={LinkIcon}
+                  imageIcon={<LinkIcon />}
                 />
               )}
             />
