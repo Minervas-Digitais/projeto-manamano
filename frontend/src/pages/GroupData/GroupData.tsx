@@ -79,16 +79,11 @@ export default function GroupData({ navigation }: any) {
         api
           .get(`/participant/group/${groupId}/users`, { params: { page: 1, limit: 20 } })
           .then((res) => {
-            const data = res.data.data ?? res.data;
-            const meta = res.data.meta;
-            setGroupParticipant(Array.isArray(data) ? data : []);
-            if (meta) {
-              setHasMoreMembers(meta.page < meta.lastPage);
-              setMembersPage(meta.page ?? 1);
-            } else {
-              setHasMoreMembers(false);
-            }
-            const loggedUserParticipant = (Array.isArray(data) ? data : []).find(
+            const { data, meta } = res.data;
+            setGroupParticipant(data);
+            setHasMoreMembers(meta.page < meta.lastPage);
+            setMembersPage(meta.page);
+            const loggedUserParticipant = data.find(
               (participant: any) => participant.userId === loggedId,
             );
             if (loggedUserParticipant) {
@@ -124,13 +119,10 @@ export default function GroupData({ navigation }: any) {
       const response = await api.get(`/participant/group/${groupId}/users`, {
         params: { page: 1, limit: 20 },
       });
-      const data = response.data.data ?? response.data;
-      const meta = response.data.meta;
-      setGroupParticipant(Array.isArray(data) ? data : []);
-      if (meta) {
-        setHasMoreMembers(meta.page < meta.lastPage);
-        setMembersPage(1);
-      }
+      const { data, meta } = response.data;
+      setGroupParticipant(data);
+      setHasMoreMembers(meta.page < meta.lastPage);
+      setMembersPage(meta.page);
       setDeleteModal({ visible: false, participantId: '', participantName: '' });
     } catch (error) {
       console.error('Erro ao remover participante:', error);
@@ -145,13 +137,10 @@ export default function GroupData({ navigation }: any) {
       const res = await api.get(`/participant/group/${groupId}/users`, {
         params: { page: nextPage, limit: 20 },
       });
-      const data = res.data.data ?? res.data;
-      const meta = res.data.meta;
-      setGroupParticipant((prev: any[]) => [...prev, ...(Array.isArray(data) ? data : [])]);
-      if (meta) {
-        setHasMoreMembers(meta.page < meta.lastPage);
-        setMembersPage(meta.page ?? nextPage);
-      }
+      const { data, meta } = res.data;
+      setGroupParticipant((prev: any[]) => [...prev, ...data]);
+      setHasMoreMembers(meta.page < meta.lastPage);
+      setMembersPage(meta.page);
     } catch (e) {
       console.error('Erro ao carregar mais membros:', e);
     } finally {
