@@ -4,16 +4,19 @@ import {
   Post,
   HttpCode,
   Param,
+  Query,
   UseGuards,
   ParseEnumPipe,
   BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateSearchDto } from './dto/create-search.dto';
-import { PaginatedResult, SearchResult, SearchService } from './search.service';
+import { SearchResult, SearchService } from './search.service';
 import { SearchFilter } from './search-filter.enum';
 import { Group, Post as PostEntity, User } from '@prisma/client';
 import { SEARCH_MESSAGES } from 'src/messages/search.messages';
+import { PaginationDto } from 'src/common/pagination/pagination-dto';
+import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
 
 @Controller('search')
 @UseGuards(JwtAuthGuard)
@@ -22,8 +25,11 @@ export class SearchController {
 
   @HttpCode(201)
   @Post()
-  search(@Body() createSearchDto: CreateSearchDto): Promise<SearchResult> {
-    return this.searchService.search(createSearchDto);
+  search(
+    @Body() createSearchDto: CreateSearchDto,
+    @Query() pagination: PaginationDto,
+  ): Promise<SearchResult> {
+    return this.searchService.search(createSearchDto, pagination);
   }
 
   @HttpCode(200)
@@ -37,7 +43,8 @@ export class SearchController {
       }),
     )
     filter: SearchFilter,
-  ): Promise<PaginatedResult<Omit<User, 'hash'> | Group | PostEntity>> {
-    return this.searchService.searchByFilter(createSearchDto, filter);
+    @Query() pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<Omit<User, 'hash'> | Group | PostEntity>> {
+    return this.searchService.searchByFilter(createSearchDto, filter, pagination);
   }
 }

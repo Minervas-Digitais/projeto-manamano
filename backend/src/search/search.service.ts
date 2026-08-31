@@ -6,13 +6,15 @@ import { SEARCH_MESSAGES } from 'src/messages/search.messages';
 import { Group, Post, User } from '@prisma/client';
 import { omitHash } from 'src/utils/user.util';
 import { Prisma } from '@prisma/client';
+import { PaginationDto } from 'src/common/pagination/pagination-dto';
+import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
+import { BASE_MESSAGES } from 'src/messages/base.messages';
 
-export interface PaginationMeta {
+export interface SearchPaginationMeta {
+  total: number;
   page: number;
   limit: number;
-  total: number;
-  totalPages: number;
-  hasMore: boolean;
+  lastPage: number;
 }
 
 export interface SearchResult {
@@ -22,28 +24,34 @@ export interface SearchResult {
   pagination: {
     page: number;
     limit: number;
-    users: PaginationMeta;
-    groups: PaginationMeta;
-    posts: PaginationMeta;
+    users: SearchPaginationMeta;
+    groups: SearchPaginationMeta;
+    posts: SearchPaginationMeta;
   };
 }
 
+// Mantido para compatibilidade de tipagem legada, mas novo código deve usar PaginatedResponseDto
 export interface PaginatedResult<T> {
   data: T[];
-  meta: PaginationMeta;
+  meta: SearchPaginationMeta;
 }
 
 const SEARCH_DEFAULT_LIMIT = 5;
 const FILTER_DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 20;
 
 @Injectable()
 export class SearchService {
   constructor(private prismaService: PrismaService) {}
 
-  async search(createSearchDto: CreateSearchDto): Promise<SearchResult> {
-    const page = createSearchDto.page ?? 1;
-    const limit = createSearchDto.limit ?? SEARCH_DEFAULT_LIMIT;
+  async search(createSearchDto: CreateSearchDto, pagination: PaginationDto): Promise<SearchResult> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? SEARCH_DEFAULT_LIMIT;
     const skip = (page - 1) * limit;
+
+    if (limit > MAX_LIMIT) {
+      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
+    }
 
     const userWhere = this.buildUserWhere(createSearchDto.input);
     const groupWhere = this.buildGroupWhere(createSearchDto.input);
@@ -87,10 +95,15 @@ export class SearchService {
   async searchByFilter(
     createSearchDto: CreateSearchDto,
     filter: SearchFilter,
-  ): Promise<PaginatedResult<Omit<User, 'hash'> | Group | Post>> {
-    const page = createSearchDto.page ?? 1;
-    const limit = createSearchDto.limit ?? FILTER_DEFAULT_LIMIT;
+    pagination: PaginationDto,
+  ): Promise<PaginatedResponseDto<Omit<User, 'hash'> | Group | Post>> {
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? FILTER_DEFAULT_LIMIT;
     const skip = (page - 1) * limit;
+
+    if (limit > MAX_LIMIT) {
+      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
+    }
 
     switch (filter) {
       case SearchFilter.USERS: {
@@ -99,10 +112,10 @@ export class SearchService {
           this.prismaService.user.findMany({ where, skip, take: limit }),
           this.prismaService.user.count({ where }),
         ]);
-        return {
-          data: users.map(omitHash),
-          meta: this.buildMeta(page, limit, total),
-        };
+        return new PaginatedResponseDto(users.map(omitHash) as Omit<User, 'hash'>[], total, {
+          page,
+          limit,
+        });
       }
       case SearchFilter.GROUPS: {
         const where = this.buildGroupWhere(createSearchDto.input);
@@ -110,10 +123,7 @@ export class SearchService {
           this.prismaService.group.findMany({ where, skip, take: limit }),
           this.prismaService.group.count({ where }),
         ]);
-        return {
-          data: groups,
-          meta: this.buildMeta(page, limit, total),
-        };
+        return new PaginatedResponseDto(groups, total, { page, limit });
       }
       case SearchFilter.POSTS: {
         const where = this.buildPostWhere(createSearchDto.input);
@@ -121,10 +131,7 @@ export class SearchService {
           this.prismaService.post.findMany({ where, skip, take: limit }),
           this.prismaService.post.count({ where }),
         ]);
-        return {
-          data: posts,
-          meta: this.buildMeta(page, limit, total),
-        };
+        return new PaginatedResponseDto(posts, total, { page, limit });
       }
       default:
         throw new BadRequestException(SEARCH_MESSAGES.INVALID_FILTER);
@@ -168,14 +175,12 @@ export class SearchService {
     };
   }
 
-  private buildMeta(page: number, limit: number, total: number): PaginationMeta {
-    const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+  private buildMeta(page: number, limit: number, total: number): SearchPaginationMeta {
     return {
+      total,
       page,
       limit,
-      total,
-      totalPages,
-      hasMore: page < totalPages,
+      lastPage: Math.ceil(total / limit),
     };
   }
 }
