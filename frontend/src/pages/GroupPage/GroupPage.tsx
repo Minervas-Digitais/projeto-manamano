@@ -527,8 +527,8 @@ export default function GroupPage({ navigation }: any) {
                 {paginatedClasses.length > 0 ? (
                   paginatedClasses.map((item: any) => (
                     <LessonsCard
-                      key={item.id}
                       id={item.id}
+                      key={item.id}
                       date={item.schedule}
                       title={item.title}
                       urlLive={item.urlLive}
