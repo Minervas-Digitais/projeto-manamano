@@ -214,7 +214,6 @@ export default function Profile({ navigation, route }: any) {
       const imageUri = `data:image/jpeg;base64,${imageStr}`;
       return { uri: imageUri };
     } catch (error) {
-      console.error('Erro ao buscar imagem de perfil:', error);
       return defaultAvatar;
     }
   };

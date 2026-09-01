@@ -63,7 +63,7 @@ export const NamePart = styled.View`
 export const MiddlePart = styled.View`
   width: ${width * 0.88}px;
   margin-left: ${width * 0.0581}px;
-  flex-direction: row;
+  flex-direction: column;
 `;
 
 export const BottomPart = styled.View`
