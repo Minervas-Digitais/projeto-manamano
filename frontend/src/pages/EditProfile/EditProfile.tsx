@@ -250,12 +250,6 @@ export default function EditProfile() {
   }, [setValue, loggedId]);
 
   const onInvalid = (validationErrors: any) => {
-    console.log('ERROS DO FORM:', validationErrors);
-
-    Object.entries(validationErrors).forEach(([field, error]: any) => {
-      console.log(field, error?.message, error?.type);
-    });
-
     Toast.show({
       type: 'error',
       text1: 'Verifique os campos',
@@ -362,7 +356,6 @@ export default function EditProfile() {
                 <>
                   <InputTextCustom
                     onChangeText={(text: string) => {
-                      console.log('BIRTHDAY INPUT:', text);
                       onChange(text);
                     }}
                     value={value}
@@ -464,7 +457,6 @@ export default function EditProfile() {
               render={({ field: { onChange, value } }) => (
                 <BigInputTextCustom
                   onChangeText={(text: string) => {
-                    console.log('BIO DIGITADO:', text);
                     onChange(text);
                   }}
                   value={value}
