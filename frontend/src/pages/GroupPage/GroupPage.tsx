@@ -16,6 +16,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute } from '@react-navigation/native';
 import { AxiosError } from 'axios';
+import Clipboard from '@react-native-clipboard/clipboard';
+import Toast from 'react-native-toast-message';
 import {
   GroupPageAddPostButton,
   GroupPageArchivesContainer,
@@ -38,10 +40,11 @@ import api from '../../services/api';
 import { storageHome } from '../Home/Home';
 import EventCard from '../../components/EventCard/EventCard';
 import GroupArchives from '../../components/GroupArchives/GroupArchives';
-import NotificationIcon from '../../assets/notification-icon.svg';
+import DotsMenuIcon from '../../assets/dots-menu-icon.svg';
 import AddPostIcon from '../../assets/add-post-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import ModalGroupOptions from '../../components/ModalGroupOptions/ModalGroupOptions';
 
 export default function GroupPage({ navigation }: any) {
   const route = useRoute();
@@ -66,6 +69,8 @@ export default function GroupPage({ navigation }: any) {
   const [hasMore, setHasMore] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [aulasPage, setAulasPage] = useState(1);
+
+  const [modalOptions, setModalOptions] = useState(false);
 
   const POSTS_PER_PAGE = 10;
   const CLASSES_PER_PAGE = 5;
@@ -320,16 +325,39 @@ export default function GroupPage({ navigation }: any) {
     navigation.navigate('Post', { postId: id });
   }
 
+  const handleNotification = () => {
+    navigation.navigate('Notification');
+  };
+
+  const handleCopyInviteCode = async () => {
+    const res = await api.get(`/group/${groupId}`);
+
+    Clipboard.setString(res.data.inviteCode);
+    Toast.show({
+      type: 'success',
+      text1: 'Codigo Copiado!',
+      visibilityTime: 1000,
+    });
+    setModalOptions(false);
+  };
+
   return (
     <ScreenWithHeader
       headerProps={{
         font: 'inter-bold',
         text: groupName,
-        icon: <NotificationIcon />,
-        onPress: () => navigation.navigate('Notification'),
-        onPressTitle: () => navigation.navigate('GroupData', { groupId }),
+        icon: <DotsMenuIcon />,
+        onPress: () => setModalOptions(!modalOptions),
         menu: true,
       }}>
+      {modalOptions ? (
+        <ModalGroupOptions
+          onNotification={handleNotification}
+          onCopyInviteCode={handleCopyInviteCode}
+        />
+      ) : (
+        ''
+      )}
       <GroupPageContainer>
         <GroupPageTabs style={style.line}>
           <GroupPageTabsContainer
