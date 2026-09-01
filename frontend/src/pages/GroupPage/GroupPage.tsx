@@ -288,18 +288,6 @@ export default function GroupPage({ navigation }: any) {
     return postDateObj.toLocaleDateString('pt-BR');
   }
 
-  function formatDateTime(createdAt: string | Date): string {
-    const date = new Date(createdAt);
-
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(-2);
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${day}/${month}/${year} - ${hours}:${minutes}`;
-  }
-
   const fixActions = async (id: string, isPinned: boolean) => {
     try {
       const url = isPinned ? `/post/unpin/${id}` : `/post/pin/${id}`;
@@ -350,6 +338,7 @@ export default function GroupPage({ navigation }: any) {
         icon: userRole === 'INSTRUCTOR' ? <DotsMenuIcon /> : <BellIcon />,
         onPress:
           userRole === 'INSTRUCTOR' ? () => setModalOptions(!modalOptions) : handleNotification,
+        onPressTitle: () => navigation.navigate('GroupData', { groupId }),
         menu: true,
       }}>
       {modalOptions && userRole === 'INSTRUCTOR' ? (
@@ -539,10 +528,14 @@ export default function GroupPage({ navigation }: any) {
                 {paginatedClasses.length > 0 ? (
                   paginatedClasses.map((item: any) => (
                     <LessonsCard
+                      id={item.id}
                       key={item.id}
-                      date={formatDateTime(item.schedule)}
+                      date={item.schedule}
                       title={item.title}
                       urlLive={item.urlLive}
+                      urlVOD={item.urlRecorded}
+                      isInstructor={userRole === 'INSTRUCTOR'}
+                      onDeleteSuccess={() => getGroupPosts(1, true)}
                     />
                   ))
                 ) : (

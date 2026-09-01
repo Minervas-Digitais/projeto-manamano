@@ -1,7 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/prisma/prisma.service';
-
 import request from 'supertest';
 import { UserModule } from 'src/user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
@@ -10,8 +9,14 @@ import { PostModule } from 'src/post/post.module';
 import { CreatePostDto } from 'src/post/dto/create-post.dto';
 import { POST_MESSAGES } from 'src/messages/post.messages';
 import { BASE_MESSAGES } from 'src/messages/base.messages';
-import { createCategory, createGroup, createPost, createUserWithToken } from './test-helpers';
-import { PostType } from '@prisma/client';
+import {
+  createCategory,
+  createGroup,
+  createParticipant,
+  createPost,
+  createUserWithToken,
+} from './test-helpers';
+import { PostType, UserRole } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
 
 export function makePostDto(overrides: Partial<CreatePostDto> = {}): CreatePostDto {
@@ -69,6 +74,7 @@ describe('Posts', () => {
 
   beforeEach(async () => {
     await prismaService.post.deleteMany({});
+    await prismaService.participant.deleteMany({});
     await prismaService.category.deleteMany({});
     await prismaService.group.deleteMany({});
     await prismaService.user.deleteMany({});
@@ -231,7 +237,16 @@ describe('Posts', () => {
   });
 
   describe('update()', () => {
-    it('deve permitir que um ADMIN atualize um post', async () => {
+    it('deve permitir que um INSTRUCTOR atualize um post', async () => {
+      const instructorRes = await createUserWithToken(prismaService, authService, {
+        fullName: 'Instructor User',
+      });
+      await createParticipant(prismaService, {
+        userId: instructorRes.user.id,
+        groupId: group.id,
+        role: UserRole.INSTRUCTOR,
+      });
+
       const updateDto = makePostDto({
         title: 'Post Atualizado',
         input: 'Conteúdo atualizado',
@@ -241,7 +256,7 @@ describe('Posts', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/post/${post.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${instructorRes.token}`)
         .send(updateDto);
 
       expect(response.status).toBe(201);
@@ -250,7 +265,13 @@ describe('Posts', () => {
       expect(response.body.input).toBe(updateDto.input);
     });
 
-    it('deve retornar 403 se um usuário comum tentar atualizar', async () => {
+    it('deve retornar 403 se um STUDENT tentar atualizar', async () => {
+      await createParticipant(prismaService, {
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
+
       const updateDto = makePostDto({ title: 'Post Atualizado' });
 
       const response = await request(app.getHttpServer())
@@ -259,15 +280,40 @@ describe('Posts', () => {
         .send(updateDto);
 
       expect(response.status).toBe(403);
-      expect(response.body.message).toBe('Forbidden resource');
+      expect(response.body.message).toBe('Você não tem permissão para acessar este recurso.');
+    });
+
+    it('deve retornar 403 se usuário não for participante do grupo', async () => {
+      const outsider = await createUserWithToken(prismaService, authService, {
+        fullName: 'Outsider',
+      });
+
+      const updateDto = makePostDto({ title: 'Post Atualizado' });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/post/${post.id}`)
+        .set('Authorization', `Bearer ${outsider.token}`)
+        .send(updateDto);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe('Você não tem permissão para acessar este recurso.');
     });
 
     it('deve retornar 404 se tentar atualizar um post inexistente', async () => {
+      const instructorRes = await createUserWithToken(prismaService, authService, {
+        fullName: 'Instructor 404',
+      });
+      await createParticipant(prismaService, {
+        userId: instructorRes.user.id,
+        groupId: group.id,
+        role: UserRole.INSTRUCTOR,
+      });
+
       const updateDto = makePostDto({ title: 'Post Atualizado' });
 
       const response = await request(app.getHttpServer())
         .patch(`/post/invalid-id`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${instructorRes.token}`)
         .send(updateDto);
 
       expect(response.status).toBe(404);
@@ -288,10 +334,19 @@ describe('Posts', () => {
   });
 
   describe('remove()', () => {
-    it('deve permitir que um ADMIN delete um post', async () => {
+    it('deve permitir que um INSTRUCTOR delete um post', async () => {
+      const instructorRes = await createUserWithToken(prismaService, authService, {
+        fullName: 'Instructor Delete',
+      });
+      await createParticipant(prismaService, {
+        userId: instructorRes.user.id,
+        groupId: group.id,
+        role: UserRole.INSTRUCTOR,
+      });
+
       const response = await request(app.getHttpServer())
         .delete(`/post/${post.id}`)
-        .set('Authorization', `Bearer ${adminToken}`);
+        .set('Authorization', `Bearer ${instructorRes.token}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('id', post.id);
@@ -299,22 +354,49 @@ describe('Posts', () => {
 
     it('deve retornar 404 ao tentar deletar um post inexistente', async () => {
       const invalidPostId = 'invalidId';
+      const instructorRes = await createUserWithToken(prismaService, authService, {
+        fullName: 'Instructor 404 del',
+      });
+      await createParticipant(prismaService, {
+        userId: instructorRes.user.id,
+        groupId: group.id,
+        role: UserRole.INSTRUCTOR,
+      });
 
       const response = await request(app.getHttpServer())
         .delete(`/post/${invalidPostId}`)
-        .set('Authorization', `Bearer ${adminToken}`);
+        .set('Authorization', `Bearer ${instructorRes.token}`);
 
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('Publicação não encontrada.');
     });
 
-    it('deve retornar 403 se usuário comum tentar deletar', async () => {
+    it('deve retornar 403 se STUDENT tentar deletar', async () => {
+      await createParticipant(prismaService, {
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
+
       const response = await request(app.getHttpServer())
         .delete(`/post/${post.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(403);
-      expect(response.body.message).toBe('Forbidden resource');
+      expect(response.body.message).toBe('Você não tem permissão para acessar este recurso.');
+    });
+
+    it('deve retornar 403 se usuário não for participante', async () => {
+      const outsider = await createUserWithToken(prismaService, authService, {
+        fullName: 'Outsider Del',
+      });
+
+      const response = await request(app.getHttpServer())
+        .delete(`/post/${post.id}`)
+        .set('Authorization', `Bearer ${outsider.token}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe('Você não tem permissão para acessar este recurso.');
     });
 
     it('deve retornar erro 401 caso o jwt token for invalido', async () => {
