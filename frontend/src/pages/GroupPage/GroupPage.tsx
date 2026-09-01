@@ -338,6 +338,7 @@ export default function GroupPage({ navigation }: any) {
         icon: userRole === 'INSTRUCTOR' ? <DotsMenuIcon /> : <BellIcon />,
         onPress:
           userRole === 'INSTRUCTOR' ? () => setModalOptions(!modalOptions) : handleNotification,
+        onPressTitle: () => navigation.navigate('GroupData', { groupId }),
         menu: true,
       }}>
       {modalOptions && userRole === 'INSTRUCTOR' ? (
