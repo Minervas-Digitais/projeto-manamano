@@ -42,6 +42,7 @@ import EventCard from '../../components/EventCard/EventCard';
 import GroupArchives from '../../components/GroupArchives/GroupArchives';
 import DotsMenuIcon from '../../assets/dots-menu-icon.svg';
 import AddPostIcon from '../../assets/add-post-icon.svg';
+import BellIcon from '../../assets/notification-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
 import ModalGroupOptions from '../../components/ModalGroupOptions/ModalGroupOptions';
@@ -346,11 +347,12 @@ export default function GroupPage({ navigation }: any) {
       headerProps={{
         font: 'inter-bold',
         text: groupName,
-        icon: <DotsMenuIcon />,
-        onPress: () => setModalOptions(!modalOptions),
+        icon: userRole === 'INSTRUCTOR' ? <DotsMenuIcon /> : <BellIcon />,
+        onPress:
+          userRole === 'INSTRUCTOR' ? () => setModalOptions(!modalOptions) : handleNotification,
         menu: true,
       }}>
-      {modalOptions ? (
+      {modalOptions && userRole === 'INSTRUCTOR' ? (
         <ModalGroupOptions
           onNotification={handleNotification}
           onCopyInviteCode={handleCopyInviteCode}
