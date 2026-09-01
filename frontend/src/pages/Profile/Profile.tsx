@@ -5,7 +5,7 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, View, StyleSheet, Share, Text } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, Share, Text, ActivityIndicator } from 'react-native';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import { AxiosError } from 'axios';
@@ -63,6 +63,12 @@ export default function Profile({ navigation, route }: any) {
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
   const [profileImage, setProfileImage] = useState<any>(null);
+  const [userPostsPage, setUserPostsPage] = useState(1);
+  const [hasMoreUserPosts, setHasMoreUserPosts] = useState(true);
+  const [loadingMoreUserPosts, setLoadingMoreUserPosts] = useState(false);
+  const [savedPostsPage, setSavedPostsPage] = useState(1);
+  const [hasMoreSavedPosts, setHasMoreSavedPosts] = useState(true);
+  const [loadingMoreSavedPosts, setLoadingMoreSavedPosts] = useState(false);
 
   const { loggedId } = useAuth();
 
@@ -100,42 +106,36 @@ export default function Profile({ navigation, route }: any) {
               setProfileImage(defaultAvatar);
             }
 
-            const fetchUserPosts = async () => {
+            const fetchUserPosts = async (page: number = 1) => {
               try {
-                const { data: postData } = await api.get(`/post/${userId}/posts`);
-
-                // Backend agora retorna formato paginado: { data, meta }
-                if (Array.isArray(postData?.data)) {
-                  setUserPosts(postData.data);
-                } else if (Array.isArray(postData)) {
-                  setUserPosts(postData);
-                } else {
-                  setUserPosts([]);
-                }
+                const { data: postData } = await api.get(`/post/${userId}/posts`, {
+                  params: { page, limit: 10 },
+                });
+                const { data: items, meta } = postData;
+                setUserPosts((prev) => (page === 1 ? items : [...prev, ...items]));
+                setHasMoreUserPosts(meta.page < meta.lastPage);
+                setUserPostsPage(meta.page);
               } catch (error) {
                 console.error('Error fetching posts:', error);
               }
             };
 
-            const fetchSavedPosts = async () => {
+            const fetchSavedPosts = async (page: number = 1) => {
               try {
                 const { data: savedPostsData } = await api.get('/post/saved', {
-                  params: { all: true },
+                  params: { page, limit: 10 },
                 });
-                if (Array.isArray(savedPostsData?.data)) {
-                  setSavedPosts(savedPostsData.data);
-                } else if (Array.isArray(savedPostsData)) {
-                  setSavedPosts(savedPostsData);
-                } else {
-                  setSavedPosts([]);
-                }
+                const { data: items, meta } = savedPostsData;
+                setSavedPosts((prev) => (page === 1 ? items : [...prev, ...items]));
+                setHasMoreSavedPosts(meta.page < meta.lastPage);
+                setSavedPostsPage(meta.page);
               } catch (error) {
                 console.error('Error fetching saved posts:', error);
               }
             };
 
-            fetchUserPosts();
-            fetchSavedPosts();
+            fetchUserPosts(1);
+            fetchSavedPosts(1);
           } catch (error) {
             if (error instanceof AxiosError) {
               if (error.response?.status === 404) {
@@ -154,6 +154,44 @@ export default function Profile({ navigation, route }: any) {
       fetchUserData();
     }, [loggedId]),
   );
+
+  const handleLoadMoreUserPosts = async () => {
+    if (loadingMoreUserPosts || !hasMoreUserPosts || !loggedId) return;
+    setLoadingMoreUserPosts(true);
+    try {
+      const nextPage = userPostsPage + 1;
+      const { data: postData } = await api.get(`/post/${loggedId}/posts`, {
+        params: { page: nextPage, limit: 10 },
+      });
+      const { data: items, meta } = postData;
+      setUserPosts((prev) => [...prev, ...items]);
+      setHasMoreUserPosts(meta.page < meta.lastPage);
+      setUserPostsPage(meta.page);
+    } catch (error) {
+      console.error('Error loading more posts:', error);
+    } finally {
+      setLoadingMoreUserPosts(false);
+    }
+  };
+
+  const handleLoadMoreSavedPosts = async () => {
+    if (loadingMoreSavedPosts || !hasMoreSavedPosts || !loggedId) return;
+    setLoadingMoreSavedPosts(true);
+    try {
+      const nextPage = savedPostsPage + 1;
+      const { data: savedPostsData } = await api.get('/post/saved', {
+        params: { page: nextPage, limit: 10 },
+      });
+      const { data: items, meta } = savedPostsData;
+      setSavedPosts((prev) => [...prev, ...items]);
+      setHasMoreSavedPosts(meta.page < meta.lastPage);
+      setSavedPostsPage(meta.page);
+    } catch (error) {
+      console.error('Error loading more saved posts:', error);
+    } finally {
+      setLoadingMoreSavedPosts(false);
+    }
+  };
 
   // Split the fullName to display the first two names
   const fullNameSplit = fullName.split(' ');
@@ -262,7 +300,50 @@ export default function Profile({ navigation, route }: any) {
           <ProfilePostsContent>
             {filterPosts === 'userPosts' ? (
               userPosts?.length > 0 ? (
-                userPosts?.map((item: any) => (
+                <>
+                  {userPosts?.map((item: any) => (
+                    <PostCard
+                      key={item.id}
+                      nameUser={item.nameUser}
+                      userId={item.userId}
+                      getUserProfileImage={getUserProfileImage}
+                      postContent={item.input}
+                      numComments={item.numComments}
+                      date={item.createdAt}
+                      share
+                      postId={item.id}
+                    />
+                  ))}
+                  {hasMoreUserPosts && (
+                    <TouchableOpacity
+                      onPress={handleLoadMoreUserPosts}
+                      disabled={loadingMoreUserPosts}
+                      style={{
+                        backgroundColor: '#EF4036',
+                        padding: 12,
+                        borderRadius: 8,
+                        marginTop: 16,
+                        alignItems: 'center',
+                        opacity: loadingMoreUserPosts ? 0.6 : 1,
+                      }}>
+                      {loadingMoreUserPosts ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={{ color: '#fff', fontFamily: 'inter-bold' }}>
+                          Carregar mais
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </>
+              ) : (
+                <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
+                  Nenhuma Publicação encontrada
+                </Text>
+              )
+            ) : savedPosts?.length > 0 ? (
+              <>
+                {savedPosts?.map((item: any) => (
                   <PostCard
                     key={item.id}
                     nameUser={item.nameUser}
@@ -272,29 +353,30 @@ export default function Profile({ navigation, route }: any) {
                     numComments={item.numComments}
                     date={item.createdAt}
                     share
+                    saved
                     postId={item.id}
                   />
-                ))
-              ) : (
-                <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
-                  Nenhuma Publicação encontrada
-                </Text>
-              )
-            ) : savedPosts?.length > 0 ? (
-              savedPosts?.map((item: any) => (
-                <PostCard
-                  key={item.id}
-                  nameUser={item.nameUser}
-                  userId={item.userId}
-                  getUserProfileImage={getUserProfileImage}
-                  postContent={item.input}
-                  numComments={item.numComments}
-                  date={item.createdAt}
-                  share
-                  saved
-                  postId={item.id}
-                />
-              ))
+                ))}
+                {hasMoreSavedPosts && (
+                  <TouchableOpacity
+                    onPress={handleLoadMoreSavedPosts}
+                    disabled={loadingMoreSavedPosts}
+                    style={{
+                      backgroundColor: '#EF4036',
+                      padding: 12,
+                      borderRadius: 8,
+                      marginTop: 16,
+                      alignItems: 'center',
+                      opacity: loadingMoreSavedPosts ? 0.6 : 1,
+                    }}>
+                    {loadingMoreSavedPosts ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={{ color: '#fff', fontFamily: 'inter-bold' }}>Carregar mais</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </>
             ) : (
               <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
                 Nenhuma Publicação salva

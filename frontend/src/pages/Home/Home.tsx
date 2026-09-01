@@ -104,11 +104,12 @@ export default function Home({ navigation }: any) {
           },
         });
 
-        const { posts: newPosts, pagination } = response.data;
+        const { data: newPosts, meta } = response.data;
+        const hasMoreValue = meta.page < meta.lastPage;
 
         setPosts((prevPosts) => (pageNumber === 1 ? newPosts : [...prevPosts, ...newPosts]));
-        setHasMore(pagination.hasMore);
-        setPage(pageNumber);
+        setHasMore(hasMoreValue);
+        setPage(meta.page);
       } catch (error: any) {
         // Fallback: Se a rota não existir (404), usar a rota antiga
         if (error?.response?.status === 404) {

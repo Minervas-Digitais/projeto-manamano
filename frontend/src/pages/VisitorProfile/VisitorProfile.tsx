@@ -44,6 +44,9 @@ export default function VisitorProfile({ navigation }: any) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [profileImage, setProfileImage] = useState<any>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const { loggedId } = useAuth();
 
   const copyToClipboard = async (text: string, message: string) => {
@@ -83,9 +86,13 @@ export default function VisitorProfile({ navigation }: any) {
         setLoading(true);
         const userResponse = await api.get(`/user/${userId}`);
         setUser(userResponse.data);
-        const userPostsResponse = await api.get(`/post/${userId}/posts`);
-        const postsResponse = userPostsResponse.data;
-        setPosts(Array.isArray(postsResponse) ? postsResponse : postsResponse?.data || []);
+        const userPostsResponse = await api.get(`/post/${userId}/posts`, {
+          params: { page: 1, limit: 10 },
+        });
+        const { data: items, meta } = userPostsResponse.data;
+        setPosts(items);
+        setHasMore(meta.page < meta.lastPage);
+        setPage(meta.page);
         try {
           const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
             responseType: 'arraybuffer',
@@ -106,6 +113,23 @@ export default function VisitorProfile({ navigation }: any) {
 
     fetchData();
   }, [userId, loggedId]);
+
+  const handleLoadMore = async () => {
+    if (loadingMore || !hasMore || !userId) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = page + 1;
+      const res = await api.get(`/post/${userId}/posts`, { params: { page: nextPage, limit: 10 } });
+      const { data: items, meta } = res.data;
+      setPosts((prev) => [...prev, ...items]);
+      setHasMore(meta.page < meta.lastPage);
+      setPage(meta.page);
+    } catch (e) {
+      console.error('Erro ao carregar mais posts:', e);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -230,21 +254,42 @@ export default function VisitorProfile({ navigation }: any) {
         <GroupPageTabs style={style.line} />
         <ProfilePostsContainer>
           {posts?.length > 0 ? (
-            posts.map((item: any) => (
-              <PostCard
-                key={item.id}
-                postId={item.id}
-                nameUser={user.fullName}
-                userId={item.userId}
-                getUserProfileImage={getUserProfileImage}
-                postContent={item.input}
-                numComments={item.numComments || 0}
-                date={item.createdAt}
-                share
-                save
-                onPressPost={() => navigation.navigate('Post', { postId: item.id })}
-              />
-            ))
+            <>
+              {posts.map((item: any) => (
+                <PostCard
+                  key={item.id}
+                  postId={item.id}
+                  nameUser={user.fullName}
+                  userId={item.userId}
+                  getUserProfileImage={getUserProfileImage}
+                  postContent={item.input}
+                  numComments={item.numComments || 0}
+                  date={item.createdAt}
+                  share
+                  save
+                  onPressPost={() => navigation.navigate('Post', { postId: item.id })}
+                />
+              ))}
+              {hasMore && (
+                <TouchableOpacity
+                  onPress={handleLoadMore}
+                  disabled={loadingMore}
+                  style={{
+                    backgroundColor: '#EF4036',
+                    padding: 12,
+                    borderRadius: 8,
+                    marginTop: 16,
+                    alignItems: 'center',
+                    opacity: loadingMore ? 0.6 : 1,
+                  }}>
+                  {loadingMore ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={{ color: '#fff', fontFamily: 'inter-bold' }}>Carregar mais</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </>
           ) : (
             <Text style={{ textAlign: 'center', marginTop: 20, fontFamily: 'inter-regular' }}>
               Este usuário ainda não fez publicações.

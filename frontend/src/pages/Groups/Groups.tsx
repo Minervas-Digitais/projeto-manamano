@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React, { useCallback, useState } from 'react';
-import { View } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { GroupsBody, GroupsContainer, GroupsList } from './GroupsStyle';
 import GroupButton from '../../components/GroupButton/GroupButton';
@@ -18,7 +18,11 @@ export default function Groups() {
 
   const [showPopup, setShowPopup] = useState(false);
   const [userData, setUserData] = useState<any>(null);
-  const [groups, setGroups] = useState([]);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const GROUPS_PER_PAGE = 10;
+  const displayedGroups = groups.slice(0, page * GROUPS_PER_PAGE);
+  const hasMoreGroups = displayedGroups.length < groups.length;
 
   useFocusEffect(
     useCallback(() => {
@@ -27,7 +31,9 @@ export default function Groups() {
           api
             .get('participant/groups/')
             .then((res: any) => {
-              setGroups(res.data);
+              const data = res.data.data ?? res.data;
+              setGroups(Array.isArray(data) ? data : []);
+              setPage(1);
             })
             .catch(() => {
               setGroups([]);
@@ -80,10 +86,10 @@ export default function Groups() {
       <GroupsContainer>
         <GroupsBody>
           <GroupsList
-            contentContainerStyle={{ gap: 25, alignItems: 'center' }}
+            contentContainerStyle={{ gap: 25, alignItems: 'center', paddingBottom: 20 }}
             showsVerticalScrollIndicator={false}>
-            {groups?.length > 0 ? (
-              groups.map((item: any) => (
+            {displayedGroups?.length > 0 ? (
+              displayedGroups.map((item: any) => (
                 <GroupButton
                   key={item.groupId}
                   groupName={item.group.name}
@@ -105,6 +111,20 @@ export default function Groups() {
               ))
             ) : (
               <View />
+            )}
+            {hasMoreGroups && (
+              <TouchableOpacity
+                onPress={() => setPage((p) => p + 1)}
+                style={{
+                  backgroundColor: '#EF4036',
+                  padding: 12,
+                  borderRadius: 8,
+                  marginTop: 16,
+                  width: '100%',
+                  alignItems: 'center',
+                }}>
+                <Text style={{ color: '#fff', fontFamily: 'inter-bold' }}>Carregar mais</Text>
+              </TouchableOpacity>
             )}
           </GroupsList>
         </GroupsBody>

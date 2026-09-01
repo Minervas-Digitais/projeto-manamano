@@ -65,8 +65,18 @@ export default function GroupPage({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [aulasPage, setAulasPage] = useState(1);
 
   const POSTS_PER_PAGE = 10;
+  const CLASSES_PER_PAGE = 5;
+
+  // Paginação por páginas para Aulas (filtrado de posts)
+  const classPosts = posts.filter((p: any) => p.type === 'CLASS');
+  const totalAulasPages = Math.max(1, Math.ceil(classPosts.length / CLASSES_PER_PAGE));
+  const paginatedClasses = classPosts.slice(
+    (aulasPage - 1) * CLASSES_PER_PAGE,
+    aulasPage * CLASSES_PER_PAGE,
+  );
 
   const getGroupPosts = useCallback(
     async (pageNum: number, refresh = false) => {
@@ -83,17 +93,18 @@ export default function GroupPage({ navigation }: any) {
             limit: POSTS_PER_PAGE,
           },
         });
-
-        const newPosts = response.data.data;
-        const { hasMore: moreAvailable } = response.data.meta;
+        const { data: newPosts, meta } = response.data;
+        const moreAvailable = meta.page < meta.lastPage;
+        const currentPage = meta.page;
 
         if (refresh) {
           setPosts(newPosts);
-          setPage(1);
+          setPage(currentPage);
           setHasMore(moreAvailable);
         } else {
           setPosts((prev) => [...prev, ...newPosts]);
           setHasMore(moreAvailable);
+          setPage(currentPage);
         }
       } catch (error) {
         console.error('Error fetching posts:', error);
@@ -109,8 +120,10 @@ export default function GroupPage({ navigation }: any) {
     if (!loggedId) return;
 
     try {
-      const response = await api.get('/post/saved');
-      setSavedPosts(response.data.map((post: any) => post.id));
+      const response = await api.get('/post/saved', { params: { all: true } } as any);
+      const data = response.data.data ?? response.data;
+      const list = Array.isArray(data) ? data : [];
+      setSavedPosts(list.map((post: any) => post.id));
     } catch (err) {
       console.error('Erro ao buscar posts salvos:', err);
     }
@@ -132,12 +145,12 @@ export default function GroupPage({ navigation }: any) {
 
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 20;
+    const paddingToBottom = 200;
 
     const isCloseToBottom =
       layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
 
-    if (isCloseToBottom && !loading) {
+    if (isCloseToBottom && !loading && hasMore) {
       loadMorePosts();
     }
   };
@@ -338,6 +351,7 @@ export default function GroupPage({ navigation }: any) {
               setClassesSelect(true);
               setMuralSelect(false);
               setFilesSelect(false);
+              setAulasPage(1);
             }}
             style={classesSelect ? style.selectStyleTab : {}}>
             <GroupDataText
@@ -368,7 +382,7 @@ export default function GroupPage({ navigation }: any) {
               style={{ flex: 1 }}
               contentContainerStyle={{ paddingBottom: 120 }}
               onScroll={handleScroll}
-              scrollEventThrottle={400}
+              scrollEventThrottle={16}
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
@@ -471,6 +485,13 @@ export default function GroupPage({ navigation }: any) {
               {loading && (
                 <View style={style.loadingContainer}>
                   <ActivityIndicator size="large" color="#EF4036" />
+                  <GroupDataText
+                    color="#8F8F8F"
+                    size="12px"
+                    font="inter-regular"
+                    style={{ marginTop: 8, textAlign: 'center' }}>
+                    Carregando mais posts...
+                  </GroupDataText>
                 </View>
               )}
 
@@ -485,24 +506,91 @@ export default function GroupPage({ navigation }: any) {
           ) : classesSelect ? (
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 120 }}>
               <GroupPageLessonsContainer style={{ paddingBottom: 0 }}>
-                {posts?.length > 0 ? (
-                  posts?.map((item: any) => {
-                    if (item.type === 'CLASS') {
-                      return (
-                        <LessonsCard
-                          key={item.id}
-                          date={formatDateTime(item.schedule)}
-                          title={item.title}
-                          urlLive={item.urlLive}
-                        />
-                      );
-                    }
-                    return null;
-                  })
+                {paginatedClasses.length > 0 ? (
+                  paginatedClasses.map((item: any) => (
+                    <LessonsCard
+                      key={item.id}
+                      date={formatDateTime(item.schedule)}
+                      title={item.title}
+                      urlLive={item.urlLive}
+                    />
+                  ))
                 ) : (
-                  <View />
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <GroupDataText color="#8F8F8F" size="14px" font="inter-regular">
+                      {classPosts.length === 0
+                        ? 'Nenhuma aula encontrada'
+                        : 'Nenhuma aula nesta página'}
+                    </GroupDataText>
+                  </View>
                 )}
               </GroupPageLessonsContainer>
+              {classPosts.length > CLASSES_PER_PAGE && (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 8,
+                    paddingVertical: 20,
+                    flexWrap: 'wrap',
+                  }}>
+                  <TouchableOpacity
+                    disabled={aulasPage <= 1}
+                    onPress={() => setAulasPage((p) => Math.max(1, p - 1))}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      backgroundColor: aulasPage <= 1 ? '#E0E0E0' : '#EF4036',
+                    }}>
+                    <GroupDataText
+                      color={aulasPage <= 1 ? '#8F8F8F' : '#fff'}
+                      size="14px"
+                      font="inter-bold">
+                      Anterior
+                    </GroupDataText>
+                  </TouchableOpacity>
+                  {Array.from({ length: totalAulasPages }, (_, i) => i + 1).map((pageNum) => (
+                    <TouchableOpacity
+                      key={pageNum}
+                      onPress={() => setAulasPage(pageNum)}
+                      style={{
+                        minWidth: 36,
+                        height: 36,
+                        borderRadius: 18,
+                        backgroundColor: pageNum === aulasPage ? '#170e49' : '#F2F6FA',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderWidth: pageNum === aulasPage ? 0 : 1,
+                        borderColor: '#D9D9D9',
+                      }}>
+                      <GroupDataText
+                        color={pageNum === aulasPage ? '#fff' : '#3F3D3D'}
+                        size="14px"
+                        font="inter-bold">
+                        {String(pageNum)}
+                      </GroupDataText>
+                    </TouchableOpacity>
+                  ))}
+                  <TouchableOpacity
+                    disabled={aulasPage >= totalAulasPages}
+                    onPress={() => setAulasPage((p) => Math.min(totalAulasPages, p + 1))}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      backgroundColor: aulasPage >= totalAulasPages ? '#E0E0E0' : '#EF4036',
+                    }}>
+                    <GroupDataText
+                      color={aulasPage >= totalAulasPages ? '#8F8F8F' : '#fff'}
+                      size="14px"
+                      font="inter-bold">
+                      Próxima
+                    </GroupDataText>
+                  </TouchableOpacity>
+                </View>
+              )}
             </ScrollView>
           ) : (
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }}>
