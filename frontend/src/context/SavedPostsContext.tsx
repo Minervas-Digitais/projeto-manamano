@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
 // import { useAuth } from './auth/useAuth';
-import {useAuth} from '../context/auth/useAuth';
+import {useAuth} from "./auth/useAuth";
 
 type SavedPostsContextType = {
   savedPostIds: Set<string>;
