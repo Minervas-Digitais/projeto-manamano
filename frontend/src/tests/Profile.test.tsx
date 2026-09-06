@@ -93,7 +93,7 @@ describe('Profile', () => {
         });
       }
 
-      if (url === '/post/saved') {
+      if (url === '/saved-post' || url.startsWith('/saved-post')) {
         return Promise.resolve({
           data: [
             {
@@ -141,7 +141,7 @@ describe('Profile', () => {
         return Promise.resolve({ data: [] });
       }
 
-      if (url === '/post/saved') {
+      if (url === '/saved-post' || url.startsWith('/saved-post')) {
         return Promise.resolve({ data: [] });
       }
 

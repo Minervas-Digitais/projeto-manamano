@@ -20,7 +20,6 @@ import { RoleType } from '@prisma/client';
 import { User } from 'src/user/user.decorator';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
-import { SavedPostsQueryDto } from './dto/saved-posts-query.dto';
 
 @Controller('post')
 @UseGuards(JwtAuthGuard)
@@ -44,16 +43,6 @@ export class PostController {
     return this.postService.findAll();
   }
 
-  @Get('saved')
-  async getSavedPosts(
-    @User('id') userId: string,
-    @Query() query: SavedPostsQueryDto,
-  ): Promise<PaginatedResponseDto<SerializedPost> | SerializedPost[]> {
-    const isAll = query.all === 'true';
-    const pagination: PaginationDto = { page: query.page, limit: query.limit };
-    return this.postService.getSavedPosts(userId, pagination, isAll);
-  }
-
   @HttpCode(200)
   @Get(':id')
   findOne(@Param('id') id: string): Promise<SerializedPost> {
@@ -66,18 +55,6 @@ export class PostController {
   @Roles(RoleType.ADMIN)
   update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto): Promise<SerializedPost> {
     return this.postService.update(id, updatePostDto);
-  }
-
-  @HttpCode(201)
-  @Patch('save/:postId')
-  async savePost(@Param('postId') postId: string, @User('id') userId: string): Promise<any> {
-    return this.postService.savePost(userId, postId);
-  }
-
-  @HttpCode(201)
-  @Patch('unsave/:postId')
-  async removeSavedPost(@Param('postId') postId: string, @User('id') userId: string): Promise<any> {
-    return this.postService.removeSavedPost(userId, postId);
   }
 
   @HttpCode(200)

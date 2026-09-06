@@ -212,7 +212,7 @@ describe('GroupPage', () => {
       if (url.includes('/participant/')) {
         return Promise.resolve({ data: [{ userId: 'user-123', role: 'MEMBER' }] });
       }
-      if (url.includes('/post/saved')) {
+      if (url.includes('/saved-post')) {
         return Promise.resolve({ data: [] });
       }
       return Promise.reject(new Error('Unknown endpoint'));

@@ -122,7 +122,7 @@ export default function Profile({ navigation, route }: any) {
 
             const fetchSavedPosts = async (page: number = 1) => {
               try {
-                const { data: savedPostsData } = await api.get('/post/saved', {
+                const { data: savedPostsData } = await api.get('saved-post', {
                   params: { page, limit: 10 },
                 });
                 const { data: items, meta } = savedPostsData;

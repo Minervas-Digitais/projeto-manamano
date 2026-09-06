@@ -14,7 +14,6 @@ model User {
   email                 String         @unique
   phone                 String         @unique
   hash                  String
-  savedPost             SavedPost[]
   birthday              DateTime?
   ethnicity             String?
   neighborhood          String?
@@ -98,7 +97,6 @@ model Post {
   group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   archives    Archive[]
-  savedPost   SavedPost[]
 }
 
 model Comment {

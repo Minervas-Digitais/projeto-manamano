@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
-import { useAuth } from './auth/useAuth';
+// import { useAuth } from './auth/useAuth';
+import {useAuth} from '../context/auth/useAuth';
 
 type SavedPostsContextType = {
   savedPostIds: Set<string>;
@@ -21,9 +22,8 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
   useEffect(() => {
     const fetchSavedPosts = async () => {
       if (!loggedId) return;
-
       try {
-        const response = await api.get('/post/saved?all=true');
+        const response = await api.get('/saved-post?all=true');
         setSavedPostIds(new Set(response.data.map((p: any) => p.id)));
       } catch (error) {
         console.error('Erro ao buscar posts salvos:', error);
@@ -35,7 +35,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
   const savePost = async (postId: string) => {
     setSavedPostIds((prev) => new Set(prev).add(postId));
     try {
-      await api.patch(`/post/save/${postId}`);
+      await api.post(`/saved-post/${postId}`);
       console.log('Post salvo com sucesso!');
     } catch (error) {
       console.error('Erro ao salvar post:', error);
@@ -54,7 +54,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
       return newSet;
     });
     try {
-      await api.patch(`/post/unsave/${postId}`);
+      await api.delete(`/saved-post/${postId}`);
       console.log('Post removido dos salvos!');
     } catch (error) {
       console.error('Erro ao remover post dos salvos:', error);
