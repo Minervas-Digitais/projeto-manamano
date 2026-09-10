@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React, { useRef, useState, useEffect } from 'react';
-import { TouchableOpacity, View, Dimensions, Alert } from 'react-native';
+import { TouchableOpacity, View, Dimensions, ActivityIndicator } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 import { Buffer } from 'buffer';
@@ -39,7 +39,7 @@ export default function EditProfile() {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     setValue,
   } = useForm({
     defaultValues: {
@@ -60,7 +60,6 @@ export default function EditProfile() {
   const { loggedId } = useAuth();
   const onSubmit = async (data: any) => {
     try {
-      // Convert birthday to ISO string (if it's not already)
       const formattedData = { ...data };
 
       if (formattedData.birthday) {
@@ -70,39 +69,54 @@ export default function EditProfile() {
       }
 
       if (!loggedId) {
-        Alert.alert('No access token or user ID found. Please sign in again.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Você precisa estar logado para salvar as alterações.',
+        });
         return;
       }
 
-      await api.patch('/user', data);
+      await api.patch('/user', formattedData);
 
-      Alert.alert('Changes saved successfully!');
+      Toast.show({
+        type: 'success',
+        text1: 'Perfil atualizado!',
+        text2: 'Suas alterações foram salvas com sucesso.',
+      });
     } catch (error: any) {
       console.error('Error saving user data:', error);
-      if (error.response && error.response.data) {
-        console.error('Error response from API:', error.response.data);
-        Alert.alert(`Failed to save data: ${error.response.data.message || 'Unknown error'}`);
-      } else {
-        Alert.alert('There was an error saving your changes. Please try again.');
-      }
+
+      const message =
+        error?.response?.data?.message ||
+        'Não foi possível salvar suas alterações. Tente novamente.';
+
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao salvar',
+        text2: Array.isArray(message) ? message.join('\n') : message,
+      });
     }
   };
+
   const phoneInputRef = useRef<TextInputMask | null>(null);
 
   const validatePhoneNumber = () => {
-    if (phoneInputRef.current) {
-      // Ser visto com mais cuidado!!!
-      const rawValue = (phoneInputRef.current as any).getRawValue();
-      if (rawValue.length < 11) {
-        return 'Telefone inválido';
-      }
+    if (!phoneInputRef.current) {
+      return 'Telefone inválido';
     }
+
+    const rawValue = (phoneInputRef.current as any).getRawValue();
+
+    if (!rawValue || rawValue.length < 11) {
+      return 'Telefone inválido';
+    }
+
     return true;
   };
 
   const { toggleMenu } = useSideMenu();
   const [profileData, setProfileData] = useState<any>(null);
-  const [profileImageData, setProfileImage] = useState<any>(null);
 
   const defaultProfImage = require('../../assets/test-profile-icon.png');
 
@@ -169,7 +183,7 @@ export default function EditProfile() {
   };
 
   useFocusEffect(() => {
-    const fetchUserData = async () => {
+    const fetchUserProfilePicture = async () => {
       if (loggedId) {
         try {
           const imageResponse = await api.get(`/user/${loggedId}/profile-picture`, {
@@ -178,15 +192,20 @@ export default function EditProfile() {
 
           const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
           const imageUri = `data:image/jpeg;base64,${imageStr}`;
-          setProfileImage({ uri: imageUri });
+          setProfileData((prev: any) => ({
+            ...prev,
+            profileImage: { uri: imageUri },
+          }));
         } catch (error) {
-          console.error('Error fetching user data:', error);
-          setProfileImage(defaultAvatar);
+          setProfileData((prev: any) => ({
+            ...prev,
+            profileImage: defaultAvatar,
+          }));
         }
       }
     };
 
-    fetchUserData();
+    fetchUserProfilePicture();
   });
 
   useEffect(() => {
@@ -198,7 +217,7 @@ export default function EditProfile() {
           const userData = response.data;
 
           const profileInfo = {
-            profileImage: profileImageData || defaultProfImage,
+            profileImage: defaultProfImage,
             phone: userData.phone || '',
             fullName: userData.fullName || '',
             email: userData.email || '',
@@ -228,7 +247,18 @@ export default function EditProfile() {
     };
 
     fetchUser();
-  }, [profileImageData, setValue, loggedId]);
+  }, [setValue, loggedId]);
+
+  const onInvalid = (validationErrors: any) => {
+    Toast.show({
+      type: 'error',
+      text1: 'Verifique os campos',
+      text2: Object.values(validationErrors)
+        .map((error: any) => error?.message)
+        .filter(Boolean)
+        .join('\n'),
+    });
+  };
 
   return (
     <BlueBackground>
@@ -287,35 +317,58 @@ export default function EditProfile() {
                 },
               }}
               render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Nome"
-                  imageIcon={null}
-                />
+                <>
+                  <InputTextCustom
+                    onChangeText={onChange}
+                    value={value}
+                    label="Nome"
+                    imageIcon={null}
+                  />
+                  {errors.fullName && <ErrorWarning errorText={errors.fullName.message} />}
+                </>
               )}
             />
-            {errors.fullName && <ErrorWarning errorText={errors.fullName.message} />}
           </NamePart>
           <MiddlePart>
             <Controller
               control={control}
               name="birthday"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
+                validate: (value) => {
+                  if (!value || value.length !== 10) {
+                    return 'Data de nascimento inválida';
+                  }
+
+                  const [day, month, year] = value.split('/').map(Number);
+
+                  const date = new Date(year, month - 1, day);
+
+                  const isValid =
+                    date.getFullYear() === year &&
+                    date.getMonth() === month - 1 &&
+                    date.getDate() === day;
+
+                  return isValid || 'Data de nascimento inválida';
+                },
               }}
               render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Data de Nascimento"
-                  imageIcon={<CalendarIcon width={15} height={15} />}
-                  type="datetime"
-                  options={{ format: 'DD/MM/YYYY' }}
-                />
+                <>
+                  <InputTextCustom
+                    onChangeText={(text: string) => {
+                      onChange(text);
+                    }}
+                    value={value}
+                    label="Data de Nascimento"
+                    imageIcon={<CalendarIcon width={15} height={15} />}
+                    type="datetime"
+                    options={{ format: 'DD/MM/YYYY' }}
+                  />
+
+                  {errors.birthday && <ErrorWarning errorText={errors.birthday.message} />}
+                </>
               )}
             />
-            {errors.birthday && <ErrorWarning errorText="Campo obrigatório" />}
           </MiddlePart>
           <BottomPart>
             <Controller
@@ -329,58 +382,70 @@ export default function EditProfile() {
                 },
               }}
               render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="E-mail"
-                  imageIcon={null}
-                />
+                <>
+                  <InputTextCustom
+                    onChangeText={onChange}
+                    value={value}
+                    label="E-mail"
+                    imageIcon={null}
+                  />
+                  {errors.email && <ErrorWarning errorText={errors.email.message} />}
+                </>
               )}
             />
-            {errors.email && <ErrorWarning errorText={errors.email.message} />}
             <Controller
               control={control}
               name="ethnicity"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
               }}
               render={({ field: { onChange, value } }) => (
-                <DropdownComponent
-                  data={ethnicity}
-                  label="Etnia"
-                  onChange={onChange}
-                  value={value}
-                />
+                <>
+                  <DropdownComponent
+                    data={ethnicity}
+                    label="Etnia"
+                    onChange={onChange}
+                    value={value}
+                  />
+
+                  {errors.ethnicity && <ErrorWarning errorText={errors.ethnicity.message} />}
+                </>
               )}
             />
             <Controller
               control={control}
               name="expertise"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
               }}
               render={({ field: { onChange, value } }) => (
-                <DropdownComponent
-                  data={expertise}
-                  label="Especialidade"
-                  onChange={onChange}
-                  value={value}
-                />
+                <>
+                  <DropdownComponent
+                    data={expertise}
+                    label="Especialidade"
+                    onChange={onChange}
+                    value={value}
+                  />
+                  {errors.expertise && <ErrorWarning errorText={errors.expertise.message} />}
+                </>
               )}
             />
             <Controller
               control={control}
               name="neighborhood"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
               }}
               render={({ field: { onChange, value } }) => (
-                <DropdownComponent
-                  data={district}
-                  label="Bairro"
-                  onChange={onChange}
-                  value={value}
-                />
+                <>
+                  <DropdownComponent
+                    data={district}
+                    label="Bairro"
+                    onChange={onChange}
+                    value={value}
+                  />
+                  {errors.neighborhood && <ErrorWarning errorText={errors.neighborhood.message} />}
+                </>
               )}
             />
             <Controller
@@ -391,7 +456,9 @@ export default function EditProfile() {
               }}
               render={({ field: { onChange, value } }) => (
                 <BigInputTextCustom
-                  onChangeText={onChange}
+                  onChangeText={(text: string) => {
+                    onChange(text);
+                  }}
                   value={value}
                   label="Bio"
                   imageIcon={null}
@@ -403,39 +470,30 @@ export default function EditProfile() {
               control={control}
               name="enterprise"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
               }}
               render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Empreendimento"
-                  imageIcon={null}
-                />
+                <>
+                  <InputTextCustom
+                    onChangeText={onChange}
+                    value={value}
+                    label="Empreendimento"
+                    imageIcon={null}
+                  />
+                  {errors.enterprise && <ErrorWarning errorText={errors.enterprise.message} />}
+                </>
               )}
             />
-            {errors.enterprise && <ErrorWarning errorText="Campo obrigatório" />}
-            <ButtonCustom
-              onPress={handleSubmit(
-                (data) => {
-                  onSubmit(data); // Directly call onSubmit after handleSubmit
-                },
-                (validationErrors) => {
-                  const errorMessages = Object.values(validationErrors)
-                    .map((error) => error.message)
-                    .join('\n');
-
-                  if (errorMessages) {
-                    Alert.alert(`Erros:\n${errorMessages}`);
-                  } else {
-                    Alert.alert('A submissão falhou por erros desconhecidos.');
-                  }
-                },
-              )}
-              backColor="#32936F"
-              fontColor="white"
-              text="Salvar"
-            />
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#32936F" />
+            ) : (
+              <ButtonCustom
+                onPress={handleSubmit(onSubmit, onInvalid)}
+                backColor="#32936F"
+                fontColor="white"
+                text="Salvar"
+              />
+            )}
           </BottomPart>
         </View>
       </WhiteBackground>
