@@ -122,10 +122,12 @@ export default function Profile({ navigation, route }: any) {
 
             const fetchSavedPosts = async (page: number = 1) => {
               try {
-                const { data: savedPostsData } = await api.get('saved-post', {
+                const { data: savedPostsData } = await api.get('/saved-post', {
                   params: { page, limit: 10 },
                 });
-                const { data: items, meta } = savedPostsData;
+                const isArray = Array.isArray(savedPostsData);
+                const items = isArray ? savedPostsData : savedPostsData.data;
+                const meta = isArray ? { page: 1, lastPage: 1 } : savedPostsData.meta;
                 setSavedPosts((prev) => (page === 1 ? items : [...prev, ...items]));
                 setHasMoreSavedPosts(meta.page < meta.lastPage);
                 setSavedPostsPage(meta.page);
@@ -179,7 +181,7 @@ export default function Profile({ navigation, route }: any) {
     setLoadingMoreSavedPosts(true);
     try {
       const nextPage = savedPostsPage + 1;
-      const { data: savedPostsData } = await api.get('/post/saved', {
+      const { data: savedPostsData } = await api.get('/saved-post', {
         params: { page: nextPage, limit: 10 },
       });
       const { data: items, meta } = savedPostsData;

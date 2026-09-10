@@ -126,7 +126,9 @@ export default function GroupPage({ navigation }: any) {
     if (!loggedId) return;
 
     try {
-      const response = await api.get('/saved-posts', { params: { all: true } } as any);
+      const response = await api.get('/saved-post', {
+        params: { page: 1, limit: 20 },
+      });
       const data = response.data.data ?? response.data;
       const list = Array.isArray(data) ? data : [];
       setSavedPosts(list.map((post: any) => post.id));
