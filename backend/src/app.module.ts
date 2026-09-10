@@ -13,6 +13,7 @@ import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
 import { ArchiveModule } from './archive/archive.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SavedPostModule } from './saved-post/saved-post.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PrismaModule } from './prisma/prisma.module';
     NotificationModule,
     ArchiveModule,
     PrismaModule,
+    SavedPostModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,6 +7,7 @@ import { UserModule } from 'src/user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { AuthService } from 'src/auth/auth.service';
 import { PostModule } from 'src/post/post.module';
+import { SavedPostModule } from 'src/saved-post/saved-post.module';
 import { CreatePostDto } from 'src/post/dto/create-post.dto';
 import { POST_MESSAGES } from 'src/messages/post.messages';
 import { BASE_MESSAGES } from 'src/messages/base.messages';
@@ -45,7 +46,7 @@ describe('Posts', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [PostModule, UserModule, AuthModule],
+      imports: [PostModule, SavedPostModule, UserModule, AuthModule],
     })
       .overrideProvider(NotificationService)
       .useValue({
@@ -68,6 +69,7 @@ describe('Posts', () => {
   });
 
   beforeEach(async () => {
+    await prismaService.savedPost.deleteMany({});
     await prismaService.post.deleteMany({});
     await prismaService.category.deleteMany({});
     await prismaService.group.deleteMany({});
@@ -332,20 +334,33 @@ describe('Posts', () => {
       const userRes = await createUserWithToken(prismaService, authService, {
         fullName: 'Test User',
       });
+
       userToken = userRes.token;
 
       const response = await request(app.getHttpServer())
-        .patch(`/post/save/${post.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ postId: post.id });
 
       expect(response.status).toBe(201);
-      expect(response.body.savedPost).toContain(post.id);
+
+      const saved = await prismaService.savedPost.findUnique({
+        where: {
+          userId_postId: {
+            userId: userRes.user.id,
+            postId: post.id,
+          },
+        },
+      });
+
+      expect(saved).not.toBeNull();
     });
 
     it('deve retornar 403 ao tentar salvar próprio post (branch CANNOT_SAVE_OWN)', async () => {
       const response = await request(app.getHttpServer())
-        .patch(`/post/save/${post.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ postId: post.id });
 
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(POST_MESSAGES.CANNOT_SAVE_OWN);
@@ -361,11 +376,13 @@ describe('Posts', () => {
         categoryId: category.id,
       });
       await request(app.getHttpServer())
-        .patch(`/post/save/${otherPost.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ postId: otherPost.id });
       const second = await request(app.getHttpServer())
-        .patch(`/post/save/${otherPost.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ postId: otherPost.id });
 
       expect(second.status).toBe(409);
       expect(second.body.message).toBe(POST_MESSAGES.ALREADY_SAVED);
@@ -373,8 +390,9 @@ describe('Posts', () => {
 
     it('deve retornar erro 401 se token inválido ou ausente', async () => {
       const response = await request(app.getHttpServer())
-        .patch(`/post/save/${post.id}`)
-        .set('Authorization', `Bearer `);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer `)
+        .send({ postId: post.id });
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Unauthorized');
@@ -386,23 +404,35 @@ describe('Posts', () => {
       const userRes = await createUserWithToken(prismaService, authService, {
         fullName: 'Test User',
       });
+
       userToken = userRes.token;
 
       await request(app.getHttpServer())
-        .patch(`/post/save/${post.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ postId: post.id });
 
       const response = await request(app.getHttpServer())
-        .patch(`/post/unsave/${post.id}`)
+        .delete(`/saved-post/${post.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
-      expect(response.status).toBe(201);
-      expect(response.body.savedPost).not.toContain(post.id);
+      expect(response.status).toBe(200);
+
+      const saved = await prismaService.savedPost.findUnique({
+        where: {
+          userId_postId: {
+            userId: userRes.user.id,
+            postId: post.id,
+          },
+        },
+      });
+
+      expect(saved).toBeNull();
     });
 
     it('deve retornar 404 ao tentar remover post não salvo (branch POST_NOT_SAVED)', async () => {
       const response = await request(app.getHttpServer())
-        .patch(`/post/unsave/${post.id}`)
+        .delete(`/saved-post/${post.id}`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(404);
@@ -411,7 +441,7 @@ describe('Posts', () => {
 
     it('deve retornar erro 401 se token JWT for inválido', async () => {
       const response = await request(app.getHttpServer())
-        .patch(`/post/unsave/${post.id}`)
+        .delete(`/saved-post/${post.id}`)
         .set('Authorization', `Bearer `);
 
       expect(response.status).toBe(401);
@@ -876,14 +906,16 @@ describe('Posts', () => {
         categoryId: category.id,
       });
       await request(app.getHttpServer())
-        .patch(`/post/save/${postToSave.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ postId: postToSave.id });
       await request(app.getHttpServer())
-        .patch(`/post/save/${extras[0].id}`)
-        .set('Authorization', `Bearer ${adminToken}`);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ postId: extras[0].id });
 
       const res = await request(app.getHttpServer())
-        .get('/post/saved?page=1&limit=10')
+        .get('/saved-post?page=1&limit=10')
         .set('Authorization', `Bearer ${userToken}`);
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('data');
@@ -891,7 +923,7 @@ describe('Posts', () => {
       expect(res.body.meta).toMatchObject({ page: 1, limit: 10 });
     });
 
-    it('deve retornar todos com all=true como array (compatibilidade)', async () => {
+    it('deve retornar 400 para all=true (não permitido no DTO global)', async () => {
       const owner = await createUserWithToken(prismaService, authService);
       const p = await createPost(prismaService, {
         title: 'All',
@@ -901,13 +933,13 @@ describe('Posts', () => {
         categoryId: category.id,
       });
       await request(app.getHttpServer())
-        .patch(`/post/save/${p.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ postId: p.id });
       const res = await request(app.getHttpServer())
-        .get('/post/saved?all=true')
+        .get('/saved-post?all=true')
         .set('Authorization', `Bearer ${userToken}`);
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.status).toBe(400);
     });
 
     it('deve respeitar paginação page/limit no saved', async () => {
@@ -923,11 +955,12 @@ describe('Posts', () => {
         });
         ids.push(p.id);
         await request(app.getHttpServer())
-          .patch(`/post/save/${p.id}`)
-          .set('Authorization', `Bearer ${userToken}`);
+          .post(`/saved-post`)
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({ postId: p.id });
       }
       const res = await request(app.getHttpServer())
-        .get('/post/saved?page=1&limit=2')
+        .get('/saved-post?page=1&limit=2')
         .set('Authorization', `Bearer ${userToken}`);
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(2);
@@ -937,35 +970,34 @@ describe('Posts', () => {
 
     it('deve retornar 400 para paginação inválida no saved', async () => {
       const res = await request(app.getHttpServer())
-        .get('/post/saved?page=0&limit=10')
+        .get('/saved-post?page=0&limit=10')
         .set('Authorization', `Bearer ${userToken}`);
       expect(res.status).toBe(400);
     });
 
     it('deve retornar 400 quando limit excede máximo no saved', async () => {
       const res = await request(app.getHttpServer())
-        .get('/post/saved?page=1&limit=21')
+        .get('/saved-post?page=1&limit=21')
         .set('Authorization', `Bearer ${userToken}`);
       expect(res.status).toBe(400);
       expect(res.body.message).toBe(BASE_MESSAGES.EXCEEDED_LIMIT(20));
     });
 
     it('deve retornar 401 sem token no saved', async () => {
-      const res = await request(app.getHttpServer()).get('/post/saved');
+      const res = await request(app.getHttpServer()).get('/saved-post');
       expect(res.status).toBe(401);
     });
 
-    it('deve retornar [] com all=true quando nenhum salvo (branch all+empty)', async () => {
+    it('deve retornar 400 para all=true quando nenhum salvo (não permitido)', async () => {
       const res = await request(app.getHttpServer())
-        .get('/post/saved?all=true')
+        .get('/saved-post?all=true')
         .set('Authorization', `Bearer ${userToken}`);
-      expect(res.status).toBe(200);
-      expect(res.body).toEqual([]);
+      expect(res.status).toBe(400);
     });
 
     it('deve retornar PaginatedResponseDto vazio quando nenhum salvo e paginado (branch paginatedIds empty)', async () => {
       const res = await request(app.getHttpServer())
-        .get('/post/saved?page=1&limit=10')
+        .get('/saved-post?page=1&limit=10')
         .set('Authorization', `Bearer ${userToken}`);
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
@@ -982,10 +1014,11 @@ describe('Posts', () => {
         categoryId: category.id,
       });
       await request(app.getHttpServer())
-        .patch(`/post/save/${p.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .post(`/saved-post`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ postId: p.id });
       const res = await request(app.getHttpServer())
-        .get('/post/saved?page=999&limit=10')
+        .get('/saved-post?page=999&limit=10')
         .set('Authorization', `Bearer ${userToken}`);
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
@@ -1006,11 +1039,12 @@ describe('Posts', () => {
         });
         created.push(p.id);
         await request(app.getHttpServer())
-          .patch(`/post/save/${p.id}`)
-          .set('Authorization', `Bearer ${userToken}`);
+          .post(`/saved-post`)
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({ postId: p.id });
       }
       const res = await request(app.getHttpServer())
-        .get('/post/saved?page=1&limit=10')
+        .get('/saved-post?page=1&limit=10')
         .set('Authorization', `Bearer ${userToken}`);
       const returnedIds = res.body.data.map((d: any) => d.id);
       created.forEach((id) => expect(returnedIds).toContain(id));

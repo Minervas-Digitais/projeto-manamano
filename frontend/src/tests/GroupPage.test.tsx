@@ -37,6 +37,18 @@ jest.mock('../pages/Home/Home', () => ({
   },
 }));
 
+jest.mock('@react-native-clipboard/clipboard', () => ({
+  default: { setString: jest.fn(), getString: jest.fn(() => Promise.resolve('')) },
+  setString: jest.fn(),
+  getString: jest.fn(() => Promise.resolve('')),
+}));
+
+jest.mock('react-native-toast-message', () => ({
+  __esModule: true,
+  default: { show: jest.fn(), hide: jest.fn() },
+  show: jest.fn(),
+}));
+
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));
@@ -132,6 +144,10 @@ describe('GroupPage', () => {
     data: {
       data: items,
       meta: {
+        page: 1,
+        limit: 10,
+        total: items.length,
+        lastPage: 1,
         hasMore,
       },
     },
@@ -212,7 +228,7 @@ describe('GroupPage', () => {
       if (url.includes('/participant/')) {
         return Promise.resolve({ data: [{ userId: 'user-123', role: 'MEMBER' }] });
       }
-      if (url.includes('/post/saved')) {
+      if (url.includes('/saved-post')) {
         return Promise.resolve({ data: [] });
       }
       return Promise.reject(new Error('Unknown endpoint'));

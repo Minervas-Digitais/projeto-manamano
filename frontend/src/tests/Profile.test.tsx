@@ -18,6 +18,12 @@ jest.mock('../services/secureStorage', () => ({
   },
 }));
 jest.mock('../assets/duck.png', () => 'duckImage');
+jest.mock('../context/SideMenuContext', () => ({
+  useSideMenu: () => ({ toggleMenu: jest.fn() }),
+}));
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: 'mock-user-id' }),
+}));
 jest.mock('../components/SideMenu/SideMenu', () => 'SideMenu');
 jest.mock('../assets/location-icon.svg', () => 'Location');
 jest.mock('../assets/share-white-icon.svg', () => 'ShareWhite');
@@ -69,15 +75,18 @@ describe('Profile', () => {
 
       if (url === '/post/mock-user-id/posts') {
         return Promise.resolve({
-          data: [
-            {
-              id: 1,
-              nameUser: 'Maria Silva',
-              input: 'Postagem da Maria',
-              numComments: 2,
-              createdAt: '2025-01-01',
-            },
-          ],
+          data: {
+            data: [
+              {
+                id: 1,
+                nameUser: 'Maria Silva',
+                input: 'Postagem da Maria',
+                numComments: 2,
+                createdAt: '2025-01-01',
+              },
+            ],
+            meta: { page: 1, limit: 10, total: 1, lastPage: 1 },
+          },
         });
       }
 
@@ -93,17 +102,20 @@ describe('Profile', () => {
         });
       }
 
-      if (url === '/post/saved') {
+      if (url === '/saved-post' || url.startsWith('/saved-post')) {
         return Promise.resolve({
-          data: [
-            {
-              id: 101,
-              nameUser: 'João',
-              input: 'Post salvo pelo João',
-              numComments: 1,
-              createdAt: '2025-01-02',
-            },
-          ],
+          data: {
+            data: [
+              {
+                id: 101,
+                nameUser: 'João',
+                input: 'Post salvo pelo João',
+                numComments: 1,
+                createdAt: '2025-01-02',
+              },
+            ],
+            meta: { page: 1, limit: 10, total: 1, lastPage: 1 },
+          },
         });
       }
 
@@ -138,11 +150,15 @@ describe('Profile', () => {
       }
 
       if (url === '/post/mock-user-id/posts') {
-        return Promise.resolve({ data: [] });
+        return Promise.resolve({
+          data: { data: [], meta: { page: 1, limit: 10, total: 0, lastPage: 0 } },
+        });
       }
 
-      if (url === '/post/saved') {
-        return Promise.resolve({ data: [] });
+      if (url === '/saved-post' || url.startsWith('/saved-post')) {
+        return Promise.resolve({
+          data: { data: [], meta: { page: 1, limit: 10, total: 0, lastPage: 0 } },
+        });
       }
 
       return Promise.reject(new Error('Not found'));

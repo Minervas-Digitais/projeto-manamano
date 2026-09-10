@@ -1,17 +1,10 @@
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, PostType, Prisma, User } from '@prisma/client';
+import { NotificationType, PostType, Prisma } from '@prisma/client';
 import { POST_MESSAGES } from '../messages/post.messages';
-import { omitHash } from 'src/utils/user.util';
 import { ValidatorService } from 'src/common/validators/validator.service';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
@@ -20,7 +13,7 @@ import { BASE_MESSAGES } from 'src/messages/base.messages';
 const MAX_LIMIT = 20;
 const DEFAULT_POST_LIMIT = 10;
 
-const postInclude: Prisma.PostInclude = {
+export const postInclude: Prisma.PostInclude = {
   Comment: {
     include: {
       user: {
@@ -172,48 +165,6 @@ export class PostService {
     return this.serializePost(deleted);
   }
 
-  async savePost(userId: string, postId: string): Promise<Omit<User, 'hash'>> {
-    const user = await this.validator.validateUserExists(userId);
-    const post = await this.validator.validatePostExists(postId);
-
-    if (post.userId === userId) {
-      throw new ForbiddenException(POST_MESSAGES.CANNOT_SAVE_OWN);
-    }
-
-    if (user.savedPost.includes(postId)) {
-      throw new ConflictException(POST_MESSAGES.ALREADY_SAVED);
-    }
-
-    const updatedUser = await this.prismaService.user.update({
-      where: { id: userId },
-      data: {
-        savedPost: {
-          push: postId,
-        },
-      },
-    });
-
-    return omitHash(updatedUser);
-  }
-
-  async removeSavedPost(userId: string, postId: string): Promise<Omit<User, 'hash'>> {
-    const user = await this.validator.validateUserExists(userId);
-    await this.validator.validatePostExists(postId);
-
-    if (!user.savedPost.includes(postId)) {
-      throw new NotFoundException(POST_MESSAGES.POST_NOT_SAVED);
-    }
-
-    const updatedUser = await this.prismaService.user.update({
-      where: { id: userId },
-      data: {
-        savedPost: user.savedPost.filter((id) => id !== postId),
-      },
-    });
-
-    return omitHash(updatedUser);
-  }
-
   async setPinStatus(postId: string, pinned: boolean): Promise<SerializedPost> {
     const post = await this.validator.validatePostExists(postId);
 
@@ -311,59 +262,5 @@ export class PostService {
     ]);
 
     return new PaginatedResponseDto(posts.map(this.serializePost), total, { page, limit });
-  }
-
-  async getSavedPosts(
-    userId: string,
-    pagination: PaginationDto,
-    all = false,
-  ): Promise<PaginatedResponseDto<SerializedPost> | SerializedPost[]> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-      select: { savedPost: true },
-    });
-
-    if (!user) {
-      throw new NotFoundException(POST_MESSAGES.USER_NOT_FOUND);
-    }
-
-    if (all) {
-      if (user.savedPost.length === 0) {
-        return [];
-      }
-      const posts = await this.prismaService.post.findMany({
-        where: { id: { in: user.savedPost } },
-        include: postInclude,
-        orderBy: { createdAt: 'desc' },
-      });
-      return posts.map(this.serializePost);
-    }
-
-    const page = pagination.page ?? 1;
-    const limit = pagination.limit ?? DEFAULT_POST_LIMIT;
-
-    if (limit > MAX_LIMIT) {
-      throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
-    }
-
-    const total = user.savedPost.length;
-    const paginatedIds = user.savedPost.slice((page - 1) * limit, page * limit);
-
-    if (paginatedIds.length === 0) {
-      return new PaginatedResponseDto([], total, { page, limit });
-    }
-
-    const posts = await this.prismaService.post.findMany({
-      where: { id: { in: paginatedIds } },
-      include: postInclude,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const ordered = paginatedIds.map((id) => posts.find((p) => p.id === id)).filter(Boolean);
-
-    return new PaginatedResponseDto((ordered as any[]).map(this.serializePost), total, {
-      page,
-      limit,
-    });
   }
 }
