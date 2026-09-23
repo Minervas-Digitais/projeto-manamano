@@ -1,10 +1,11 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
-import { TouchableOpacity, Alert, Platform } from 'react-native';
+import { TouchableOpacity, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
+import Toast from 'react-native-toast-message';
 
 import {
   ArchiveButtonContainer,
@@ -45,7 +46,7 @@ const getFileTypeIcon = (mimeType?: string) => {
 
 // Função para renderizar prévia do arquivo (igual ao ArchiveCard)
 const renderFilePreview = (mimeType?: string, uri?: string) => {
-  if (mimeType?.startsWith('image/') && uri) {
+  if (mimeType?.startsWith('image/') && !mimeType.includes('svg') && uri) {
     return <ArchivePreviewImage source={{ uri: `data:${mimeType};base64,${uri}` }} />;
   }
   const icon = getFileTypeIcon(mimeType);
@@ -91,7 +92,7 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
 
   const saveFile = async () => {
     if (!archive || !archive.uri || !archive.name || !archive.mimeType) {
-      Alert.alert('Erro', 'Arquivo inválido para download');
+      Toast.show({ type: 'error', text1: 'Erro', text2: 'Arquivo inválido para download' });
       return;
     }
 
@@ -131,14 +132,22 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
       if (mediaType === 'image' || mediaType === 'video') {
         const { status } = await MediaLibrary.requestPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permissão negada', 'Não foi possível acessar a galeria.');
+          Toast.show({
+            type: 'error',
+            text1: 'Permissão negada',
+            text2: 'Não foi possível acessar a galeria.',
+          });
           return;
         }
 
         // cria apenas o asset — NÃO chama createAlbumAsync
         await MediaLibrary.createAssetAsync(tempUri);
         // asset salvo; o sistema colocará na galeria padrão (Recents, Camera Roll etc.)
-        Alert.alert('Sucesso', 'Imagem/Vídeo salvo na galeria!');
+        Toast.show({
+          type: 'success',
+          text1: 'Arquivo baixado',
+          text2: 'Imagem/Vídeo salvo na galeria!',
+        });
         return;
       }
 
@@ -146,14 +155,22 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
       if (Platform.OS === 'android') {
         // usar Storage Access Framework: pede pasta EXISTENTE e cria o arquivo lá
         if (!FileSystem.StorageAccessFramework) {
-          Alert.alert('Erro', 'StorageAccessFramework não disponível nesta versão do Expo.');
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'StorageAccessFramework não disponível nesta versão do Expo.',
+          });
           return;
         }
 
         const permissions =
           await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
         if (!permissions.granted) {
-          Alert.alert('Permissão negada', 'Não foi possível acessar a pasta de destino.');
+          Toast.show({
+            type: 'error',
+            text1: 'Permissão negada',
+            text2: 'Não foi possível acessar a pasta de destino.',
+          });
           return;
         }
 
@@ -177,15 +194,27 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
             encoding: FileSystem.EncodingType.Base64,
           });
 
-          Alert.alert('Sucesso', 'Arquivo salvo com sucesso!');
+          Toast.show({
+            type: 'success',
+            text1: 'Arquivo baixado',
+            text2: 'Arquivo salvo com sucesso!',
+          });
         } catch (e) {
-          Alert.alert('Erro', 'Não foi possível salvar o arquivo via Storage Access Framework.');
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Não foi possível salvar o arquivo via Storage Access Framework.',
+          });
         }
       } else {
         try {
           const canShare = await Sharing.isAvailableAsync();
           if (!canShare) {
-            Alert.alert('Erro', 'Compartilhamento não disponível neste dispositivo.');
+            Toast.show({
+              type: 'error',
+              text1: 'Erro',
+              text2: 'Compartilhamento não disponível neste dispositivo.',
+            });
             return;
           }
           await Sharing.shareAsync(tempUri, {
@@ -193,11 +222,15 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
             dialogTitle: archive.name,
           });
         } catch (e) {
-          Alert.alert('Erro', 'Não foi possível exportar o arquivo.');
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Não foi possível exportar o arquivo.',
+          });
         }
       }
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar o arquivo.');
+      Toast.show({ type: 'error', text1: 'Erro', text2: 'Não foi possível salvar o arquivo.' });
     }
   };
 

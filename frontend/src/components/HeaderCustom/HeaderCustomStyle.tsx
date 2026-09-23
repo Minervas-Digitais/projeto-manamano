@@ -27,6 +27,8 @@ export const HeaderText = styled.Text<{ font?: string }>`
   font-size: 20px;
   color: #160e47;
   font-family: ${(prop) => prop.font};
+  text-align: center;
+  flex-shrink: 1;
 `;
 export const NoIcon = styled.View`
   width: 24px;

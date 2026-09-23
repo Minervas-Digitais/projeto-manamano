@@ -41,3 +41,10 @@ export const AttachmentType = styled.Text<{ font?: string }>`
   font-size: 10px;
   padding-top: 8px;
 `;
+
+export const AttachmentImagePreview = styled.Image`
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  resize-mode: cover;
+`;

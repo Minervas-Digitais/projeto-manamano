@@ -33,6 +33,8 @@ import NotificationPage from './src/pages/NotificationPage/NotificationPage';
 import ADMPage from './src/pages/ADMPage/ADMPage';
 import GlobalNotificationPage from './src/pages/GlobalNotificationPage/GlobalNotificationPage';
 import Groups from './src/pages/Groups/Groups';
+import LessonFiles from './src/pages/LessonFiles/LessonFiles';
+import EditLesson from './src/pages/EditLesson/EditLesson';
 import { useNotifications } from './src/hooks/useNotification';
 import { SavedPostsProvider } from './src/context/SavedPostsContext';
 import { AuthProvider } from './src/context/auth/AuthProvider';
@@ -75,6 +77,7 @@ function AppNavigator({ linking }: { linking: any }) {
         <Stack.Screen name="EditProfile" component={EditProfile} options={{ headerShown: false }} />
         <Stack.Screen name="NewPost" component={NewPost} options={{ headerShown: false }} />
         <Stack.Screen name="NewLesson" component={NewLesson} options={{ headerShown: false }} />
+        <Stack.Screen name="EditLesson" component={EditLesson} options={{ headerShown: false }} />
         <Stack.Screen
           name="ChangePassword"
           component={ChangePassword}
@@ -109,6 +112,7 @@ function AppNavigator({ linking }: { linking: any }) {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="EditGroup" component={EditGroup} options={{ headerShown: false }} />
+        <Stack.Screen name="LessonFiles" component={LessonFiles} options={{ headerShown: false }} />
         <Stack.Screen
           name="NotificationPage"
           component={NotificationPage}
@@ -129,10 +133,12 @@ export default function App() {
         Profile: 'profile/:id',
         NewPost: 'newpost/:groupId',
         NewLesson: 'newlesson/:groupId',
+        EditLesson: 'editlesson/:lessonId',
         VisitorProfile: 'visitorprofile/:id',
         GroupPage: 'group/:groupId',
         EditProfile: 'editprofile/:id',
         GroupData: 'groupdata/:groupId',
+        LessonFiles: 'lessonfiles/:postId',
       },
     },
   };

@@ -170,7 +170,12 @@ describe('NewLesson', () => {
     // ignora os erros do act e causados pelo proprio teste
     jest.spyOn(console, 'error').mockImplementation((msg) => {
       if (typeof msg === 'string') {
-        if (msg.includes('An update to') || msg.includes('inside a test was not wrapped in act')) {
+        if (
+          msg.includes('An update to') ||
+          msg.includes('inside a test was not wrapped in act') ||
+          msg.includes('GO_BACK') ||
+          msg.includes('was not handled')
+        ) {
           return;
         }
       }
@@ -181,6 +186,10 @@ describe('NewLesson', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // limpa filas de mockImplementationOnce que clearAllMocks não limpa
+    jest.mocked(api.get).mockReset();
+    jest.mocked(api.post).mockReset();
+    jest.mocked(api.patch).mockReset();
     (global as any).mockUseRoute.mockReturnValue({ params: { groupId: '123' } as any });
     jest.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/category/group/123') {
@@ -443,69 +452,63 @@ describe('NewLesson', () => {
     });
   });
 
-  it('deve renderizar em modo edição com botão Salvar', async () => {
-    (global as any).mockUseRoute.mockReturnValue({
-      params: {
-        groupId: '123',
-        editData: {
-          id: 'lesson-1',
-          title: 'Aula Edit',
-          date: new Date('2099-12-31T10:00:00.000Z').toISOString(),
-          urlLive: 'https://live.com/edit',
-          urlVOD: 'https://vod.com/edit',
-          input: 'Descricao editada',
-        },
-      } as any,
-    } as any);
-
-    const { getByText } = renderWithNavigation();
-
-    await waitFor(() => {
-      expect(getByText('Salvar')).toBeTruthy();
-    });
-  });
-
-  it('deve chamar PATCH ao salvar em modo edição', async () => {
-    (global as any).mockUseRoute.mockReturnValue({
-      params: {
-        groupId: '123',
-        editData: {
-          id: 'lesson-1',
-          title: 'Aula Edit',
-          date: new Date('2099-12-31T10:00:00.000Z').toISOString(),
-          urlLive: 'https://live.com/edit',
-          urlVOD: 'https://vod.com/edit',
-          input: 'Descricao editada',
-        },
-      } as any,
-    } as any);
-
+  it('permite enviar sem aula gravada (vod opcional)', async () => {
     const { getByTestId } = renderWithNavigation();
 
     await waitFor(() => {
       expect(api.get).toHaveBeenCalledWith('/category/group/123');
     });
+    await new Promise((r) => {
+      setTimeout(r, 100);
+    });
 
-    fireEvent.changeText(getByTestId('input-title'), 'Aula Editada 2');
+    fireEvent.changeText(getByTestId('input-title'), 'Aula sem VOD');
     fireEvent.changeText(getByTestId('input-date'), '31/12/2099');
-    fireEvent.changeText(getByTestId('input-hour'), '10:00');
-    fireEvent.changeText(getByTestId('input-link'), 'https://live.com/edit2');
-    fireEvent.changeText(getByTestId('input-vod'), 'https://vod.com/edit2');
-    fireEvent.changeText(getByTestId('input-description'), 'Descricao editada 2');
+    fireEvent.changeText(getByTestId('input-hour'), '23:59');
+    fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
+    fireEvent.changeText(getByTestId('input-vod'), '');
+    fireEvent.changeText(getByTestId('input-description'), 'Descrição sem vod');
 
     fireEvent.press(getByTestId('btn-publish'));
 
+    await waitFor(
+      () => {
+        expect(api.post).toHaveBeenCalled();
+        expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
+      },
+      { timeout: 3000 },
+    );
+    const postArgs = (api.post as jest.Mock).mock.calls[0]?.[1] as any;
+    expect(postArgs?.urlRecorded).toBeFalsy();
+  });
+
+  it('sempre renderiza Publicação como create-only mesmo com editData na rota', async () => {
+    (global as any).mockUseRoute.mockReturnValue({
+      params: {
+        groupId: '123',
+        editData: {
+          id: 'lesson-1',
+          title: 'Aula Edit',
+          date: new Date('2099-12-31T10:00:00.000Z').toISOString(),
+          urlLive: 'https://live.com/edit',
+          urlVOD: 'https://vod.com/edit',
+          input: 'Descricao editada',
+        },
+      } as any,
+    } as any);
+
+    const { getByText, queryByText } = renderWithNavigation();
+
     await waitFor(() => {
-      expect(api.patch).toHaveBeenCalledWith(
-        '/post/lesson-1',
-        expect.objectContaining({
-          title: 'Aula Editada 2',
-          groupId: '123',
-        }),
-      );
-      expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'success', text1: 'Aula atualizada com sucesso!' }),
-      );
+      expect(getByText('Publicação')).toBeTruthy();
     });
+    expect(queryByText('Salvar')).toBeNull();
+    expect(queryByText('Editar aula')).toBeNull();
+  });
+
+  it('label de aula gravada indica opcional', async () => {
+    const { getByTestId, getByText } = renderWithNavigation();
+    await waitFor(() => expect(getByTestId('input-vod')).toBeTruthy());
+    expect(getByText('Aula gravada (opcional)')).toBeTruthy();
   });
 });

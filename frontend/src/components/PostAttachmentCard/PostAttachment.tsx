@@ -1,13 +1,15 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
-import { Pressable, View, Alert, Platform } from 'react-native';
+import { Pressable, View, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
+import Toast from 'react-native-toast-message';
 
 import {
   AttachmentContainer,
+  AttachmentImagePreview,
   AttachmentText,
   AttachmentType,
   VerticalSeparator,
@@ -26,7 +28,7 @@ export default function PostAttachment({ archive, text, file }: any) {
   const saveFile = async () => {
     if (!file || (!file.contentBase64 && !file.uri) || !file.name || !file.mimeType) {
       console.error('Arquivo inválido para download', file);
-      Alert.alert('Erro', 'Arquivo inválido para download');
+      Toast.show({ type: 'error', text1: 'Erro', text2: 'Arquivo inválido para download' });
       return;
     }
 
@@ -66,14 +68,22 @@ export default function PostAttachment({ archive, text, file }: any) {
       if (mediaType === 'image' || mediaType === 'video') {
         const { status } = await MediaLibrary.requestPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permissão negada', 'Não foi possível acessar a galeria.');
+          Toast.show({
+            type: 'error',
+            text1: 'Permissão negada',
+            text2: 'Não foi possível acessar a galeria.',
+          });
           return;
         }
 
         // cria apenas o asset — NÃO chama createAlbumAsync
         await MediaLibrary.createAssetAsync(tempUri);
         // asset salvo; o sistema colocará na galeria padrão (Recents, Camera Roll etc.)
-        Alert.alert('Sucesso', 'Imagem/Vídeo salvo na galeria!');
+        Toast.show({
+          type: 'success',
+          text1: 'Arquivo baixado',
+          text2: 'Imagem/Vídeo salvo na galeria!',
+        });
         return;
       }
 
@@ -81,14 +91,22 @@ export default function PostAttachment({ archive, text, file }: any) {
       if (Platform.OS === 'android') {
         // usar Storage Access Framework: pede pasta EXISTENTE e cria o arquivo lá
         if (!FileSystem.StorageAccessFramework) {
-          Alert.alert('Erro', 'StorageAccessFramework não disponível nesta versão do Expo.');
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'StorageAccessFramework não disponível nesta versão do Expo.',
+          });
           return;
         }
 
         const permissions =
           await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
         if (!permissions.granted) {
-          Alert.alert('Permissão negada', 'Não foi possível acessar a pasta de destino.');
+          Toast.show({
+            type: 'error',
+            text1: 'Permissão negada',
+            text2: 'Não foi possível acessar a pasta de destino.',
+          });
           return;
         }
 
@@ -112,11 +130,19 @@ export default function PostAttachment({ archive, text, file }: any) {
             encoding: FileSystem.EncodingType.Base64,
           });
 
-          Alert.alert('Sucesso', 'Arquivo salvo com sucesso!');
+          Toast.show({
+            type: 'success',
+            text1: 'Arquivo baixado',
+            text2: 'Arquivo salvo com sucesso!',
+          });
           return;
         } catch (e) {
           console.error('Erro ao criar/escrever arquivo via SAF:', e);
-          Alert.alert('Erro', 'Não foi possível salvar o arquivo via Storage Access Framework.');
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Não foi possível salvar o arquivo via Storage Access Framework.',
+          });
           return;
         }
       } else {
@@ -124,7 +150,11 @@ export default function PostAttachment({ archive, text, file }: any) {
         try {
           const canShare = await Sharing.isAvailableAsync();
           if (!canShare) {
-            Alert.alert('Erro', 'Compartilhamento não disponível neste dispositivo.');
+            Toast.show({
+              type: 'error',
+              text1: 'Erro',
+              text2: 'Compartilhamento não disponível neste dispositivo.',
+            });
             return;
           }
           await Sharing.shareAsync(tempUri, {
@@ -134,19 +164,45 @@ export default function PostAttachment({ archive, text, file }: any) {
           return;
         } catch (e) {
           console.error('Erro ao compartilhar o arquivo no iOS:', e);
-          Alert.alert('Erro', 'Não foi possível exportar o arquivo.');
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Não foi possível exportar o arquivo.',
+          });
           return;
         }
       }
     } catch (error) {
       console.error('Erro ao salvar o arquivo:', error);
-      Alert.alert('Erro', 'Não foi possível salvar o arquivo.');
+      Toast.show({ type: 'error', text1: 'Erro', text2: 'Não foi possível salvar o arquivo.' });
     }
   };
+  const isPreviewableImage =
+    archive && file?.mimeType?.startsWith('image/') && !file.mimeType.includes('svg');
+  let imageUri: string | null = null;
+  if (isPreviewableImage) {
+    if (file?.contentBase64) {
+      imageUri = file.contentBase64.startsWith('data:')
+        ? file.contentBase64
+        : `data:${file.mimeType};base64,${file.contentBase64}`;
+    } else if (file?.uri) {
+      imageUri = file.uri;
+    }
+  }
+
+  let icon: React.ReactNode;
+  if (isPreviewableImage && imageUri) {
+    icon = <AttachmentImagePreview source={{ uri: imageUri }} />;
+  } else if (archive) {
+    icon = <ArchiveIcon />;
+  } else {
+    icon = <LinkIcon />;
+  }
+
   return (
     <Pressable onPress={saveFile}>
       <AttachmentContainer>
-        {archive ? <ArchiveIcon /> : <LinkIcon />}
+        {icon}
         <VerticalSeparator />
         <View style={{ flexDirection: 'column' }}>
           <AttachmentText font="inter-semibold" size="12px">

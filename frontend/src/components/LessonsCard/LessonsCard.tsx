@@ -6,6 +6,8 @@ import { Linking } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import {
   FileButtonContainer,
   FileButtonIconContainer,
@@ -38,6 +40,7 @@ import DotsMenuIcon from '../../assets/dots-menu-icon.svg';
 import EditIcon from '../../assets/edit-icon.svg';
 import EyeIcon from '../../assets/eye-open-icon.svg';
 import TrashCan from '../../assets/trash-can.svg';
+import { RootStackParamList } from '../../navigation/types';
 import DeleteOneConfirmation from '../DeleteOneConfirmation/DeleteOneConfirmation';
 import api from '../../services/api';
 
@@ -71,6 +74,7 @@ export default function LessonsCard({
   isInstructor = false,
   onDeleteSuccess,
 }: LessonsCardProps) {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [selected, setSelected] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [showMenu, setShowMenu] = useState(false);
@@ -156,7 +160,8 @@ export default function LessonsCard({
   };
 
   const handleEdit = () => {
-    // TODO criar pagina de edição de aulas
+    setShowMenu(false);
+    (navigation as any).navigate('EditLesson', { lessonId: id });
   };
 
   const handleDelete = () => {
@@ -186,7 +191,7 @@ export default function LessonsCard({
   };
 
   const handleViewFiles = () => {
-    // TODO criar pagina de visualização de arquivos
+    (navigation as any).navigate('LessonFiles', { postId: id, title });
   };
 
   return (

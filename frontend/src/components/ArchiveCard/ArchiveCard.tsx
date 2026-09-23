@@ -48,7 +48,7 @@ const getFileTypeIcon = (mimeType?: string) => {
 
 // Função para renderizar prévia do arquivo
 const renderFilePreview = (mimeType?: string, uri?: string) => {
-  if (mimeType?.startsWith('image/') && uri) {
+  if (mimeType?.startsWith('image/') && !mimeType.includes('svg') && uri) {
     return <FilePreviewImage source={{ uri: `data:${mimeType};base64,${uri}` }} />;
   }
   const icon = getFileTypeIcon(mimeType);
