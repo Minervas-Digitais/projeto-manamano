@@ -16,6 +16,17 @@ export const ArchivesCardContainer = styled.View`
   flex-direction: row;
 `;
 
+export const NamePart = styled.View`
+  width: ${width * 0.88}px;
+  margin-left: ${width * 0.0581}px;
+`;
+
+export const MiddlePart = styled.View`
+  width: ${width * 0.88}px;
+  margin-left: ${width * 0.0581}px;
+  flex-direction: row;
+`;
+
 export const NewLessonContainer = styled.View`
   margin-top: ${height * 0.03}px;
   flex: 1;

@@ -28,8 +28,16 @@ export default function HeaderCustom({
       ) : (
         <BackButton />
       )}
-      <TouchableOpacity onPress={onPressTitle}>
-        <HeaderText font={font} {...(testID ? { testID } : {})}>
+      <TouchableOpacity
+        onPress={onPressTitle}
+        style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}
+        activeOpacity={0.7}>
+        <HeaderText
+          font={font}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          adjustsFontSizeToFit
+          {...(testID ? { testID } : {})}>
           {text}
         </HeaderText>
       </TouchableOpacity>

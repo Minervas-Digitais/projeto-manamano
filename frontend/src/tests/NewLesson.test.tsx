@@ -1,3 +1,4 @@
+/* eslint-disable global-require */
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -38,6 +39,7 @@ jest.mock('expo-modules-core', () => ({
 jest.mock('expo-document-picker', () => ({
   getDocumentAsync: jest.fn(() =>
     Promise.resolve({
+      canceled: false,
       type: 'success',
       assets: [
         {
@@ -46,7 +48,7 @@ jest.mock('expo-document-picker', () => ({
           mimeType: 'image/png',
         },
       ],
-    }),
+    } as any),
   ),
 }));
 
@@ -61,6 +63,20 @@ jest.mock('../../assets/calendar-icon.svg', () => {
   return () => null;
 });
 
+jest.mock('../context/SideMenuContext', () => ({
+  useSideMenu: () => ({
+    isOpen: false,
+    closeMenu: jest.fn(),
+    openMenu: jest.fn(),
+    toggleMenu: jest.fn(),
+  }),
+  SideMenuProvider: ({ children }: any) => children,
+}));
+
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: 'fake-user-id' }),
+}));
+
 // Mock do react-navigation
 
 const mockNavigate = jest.fn();
@@ -68,9 +84,11 @@ const mockGoBack = jest.fn();
 
 jest.mock('@react-navigation/native', () => {
   const actualNav = jest.requireActual('@react-navigation/native');
+  const mockUseRoute = jest.fn(() => ({ params: { groupId: '123' } as any }));
+  (global as any).mockUseRoute = mockUseRoute;
   return {
     ...actualNav,
-    useRoute: () => ({ params: { groupId: '123' } }),
+    useRoute: (...args: any) => (global as any).mockUseRoute(...args),
     useNavigation: () => ({
       navigate: mockNavigate,
       goBack: mockGoBack,
@@ -92,7 +110,11 @@ jest.mock('../services/secureStorage', () => ({
 // Mock api
 jest.mock('../services/api', () => {
   const post = jest.fn((url, data) => {
-    return Promise.resolve({ data: { success: true } });
+    return Promise.resolve({ data: { id: 'new-id', success: true } });
+  });
+
+  const patch = jest.fn((url, data) => {
+    return Promise.resolve({ data: { id: 'patched-id', success: true } });
   });
 
   const get = jest.fn((url) => {
@@ -106,7 +128,9 @@ jest.mock('../services/api', () => {
     __esModule: true,
     default: {
       post,
+      patch,
       get,
+      delete: jest.fn(() => Promise.resolve({ data: {} })),
     },
   };
 });
@@ -146,7 +170,12 @@ describe('NewLesson', () => {
     // ignora os erros do act e causados pelo proprio teste
     jest.spyOn(console, 'error').mockImplementation((msg) => {
       if (typeof msg === 'string') {
-        if (msg.includes('An update to') || msg.includes('inside a test was not wrapped in act')) {
+        if (
+          msg.includes('An update to') ||
+          msg.includes('inside a test was not wrapped in act') ||
+          msg.includes('GO_BACK') ||
+          msg.includes('was not handled')
+        ) {
           return;
         }
       }
@@ -157,6 +186,19 @@ describe('NewLesson', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // limpa filas de mockImplementationOnce que clearAllMocks não limpa
+    jest.mocked(api.get).mockReset();
+    jest.mocked(api.post).mockReset();
+    jest.mocked(api.patch).mockReset();
+    (global as any).mockUseRoute.mockReturnValue({ params: { groupId: '123' } as any });
+    jest.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/category/group/123') {
+        return Promise.resolve({ data: [{ id: '1', name: 'Aulas' }] });
+      }
+      return Promise.resolve({ data: [] });
+    });
+    jest.mocked(api.post).mockResolvedValue({ data: { id: 'new-id', success: true } } as any);
+    jest.mocked(api.patch).mockResolvedValue({ data: { id: 'patched-id', success: true } } as any);
   });
 
   it('renderiza corretamente o componente com os campos principais', async () => {
@@ -188,8 +230,9 @@ describe('NewLesson', () => {
     jest.mocked(FileSystem.readAsStringAsync).mockResolvedValueOnce('base64-mockado');
 
     jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValue({
+      canceled: false,
       assets: [{ name: 'arquivo.pdf', uri: 'file://arquivo.pdf', mimeType: 'application/pdf' }],
-    });
+    } as any);
 
     const { getByTestId, findByTestId } = renderWithNavigation();
 
@@ -203,7 +246,7 @@ describe('NewLesson', () => {
     const { getByTestId, findByTestId } = renderWithNavigation();
 
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/category/group/123', expect.anything());
+      expect(api.get).toHaveBeenCalledWith('/category/group/123');
     });
 
     fireEvent.changeText(getByTestId('input-title'), 'Aula Teste');
@@ -258,7 +301,9 @@ describe('NewLesson', () => {
   });
 
   it('mostra erro ao não selecionar nenhum arquivo', async () => {
-    jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValueOnce({ assets: [] });
+    jest
+      .mocked(DocumentPicker.getDocumentAsync)
+      .mockResolvedValueOnce({ canceled: false, assets: [] } as any);
 
     const { getByTestId } = renderWithNavigation();
 
@@ -327,7 +372,7 @@ describe('NewLesson', () => {
 
   it('exibe erro quando a API falha ao enviar dados da aulaa', async () => {
     jest.mocked(api.get).mockResolvedValueOnce({
-      data: [{ id: '1', name: 'Outros' }],
+      data: [{ id: '1', name: 'Aulas' }],
     });
     jest.mocked(api.post).mockRejectedValueOnce(new Error('Erro na API'));
 
@@ -349,10 +394,6 @@ describe('NewLesson', () => {
 
   it('exibe erro quando ocorre exceção ao criar aula após obter categoria', async () => {
     jest.mocked(api.get).mockResolvedValueOnce({
-      data: [{ id: '1', name: 'Outros' }],
-    });
-
-    jest.mocked(api.get).mockResolvedValueOnce({
       data: [{ id: '1', name: 'Aulas' }],
     });
 
@@ -363,7 +404,7 @@ describe('NewLesson', () => {
     const { getByTestId } = renderWithNavigation();
 
     await waitFor(() => {
-      expect(jest.mocked(api.get)).toHaveBeenCalledWith(`/category/group/123`, expect.anything());
+      expect(jest.mocked(api.get)).toHaveBeenCalledWith(`/category/group/123`);
     });
 
     fireEvent.changeText(getByTestId('input-title'), 'Título Teste');
@@ -386,10 +427,6 @@ describe('NewLesson', () => {
   });
 
   it('mostra erro se falhar ao buscar categorias', async () => {
-    jest.mocked(api.get).mockResolvedValueOnce({
-      data: [{ id: '1', name: 'Outros' }],
-    });
-
     jest.mocked(api.get).mockImplementation((url: string) => {
       if (url === '/category/group/123') {
         return Promise.reject(new Error('Erro ao buscar categorias'));
@@ -413,5 +450,65 @@ describe('NewLesson', () => {
         }),
       );
     });
+  });
+
+  it('permite enviar sem aula gravada (vod opcional)', async () => {
+    const { getByTestId } = renderWithNavigation();
+
+    await waitFor(() => {
+      expect(api.get).toHaveBeenCalledWith('/category/group/123');
+    });
+    await new Promise((r) => {
+      setTimeout(r, 100);
+    });
+
+    fireEvent.changeText(getByTestId('input-title'), 'Aula sem VOD');
+    fireEvent.changeText(getByTestId('input-date'), '31/12/2099');
+    fireEvent.changeText(getByTestId('input-hour'), '23:59');
+    fireEvent.changeText(getByTestId('input-link'), 'https://live.com/aula');
+    fireEvent.changeText(getByTestId('input-vod'), '');
+    fireEvent.changeText(getByTestId('input-description'), 'Descrição sem vod');
+
+    fireEvent.press(getByTestId('btn-publish'));
+
+    await waitFor(
+      () => {
+        expect(api.post).toHaveBeenCalled();
+        expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
+      },
+      { timeout: 3000 },
+    );
+    const postArgs = (api.post as jest.Mock).mock.calls[0]?.[1] as any;
+    expect(postArgs?.urlRecorded).toBeFalsy();
+  });
+
+  it('sempre renderiza Publicação como create-only mesmo com editData na rota', async () => {
+    (global as any).mockUseRoute.mockReturnValue({
+      params: {
+        groupId: '123',
+        editData: {
+          id: 'lesson-1',
+          title: 'Aula Edit',
+          date: new Date('2099-12-31T10:00:00.000Z').toISOString(),
+          urlLive: 'https://live.com/edit',
+          urlVOD: 'https://vod.com/edit',
+          input: 'Descricao editada',
+        },
+      } as any,
+    } as any);
+
+    const { getByText, queryByText } = renderWithNavigation();
+
+    await waitFor(() => {
+      expect(getByText('Publicação')).toBeTruthy();
+    });
+    expect(queryByText('Salvar')).toBeNull();
+    expect(queryByText('Editar aula')).toBeNull();
+  });
+
+  it('label de aula gravada indica opcional', async () => {
+    const { getByTestId, getByText } = renderWithNavigation();
+    await waitFor(() => expect(getByTestId('input-vod')).toBeTruthy());
+    expect(getByText('Aula gravada (opcional)')).toBeTruthy();
   });
 });
