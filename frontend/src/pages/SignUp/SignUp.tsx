@@ -5,6 +5,7 @@ import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Text, View, StyleSheet, StatusBar, Alert as RNAlert } from 'react-native';
 import { isAxiosError } from 'axios';
+import Toast from 'react-native-toast-message';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { SignUpContainer, SignUpInputContainer, SignUpForm } from './SignUpStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
@@ -24,8 +25,6 @@ interface SignUpFormData {
 }
 
 export default function SignUp({ navigation }: any) {
-  const showAlert = (message: string) => RNAlert.alert(message);
-
   function cleanPhoneNumber(num: string): string {
     return num.replace(/\D/g, '');
   }
@@ -41,15 +40,27 @@ export default function SignUp({ navigation }: any) {
 
     try {
       await api.post('/user', updatedData);
-      showAlert('Cadastro realizado!');
+      Toast.show({
+        type: 'success',
+        text1: 'Cadastro realizado',
+        text2: 'Seu cadastro foi realizado com sucesso!',
+      });
       navigation.navigate('SignIn');
     } catch (error: unknown) {
       if (isAxiosError(error) && error.response?.status === 409) {
-        showAlert('E-mail ou celular já está associado a outra conta!');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro no cadastro',
+          text2: 'E-mail ou celular já está associado a outra conta!',
+        });
         return;
       }
 
-      showAlert('Erro ao criar usuário.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro no cadastro',
+        text2: 'Não foi possível criar o usuário.',
+      });
     }
   };
 

@@ -169,7 +169,6 @@ export default function EditProfile() {
         });
       }
     } catch (error) {
-      console.error('Erro ao selecionar ou enviar imagem: ', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao enviar imagem.',
@@ -241,7 +240,11 @@ export default function EditProfile() {
           setValue('expertise', profileInfo.expertise);
           setValue('neighborhood', profileInfo.neighborhood);
         } catch (error) {
-          console.error('Erro ao buscar os dados do usuário:', error);
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Erro ao buscar os dados do usuário.',
+          });
         }
       }
     };

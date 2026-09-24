@@ -1,9 +1,9 @@
-/* eslint-disable no-console */
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
+import Toast from 'react-native-toast-message';
 import {
   DeleteConfirmationButton,
   DeleteConfirmationButtonContainer,
@@ -31,7 +31,13 @@ export default function DeleteConfirmation({ text }: any) {
         localStorage.delete('displayNotif');
         setShouldDisplay(undefined);
       })
-      .catch((err) => console.log('Erro ao deletar a notificação:', err));
+      .catch(() => {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao excluir a notificação',
+          text2: 'Não foi possível excluir a notificação. Tente novamente.',
+        });
+      });
   };
 
   if (!fontsLoaded) return null;

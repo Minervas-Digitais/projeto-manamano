@@ -1,9 +1,9 @@
-/* eslint-disable no-console */
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
+import Toast from 'react-native-toast-message';
 import {
   DeleteConfirmationButton,
   DeleteConfirmationButtonContainer,
@@ -29,7 +29,10 @@ export default function DeleteConfirmation({ text, display }: any) {
 
   const optionsDelete = async () => {
     if (!loggedId) {
-      console.log('Erro ao deletar todas as notificações: token ausente');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao deletar todas as notificações: token ausente'
+      });
       return;
     }
 
@@ -38,12 +41,16 @@ export default function DeleteConfirmation({ text, display }: any) {
       localStorage.delete('displayNotif');
       localStorage.delete('header');
       setShouldDisplay(false);
-      console.log('Todas as notificações foram excluídas.');
+      Toast.show({
+        type: 'success',
+        text1: 'Notificações excluídas',
+        text2: 'Todas as notificações foram excluídas com sucesso.',
+      });
     } catch (err) {
-      console.log('Erro ao deletar todas as notificações:', {
-        status: (err as any)?.response?.status,
-        url: (err as any)?.config?.url,
-        responseData: (err as any)?.response?.data,
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao excluir notificações',
+        text2: 'Não foi possível excluir todas as notificações. Tente novamente.',
       });
     }
   };

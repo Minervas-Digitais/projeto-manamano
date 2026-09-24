@@ -19,6 +19,7 @@ import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/Delete
 import NoNotification from '../../assets/no-notification-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import { Toast } from 'react-native-toast-message/lib/src/Toast';
 
 export interface IUser {
   id: string;
@@ -80,7 +81,11 @@ export default function Notification({ navigation }: any) {
             setAdmin(false);
           }
         } catch (error) {
-          console.error('Erro ao buscar informações do usuário:', error);
+          Toast.show({
+            type: 'error',
+            text1: 'Erro ao buscar informações do usuário',
+            text2: 'Não foi possível carregar as informações do usuário.',
+          });
         }
       }
     };
@@ -129,13 +134,17 @@ export default function Notification({ navigation }: any) {
     try {
       await api.delete(`/notifications/${deleteModal.notifId}`);
       setNotification((prev) => prev.filter((n: any) => n.id !== deleteModal.notifId));
-      Alert.alert('Sucesso', 'Notificação excluída com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Notificação excluída',
+        text2: 'A notificação foi excluída com sucesso.',
+      });
     } catch (error: any) {
-      Alert.alert(
-        'Erro',
-        error?.response?.data?.message || 'Não foi possível excluir a notificação.',
-      );
-      console.error('Erro ao excluir notificação:', error);
+      Toast.show({
+        type: 'warning',
+        text1: 'Erro ao excluir notificação',
+        text2: error?.response?.data?.message || 'Não foi possível excluir a notificação.',
+      });
     }
     setDeleteModal({ visible: false, notifId: '' });
   };

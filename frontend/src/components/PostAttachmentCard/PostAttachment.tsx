@@ -27,7 +27,6 @@ export default function PostAttachment({ archive, text, file }: any) {
   }
   const saveFile = async () => {
     if (!file || (!file.contentBase64 && !file.uri) || !file.name || !file.mimeType) {
-      console.error('Arquivo inválido para download', file);
       Toast.show({ type: 'error', text1: 'Erro', text2: 'Arquivo inválido para download' });
       return;
     }
@@ -58,7 +57,11 @@ export default function PostAttachment({ archive, text, file }: any) {
             encoding: FileSystem.EncodingType.Base64,
           });
         } catch (e) {
-          console.warn('Não foi possível ler uri original; prosseguindo sem copiar:', e);
+          Toast.show({
+            type: 'warning',
+            text1: 'Erro ao salvar arquivo',
+            text2: 'Não foi possível ler o uri original; prosseguindo sem copiar.',
+          });
         }
       }
 
@@ -137,7 +140,6 @@ export default function PostAttachment({ archive, text, file }: any) {
           });
           return;
         } catch (e) {
-          console.error('Erro ao criar/escrever arquivo via SAF:', e);
           Toast.show({
             type: 'error',
             text1: 'Erro',
