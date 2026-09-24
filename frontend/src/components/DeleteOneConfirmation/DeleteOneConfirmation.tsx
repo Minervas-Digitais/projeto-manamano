@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React from 'react';

@@ -34,6 +34,7 @@ import MenuIcon from '../../assets/menu-white-icon.svg';
 import LupaIcon from '../../assets/lupa-white-icon.svg';
 import { useAuth } from '../../context/auth/useAuth';
 import { useSideMenu } from '../../context/SideMenuContext';
+import { Toast } from 'react-native-toast-message/lib/src/Toast';
 
 export const storageHome = new MMKV();
 
@@ -156,10 +157,18 @@ export default function Home({ navigation }: any) {
             setHasMore(endIndex < allPosts.length);
             setPage(pageNumber);
           } catch (fallbackError) {
-            console.error('Erro ao carregar posts (fallback):', fallbackError);
+            Toast.show({
+              type: 'error',
+              text1: 'Erro inesperado',
+              text2: 'Não foi possível carregar os posts.',
+            });
           }
         } else {
-          console.error('Erro ao carregar posts:', error);
+          Toast.show({
+            type: 'error',
+            text1: 'Erro inesperado',
+            text2: 'Não foi possível carregar os posts.',
+          });
         }
       } finally {
         setLoading(false);

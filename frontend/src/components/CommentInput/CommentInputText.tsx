@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable } from 'react-native';
 import { Buffer } from 'buffer';
+import Toast from 'react-native-toast-message';
 import {
   CommentInputText,
   CommentInputTextFocused,
@@ -44,7 +45,11 @@ export default function CommentInputTextCustom({
         const imageUri = `data:image/jpeg;base64,${imageBase64}`;
         setProfileImage({ uri: imageUri });
       } catch (error) {
-        console.error('Erro ao carregar imagem de perfil do input:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao carregar imagem de perfil do input',
+          text2: 'Não foi possível carregar a imagem de perfil. Tente novamente.',
+        });
         setProfileImage(defaultAvatar);
       }
     };

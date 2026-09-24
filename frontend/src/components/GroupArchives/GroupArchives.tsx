@@ -1,11 +1,11 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
+import Toast from 'react-native-toast-message';
 import { TouchableOpacity, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
-import Toast from 'react-native-toast-message';
 
 import {
   ArchiveButtonContainer,
@@ -122,7 +122,11 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
             encoding: FileSystem.EncodingType.Base64,
           });
         } catch (e) {
-          console.warn('Não foi possível ler uri original; prosseguindo sem copiar:', e);
+          Toast.show({
+            type: 'warning',
+            text1: 'Erro ao salvar arquivo',
+            text2: 'Não foi possível ler o arquivo original para salvar.',
+          });
         }
       }
 

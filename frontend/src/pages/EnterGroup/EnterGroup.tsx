@@ -19,7 +19,11 @@ export default function EnterGroup({ navigation }: any) {
   } = useForm({});
   const onSubmit = async (data: any) => {
     if (!loggedId) {
-      console.error('Token do usuário não encontrado.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Token do usuário não encontrado. Faça login novamente.',
+      });
       return;
     }
 
@@ -28,9 +32,8 @@ export default function EnterGroup({ navigation }: any) {
         inviteCode: data.inviteCode,
       };
 
-      const resp = await api.post('/participant', participantData);
+      await api.post('/participant', participantData);
 
-      console.log('Participante adicionado com sucesso:', resp.data);
       Toast.show({
         type: 'success',
         text1: 'Sucesso',
@@ -38,7 +41,6 @@ export default function EnterGroup({ navigation }: any) {
       });
       navigation.navigate('Groups');
     } catch (error: any) {
-      console.error('Erro ao entrar no grupo:', error);
       if (error?.response?.status === 404) {
         Toast.show({
           type: 'error',

@@ -40,7 +40,6 @@ export default function ChangePassword() {
       });
       navigation.navigate('Config');
     } catch (error) {
-      console.error('Erro ao mudar senha:', error);
       Toast.show({
         type: 'error',
         text1: 'Erro',

@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Toast from 'react-native-toast-message';
 import { useEffect, useRef } from 'react';
 import { Subscription } from 'expo-media-library';
 import { Alert } from 'react-native';
@@ -25,7 +26,11 @@ export function useNotifications() {
 
 export async function registerForPushNotificationsAsync() {
   if (!Device.isDevice) {
-    Alert.alert('Você precisa usar um dispositivo físico para receber notificações');
+    Toast.show({
+      type: 'warning',
+      text1: 'Erro ao receber notificações',
+      text2: 'Você precisa usar um dispositivo físico para receber notificações.',
+    });
     return null;
   }
 
@@ -38,7 +43,11 @@ export async function registerForPushNotificationsAsync() {
   }
 
   if (finalStatus !== 'granted') {
-    Alert.alert('Permissão para notificações não foi concedida');
+    Toast.show({
+      type: 'warning',
+      text1: 'Erro de permissão',
+      text2: 'Permissão não concedida para notificações.',
+    });
     return null;
   }
 

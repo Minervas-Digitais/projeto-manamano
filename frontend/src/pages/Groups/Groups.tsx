@@ -11,6 +11,7 @@ import Add from '../../assets/add-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import { Toast } from 'react-native-toast-message/lib/src/Toast';
 
 export default function Groups() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Use navigation instance
@@ -46,7 +47,11 @@ export default function Groups() {
             const { data: fetchedUserData } = await api.get(`/user/${loggedId}`);
             setUserData(fetchedUserData);
           } catch (error) {
-            console.error('Error fetching user data:', error);
+            Toast.show({
+              type: 'error',
+              text1: 'Erro inesperado',
+              text2: 'Não foi possível carregar as informações do usuário.',
+            });
           }
         }
       };

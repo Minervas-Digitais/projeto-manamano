@@ -4,6 +4,7 @@ import { TouchableOpacity, View, Text, ScrollView, Dimensions, Alert } from 'rea
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Buffer } from 'buffer';
+import Toast from 'react-native-toast-message';
 import {
   Avatar,
   Card,
@@ -110,7 +111,11 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   // Função para buscar dados do servidor
   const fetchSearch = useCallback(async (): Promise<void> => {
     if (!loggedId) {
-      console.error('No user logged in.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Nenhum usuário logado.',
+      });
       return;
     }
 
@@ -124,14 +129,22 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
         posts: json.posts ?? [],
       });
     } catch (error) {
-      console.error('Error fetching data:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível buscar os dados.',
+      });
     }
   }, [loggedId, searchText]);
 
   const fetchFiltered = useCallback(
     async (section: keyof DataState, pageNumber: number): Promise<void> => {
       if (!loggedId) {
-        console.error('No user logged in.');
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Nenhum usuário logado.',
+        });
         return;
       }
 
@@ -153,7 +166,11 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
         setPage(meta.page);
         setHasMore(meta.page < meta.lastPage);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Não foi possível buscar os dados filtrados.',
+        });
       }
     },
     [loggedId, searchText],
@@ -170,15 +187,22 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
     try {
       await api.delete(`/user/${userId}`);
 
-      Alert.alert('Sucesso', 'Usuário deletado com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso',
+        text2: 'Usuário deletado com sucesso!',
+      });
 
       setData((prevData) => ({
         ...prevData,
         users: prevData.users.filter((user) => user.id !== userId),
       }));
     } catch (error: any) {
-      console.error('Erro ao deletar usuário:', error);
-      Alert.alert('Erro', error?.response?.data?.message || 'Não foi possível deletar o usuário.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: error?.response?.data?.message || 'Não foi possível deletar o usuário.',
+      });
     }
   };
   // Delete group
@@ -186,15 +210,22 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
     try {
       await api.delete(`/group/${groupId}`);
 
-      Alert.alert('Sucesso', 'Grupo deletado com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso',
+        text2: 'Grupo deletado com sucesso!',
+      });
 
       setData((prevData) => ({
         ...prevData,
         groups: prevData.groups.filter((group) => group.id !== groupId),
       }));
     } catch (error: any) {
-      console.error('Erro ao deletar grupo:', error);
-      Alert.alert('Erro', error?.response?.data?.message || 'Não foi possível deletar o grupo.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: error?.response?.data?.message || 'Não foi possível deletar o grupo.',
+      });
     }
   };
   // Delete post
@@ -202,18 +233,22 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
     try {
       await api.delete(`/post/${postId}`);
 
-      Alert.alert('Sucesso', 'Publicação deletada com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso',
+        text2: 'Publicação deletada com sucesso!',
+      });
 
       setData((prevData) => ({
         ...prevData,
         posts: prevData.posts.filter((post) => post.id !== postId),
       }));
     } catch (error: any) {
-      console.error('Erro ao deletar publicação:', error);
-      Alert.alert(
-        'Erro',
-        error?.response?.data?.message || 'Não foi possível deletar a publicação.',
-      );
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: error?.response?.data?.message || 'Não foi possível deletar a publicação.',
+      });
     }
   };
   useEffect(() => {
@@ -230,7 +265,11 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
 
   const fetchUserName = async (userId: string): Promise<string> => {
     if (!loggedId) {
-      console.error('No user logged in.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Nenhum usuário logado.',
+      });
       return 'Nome não encontrado';
     }
 
@@ -241,14 +280,22 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
       const fullName = user.fullName.split(' ');
       return `${fullName[0]} ${fullName[1] || ''}`;
     } catch (error) {
-      console.error('Error fetching user name:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível buscar o nome do usuário.',
+      });
       return 'Nome não encontrado';
     }
   };
 
   const fetchNumComments = async (postId: string): Promise<number> => {
     if (!loggedId) {
-      console.error('No user logged in.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Nenhum usuário logado.',
+      });
       return 0;
     }
 
@@ -258,7 +305,11 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
       const postDetails = response.data;
       return postDetails.Comment ? postDetails.Comment.length : 0;
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível buscar os comentários.',
+      });
       return 0;
     }
   };

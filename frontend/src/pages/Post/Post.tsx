@@ -82,8 +82,12 @@ export default function Post() {
       api
         .get(`/user/${loggedId}`)
         .then((res) => setUserName(res.data.fullName))
-        .catch((err) => {
-          console.error('Erro ao buscar nome do usuário logado:', err);
+        .catch(() => {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro inesperado',
+            text2: 'Não foi possível carregar o nome do usuário logado.',
+          });
           setUserName('Usuário');
         });
     };
@@ -99,7 +103,6 @@ export default function Post() {
         setRecipientId(response.data.userId);
         setIdGroup(response.data.groupId);
       } catch (error) {
-        console.error('Erro ao buscar publicação', error);
         Toast.show({
           type: 'error',
           text1: 'Erro ao buscar publicação. Tente novamente mais tarde.',
@@ -121,7 +124,11 @@ export default function Post() {
         const image = await getUserProfileImage(userData.id);
         setPostUserImage(image);
       } catch (error) {
-        console.error('Erro ao buscar usuário ou imagem do post:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro inesperado',
+          text2: 'Não foi possível carregar o usuário ou a imagem do post.',
+        });
         setPostUserImage(defaultAvatar);
       }
     };
@@ -136,7 +143,6 @@ export default function Post() {
         const response = await api.get(`archives/post/${postId}`);
         setPostArchives(response.data);
       } catch (error) {
-        console.error('Erro ao buscar arquivos do post', error);
         Toast.show({
           type: 'error',
           text1: 'Erro ao buscar arquivos da publicação. Tente novamente mais tarde.',
@@ -163,7 +169,6 @@ export default function Post() {
         }, {});
         setCommentUsers(usersMap);
       } catch (error) {
-        console.error('Erro ao buscar usuários dos comentários', error);
         Toast.show({
           type: 'error',
           text1: 'Erro ao buscar usuários dos comentários. Tente novamente mais tarde.',
@@ -191,7 +196,11 @@ export default function Post() {
       const imageUri = `data:image/jpeg;base64,${imageStr}`;
       return { uri: imageUri };
     } catch (error) {
-      console.error('Erro ao buscar imagem de perfil:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro inesperado',
+        text2: 'Não foi possível carregar a imagem de perfil do usuário.',
+      });
       return defaultAvatar;
     }
   };
@@ -229,7 +238,6 @@ export default function Post() {
         navigation.replace('Post', { postId });
       }, 500);
     } catch (error) {
-      console.error('Erro ao enviar comentário:', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao enviar comentário. Tente novamente mais tarde.',
@@ -261,7 +269,11 @@ export default function Post() {
         message: `Confira este post: ${deepLink}`,
       });
     } catch (error) {
-      console.error('Erro ao compartilhar:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro inesperado',
+        text2: 'Não foi possível compartilhar o post.',
+      });
     }
   };
 

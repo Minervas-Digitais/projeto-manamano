@@ -113,7 +113,11 @@ export default function GroupPage({ navigation }: any) {
           setPage(currentPage);
         }
       } catch (error) {
-        console.error('Error fetching posts:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Não foi possível carregar os posts. Tente novamente mais tarde.',
+        });
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -133,7 +137,11 @@ export default function GroupPage({ navigation }: any) {
       const list = Array.isArray(data) ? data : [];
       setSavedPosts(list.map((post: any) => post.id));
     } catch (err) {
-      console.error('Erro ao buscar posts salvos:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível buscar os posts salvos. Tente novamnete mais tarde.',
+      });
     }
   }, [loggedId]);
 
@@ -165,7 +173,11 @@ export default function GroupPage({ navigation }: any) {
 
   const getGroupCategory = useCallback(async () => {
     if (!loggedId || !groupId) {
-      console.error('Access token or Group ID is missing.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível carregar as categorias do grupo.',
+      });
       return;
     }
     try {
@@ -173,13 +185,21 @@ export default function GroupPage({ navigation }: any) {
       const filteredData = response.data.filter((category: any) => category.name !== 'Aulas');
       setCategories(filteredData);
     } catch (error) {
-      console.error('Error fetching group categories:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível carregar as categorias do grupo.',
+      });
     }
   }, [groupId, loggedId]);
 
   const getGroupArchives = useCallback(async () => {
     if (!loggedId || !groupId) {
-      console.error('Access token or Group ID is missing.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível carregar os arquivos do grupo.',
+      });
       return;
     }
     try {
@@ -187,10 +207,18 @@ export default function GroupPage({ navigation }: any) {
       setArchives(response.data);
     } catch (error: any) {
       if (error.response?.status === 404) {
-        console.log('No archives found or endpoint not available for group:', groupId);
+        Toast.show({
+          type: 'warning',
+          text1: 'Nenhum arquivo encontrado',
+          text2: 'Não há arquivos disponíveis para este grupo.',
+        });
         setArchives([]);
       } else {
-        console.error('Error fetching group archives:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao buscar arquivos',
+          text2: 'Não foi possível buscar os arquivos do grupo. Tente novamente mais tarde.',
+        });
         setArchives([]);
       }
     }
@@ -216,7 +244,11 @@ export default function GroupPage({ navigation }: any) {
 
   const getUserRoleInGroup = useCallback(async () => {
     if (!groupId || !loggedId) {
-      console.error('Access token, Group ID or User ID is missing.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível carregar o role do usuário.',
+      });
       return;
     }
     try {
@@ -227,13 +259,24 @@ export default function GroupPage({ navigation }: any) {
       if (error && typeof error === 'object' && (error as AxiosError).isAxiosError) {
         const axiosError = error as AxiosError;
         if (axiosError.response?.status === 404) {
-          console.log('Usuário não é participante do grupo');
+          Toast.show({
+            type: 'warning',
+            text1: 'Usuário não é participante do grupo',
+          });
         } else {
-          console.error('Erro ao buscar role do usuário:', axiosError.message);
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Não foi possível carregar o role do usuário.',
+          });
           setUserRole('MEMBER');
         }
       } else {
-        console.error('Unexpected error fetching user role:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro inesperado',
+          text2: 'Não foi possível carregar o role do usuário.',
+        });
       }
 
       setUserRole('MEMBER'); // Default para membro
@@ -307,7 +350,11 @@ export default function GroupPage({ navigation }: any) {
 
       getGroupPosts(1, true);
     } catch (error) {
-      console.error('Erro ao fixar/desfixar post:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao fixar/desfixar post',
+        text2: 'Não foi possível fixar/desfixar o post.',
+      });
     }
   };
 

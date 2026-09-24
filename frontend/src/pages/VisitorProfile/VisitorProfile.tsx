@@ -71,7 +71,11 @@ export default function VisitorProfile({ navigation }: any) {
         message: `Confira este perfil: ${deepLink}`,
       });
     } catch (error) {
-      console.error('Erro ao compartilhar perfil:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro inesperado',
+        text2: 'Não foi possível compartilhar o perfil.',
+      });
     }
   };
 
@@ -101,11 +105,19 @@ export default function VisitorProfile({ navigation }: any) {
           const imageUri = `data:image/jpeg;base64,${imageStr}`;
           setProfileImage({ uri: imageUri });
         } catch (error) {
-          console.error('Erro ao buscar imagem de perfil:', error);
+          Toast.show({
+            type: 'error',
+            text1: 'Erro inesperado',
+            text2: 'Não foi possível carregar a imagem de perfil do usuário.',
+          });
           setProfileImage(defaultAvatar);
         }
       } catch (error) {
-        console.error('Failed to fetch visitor profile data:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro inesperado',
+          text2: 'Não foi possível carregar as informações do perfil do usuário.',
+        });
       } finally {
         setLoading(false);
       }
@@ -125,7 +137,11 @@ export default function VisitorProfile({ navigation }: any) {
       setHasMore(meta.page < meta.lastPage);
       setPage(meta.page);
     } catch (e) {
-      console.error('Erro ao carregar mais posts:', e);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro inesperado',
+        text2: 'Não foi possível carregar mais publicações.',
+      });
     } finally {
       setLoadingMore(false);
     }

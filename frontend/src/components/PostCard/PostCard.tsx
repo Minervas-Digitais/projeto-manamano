@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { Share, TouchableOpacity, View } from 'react-native';
 import { ptBR } from 'date-fns/locale';
 import { format, isValid } from 'date-fns';
+import Toast from 'react-native-toast-message';
 import {
   PostCardContainer,
   PostCardIcons,
@@ -48,7 +49,11 @@ export default function PostCard({
         message: `Confira este post: ${deepLink}`,
       });
     } catch (error) {
-      console.error('Erro ao compartilhar:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao compartilhar',
+        text2: 'Não foi possível compartilhar o post.',
+      })
     }
   };
 

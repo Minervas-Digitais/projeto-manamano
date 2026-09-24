@@ -37,16 +37,23 @@ export default function SignIn({ navigation }: any) {
           try {
             await api.post('/notifications/register-token', { pushNotifToken: pushToken });
           } catch (error) {
-            console.error('Erro ao enviar push token para o backend:', error);
+            Toast.show({
+              type: 'error',
+              text1: 'Erro inesperado',
+              text2: 'Não foi possível enviar push token para o backend.',
+            });
           }
         }
       } catch (error) {
-        console.error('Erro ao registrar notificações push:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro inesperado',
+          text2: 'Não foi possível registrar notificações push.',
+        });
       }
 
       navigation.navigate('Home');
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao entrar',

@@ -2,6 +2,7 @@
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, View } from 'react-native';
 import React from 'react';
+import Toast from 'react-native-toast-message';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
@@ -26,10 +27,17 @@ export default function GetInTouch() {
         subject: data.subject,
         text: data.getintouch,
       });
-      Alert.alert('Mensagem enviada com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Mensagem enviada',
+        text2: 'Sua mensagem foi enviada com sucesso!',
+      });
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-      Alert.alert('Erro ao enviar mensagem. Tente novamente mais tarde.');
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível enviar a mensagem. Tente novamente mais tarde.',
+      });
     }
   };
 

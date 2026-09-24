@@ -50,7 +50,13 @@ export default function ModalOptionsNotification({
       api
         .patch('notifications/user/')
         .then((res) => console.log(JSON.stringify(res.data)))
-        .catch((err) => console.log('Erro ao atualizar as notificações:', err));
+        .catch(() => {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro ao atualizar as notificações',
+            text2: 'Não foi possível marcar todas as notificações como lidas. Tente novamente.',
+          });
+        });
     } else if (type === 'header' && admin) {
       navigation.navigate('GlobalNotification', { id });
       setDisplayConfirm(false);
@@ -61,7 +67,13 @@ export default function ModalOptionsNotification({
       api
         .patch(`notifications/${id}`)
         .then((res) => console.log(JSON.stringify(res.data)))
-        .catch((err) => console.log('Erro ao atualizar a notificação:', err));
+        .catch(() => {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro ao atualizar notificação',
+            text2: 'Não foi possível atualizar a notificação. Tente novamente.',
+          });
+        });
       setDisplayConfirm(false);
     }
   };
@@ -84,8 +96,7 @@ export default function ModalOptionsNotification({
             text1: 'Notificação excluída com sucesso!',
           });
         })
-        .catch((err) => {
-          console.error('Erro ao deletar notificação:', err);
+        .catch(() => {
           Toast.show({
             type: 'error',
             text1: 'Erro ao excluir notificação.',
