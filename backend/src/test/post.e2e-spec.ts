@@ -9,6 +9,7 @@ import { PostModule } from 'src/post/post.module';
 import { SavedPostModule } from 'src/saved-post/saved-post.module';
 import { CreatePostDto } from 'src/post/dto/create-post.dto';
 import { POST_MESSAGES } from 'src/messages/post.messages';
+import { CATEGORY_MESSAGES } from 'src/messages/category.messages';
 import { BASE_MESSAGES } from 'src/messages/base.messages';
 import {
   createCategory,
@@ -162,6 +163,56 @@ describe('Posts', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe('Unauthorized');
+    });
+
+    it('deve retornar 404 se a categoria não existir', async () => {
+      const postDto = makePostDto({
+        groupId: group.id,
+        categoryId: '00000000-0000-4000-a000-000000000000',
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/post')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(postDto);
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe(CATEGORY_MESSAGES.NOT_FOUND);
+    });
+
+    it('deve retornar 400 se a categoria pertencer a outro grupo', async () => {
+      const otherGroup = await createGroup(prismaService, { name: 'Other Group' });
+      const otherCategory = await createCategory(prismaService, {
+        name: 'Other Category',
+        groupId: otherGroup.id,
+      });
+
+      const postDto = makePostDto({
+        groupId: group.id,
+        categoryId: otherCategory.id,
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/post')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(postDto);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe(CATEGORY_MESSAGES.NOT_FOUND);
+    });
+
+    it('deve retornar 404 se o grupo não existir', async () => {
+      const postDto = makePostDto({
+        groupId: '00000000-0000-4000-a000-000000000000',
+        categoryId: category.id,
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/post')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(postDto);
+
+      expect(response.status).toBe(404);
     });
   });
 

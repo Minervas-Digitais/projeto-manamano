@@ -63,7 +63,6 @@ export default function GroupPage({ navigation }: any) {
   const [posts, setPosts] = useState<any[]>([]);
   const [archives, setArchives] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string>('');
-  const [savedPosts, setSavedPosts] = useState<string[]>([]);
 
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -121,21 +120,6 @@ export default function GroupPage({ navigation }: any) {
     },
     [groupId, loading, hasMore, loggedId],
   );
-
-  const getSavedPosts = useCallback(async () => {
-    if (!loggedId) return;
-
-    try {
-      const response = await api.get('/saved-post', {
-        params: { page: 1, limit: 20 },
-      });
-      const data = response.data.data ?? response.data;
-      const list = Array.isArray(data) ? data : [];
-      setSavedPosts(list.map((post: any) => post.id));
-    } catch (err) {
-      console.error('Erro ao buscar posts salvos:', err);
-    }
-  }, [loggedId]);
 
   const loadMorePosts = () => {
     if (!loading && hasMore) {
@@ -245,8 +229,7 @@ export default function GroupPage({ navigation }: any) {
     getGroupCategory();
     getGroupArchives();
     getUserRoleInGroup();
-    getSavedPosts();
-  }, [getGroupCategory, getGroupArchives, getUserRoleInGroup, getSavedPosts]);
+  }, [getGroupCategory, getGroupArchives, getUserRoleInGroup]);
 
   const fileCategory = [
     { categoryName: 'Fotos' },
@@ -432,7 +415,6 @@ export default function GroupPage({ navigation }: any) {
                               onPressPost={() => onPressPostAction(item.id)}
                               dotsMenu
                               fix
-                              isSaved={savedPosts.includes(item.id)}
                               postId={item.id}
                             />
                           </GroupPagePinnedCardWrapper>
@@ -481,7 +463,6 @@ export default function GroupPage({ navigation }: any) {
                           onPressFix={() => fixActions(item.id, item.isPinned)}
                           onPressPost={() => onPressPostAction(item.id)}
                           dotsMenu
-                          isSaved={savedPosts.includes(item.id)}
                           postId={item.id}
                         />
                       );

@@ -24,6 +24,13 @@ jest.mock('../context/SideMenuContext', () => ({
 jest.mock('../context/auth/useAuth', () => ({
   useAuth: () => ({ loggedId: 'mock-user-id' }),
 }));
+jest.mock('../context/SavedPostsContext', () => ({
+  useSavedPosts: () => ({
+    savedPostIds: new Set<string>(),
+    savePost: jest.fn(),
+    unsavePost: jest.fn(),
+  }),
+}));
 jest.mock('../components/SideMenu/SideMenu', () => 'SideMenu');
 jest.mock('../assets/location-icon.svg', () => 'Location');
 jest.mock('../assets/share-white-icon.svg', () => 'ShareWhite');

@@ -4,7 +4,7 @@
 /* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable prettier/prettier */
 /* eslint-disable global-require */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TouchableOpacity, View, StyleSheet, Share, Text, ActivityIndicator } from 'react-native';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
@@ -25,6 +25,7 @@ import { HomePageBlue, HomePageWhite } from '../Home/HomeStyle';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
 import { GroupPageTabs } from '../GroupPage/GroupPageStyle';
 import PostCard from '../../components/PostCard/PostCard';
+import { useSavedPosts } from '../../context/SavedPostsContext';
 import { useSideMenu } from '../../context/SideMenuContext';
 import Location from '../../assets/location-icon.svg';
 import ShareWhite from '../../assets/share-white-icon.svg';
@@ -79,6 +80,21 @@ export default function Profile({ navigation, route }: any) {
       setFilterPosts('savedPosts');
     }
   }, [route?.params?.initialTab]);
+
+  const { savedPostIds } = useSavedPosts();
+  const prevSavedIdsRef = useRef<Set<string>>(savedPostIds);
+
+  // Remove da aba "Salvas" os posts dessalvados em qualquer tela
+  useEffect(() => {
+    const removed: string[] = [];
+    prevSavedIdsRef.current.forEach((id) => {
+      if (!savedPostIds.has(id)) removed.push(id);
+    });
+    prevSavedIdsRef.current = savedPostIds;
+    if (removed.length === 0) return;
+    const removedSet = new Set(removed);
+    setSavedPosts((prevPosts) => prevPosts.filter((p: any) => !removedSet.has(p.id)));
+  }, [savedPostIds]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -354,7 +370,6 @@ export default function Profile({ navigation, route }: any) {
                     numComments={item.numComments}
                     date={item.createdAt}
                     share
-                    saved
                     postId={item.id}
                   />
                 ))}

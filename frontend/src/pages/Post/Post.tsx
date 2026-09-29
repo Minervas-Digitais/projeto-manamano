@@ -248,8 +248,18 @@ export default function Post() {
   const isSaved = savedPostIds.has(postId);
 
   const handleSavePress = async () => {
-    if (isSaved) await unsavePost(postId);
-    else await savePost(postId);
+    if (isSaved) {
+      await unsavePost(postId);
+      return;
+    }
+    if (post?.userId && loggedId && post.userId === loggedId) {
+      Toast.show({
+        type: 'error',
+        text1: 'Você não pode salvar sua própria publicação.',
+      });
+      return;
+    }
+    await savePost(postId, post?.userId);
   };
 
   const createDeepLink = () => `manamano://post/${postId}`;
