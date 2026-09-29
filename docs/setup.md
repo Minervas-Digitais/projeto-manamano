@@ -18,8 +18,31 @@ Antes de começar, você precisa ter instalado:
 
 ## Tabela de Conteúdo
 
-1. [Backend](#backend-setup)
-2. [Frontend](#frontend-setup)
+1. [Hooks do git (passo obrigatório)](#hooks-do-git)
+2. [Backend](#backend-setup)
+3. [Frontend](#frontend-setup)
+
+---
+
+# Hooks do git
+
+O projeto usa Husky + lint-staged para rodar lint e formatação automaticamente a cada commit.
+
+Na raiz do projeto, execute:
+
+```bash
+npm install
+```
+
+Esse passo instala as dependências da raiz e ativa os hooks do git. Sem ele, commits com erro de formatação passam localmente e quebram o Format Check no CI.
+
+Para confirmar que está ativo:
+
+```bash
+git config core.hooksPath
+```
+
+O retorno esperado é `.husky/_`. Se vier vazio, rode `npx husky` na raiz.
 
 ---
 
