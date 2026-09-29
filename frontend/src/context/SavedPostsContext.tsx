@@ -46,7 +46,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
     try {
       await api.post('/saved-post', { postId });
       Toast.show({
-        type: 'sucess',
+        type: 'success',
         text1: 'Post salvo com sucesso!',
       });
     } catch (error) {
@@ -72,7 +72,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
     try {
       await api.delete(`/saved-post/${postId}`);
       Toast.show({
-        type: 'sucess',
+        type: 'success',
         text1: 'Post removido dos salvos!',
       });
     } catch (error) {
