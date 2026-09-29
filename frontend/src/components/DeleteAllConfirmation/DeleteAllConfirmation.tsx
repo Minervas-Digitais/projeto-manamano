@@ -31,7 +31,7 @@ export default function DeleteConfirmation({ text, display }: any) {
     if (!loggedId) {
       Toast.show({
         type: 'error',
-        text1: 'Erro ao deletar todas as notificações: token ausente'
+        text1: 'Erro ao deletar todas as notificações: token ausente',
       });
       return;
     }

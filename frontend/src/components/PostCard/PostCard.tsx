@@ -53,7 +53,7 @@ export default function PostCard({
         type: 'error',
         text1: 'Erro ao compartilhar',
         text2: 'Não foi possível compartilhar o post.',
-      })
+      });
     }
   };
 

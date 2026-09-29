@@ -48,7 +48,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
       Toast.show({
         type: 'sucess',
         text1: 'Post salvo com sucesso!',
-      })
+      });
     } catch (error) {
       Toast.show({
         type: 'error',

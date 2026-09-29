@@ -45,7 +45,7 @@ export default function CommentCard({ fullName, createdAt, input, userId }: Comm
           type: 'error',
           text1: 'Erro ao buscar imagem de perfil do comentário',
           text2: 'Não foi possível carregar a imagem de perfil. Tente novamente.',
-        })
+        });
         setProfileImage(defaultAvatar);
       }
     };

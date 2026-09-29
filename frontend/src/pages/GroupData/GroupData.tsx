@@ -77,7 +77,7 @@ export default function GroupData({ navigation }: any) {
               type: 'error',
               text1: 'Erro',
               text2: 'Erro ao buscar os dados do usuário.',
-            })
+            });
           });
 
         api
