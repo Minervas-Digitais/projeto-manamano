@@ -21,6 +21,7 @@ import CommentIcon from '../../assets/comment-icon.svg';
 import FixIcon from '../../assets/fix-icon.svg';
 import DotsMenuIcon from '../../assets/dots-menu-icon.svg';
 import { useSavedPosts } from '../../context/SavedPostsContext';
+import { useAuth } from '../../context/auth/useAuth';
 
 const defaultAvatar = require('../../assets/user-profile.png');
 
@@ -61,11 +62,22 @@ export default function PostCard({
   const [userProfile, setUserProfile] = useState(defaultAvatar);
 
   const { savedPostIds, savePost, unsavePost } = useSavedPosts();
+  const { loggedId } = useAuth();
   const isSaved = savedPostIds.has(postId);
 
   const handleSavePress = () => {
-    if (isSaved) unsavePost(postId);
-    else savePost(postId);
+    if (isSaved) {
+      unsavePost(postId);
+      return;
+    }
+    if (userId && loggedId && userId === loggedId) {
+      Toast.show({
+        type: 'error',
+        text1: 'Você não pode salvar sua própria publicação.',
+      });
+      return;
+    }
+    savePost(postId, userId);
   };
 
   useEffect(() => {

@@ -4,9 +4,11 @@ import api from '../services/api';
 // import { useAuth } from './auth/useAuth';
 import { useAuth } from './auth/useAuth';
 
+export const OWN_POST_SAVE_MESSAGE = 'Você não pode salvar sua própria publicação.';
+
 type SavedPostsContextType = {
   savedPostIds: Set<string>;
-  savePost: (postId: string) => Promise<void>;
+  savePost: (postId: string, ownerId?: string) => Promise<void>;
   unsavePost: (postId: string) => Promise<void>;
 };
 
@@ -24,12 +26,23 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
     const fetchSavedPosts = async () => {
       if (!loggedId) return;
       try {
-        const response = await api.get('/saved-post', {
-          params: { page: 1, limit: 20 },
-        });
-        const data = response.data.data ?? response.data;
-        const list = Array.isArray(data) ? data : [];
-        setSavedPostIds(new Set(list.map((p: any) => p.id)));
+        const ids = new Set<string>();
+        let page = 1;
+        let lastPage = 1;
+        do {
+          // eslint-disable-next-line no-await-in-loop
+          const response = await api.get('/saved-post', {
+            params: { page, limit: 20 },
+          });
+          const payload = response.data;
+          const list = Array.isArray(payload) ? payload : (payload?.data ?? []);
+          list.forEach((p: any) => {
+            if (p?.id) ids.add(p.id);
+          });
+          lastPage = Array.isArray(payload) ? 1 : (payload?.meta?.lastPage ?? 1);
+          page += 1;
+        } while (page <= lastPage);
+        setSavedPostIds(ids);
       } catch (error) {
         Toast.show({
           type: 'error',
@@ -41,7 +54,14 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
     fetchSavedPosts();
   }, [loggedId]);
 
-  const savePost = async (postId: string) => {
+  const savePost = async (postId: string, ownerId?: string) => {
+    if (ownerId && loggedId && ownerId === loggedId) {
+      Toast.show({
+        type: 'error',
+        text1: OWN_POST_SAVE_MESSAGE,
+      });
+      return;
+    }
     setSavedPostIds((prev) => new Set(prev).add(postId));
     try {
       await api.post('/saved-post', { postId });
@@ -50,6 +70,11 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
         text1: 'Post salvo com sucesso!',
       });
     } catch (error) {
+      if (error?.response?.status === 409) {
+        // Já estava salvo
+        setSavedPostIds((prev) => new Set(prev).add(postId));
+        return;
+      }
       Toast.show({
         type: 'error',
         text1: 'Erro ao salvar post',
@@ -59,6 +84,13 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
         const newSet = new Set(prev);
         newSet.delete(postId);
         return newSet;
+      });
+      const serverMessage = error?.response?.data?.message;
+      Toast.show({
+        type: 'error',
+        text1: Array.isArray(serverMessage)
+          ? serverMessage[0]
+          : serverMessage || 'Erro ao salvar post. Tente novamente mais tarde.',
       });
     }
   };
@@ -76,12 +108,20 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
         text1: 'Post removido dos salvos!',
       });
     } catch (error) {
+      if (error?.response?.status === 404) {
+        // Já não estava salvo.
+        return;
+      }
       Toast.show({
         type: 'error',
         text1: 'Erro ao remover post dos salvos',
         text2: 'Não foi possível remover o post. Tente novamente.',
       });
       setSavedPostIds((prev) => new Set(prev).add(postId));
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao remover post dos salvos. Tente novamente.',
+      });
     }
   };
 

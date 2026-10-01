@@ -369,7 +369,6 @@ export default function Home({ navigation }: any) {
                         date={formatRelativeDate(post.createdAt)}
                         originGroup={post.group.name}
                         tag
-                        save
                         share
                         onPressPost={() => onPressPostAction(post.id)}
                         postId={post.id}

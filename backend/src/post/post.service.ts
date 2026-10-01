@@ -10,6 +10,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType, PostType, Prisma, UserRole } from '@prisma/client';
 import { POST_MESSAGES } from '../messages/post.messages';
+import { CATEGORY_MESSAGES } from '../messages/category.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
@@ -99,6 +100,18 @@ export class PostService {
     const group = await this.validator.validateGroupExists(createPostDto.groupId);
 
     await this.validator.validateUserExists(userId);
+
+    const category = await this.prismaService.category.findUnique({
+      where: { id: createPostDto.categoryId },
+    });
+
+    if (!category) {
+      throw new NotFoundException(CATEGORY_MESSAGES.NOT_FOUND);
+    }
+
+    if (category.groupId !== createPostDto.groupId) {
+      throw new BadRequestException(CATEGORY_MESSAGES.NOT_FOUND);
+    }
 
     const post = await this.prismaService.post.create({
       data: {
