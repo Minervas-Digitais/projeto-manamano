@@ -113,21 +113,12 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
           encoding: FileSystem.EncodingType.Base64,
         });
       } else if (archive.uri) {
-        // fallback: tentar ler e gravar o conteúdo do content:// para cache
-        try {
-          const read = await FileSystem.readAsStringAsync(archive.uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-          await FileSystem.writeAsStringAsync(tempUri, read, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-        } catch (e) {
-          Toast.show({
-            type: 'warning',
-            text1: 'Erro ao salvar arquivo',
-            text2: 'Não foi possível ler o arquivo original para salvar.',
-          });
-        }
+        const read = await FileSystem.readAsStringAsync(archive.uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        await FileSystem.writeAsStringAsync(tempUri, read, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
       }
 
       const mediaType = archive.mimeType.split('/')[0];
@@ -162,7 +153,7 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
           Toast.show({
             type: 'error',
             text1: 'Erro',
-            text2: 'StorageAccessFramework não disponível nesta versão do Expo.',
+            text2: 'Não foi possível salvar o arquivo neste dispositivo.',
           });
           return;
         }

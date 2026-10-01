@@ -141,7 +141,6 @@ export default function LessonFiles() {
       }
       await Sharing.shareAsync(tempUri, { mimeType: file.mimeType, dialogTitle: file.name });
     } catch (error) {
-      console.error('Erro ao salvar arquivo:', error);
       Toast.show({ type: 'error', text1: 'Erro', text2: 'Não foi possível salvar o arquivo.' });
     }
   };

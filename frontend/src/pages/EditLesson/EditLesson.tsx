@@ -128,7 +128,6 @@ export default function EditLesson({ navigation }: any) {
         if (navigation.canGoBack?.()) navigation.goBack();
       }, 500);
     } catch (error) {
-      console.error('Erro ao atualizar aula:', error);
       Toast.show({ type: 'error', text1: 'Erro ao atualizar aula.' });
     }
   };

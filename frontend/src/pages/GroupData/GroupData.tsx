@@ -111,7 +111,8 @@ export default function GroupData({ navigation }: any) {
       Toast.show({
         type: 'error',
         text1: 'Ação indisponível',
-        text2: 'O backend atual não possui rota para remover outros participantes.',
+        text2:
+          'Você só pode sair do grupo você mesmo. Peça a um administrador para remover outro participante.',
       });
       return;
     }
@@ -132,7 +133,7 @@ export default function GroupData({ navigation }: any) {
       Toast.show({
         type: 'error',
         text1: 'Erro',
-        text2: 'Não foi possível remover o pariticipante. Tente novamente mais tarde.',
+        text2: 'Não foi possível remover o participante. Tente novamente mais tarde.',
       });
     }
   };

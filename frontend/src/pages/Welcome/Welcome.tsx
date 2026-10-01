@@ -4,6 +4,7 @@ import { ActivityIndicator, StatusBar, View } from 'react-native';
 import React, { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import * as Application from 'expo-application';
+import Toast from 'react-native-toast-message';
 import {
   ButtomContainer,
   LogoSVG,
@@ -27,10 +28,17 @@ export default function WelcomeScreen({ navigation }: any) {
         const res = await api.get(`/version/check?build=${build}`);
 
         if (res.data.update) {
-          console.log('Tem que atualizar');
+          Toast.show({
+            type: 'warning',
+            text1: 'Nova versão disponível',
+            text2: 'Atualize o aplicativo para continuar recebendo novidades.',
+          });
         }
       } catch (error) {
-        console.log(error);
+        Toast.show({
+          type: 'error',
+          text1: 'Não foi possível verificar a versão',
+        });
       }
     }
 

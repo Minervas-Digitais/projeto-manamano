@@ -7,30 +7,19 @@ import * as SecureStore from 'expo-secure-store';
 
 const secureStorage = {
   async setItem(key: string, value: string): Promise<void> {
-    try {
-      await SecureStore.setItemAsync(key, value);
-    } catch (error) {
-      console.error(`Error saving ${key} to secure storage:`, error);
-      throw error;
-    }
+    await SecureStore.setItemAsync(key, value);
   },
 
   async getItem(key: string): Promise<string | null> {
     try {
       return await SecureStore.getItemAsync(key);
     } catch (error) {
-      console.error(`Error retrieving ${key} from secure storage:`, error);
       return null;
     }
   },
 
   async removeItem(key: string): Promise<void> {
-    try {
-      await SecureStore.deleteItemAsync(key);
-    } catch (error) {
-      console.error(`Error removing ${key} from secure storage:`, error);
-      throw error;
-    }
+    await SecureStore.deleteItemAsync(key);
   },
 };
 

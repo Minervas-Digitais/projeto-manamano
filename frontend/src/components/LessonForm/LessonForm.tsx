@@ -166,7 +166,6 @@ export default function LessonForm({
         });
       }
     } catch (error) {
-      console.error('Erro ao selecionar os arquivos: ', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao selecionar os arquivos.',

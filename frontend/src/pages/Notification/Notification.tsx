@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
-import React, { useState, useEffect, useCallback } from 'react';
-import { Alert } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { Toast } from 'react-native-toast-message/lib/src/Toast';
 import {
   ConfigNotificationContainer,
   NotificationInfoContainer,
@@ -19,7 +19,6 @@ import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/Delete
 import NoNotification from '../../assets/no-notification-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
-import { Toast } from 'react-native-toast-message/lib/src/Toast';
 
 export interface IUser {
   id: string;
@@ -58,13 +57,25 @@ export default function Notification({ navigation }: any) {
     visible: false,
     notifId: '',
   });
+  const fetchFailed = useRef(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!loggedId) return;
     api
       .get('/notifications/user')
-      .then((res) => setNotification(res.data))
-      .catch((err) => console.log(err));
+      .then((res) => {
+        setNotification(res.data);
+        fetchFailed.current = false;
+      })
+      .catch(() => {
+        if (fetchFailed.current) return;
+        fetchFailed.current = true;
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao carregar notificações',
+          text2: 'Não foi possível buscar suas notificações. Tente novamente.',
+        });
+      });
   }, [loggedId]);
 
   useEffect(() => {
@@ -101,20 +112,17 @@ export default function Notification({ navigation }: any) {
   useFocusEffect(
     useCallback(() => {
       fetchNotifications();
-      secureStorage.removeItem('body').catch(console.error);
-      secureStorage.removeItem('displayNotif').catch(console.error);
+      secureStorage.removeItem('body').catch(() => {});
+      secureStorage.removeItem('displayNotif').catch(() => {});
     }, [fetchNotifications]),
   );
 
   const onPressActions = (body: string, id: string, type: string, idContent?: string) => {
-    secureStorage.setItem('body', body).catch(console.error);
+    secureStorage.setItem('body', body).catch(() => {});
     setNotification((prev) =>
       prev?.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
     );
-    api
-      .patch(`/notifications/${id}`, {})
-      // .then((res) => console.log(JSON.stringify(res.data)))
-      .catch((err) => console.log('Erro ao atualizar a notificação:', err));
+    api.patch(`/notifications/${id}`, {}).catch(() => {});
 
     if (type === 'WARNING') {
       navigation.navigate('NotificationPage');

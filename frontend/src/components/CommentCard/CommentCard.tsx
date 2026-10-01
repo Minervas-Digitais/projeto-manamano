@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { Buffer } from 'buffer';
-import Toast from 'react-native-toast-message';
 import { PostDate, PostUpperPart, ProfileImage, ProfileName } from '../../pages/Post/PostStyle';
 import { CommentText, CommentTextContainer } from './CommentCardStyle';
 import api from '../../services/api';
@@ -41,11 +40,6 @@ export default function CommentCard({ fullName, createdAt, input, userId }: Comm
         const imageUri = `data:image/jpeg;base64,${imageStr}`;
         setProfileImage({ uri: imageUri });
       } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao buscar imagem de perfil do comentário',
-          text2: 'Não foi possível carregar a imagem de perfil. Tente novamente.',
-        });
         setProfileImage(defaultAvatar);
       }
     };

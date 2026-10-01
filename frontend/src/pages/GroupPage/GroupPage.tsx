@@ -140,7 +140,7 @@ export default function GroupPage({ navigation }: any) {
       Toast.show({
         type: 'error',
         text1: 'Erro',
-        text2: 'Não foi possível buscar os posts salvos. Tente novamnete mais tarde.',
+        text2: 'Não foi possível buscar os posts salvos. Tente novamente mais tarde.',
       });
     }
   }, [loggedId]);
@@ -243,14 +243,7 @@ export default function GroupPage({ navigation }: any) {
   };
 
   const getUserRoleInGroup = useCallback(async () => {
-    if (!groupId || !loggedId) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Não foi possível carregar o role do usuário.',
-      });
-      return;
-    }
+    if (!groupId || !loggedId) return;
     try {
       const response = await api.get(`/participant/group/${groupId}/me`);
 
@@ -261,21 +254,22 @@ export default function GroupPage({ navigation }: any) {
         if (axiosError.response?.status === 404) {
           Toast.show({
             type: 'warning',
-            text1: 'Usuário não é participante do grupo',
+            text1: 'Você não faz parte deste grupo',
+            text2: 'Entre no grupo para ver o conteúdo completo.',
           });
         } else {
           Toast.show({
             type: 'error',
             text1: 'Erro',
-            text2: 'Não foi possível carregar o role do usuário.',
+            text2: 'Não foi possível carregar suas permissões no grupo.',
           });
           setUserRole('MEMBER');
         }
       } else {
         Toast.show({
           type: 'error',
-          text1: 'Erro inesperado',
-          text2: 'Não foi possível carregar o role do usuário.',
+          text1: 'Erro',
+          text2: 'Não foi possível carregar suas permissões no grupo.',
         });
       }
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/jsx-closing-bracket-location */

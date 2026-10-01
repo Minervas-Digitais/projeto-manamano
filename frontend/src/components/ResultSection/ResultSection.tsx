@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import React, { useState, useEffect, useCallback } from 'react';
-import { TouchableOpacity, View, Text, ScrollView, Dimensions, Alert } from 'react-native';
+import { TouchableOpacity, View, Text, ScrollView, Dimensions } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Buffer } from 'buffer';
@@ -264,14 +264,7 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   }, [selectedSection, fetchFiltered]);
 
   const fetchUserName = async (userId: string): Promise<string> => {
-    if (!loggedId) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Nenhum usuário logado.',
-      });
-      return 'Nome não encontrado';
-    }
+    if (!loggedId) return 'Nome não encontrado';
 
     try {
       const response = await api.get(`/user/${userId}`);
@@ -280,24 +273,12 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
       const fullName = user.fullName.split(' ');
       return `${fullName[0]} ${fullName[1] || ''}`;
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Não foi possível buscar o nome do usuário.',
-      });
       return 'Nome não encontrado';
     }
   };
 
   const fetchNumComments = async (postId: string): Promise<number> => {
-    if (!loggedId) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Nenhum usuário logado.',
-      });
-      return 0;
-    }
+    if (!loggedId) return 0;
 
     try {
       const response = await api.get(`/post/${postId}`);
@@ -305,11 +286,6 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
       const postDetails = response.data;
       return postDetails.Comment ? postDetails.Comment.length : 0;
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Não foi possível buscar os comentários.',
-      });
       return 0;
     }
   };

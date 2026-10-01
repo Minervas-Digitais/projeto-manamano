@@ -28,13 +28,7 @@ export default function DeleteConfirmation({ text, display }: any) {
   });
 
   const optionsDelete = async () => {
-    if (!loggedId) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro ao deletar todas as notificações: token ausente',
-      });
-      return;
-    }
+    if (!loggedId) return;
 
     try {
       await api.delete('/notifications/user');

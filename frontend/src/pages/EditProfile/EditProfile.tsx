@@ -85,8 +85,6 @@ export default function EditProfile() {
         text2: 'Suas alterações foram salvas com sucesso.',
       });
     } catch (error: any) {
-      console.error('Error saving user data:', error);
-
       const message =
         error?.response?.data?.message ||
         'Não foi possível salvar suas alterações. Tente novamente.';

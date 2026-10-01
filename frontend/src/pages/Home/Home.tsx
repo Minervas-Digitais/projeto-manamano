@@ -13,6 +13,7 @@ import { MMKV } from 'react-native-mmkv';
 import { Buffer } from 'buffer';
 import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect } from '@react-navigation/native';
+import { Toast } from 'react-native-toast-message/lib/src/Toast';
 import {
   HomeContainerGroup,
   HomeContainerInfo,
@@ -34,7 +35,6 @@ import MenuIcon from '../../assets/menu-white-icon.svg';
 import LupaIcon from '../../assets/lupa-white-icon.svg';
 import { useAuth } from '../../context/auth/useAuth';
 import { useSideMenu } from '../../context/SideMenuContext';
-import { Toast } from 'react-native-toast-message/lib/src/Toast';
 
 export const storageHome = new MMKV();
 

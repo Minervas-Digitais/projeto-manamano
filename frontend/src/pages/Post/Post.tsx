@@ -196,11 +196,6 @@ export default function Post() {
       const imageUri = `data:image/jpeg;base64,${imageStr}`;
       return { uri: imageUri };
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro inesperado',
-        text2: 'Não foi possível carregar a imagem de perfil do usuário.',
-      });
       return defaultAvatar;
     }
   };

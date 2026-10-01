@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import React from 'react';
 import Toast from 'react-native-toast-message';
 import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';

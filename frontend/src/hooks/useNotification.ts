@@ -3,7 +3,6 @@ import * as Device from 'expo-device';
 import Toast from 'react-native-toast-message';
 import { useEffect, useRef } from 'react';
 import { Subscription } from 'expo-media-library';
-import { Alert } from 'react-native';
 
 export function useNotifications() {
   const notificationListener = useRef<Subscription | null>(null);
