@@ -44,7 +44,11 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
         } while (page <= lastPage);
         setSavedPostIds(ids);
       } catch (error) {
-        console.error('Erro ao buscar posts salvos:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Não foi possível buscar os posts salvos.',
+        });
       }
     };
     fetchSavedPosts();
@@ -61,14 +65,21 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
     setSavedPostIds((prev) => new Set(prev).add(postId));
     try {
       await api.post('/saved-post', { postId });
-      console.log('Post salvo com sucesso!');
-    } catch (error: any) {
-      console.error('Erro ao salvar post:', error);
+      Toast.show({
+        type: 'success',
+        text1: 'Post salvo com sucesso!',
+      });
+    } catch (error) {
       if (error?.response?.status === 409) {
-        // Já estava salvo (ex: toque duplo) — mantém como salvo, sem erro
+        // Já estava salvo
         setSavedPostIds((prev) => new Set(prev).add(postId));
         return;
       }
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao salvar post',
+        text2: 'Não foi possível salvar o post. Tente novamente.',
+      });
       setSavedPostIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(postId);
@@ -92,13 +103,20 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
     });
     try {
       await api.delete(`/saved-post/${postId}`);
-      console.log('Post removido dos salvos!');
-    } catch (error: any) {
-      console.error('Erro ao remover post dos salvos:', error);
+      Toast.show({
+        type: 'success',
+        text1: 'Post removido dos salvos!',
+      });
+    } catch (error) {
       if (error?.response?.status === 404) {
-        // Já não estava salvo — mantém como não salvo, sem erro
+        // Já não estava salvo.
         return;
       }
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao remover post dos salvos',
+        text2: 'Não foi possível remover o post. Tente novamente.',
+      });
       setSavedPostIds((prev) => new Set(prev).add(postId));
       Toast.show({
         type: 'error',

@@ -13,6 +13,7 @@ import { MMKV } from 'react-native-mmkv';
 import { Buffer } from 'buffer';
 import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect } from '@react-navigation/native';
+import { Toast } from 'react-native-toast-message/lib/src/Toast';
 import {
   HomeContainerGroup,
   HomeContainerInfo,
@@ -156,10 +157,18 @@ export default function Home({ navigation }: any) {
             setHasMore(endIndex < allPosts.length);
             setPage(pageNumber);
           } catch (fallbackError) {
-            console.error('Erro ao carregar posts (fallback):', fallbackError);
+            Toast.show({
+              type: 'error',
+              text1: 'Erro inesperado',
+              text2: 'Não foi possível carregar os posts.',
+            });
           }
         } else {
-          console.error('Erro ao carregar posts:', error);
+          Toast.show({
+            type: 'error',
+            text1: 'Erro inesperado',
+            text2: 'Não foi possível carregar os posts.',
+          });
         }
       } finally {
         setLoading(false);

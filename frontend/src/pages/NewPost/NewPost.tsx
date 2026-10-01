@@ -103,7 +103,6 @@ export default function NewPost({ navigation }: any) {
         const response = await api.get(`/category/group/${groupId}`);
         setCategories(response.data);
       } catch (error) {
-        console.error('Erro ao buscar categorias', error);
         Toast.show({
           type: 'error',
           text1: 'Erro ao buscar categorias.',
@@ -161,7 +160,6 @@ export default function NewPost({ navigation }: any) {
           navigation.goBack();
         }, 500);
       } catch (error) {
-        console.error('Erro ao enviar publicação:', error);
         setFiles([]);
         Toast.show({
           type: 'error',
@@ -188,7 +186,6 @@ export default function NewPost({ navigation }: any) {
           navigation.goBack();
         }, 500);
       } catch (error) {
-        console.error('Erro ao enviar publicação:', error);
         Toast.show({
           type: 'error',
           text1: 'Erro ao enviar publicação. Tente novamente mais tarde.',
@@ -234,7 +231,6 @@ export default function NewPost({ navigation }: any) {
         });
       }
     } catch (error) {
-      console.error('Erro ao selecionar os arquivos: ', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao selecionar os arquivos.',

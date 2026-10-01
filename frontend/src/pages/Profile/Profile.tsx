@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /* eslint-disable no-nested-ternary */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/jsx-closing-bracket-location */
@@ -9,6 +8,7 @@ import { TouchableOpacity, View, StyleSheet, Share, Text, ActivityIndicator } fr
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
 import { AxiosError } from 'axios';
+import Toast from 'react-native-toast-message';
 import { useAuth } from '../../context/auth/useAuth';
 import { district } from './ProfileData'; // Adjust the path based on your folder structure
 import {
@@ -46,7 +46,11 @@ export default function Profile({ navigation, route }: any) {
         message: `Confira este perfil: ${deepLink}`,
       });
     } catch (error) {
-      console.error('Erro ao compartilhar:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao compartilhar',
+        text2: 'Não foi possível compartilhar o perfil. Tente novamente.',
+      });
     }
   };
 
@@ -132,7 +136,11 @@ export default function Profile({ navigation, route }: any) {
                 setHasMoreUserPosts(meta.page < meta.lastPage);
                 setUserPostsPage(meta.page);
               } catch (error) {
-                console.error('Error fetching posts:', error);
+                Toast.show({
+                  type: 'error',
+                  text1: 'Erro ao carregar publicações',
+                  text2: 'Não foi possível buscar as publicações. Tente novamente.',
+                });
               }
             };
 
@@ -148,7 +156,11 @@ export default function Profile({ navigation, route }: any) {
                 setHasMoreSavedPosts(meta.page < meta.lastPage);
                 setSavedPostsPage(meta.page);
               } catch (error) {
-                console.error('Error fetching saved posts:', error);
+                Toast.show({
+                  type: 'error',
+                  text1: 'Erro ao carregar salvos',
+                  text2: 'Não foi possível buscar os posts salvos. Tente novamente.',
+                });
               }
             };
 
@@ -157,13 +169,21 @@ export default function Profile({ navigation, route }: any) {
           } catch (error) {
             if (error instanceof AxiosError) {
               if (error.response?.status === 404) {
-                console.log('Sem imagem de perfil, usando padrão');
                 setProfileImage(require('../../assets/user-profile.png'));
               } else {
-                console.error('Erro ao buscar imagem de perfil:', error);
+                setProfileImage(require('../../assets/user-profile.png'));
+                Toast.show({
+                  type: 'error',
+                  text1: 'Erro ao carregar foto',
+                  text2: 'Não foi possível buscar sua foto de perfil.',
+                });
               }
             } else {
-              console.error('Erro desconhecido:', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Erro ao carregar perfil',
+                text2: 'Não foi possível buscar seus dados. Tente novamente.',
+              });
             }
           }
         }
@@ -186,7 +206,11 @@ export default function Profile({ navigation, route }: any) {
       setHasMoreUserPosts(meta.page < meta.lastPage);
       setUserPostsPage(meta.page);
     } catch (error) {
-      console.error('Error loading more posts:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao carregar mais publicações',
+        text2: 'Não foi possível buscar. Tente novamente.',
+      });
     } finally {
       setLoadingMoreUserPosts(false);
     }
@@ -205,7 +229,11 @@ export default function Profile({ navigation, route }: any) {
       setHasMoreSavedPosts(meta.page < meta.lastPage);
       setSavedPostsPage(meta.page);
     } catch (error) {
-      console.error('Error loading more saved posts:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao carregar mais salvos',
+        text2: 'Não foi possível buscar. Tente novamente.',
+      });
     } finally {
       setLoadingMoreSavedPosts(false);
     }

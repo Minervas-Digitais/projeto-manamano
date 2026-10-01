@@ -44,7 +44,6 @@ export default function CommentInputTextCustom({
         const imageUri = `data:image/jpeg;base64,${imageBase64}`;
         setProfileImage({ uri: imageUri });
       } catch (error) {
-        console.error('Erro ao carregar imagem de perfil do input:', error);
         setProfileImage(defaultAvatar);
       }
     };

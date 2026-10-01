@@ -29,24 +29,22 @@ export default function SignIn({ navigation }: any) {
     try {
       await login(data.email, data.password);
 
-      // Tentar registrar notificações push (não bloqueia o login se falhar)
       try {
         const pushToken = await registerForPushNotificationsAsync();
 
         if (pushToken) {
-          try {
-            await api.post('/notifications/register-token', { pushNotifToken: pushToken });
-          } catch (error) {
-            console.error('Erro ao enviar push token para o backend:', error);
-          }
+          await api.post('/notifications/register-token', { pushNotifToken: pushToken });
         }
       } catch (error) {
-        console.error('Erro ao registrar notificações push:', error);
+        Toast.show({
+          type: 'warning',
+          text1: 'Notificações não ativadas',
+          text2: 'Não foi possível ativar as notificações neste dispositivo.',
+        });
       }
 
       navigation.navigate('Home');
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao entrar',

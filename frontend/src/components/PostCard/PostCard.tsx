@@ -50,7 +50,11 @@ export default function PostCard({
         message: `Confira este post: ${deepLink}`,
       });
     } catch (error) {
-      console.error('Erro ao compartilhar:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao compartilhar',
+        text2: 'Não foi possível compartilhar o post.',
+      });
     }
   };
 

@@ -1,11 +1,11 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { useFonts } from 'expo-font';
+import Toast from 'react-native-toast-message';
 import { TouchableOpacity, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
-import Toast from 'react-native-toast-message';
 
 import {
   ArchiveButtonContainer,
@@ -113,17 +113,12 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
           encoding: FileSystem.EncodingType.Base64,
         });
       } else if (archive.uri) {
-        // fallback: tentar ler e gravar o conteúdo do content:// para cache
-        try {
-          const read = await FileSystem.readAsStringAsync(archive.uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-          await FileSystem.writeAsStringAsync(tempUri, read, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-        } catch (e) {
-          console.warn('Não foi possível ler uri original; prosseguindo sem copiar:', e);
-        }
+        const read = await FileSystem.readAsStringAsync(archive.uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        await FileSystem.writeAsStringAsync(tempUri, read, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
       }
 
       const mediaType = archive.mimeType.split('/')[0];
@@ -158,7 +153,7 @@ export default function GroupArchives({ archive }: GroupArchivesProps) {
           Toast.show({
             type: 'error',
             text1: 'Erro',
-            text2: 'StorageAccessFramework não disponível nesta versão do Expo.',
+            text2: 'Não foi possível salvar o arquivo neste dispositivo.',
           });
           return;
         }
