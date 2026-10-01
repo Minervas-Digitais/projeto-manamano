@@ -1,7 +1,7 @@
 /* eslint-disable global-require */
-import React, { useState, useEffect, useCallback } from 'react';
-import { Alert } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { Toast } from 'react-native-toast-message/lib/src/Toast';
 import {
   ConfigNotificationContainer,
   NotificationInfoContainer,
@@ -57,13 +57,25 @@ export default function Notification({ navigation }: any) {
     visible: false,
     notifId: '',
   });
+  const fetchFailed = useRef(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!loggedId) return;
     api
       .get('/notifications/user')
-      .then((res) => setNotification(res.data))
-      .catch((err) => console.log(err));
+      .then((res) => {
+        setNotification(res.data);
+        fetchFailed.current = false;
+      })
+      .catch(() => {
+        if (fetchFailed.current) return;
+        fetchFailed.current = true;
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao carregar notificações',
+          text2: 'Não foi possível buscar suas notificações. Tente novamente.',
+        });
+      });
   }, [loggedId]);
 
   useEffect(() => {
@@ -80,7 +92,11 @@ export default function Notification({ navigation }: any) {
             setAdmin(false);
           }
         } catch (error) {
-          console.error('Erro ao buscar informações do usuário:', error);
+          Toast.show({
+            type: 'error',
+            text1: 'Erro ao buscar informações do usuário',
+            text2: 'Não foi possível carregar as informações do usuário.',
+          });
         }
       }
     };
@@ -96,20 +112,17 @@ export default function Notification({ navigation }: any) {
   useFocusEffect(
     useCallback(() => {
       fetchNotifications();
-      secureStorage.removeItem('body').catch(console.error);
-      secureStorage.removeItem('displayNotif').catch(console.error);
+      secureStorage.removeItem('body').catch(() => {});
+      secureStorage.removeItem('displayNotif').catch(() => {});
     }, [fetchNotifications]),
   );
 
   const onPressActions = (body: string, id: string, type: string, idContent?: string) => {
-    secureStorage.setItem('body', body).catch(console.error);
+    secureStorage.setItem('body', body).catch(() => {});
     setNotification((prev) =>
       prev?.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
     );
-    api
-      .patch(`/notifications/${id}`, {})
-      // .then((res) => console.log(JSON.stringify(res.data)))
-      .catch((err) => console.log('Erro ao atualizar a notificação:', err));
+    api.patch(`/notifications/${id}`, {}).catch(() => {});
 
     if (type === 'WARNING') {
       navigation.navigate('NotificationPage');
@@ -129,13 +142,17 @@ export default function Notification({ navigation }: any) {
     try {
       await api.delete(`/notifications/${deleteModal.notifId}`);
       setNotification((prev) => prev.filter((n: any) => n.id !== deleteModal.notifId));
-      Alert.alert('Sucesso', 'Notificação excluída com sucesso!');
+      Toast.show({
+        type: 'success',
+        text1: 'Notificação excluída',
+        text2: 'A notificação foi excluída com sucesso.',
+      });
     } catch (error: any) {
-      Alert.alert(
-        'Erro',
-        error?.response?.data?.message || 'Não foi possível excluir a notificação.',
-      );
-      console.error('Erro ao excluir notificação:', error);
+      Toast.show({
+        type: 'warning',
+        text1: 'Erro ao excluir notificação',
+        text2: error?.response?.data?.message || 'Não foi possível excluir a notificação.',
+      });
     }
     setDeleteModal({ visible: false, notifId: '' });
   };

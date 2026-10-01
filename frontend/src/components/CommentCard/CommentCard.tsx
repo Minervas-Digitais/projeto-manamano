@@ -40,7 +40,6 @@ export default function CommentCard({ fullName, createdAt, input, userId }: Comm
         const imageUri = `data:image/jpeg;base64,${imageStr}`;
         setProfileImage({ uri: imageUri });
       } catch (error) {
-        console.error('Erro ao buscar imagem de perfil do comentário:', error);
         setProfileImage(defaultAvatar);
       }
     };

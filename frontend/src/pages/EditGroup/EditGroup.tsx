@@ -5,7 +5,6 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable prettier/prettier */
 /* eslint-disable react/jsx-indent */
-/* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';

@@ -85,8 +85,6 @@ export default function EditProfile() {
         text2: 'Suas alterações foram salvas com sucesso.',
       });
     } catch (error: any) {
-      console.error('Error saving user data:', error);
-
       const message =
         error?.response?.data?.message ||
         'Não foi possível salvar suas alterações. Tente novamente.';
@@ -169,7 +167,6 @@ export default function EditProfile() {
         });
       }
     } catch (error) {
-      console.error('Erro ao selecionar ou enviar imagem: ', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao enviar imagem.',
@@ -241,7 +238,11 @@ export default function EditProfile() {
           setValue('expertise', profileInfo.expertise);
           setValue('neighborhood', profileInfo.neighborhood);
         } catch (error) {
-          console.error('Erro ao buscar os dados do usuário:', error);
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Erro ao buscar os dados do usuário.',
+          });
         }
       }
     };

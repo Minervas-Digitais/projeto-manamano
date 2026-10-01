@@ -72,8 +72,12 @@ export default function GroupData({ navigation }: any) {
           .then((res) => {
             setUserRole(res.data.sysRole);
           })
-          .catch((err) => {
-            console.error('Erro ao buscar dados do usuário:', err);
+          .catch(() => {
+            Toast.show({
+              type: 'error',
+              text1: 'Erro',
+              text2: 'Erro ao buscar os dados do usuário.',
+            });
           });
 
         api
@@ -107,7 +111,8 @@ export default function GroupData({ navigation }: any) {
       Toast.show({
         type: 'error',
         text1: 'Ação indisponível',
-        text2: 'O backend atual não possui rota para remover outros participantes.',
+        text2:
+          'Você só pode sair do grupo você mesmo. Peça a um administrador para remover outro participante.',
       });
       return;
     }
@@ -125,7 +130,11 @@ export default function GroupData({ navigation }: any) {
       setMembersPage(meta.page);
       setDeleteModal({ visible: false, participantId: '', participantName: '' });
     } catch (error) {
-      console.error('Erro ao remover participante:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível remover o participante. Tente novamente mais tarde.',
+      });
     }
   };
 
@@ -142,7 +151,11 @@ export default function GroupData({ navigation }: any) {
       setHasMoreMembers(meta.page < meta.lastPage);
       setMembersPage(meta.page);
     } catch (e) {
-      console.error('Erro ao carregar mais membros:', e);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível carregar mais membros. Tente novamente mais tarde.',
+      });
     } finally {
       setLoadingMoreMembers(false);
     }

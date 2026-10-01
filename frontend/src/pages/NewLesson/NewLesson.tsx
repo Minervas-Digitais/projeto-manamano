@@ -83,7 +83,6 @@ export default function NewLesson({ navigation }: any) {
         if (navigation.canGoBack?.()) navigation.goBack();
       }, 500);
     } catch (error) {
-      console.error('Erro ao enviar post:', error);
       Toast.show({
         type: 'error',
         text1: 'Erro ao criar aula. Tente novamente mais tarde.',

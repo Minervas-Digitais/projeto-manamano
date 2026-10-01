@@ -25,7 +25,6 @@ export default function ConfigNotification() {
         setSettings(response.data);
         setLoading(false);
       } catch (error) {
-        console.error('Erro ao carregar configurações', error);
         Toast.show({
           type: 'error',
           text1: 'Erro',

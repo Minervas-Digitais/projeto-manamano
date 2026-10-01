@@ -1,6 +1,7 @@
 /* eslint-disable global-require */
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import {
   SideMenuOptionsButtonsContainer,
   SideMenuOptionsButtonsText,
@@ -45,7 +46,11 @@ export default function SideMenuOptions({
       const hasUnreadNotifications = res.data.some((n) => !n.isRead);
       setHasUnread(hasUnreadNotifications);
     } catch (err) {
-      console.error('Erro ao carregar notificações', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível carregar as notificações.',
+      });
     }
   }, [type, loggedId]);
 
