@@ -1,7 +1,6 @@
 /* eslint-disable react/jsx-one-expression-per-line */
 /* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable global-require */
-/* eslint-disable @typescript-eslint/indent */
 /* eslint-disable no-confusing-arrow */
 /* eslint-disable react/no-array-index-key */
 /* eslint-disable react/jsx-indent-props */

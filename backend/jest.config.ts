@@ -6,6 +6,10 @@
 import type { Config } from 'jest';
 
 const config: Config = {
+  setupFiles: ['<rootDir>/src/load-env.ts'],
+  globalSetup: '<rootDir>/src/test/global-setup.ts',
+  globalTeardown: '<rootDir>/src/test/global-teardown.ts',
+
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 

@@ -10,10 +10,11 @@
     "target": "es2022",
 
     "outDir": "./dist",
+    "rootDir": "./src",
+    "paths": {
+      "src/*": ["./src/*"]
+    },
 
-    "baseUrl": "./",
-
-    "incremental": true,
     "skipLibCheck": true,
 
     "strictNullChecks": false,

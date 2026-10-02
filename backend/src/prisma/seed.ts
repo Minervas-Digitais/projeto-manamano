@@ -1,3 +1,4 @@
+import '../load-env';
 import { PrismaClient, PostType, UserRole, Prisma } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 

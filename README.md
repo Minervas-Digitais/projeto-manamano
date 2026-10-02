@@ -85,31 +85,15 @@ A versão estável do aplicativo pode ser baixada no ambiente local via Nginx:
 
 ## Configuração
 
-O projeto possui múltiplos arquivos de variáveis de ambiente:
+O projeto usa um único arquivo de variáveis de ambiente na raiz: `.env`. Ele é lido por docker-compose, backend e frontend.
 
-- Backend: `backend/.env`
-- Frontend: `frontend/.env`
-- Infraestrutura: `.env` na raiz do projeto
-
-Todos os arquivos possuem um template `.env.example` correspondente.
+O template `.env.example` na raiz documenta cada variável com comentário.
 
 ---
 
-### 1. Criar arquivos de ambiente
+### 1. Criar o arquivo de ambiente
 
-Backend:
-
-```bash
-cp backend/.env.example backend/.env
-```
-
-Frontend:
-
-```bash
-cp frontend/.env.example frontend/.env
-```
-
-Raiz:
+Na raiz do projeto:
 
 ```bash
 cp .env.example .env
@@ -117,7 +101,10 @@ cp .env.example .env
 
 ### 2. Preencher variáveis
 
-Preencha os arquivos `.env` com os valores necessários do projeto.
+Edite o `.env` da raiz. Em especial:
+
+- `POSTGRES_DB` é o nome do banco
+- `EXPO_PUBLIC_API_URL` é embutida no bundle do app no momento do build (use o IP da máquina host no dev, não `localhost`).
 
 ---
 

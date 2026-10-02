@@ -8,9 +8,15 @@ Este documento descreve como rodar o projeto localmente sem utilizar o fluxo com
 
 Antes de começar, você precisa ter instalado:
 
-- Node.js
-- npm
-- Docker
+- Node.js, a versão usada pelo projeto está fixada no `.nvmrc` na raiz, gerenciada com [nvm](https://github.com/nvm-sh/nvm#readme). Se você ainda não tem o nvm, siga os passos de instalação no README do repositório oficial dele (é um script de uma linha). Depois de instalado, na raiz do projeto:
+
+  ```bash
+  nvm install   # baixa a versão do .nvmrc (só na primeira vez)
+  nvm use       # ativa a versão do projeto
+  ```
+
+- npm (instalado junto com o Node)
+- Docker e Docker Compose
 - Android Studio
 - Expo CLI
 
@@ -34,7 +40,7 @@ Na raiz do projeto, execute:
 npm install
 ```
 
-Esse passo instala as dependências da raiz e ativa os hooks do git. Sem ele, commits com erro de formatação passam localmente e quebram o Format Check no CI.
+Esse passo instala, de uma vez, as dependências de todo o monorepo (raiz, backend e frontend — o projeto usa npm workspaces) e ativa os hooks do git. Sem ele, commits com erro de formatação passam localmente e quebram o Format Check no CI.
 
 Para confirmar que está ativo:
 
@@ -52,27 +58,33 @@ O retorno esperado é `.husky/_`. Se vier vazio, rode `npx husky` na raiz.
 
 O backend utiliza PostgreSQL via Docker.
 
-Na raiz do projeto, execute:
+O `docker-compose.yaml` lê as variáveis de conexão do arquivo `.env` na raiz do projeto. Se ele não existir (ou `POSTGRES_DB` estiver vazio), o container do banco não fica saudável e não será possível conectar.
 
-```bash
-docker compose up -d postgres_db
-```
-
-## 2. Configurar variáveis de ambiente
-
-Entre na pasta do backend:
-
-```bash
-cd backend
-```
-
-Crie o arquivo `.env`:
+Na raiz do projeto, crie o arquivo (caso ainda não exista) e preencha as variáveis do PostgreSQL:
 
 ```bash
 cp .env.example .env
 ```
 
-Preencha as variáveis necessárias do projeto.
+Preencha `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_DB`
+
+Depois, suba apenas o banco:
+
+```bash
+docker compose up -d postgres_db
+```
+
+Confirme que ele subiu antes de seguir:
+
+```bash
+docker compose ps
+```
+
+O serviço `postgres_db` deve aparecer com status `healthy`.
+
+## 2. Configurar variáveis de ambiente
+
+O backend carrega o `.env` da raiz do projeto (criado no passo 1). Nenhuma ação extra aqui, cada variável está documentada com comentário no `.env.example`.
 
 ## 3. Instalar dependências
 
@@ -80,13 +92,19 @@ Preencha as variáveis necessárias do projeto.
 npm install
 ```
 
+Com npm workspaces, esse comando instala, de uma vez, as dependências de todo o monorepo.
+
 ## 4. Rodar migrations
 
+Na pasta `backend/`:
+
 ```bash
-npx prisma migrate deploy
+npm run prisma:deploy
 ```
 
 ## 5. Iniciar backend
+
+Também na pasta `backend/`:
 
 ```bash
 npm run start:dev
@@ -108,25 +126,15 @@ O aplicativo pode ser executado diretamente no Android Emulator ou através de b
 
 ## 1. Configurar variáveis de ambiente
 
-Entre na pasta do frontend:
-
-```bash
-cd frontend
-```
-
-Crie o arquivo `.env`:
-
-```bash
-cp .env.example .env
-```
-
-Preencha as variáveis necessárias do projeto.
+O frontend utiliza o `.env` da raiz lendo `EXPO_PUBLIC_API_URL` dele. Garanta que essa variável esteja preenchida.
 
 ## 2. Instalar dependências
 
 ```bash
 npm install
 ```
+
+Com npm workspaces, esse comando instala, de uma vez, as dependências de todo o monorepo (vale também se rodado na raiz).
 
 ## 3. Sincronizar código nativo
 

@@ -1,13 +1,15 @@
 #!/bin/sh
 set -e
 
+cd /app/backend
+
 APP_ENV=${APP_ENV:-production}
 
 if [ "$APP_ENV" = "development" ]; then
-	npx prisma generate --schema=/app/prisma/schema.prisma
-	npx prisma migrate dev --name init --schema=/app/prisma/schema.prisma
+	npx prisma generate --schema=/app/backend/prisma/schema.prisma
+	npx prisma migrate dev --name init --schema=/app/backend/prisma/schema.prisma
 	exec npm run start:dev
 fi
 
-npx prisma migrate deploy --schema=/app/prisma/schema.prisma
+npx prisma migrate deploy --schema=/app/backend/prisma/schema.prisma
 exec npm run start:prod
