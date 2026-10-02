@@ -1,20 +1,37 @@
 {
+  "name": "projeto-manamano",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "packageManager": "npm@10.9.7",
   "scripts": {
-    "lint:backend": "eslint backend/src --ext .ts",
-    "lint:frontend": "eslint frontend/src --ext .ts,.tsx",
-    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:backend": "eslint backend",
+    "lint:frontend": "eslint frontend",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "prepare": "husky"
   },
+  "engines": {
+    "node": ">=24"
+  },
   "devDependencies": {
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^9.1.2",
+    "@types/jest": "^29.5.14",
+    "@typescript-eslint/eslint-plugin": "^8.71.0",
+    "@typescript-eslint/parser": "^8.71.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "^57.0.2",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-prettier": "^5.5.6",
+    "globals": "^16.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",
-    "prettier": "^3.8.3"
+    "prettier": "^3.8.3",
+    "typescript-eslint": "^8.71.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -24,5 +41,14 @@
     "*.{json,md,css}": [
       "prettier --write"
     ]
+  },
+  "allowScripts": {
+    "bcrypt@5.1.1": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "prisma@6.19.3": true,
+    "unrs-resolver@1.12.2": true,
+    "@parcel/watcher@2.6.0": true,
+    "@nestjs/core": false
   }
 }

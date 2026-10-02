@@ -1,22 +1,29 @@
-ARG NODE_IMAGE=node:20.19.5-alpine3.21
+ARG NODE_IMAGE=node:24-alpine
 
 FROM ${NODE_IMAGE} AS base
 
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/package.json
+COPY frontend/package.json ./frontend/package.json
 
 FROM base AS deps-dev
-RUN npm ci
+RUN npm ci -w backend --ignore-scripts
+RUN npm rebuild bcrypt
 
 FROM base AS deps-prod
-RUN npm ci --omit=dev
+RUN npm ci -w backend --omit=dev --ignore-scripts
+RUN npm rebuild bcrypt
 
 FROM deps-dev AS build
-COPY . .
-RUN npx prisma generate --schema=/app/prisma/schema.prisma
-RUN npm run build
-RUN node verifyPrisma.js
+COPY backend ./backend
+ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+RUN npx prisma generate --schema=/app/backend/prisma/schema.prisma
+RUN npm run build -w backend
+RUN node backend/verifyPrisma.js
 
 FROM ${NODE_IMAGE} AS runtime-prod
 
@@ -24,14 +31,13 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=deps-prod /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/entrypoint.sh ./entrypoint.sh
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/backend ./backend
 
-RUN chmod +x /app/entrypoint.sh
+RUN chmod +x /app/backend/entrypoint.sh
 
 EXPOSE 3000
-CMD ["/app/entrypoint.sh"]
+CMD ["/app/backend/entrypoint.sh"]
 
 FROM ${NODE_IMAGE} AS runtime-dev
 
@@ -41,7 +47,7 @@ ENV NODE_ENV=development
 COPY --from=deps-dev /app/node_modules ./node_modules
 COPY . .
 
-RUN chmod +x /app/entrypoint.sh
+RUN chmod +x /app/backend/entrypoint.sh
 
 EXPOSE 3000
-CMD ["/app/entrypoint.sh"]
+CMD ["/app/backend/entrypoint.sh"]

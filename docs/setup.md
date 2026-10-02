@@ -8,7 +8,7 @@ Este documento descreve como rodar o projeto localmente sem utilizar o fluxo com
 
 Antes de começar, você precisa ter instalado:
 
-- Node.js
+- Node.js (versão definida no `.nvmrc` na raiz; com nvm instalado, basta rodar `nvm use`)
 - npm
 - Docker
 - Android Studio
@@ -34,7 +34,7 @@ Na raiz do projeto, execute:
 npm install
 ```
 
-Esse passo instala as dependências da raiz e ativa os hooks do git. Sem ele, commits com erro de formatação passam localmente e quebram o Format Check no CI.
+Esse passo instala, de uma vez, as dependências de todo o monorepo (raiz, backend e frontend — o projeto usa npm workspaces) e ativa os hooks do git. Sem ele, commits com erro de formatação passam localmente e quebram o Format Check no CI.
 
 Para confirmar que está ativo:
 
@@ -79,6 +79,8 @@ Preencha as variáveis necessárias do projeto.
 ```bash
 npm install
 ```
+
+Com npm workspaces, esse comando instala, de uma vez, as dependências de todo o monorepo (vale também se rodado na raiz).
 
 ## 4. Rodar migrations
 
@@ -127,6 +129,8 @@ Preencha as variáveis necessárias do projeto.
 ```bash
 npm install
 ```
+
+Com npm workspaces, esse comando instala, de uma vez, as dependências de todo o monorepo (vale também se rodado na raiz).
 
 ## 3. Sincronizar código nativo
 

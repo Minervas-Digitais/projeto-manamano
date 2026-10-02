@@ -1,12 +1,13 @@
 {
-  "extends": "./node_modules/expo/tsconfig.base.json",
+  "extends": "expo/tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react",
     "strict": true,
     "esModuleInterop": true,
     "lib": ["ES2020"],
-    "ignoreDeprecations": "6.0",
-    "types": ["jest", "react", "react-native"]
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "types": ["jest", "react", "react-native", "node"]
   },
   "include": [
     "src",
@@ -14,7 +15,7 @@
     "**/*.tsx",
     "**/*.d.ts",
     "declaration.d.ts",
-    ".eslintrc.js",
+    "index.js",
     "__mocks__/react-native-gesture-handler.js"
   ]
 }

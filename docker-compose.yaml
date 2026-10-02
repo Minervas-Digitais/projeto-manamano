@@ -20,8 +20,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
       target: ${DOCKER_TARGET:-runtime-dev}
     container_name: manamano-backend
     restart: unless-stopped
