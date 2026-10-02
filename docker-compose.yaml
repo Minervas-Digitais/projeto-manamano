@@ -1,7 +1,8 @@
+name: manamano
+
 services:
   postgres_db:
     image: postgres:16-alpine
-    container_name: manamano-db
     restart: unless-stopped
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
@@ -23,14 +24,12 @@ services:
       context: .
       dockerfile: backend/Dockerfile
       target: ${DOCKER_TARGET:-runtime-dev}
-    container_name: manamano-backend
     restart: unless-stopped
     depends_on:
       postgres_db:
         condition: service_healthy
     env_file:
       - ./.env
-      - ./backend/.env
     environment:
       APP_ENV: ${APP_ENV:-development}
       BACKEND_PORT: 3000
@@ -40,7 +39,6 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: manamano-nginx
     restart: unless-stopped
     ports:
       - '8080:80'

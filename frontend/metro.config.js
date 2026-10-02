@@ -1,8 +1,14 @@
+const fs = require('fs');
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '..');
+
+const rootEnv = path.resolve(workspaceRoot, '.env');
+if (fs.existsSync(rootEnv)) {
+  process.loadEnvFile(rootEnv);
+}
 
 const config = getDefaultConfig(projectRoot);
 

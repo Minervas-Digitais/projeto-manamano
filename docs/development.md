@@ -31,6 +31,8 @@ cd backend
 npm run test
 ```
 
+Os testes sobem um PostgreSQL descartável via Testcontainers, é preciso ter o Docker rodando, mas o compose não precisa estar no ar e o banco de dev não é tocado.
+
 ### Antes de abrir PR
 
 - garantir que testes passam
@@ -83,20 +85,22 @@ Sempre que houver alterações no schema, siga o fluxo abaixo.
 
 ### Aplicar migrations existentes
 
+Na pasta `backend/`:
+
 ```bash
-npx prisma migrate deploy
+npm run prisma:deploy
 ```
 
 Use quando alterar o schema.prisma:
 
 ```bash
-npx prisma migrate dev --name nome_da_migration
+npm run prisma:migrate -- --name nome_da_migration
 ```
 
 Sempre que o schema for alterado, gere o client:
 
 ```bash
-npx prisma generate
+npm run prisma:generate
 ```
 
 ### Reset do banco
@@ -104,7 +108,7 @@ npx prisma generate
 Isso ajuda quando o Prisma ou migrations ficam inconsistentes:
 
 ```bash
-npx prisma migrate reset
+npm run prisma:reset
 ```
 
 ### Populando o banco
