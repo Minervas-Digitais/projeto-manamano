@@ -4,7 +4,15 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable global-require */
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, View, StyleSheet, ActivityIndicator, Text, Share } from 'react-native';
+import {
+  TouchableOpacity,
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Text,
+  Share,
+  RefreshControl,
+} from 'react-native';
 import { Buffer } from 'buffer';
 import { useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
@@ -24,6 +32,8 @@ import { GroupPageTabs } from '../GroupPage/GroupPageStyle';
 import PostCard from '../../components/PostCard/PostCard';
 import { useSideMenu } from '../../context/SideMenuContext';
 import api from '../../services/api';
+import useFetch from '../../hooks/useFetch';
+import ErrorState from '../../components/ErrorState/ErrorState';
 import { useAuth } from '../../context/auth/useAuth';
 import LocationIcon from '../../assets/location-icon.svg';
 import ShareWhiteIcon from '../../assets/share-white-icon.svg';
@@ -39,12 +49,9 @@ export default function VisitorProfile({ navigation }: any) {
   const { id: userId } = route.params as { id: string };
 
   const { toggleMenu } = useSideMenu();
-  const [user, setUser] = useState<any>(null);
-  const [posts, setPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [profileImage, setProfileImage] = useState<any>(null);
+  const [extraPosts, setExtraPosts] = useState<any[]>([]);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const { loggedId } = useAuth();
 
@@ -78,52 +85,74 @@ export default function VisitorProfile({ navigation }: any) {
     }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!loggedId || !userId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const userResponse = await api.get(`/user/${userId}`);
-        setUser(userResponse.data);
-        const userPostsResponse = await api.get(`/post/${userId}/posts`, {
-          params: { page: 1, limit: 10 },
-        });
-        const { data: items, meta } = userPostsResponse.data;
-        setPosts(items);
-        setHasMore(meta.page < meta.lastPage);
-        setPage(meta.page);
-        try {
-          const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-            responseType: 'arraybuffer',
-          });
-          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
-          const imageUri = `data:image/jpeg;base64,${imageStr}`;
-          setProfileImage({ uri: imageUri });
-        } catch (error) {
+  const userQuery = useFetch(
+    () => api.get(`/user/${userId}`).then((res) => res.data),
+    [loggedId, userId],
+    {
+      enabled: !!loggedId && !!userId,
+      onError: (_error, { hadData }) => {
+        // Sem dados o erro vira ErrorState com "tentar novamente"
+        if (hadData) {
           Toast.show({
             type: 'error',
             text1: 'Erro inesperado',
-            text2: 'Não foi possível carregar a imagem de perfil do usuário.',
+            text2: 'Não foi possível atualizar as informações do perfil do usuário.',
           });
-          setProfileImage(defaultAvatar);
         }
-      } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro inesperado',
-          text2: 'Não foi possível carregar as informações do perfil do usuário.',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+      },
+    },
+  );
+  const user = userQuery.data ?? null;
 
-    fetchData();
-  }, [userId, loggedId]);
+  const postsQuery = useFetch(
+    () =>
+      api.get(`/post/${userId}/posts`, { params: { page: 1, limit: 10 } }).then((res) => {
+        const payload = res.data;
+        if (Array.isArray(payload)) {
+          return { data: payload, meta: { page: 1, lastPage: 1 } };
+        }
+        return {
+          data: payload?.data ?? [],
+          meta: payload?.meta ?? { page: 1, lastPage: 1 },
+        };
+      }),
+    [loggedId, userId],
+    { enabled: !!loggedId && !!userId },
+  );
+
+  // Recarga no focus volta com a página 1: descarta as páginas extras
+  useEffect(() => {
+    setExtraPosts([]);
+    const meta = postsQuery.data?.meta;
+    setPage(meta?.page ?? 1);
+    setHasMore((meta?.page ?? 1) < (meta?.lastPage ?? 1));
+  }, [postsQuery.data]);
+
+  const posts = [...(postsQuery.data?.data ?? []), ...extraPosts];
+
+  const imageQuery = useFetch(
+    () =>
+      api.get(`/user/${userId}/profile-picture`, { responseType: 'arraybuffer' }).then((res) => {
+        const imageStr = Buffer.from(res.data, 'binary').toString('base64');
+        return { uri: `data:image/jpeg;base64,${imageStr}` };
+      }),
+    [loggedId, userId],
+    {
+      enabled: !!loggedId && !!userId,
+      onError: (_error, { hadData }) => {
+        if (hadData) {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro inesperado',
+            text2: 'Não foi possível atualizar a imagem de perfil do usuário.',
+          });
+        }
+      },
+    },
+  );
+  const profileImage = imageQuery.data ?? null;
+
+  const loading = userQuery.loading || postsQuery.loading || imageQuery.loading;
 
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore || !userId) return;
@@ -132,7 +161,7 @@ export default function VisitorProfile({ navigation }: any) {
       const nextPage = page + 1;
       const res = await api.get(`/post/${userId}/posts`, { params: { page: nextPage, limit: 10 } });
       const { data: items, meta } = res.data;
-      setPosts((prev) => [...prev, ...items]);
+      setExtraPosts((prev) => [...prev, ...(Array.isArray(items) ? items : [])]);
       setHasMore(meta.page < meta.lastPage);
       setPage(meta.page);
     } catch (e) {
@@ -155,6 +184,8 @@ export default function VisitorProfile({ navigation }: any) {
   }
 
   if (!user) {
+    // 404 = usuário realmente não existe; outros erros são falhas de requisição
+    const isNotFound = (userQuery.error as any)?.response?.status === 404;
     return (
       <HomePageBlue>
         <ProfileContainerInfo>
@@ -173,21 +204,31 @@ export default function VisitorProfile({ navigation }: any) {
               width="78px"
               source={profileImage || defaultAvatar}
             />
-            <View style={{ gap: '4px' }}>
-              <ProfileContainerData gap={10} center>
-                <GroupDataText color="white" size="20px" font="inter-bold">
-                  Usuário não encontrado
-                </GroupDataText>
-              </ProfileContainerData>
-            </View>
+            {isNotFound && (
+              <View style={{ gap: '4px' }}>
+                <ProfileContainerData gap={10} center>
+                  <GroupDataText color="white" size="20px" font="inter-bold">
+                    Usuário não encontrado
+                  </GroupDataText>
+                </ProfileContainerData>
+              </View>
+            )}
           </ProfileContainerData>
         </ProfileContainerInfo>
         <HomePageWhite style={{ gap: 0 }}>
-          <ProfileTextContainer style={{ padding: 25 }}>
-            <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
-              Este usuário não existe ou teve seu perfil removido.
-            </GroupDataText>
-          </ProfileTextContainer>
+          {isNotFound ? (
+            <ProfileTextContainer style={{ padding: 25 }}>
+              <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
+                Este usuário não existe ou teve seu perfil removido.
+              </GroupDataText>
+            </ProfileTextContainer>
+          ) : (
+            <ErrorState
+              inline
+              text="Não foi possível carregar o perfil."
+              onRetry={userQuery.refetch}
+            />
+          )}
         </HomePageWhite>
       </HomePageBlue>
     );
@@ -267,8 +308,32 @@ export default function VisitorProfile({ navigation }: any) {
         </ProfileTextContainer>
 
         <GroupPageTabs style={style.line} />
-        <ProfilePostsContainer>
-          {posts?.length > 0 ? (
+        <ProfilePostsContainer
+          refreshControl={
+            <RefreshControl
+              refreshing={userQuery.refreshing || postsQuery.refreshing}
+              onRefresh={() => {
+                userQuery.refresh();
+                postsQuery.refresh();
+              }}
+              colors={['#EF4036']}
+              tintColor="#EF4036"
+            />
+          }>
+          {postsQuery.loading && !posts.length ? (
+            <ActivityIndicator
+              testID="posts-loading"
+              size="large"
+              color="#EF4036"
+              style={{ marginTop: 20 }}
+            />
+          ) : !!postsQuery.error && !posts.length ? (
+            <ErrorState
+              inline
+              text="Não foi possível carregar as publicações deste usuário."
+              onRetry={postsQuery.refetch}
+            />
+          ) : posts?.length > 0 ? (
             <>
               {posts.map((item: any) => (
                 <PostCard

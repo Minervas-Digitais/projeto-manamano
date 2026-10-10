@@ -142,7 +142,8 @@ describe('Category', () => {
         .get('/category')
         .set('Authorization', `Bearer ${userToken}`);
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
     });
 
     it('deve retornar 401 se o token JWT for inválido ou ausente', async () => {

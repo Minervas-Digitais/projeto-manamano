@@ -3,7 +3,6 @@ import { BASE_MESSAGES } from './base.messages';
 export const POST_MESSAGES = {
   ...BASE_MESSAGES,
   NOT_FOUND: 'Publicação não encontrada.',
-  NO_POST_IN_LIST: 'Nenhuma publicação encontrada.',
   NO_POST_IN_GROUP: 'Nenhuma publicação encontrada neste grupo.',
   NO_POST_IN_CATEGORY: 'Nenhuma publicação encontrada nesta categoria.',
   NO_POST_IN_USER: 'Nenhuma publicação encontrada para este usuário.',

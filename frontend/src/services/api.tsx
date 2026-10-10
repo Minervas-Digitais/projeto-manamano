@@ -7,13 +7,17 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & {
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
+const REQUEST_TIMEOUT_MS = 10000;
+
 const api = axios.create({
   baseURL: BASE_URL,
+  timeout: REQUEST_TIMEOUT_MS,
   validateStatus: (status) => status < 400,
 });
 
 const refreshClient = axios.create({
   baseURL: BASE_URL,
+  timeout: REQUEST_TIMEOUT_MS,
 });
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -31,7 +35,11 @@ async function doRefresh() {
     await authStore.updateTokens(response.data.accessToken, response.data.refreshToken);
     return response.data.accessToken;
   } catch (error) {
-    await authStore.clearSession();
+    // Só encerra a sessão quando o servidor rejeita o refresh token;
+    // queda de rede/timeout não desloga o usuário.
+    if (axios.isAxiosError(error) && error.response) {
+      await authStore.clearSession();
+    }
     return null;
   }
 }

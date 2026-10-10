@@ -249,13 +249,13 @@ describe('LessonFiles', () => {
     );
   });
 
-  it('mostra toast error quando falha ao carregar', async () => {
+  it('mostra estado de erro com tentar novamente quando falha ao carregar', async () => {
     jest.mocked(api.get).mockRejectedValueOnce(new Error('fail'));
-    renderWithNavigation();
-    await waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'error', text1: 'Erro ao carregar arquivos da aula.' }),
-      );
-    });
+    const { findByTestId, getByTestId } = renderWithNavigation();
+    expect(await findByTestId('error-state', {}, { timeout: 5000 })).toBeTruthy();
+    expect(getByTestId('retry-button')).toBeTruthy();
+    expect(Toast.show).not.toHaveBeenCalledWith(
+      expect.objectContaining({ text1: 'Erro ao carregar arquivos da aula.' }),
+    );
   });
 });

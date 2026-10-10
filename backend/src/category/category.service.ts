@@ -22,12 +22,7 @@ export class CategoryService {
   }
 
   async findAll(): Promise<Category[]> {
-    const categories = await this.prismaService.category.findMany();
-    if (categories.length === 0) {
-      throw new NotFoundException(CATEGORY_MESSAGES.EMPTY_CATEGORY);
-    }
-
-    return categories;
+    return this.prismaService.category.findMany();
   }
 
   async findCategoriesInGroup(groupId: string): Promise<Category[]> {

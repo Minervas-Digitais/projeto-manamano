@@ -4,11 +4,19 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable global-require */
 import React, { useState, useEffect, useRef } from 'react';
-import { TouchableOpacity, View, StyleSheet, Share, Text, ActivityIndicator } from 'react-native';
+import {
+  TouchableOpacity,
+  View,
+  StyleSheet,
+  Share,
+  Text,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { Buffer } from 'buffer';
 import { useFocusEffect } from '@react-navigation/native';
-import { AxiosError } from 'axios';
 import Toast from 'react-native-toast-message';
+import StaleDataBanner from '../../components/StaleDataBanner/StaleDataBanner';
 import { useAuth } from '../../context/auth/useAuth';
 import { district } from './ProfileData'; // Adjust the path based on your folder structure
 import {
@@ -33,6 +41,8 @@ import MenuIcon from '../../assets/menu-white-icon.svg';
 import Pen from '../../assets/pen-icon.svg';
 import Business from '../../assets/business-icon.svg';
 import api from '../../services/api';
+import useFetch from '../../hooks/useFetch';
+import ErrorState from '../../components/ErrorState/ErrorState';
 
 const defaultAvatar = require('../../assets/user-profile.png');
 
@@ -56,26 +66,70 @@ export default function Profile({ navigation, route }: any) {
 
   const { toggleMenu } = useSideMenu();
 
-  const [fullName, setFullName] = useState('');
-  const [neighborhood, setNeighborhood] = useState('');
-  const [enterprise, setEnterprise] = useState('');
-  const [bio, setBio] = useState('');
-
   const [myPostsSelect, setMyPostsSelect] = useState(true);
   const [savedPostsSelect, setSavedPostsSelect] = useState(false);
   const [filterPosts, setFilterPosts] = useState('userPosts');
 
-  const [userPosts, setUserPosts] = useState<any[]>([]);
-  const [savedPosts, setSavedPosts] = useState<any[]>([]);
-  const [profileImage, setProfileImage] = useState<any>(null);
+  const [extraUserPosts, setExtraUserPosts] = useState<any[]>([]);
   const [userPostsPage, setUserPostsPage] = useState(1);
-  const [hasMoreUserPosts, setHasMoreUserPosts] = useState(true);
+  const [hasMoreUserPosts, setHasMoreUserPosts] = useState(false);
   const [loadingMoreUserPosts, setLoadingMoreUserPosts] = useState(false);
+  const [extraSavedPosts, setExtraSavedPosts] = useState<any[]>([]);
   const [savedPostsPage, setSavedPostsPage] = useState(1);
-  const [hasMoreSavedPosts, setHasMoreSavedPosts] = useState(true);
+  const [hasMoreSavedPosts, setHasMoreSavedPosts] = useState(false);
   const [loadingMoreSavedPosts, setLoadingMoreSavedPosts] = useState(false);
+  const [profileImage, setProfileImage] = useState<any>(null);
 
   const { loggedId } = useAuth();
+
+  const userQuery = useFetch<any>(
+    async () => (await api.get(`/user/${loggedId}`)).data,
+    [loggedId],
+    { enabled: !!loggedId },
+  );
+
+  const userPostsQuery = useFetch<{ posts: any[]; hasMore: boolean }>(
+    async () => {
+      const { data } = await api.get(`/post/${loggedId}/posts`, {
+        params: { page: 1, limit: 10 },
+      });
+      const { data: items, meta } = data;
+      return {
+        posts: Array.isArray(items) ? items : [],
+        hasMore: meta.page < meta.lastPage,
+      };
+    },
+    [loggedId],
+    {
+      enabled: !!loggedId,
+    },
+  );
+
+  const savedPostsQuery = useFetch<{ posts: any[]; hasMore: boolean }>(
+    async () => {
+      const { data } = await api.get('/saved-post', {
+        params: { page: 1, limit: 10 },
+      });
+      const isArray = Array.isArray(data);
+      const items = isArray ? data : data.data;
+      const meta = isArray ? { page: 1, lastPage: 1 } : data.meta;
+      return {
+        posts: Array.isArray(items) ? items : [],
+        hasMore: meta.page < meta.lastPage,
+      };
+    },
+    [loggedId],
+    {
+      enabled: !!loggedId,
+    },
+  );
+
+  const fullName = userQuery.data?.fullName ?? '';
+  const neighborhood = userQuery.data?.neighborhood ?? '';
+  const enterprise = userQuery.data?.enterprise ?? '';
+  const bio = userQuery.data?.bio ?? '';
+  const userPosts = [...(userPostsQuery.data?.posts ?? []), ...extraUserPosts];
+  const savedPosts = [...(savedPostsQuery.data?.posts ?? []), ...extraSavedPosts];
 
   useEffect(() => {
     if (route?.params?.initialTab === 'saved') {
@@ -97,101 +151,46 @@ export default function Profile({ navigation, route }: any) {
     prevSavedIdsRef.current = savedPostIds;
     if (removed.length === 0) return;
     const removedSet = new Set(removed);
-    setSavedPosts((prevPosts) => prevPosts.filter((p: any) => !removedSet.has(p.id)));
+    savedPostsQuery.mutate((prev) => {
+      if (!prev) return { posts: [], hasMore: false };
+      return { ...prev, posts: prev.posts.filter((p: any) => !removedSet.has(p.id)) };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedPostIds]);
 
   useFocusEffect(
     React.useCallback(() => {
-      const fetchUserData = async () => {
-        if (loggedId) {
-          try {
-            const userId = loggedId;
+      const fetchProfileImage = async () => {
+        if (!loggedId) return;
+        try {
+          const imageResponse = await api.get(`/user/${loggedId}/profile-picture`, {
+            responseType: 'arraybuffer',
+          });
 
-            const { data } = await api.get(`/user/${userId}`);
-
-            setFullName(data.fullName);
-            setNeighborhood(data.neighborhood);
-            setEnterprise(data.enterprise);
-            setBio(data.bio);
-
-            try {
-              const imageResponse = await api.get(`/user/${userId}/profile-picture`, {
-                responseType: 'arraybuffer',
-              });
-
-              const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
-              const imageUri = `data:image/jpeg;base64,${imageStr}`;
-              setProfileImage({ uri: imageUri });
-            } catch (error) {
-              setProfileImage(defaultAvatar);
-            }
-
-            const fetchUserPosts = async (page: number = 1) => {
-              try {
-                const { data: postData } = await api.get(`/post/${userId}/posts`, {
-                  params: { page, limit: 10 },
-                });
-                const { data: items, meta } = postData;
-                setUserPosts((prev) => (page === 1 ? items : [...prev, ...items]));
-                setHasMoreUserPosts(meta.page < meta.lastPage);
-                setUserPostsPage(meta.page);
-              } catch (error) {
-                Toast.show({
-                  type: 'error',
-                  text1: 'Erro ao carregar publicações',
-                  text2: 'Não foi possível buscar as publicações. Tente novamente.',
-                });
-              }
-            };
-
-            const fetchSavedPosts = async (page: number = 1) => {
-              try {
-                const { data: savedPostsData } = await api.get('/saved-post', {
-                  params: { page, limit: 10 },
-                });
-                const isArray = Array.isArray(savedPostsData);
-                const items = isArray ? savedPostsData : savedPostsData.data;
-                const meta = isArray ? { page: 1, lastPage: 1 } : savedPostsData.meta;
-                setSavedPosts((prev) => (page === 1 ? items : [...prev, ...items]));
-                setHasMoreSavedPosts(meta.page < meta.lastPage);
-                setSavedPostsPage(meta.page);
-              } catch (error) {
-                Toast.show({
-                  type: 'error',
-                  text1: 'Erro ao carregar salvos',
-                  text2: 'Não foi possível buscar os posts salvos. Tente novamente.',
-                });
-              }
-            };
-
-            fetchUserPosts(1);
-            fetchSavedPosts(1);
-          } catch (error) {
-            if (error instanceof AxiosError) {
-              if (error.response?.status === 404) {
-                setProfileImage(require('../../assets/user-profile.png'));
-              } else {
-                setProfileImage(require('../../assets/user-profile.png'));
-                Toast.show({
-                  type: 'error',
-                  text1: 'Erro ao carregar foto',
-                  text2: 'Não foi possível buscar sua foto de perfil.',
-                });
-              }
-            } else {
-              Toast.show({
-                type: 'error',
-                text1: 'Erro ao carregar perfil',
-                text2: 'Não foi possível buscar seus dados. Tente novamente.',
-              });
-            }
-          }
+          const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
+          const imageUri = `data:image/jpeg;base64,${imageStr}`;
+          setProfileImage({ uri: imageUri });
+        } catch (error) {
+          setProfileImage(defaultAvatar);
         }
       };
 
-      fetchUserData();
+      fetchProfileImage();
     }, [loggedId]),
   );
+
+  // Recarga no focus volta com a página 1: descarta as páginas extras
+  useEffect(() => {
+    setUserPostsPage(1);
+    setExtraUserPosts([]);
+    setHasMoreUserPosts(userPostsQuery.data?.hasMore ?? false);
+  }, [userPostsQuery.data]);
+
+  useEffect(() => {
+    setSavedPostsPage(1);
+    setExtraSavedPosts([]);
+    setHasMoreSavedPosts(savedPostsQuery.data?.hasMore ?? false);
+  }, [savedPostsQuery.data]);
 
   const handleLoadMoreUserPosts = async () => {
     if (loadingMoreUserPosts || !hasMoreUserPosts || !loggedId) return;
@@ -202,7 +201,7 @@ export default function Profile({ navigation, route }: any) {
         params: { page: nextPage, limit: 10 },
       });
       const { data: items, meta } = postData;
-      setUserPosts((prev) => [...prev, ...items]);
+      setExtraUserPosts((prev) => [...prev, ...(Array.isArray(items) ? items : [])]);
       setHasMoreUserPosts(meta.page < meta.lastPage);
       setUserPostsPage(meta.page);
     } catch (error) {
@@ -225,7 +224,7 @@ export default function Profile({ navigation, route }: any) {
         params: { page: nextPage, limit: 10 },
       });
       const { data: items, meta } = savedPostsData;
-      setSavedPosts((prev) => [...prev, ...items]);
+      setExtraSavedPosts((prev) => [...prev, ...(Array.isArray(items) ? items : [])]);
       setHasMoreSavedPosts(meta.page < meta.lastPage);
       setSavedPostsPage(meta.page);
     } catch (error) {
@@ -305,129 +304,181 @@ export default function Profile({ navigation, route }: any) {
         </ProfileContainerData>
       </ProfileContainerInfo>
       <HomePageWhite style={{ gap: 0 }}>
-        <ProfileTextContainer style={{ paddingVertical: 25, paddingHorizontal: 0 }}>
-          <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
-            {bio}
-          </GroupDataText>
-        </ProfileTextContainer>
-
-        <GroupPageTabs style={style.line}>
-          <ProfileTabsContainer
-            onPress={() => {
-              setMyPostsSelect(true);
-              setSavedPostsSelect(false);
-              setFilterPosts('userPosts');
-            }}
-            style={myPostsSelect ? style.selectStyleTab : {}}>
-            <GroupDataText
-              font="inter-bold"
-              size="18px"
-              color={myPostsSelect ? '#EF4036' : '#8F8F8F'}>
-              Publicações
-            </GroupDataText>
-          </ProfileTabsContainer>
-          <ProfileTabsContainer
-            onPress={() => {
-              setMyPostsSelect(false);
-              setSavedPostsSelect(true);
-              setFilterPosts('savedPosts');
-            }}
-            style={savedPostsSelect ? style.selectStyleTab : {}}>
-            <GroupDataText
-              font="inter-bold"
-              size="18px"
-              color={savedPostsSelect ? '#EF4036' : '#8F8F8F'}>
-              Salvas
-            </GroupDataText>
-          </ProfileTabsContainer>
-        </GroupPageTabs>
-        <ProfilePostsContainer>
-          <ProfilePostsContent>
-            {filterPosts === 'userPosts' ? (
-              userPosts?.length > 0 ? (
-                <>
-                  {userPosts?.map((item: any) => (
-                    <PostCard
-                      key={item.id}
-                      nameUser={item.nameUser}
-                      userId={item.userId}
-                      getUserProfileImage={getUserProfileImage}
-                      postContent={item.input}
-                      numComments={item.numComments}
-                      date={item.createdAt}
-                      share
-                      postId={item.id}
-                    />
-                  ))}
-                  {hasMoreUserPosts && (
-                    <TouchableOpacity
-                      onPress={handleLoadMoreUserPosts}
-                      disabled={loadingMoreUserPosts}
-                      style={{
-                        backgroundColor: '#EF4036',
-                        padding: 12,
-                        borderRadius: 8,
-                        marginTop: 16,
-                        alignItems: 'center',
-                        opacity: loadingMoreUserPosts ? 0.6 : 1,
-                      }}>
-                      {loadingMoreUserPosts ? (
-                        <ActivityIndicator color="#fff" />
-                      ) : (
-                        <Text style={{ color: '#fff', fontFamily: 'inter-bold' }}>
-                          Carregar mais
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </>
-              ) : (
-                <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
-                  Nenhuma Publicação encontrada
-                </Text>
-              )
-            ) : savedPosts?.length > 0 ? (
-              <>
-                {savedPosts?.map((item: any) => (
-                  <PostCard
-                    key={item.id}
-                    nameUser={item.nameUser}
-                    userId={item.userId}
-                    getUserProfileImage={getUserProfileImage}
-                    postContent={item.input}
-                    numComments={item.numComments}
-                    date={item.createdAt}
-                    share
-                    postId={item.id}
-                  />
-                ))}
-                {hasMoreSavedPosts && (
-                  <TouchableOpacity
-                    onPress={handleLoadMoreSavedPosts}
-                    disabled={loadingMoreSavedPosts}
-                    style={{
-                      backgroundColor: '#EF4036',
-                      padding: 12,
-                      borderRadius: 8,
-                      marginTop: 16,
-                      alignItems: 'center',
-                      opacity: loadingMoreSavedPosts ? 0.6 : 1,
-                    }}>
-                    {loadingMoreSavedPosts ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={{ color: '#fff', fontFamily: 'inter-bold' }}>Carregar mais</Text>
-                    )}
-                  </TouchableOpacity>
-                )}
-              </>
-            ) : (
-              <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
-                Nenhuma Publicação salva
-              </Text>
+        {!!userQuery.error && userQuery.data === undefined ? (
+          <ErrorState
+            inline
+            text="Não foi possível carregar seu perfil."
+            onRetry={userQuery.refetch}
+          />
+        ) : (
+          <>
+            {(userQuery.stale || userPostsQuery.stale || savedPostsQuery.stale) && (
+              <StaleDataBanner
+                refreshing={
+                  userQuery.refreshing || userPostsQuery.refreshing || savedPostsQuery.refreshing
+                }
+                onRefresh={() => {
+                  userQuery.refresh();
+                  userPostsQuery.refresh();
+                  savedPostsQuery.refresh();
+                }}
+              />
             )}
-          </ProfilePostsContent>
-        </ProfilePostsContainer>
+            <ProfileTextContainer style={{ paddingVertical: 25, paddingHorizontal: 0 }}>
+              <GroupDataText color="#515151" size="12px" font="inter-regular" numberOfLines={3}>
+                {bio}
+              </GroupDataText>
+            </ProfileTextContainer>
+
+            <GroupPageTabs style={style.line}>
+              <ProfileTabsContainer
+                onPress={() => {
+                  setMyPostsSelect(true);
+                  setSavedPostsSelect(false);
+                  setFilterPosts('userPosts');
+                }}
+                style={myPostsSelect ? style.selectStyleTab : {}}>
+                <GroupDataText
+                  font="inter-bold"
+                  size="18px"
+                  color={myPostsSelect ? '#EF4036' : '#8F8F8F'}>
+                  Publicações
+                </GroupDataText>
+              </ProfileTabsContainer>
+              <ProfileTabsContainer
+                onPress={() => {
+                  setMyPostsSelect(false);
+                  setSavedPostsSelect(true);
+                  setFilterPosts('savedPosts');
+                }}
+                style={savedPostsSelect ? style.selectStyleTab : {}}>
+                <GroupDataText
+                  font="inter-bold"
+                  size="18px"
+                  color={savedPostsSelect ? '#EF4036' : '#8F8F8F'}>
+                  Salvas
+                </GroupDataText>
+              </ProfileTabsContainer>
+            </GroupPageTabs>
+            <ProfilePostsContainer
+              refreshControl={
+                <RefreshControl
+                  refreshing={userPostsQuery.refreshing || savedPostsQuery.refreshing}
+                  onRefresh={() => {
+                    userPostsQuery.refresh();
+                    savedPostsQuery.refresh();
+                    userQuery.refresh();
+                  }}
+                  colors={['#EF4036']}
+                  tintColor="#EF4036"
+                />
+              }>
+              <ProfilePostsContent>
+                {filterPosts === 'userPosts' ? (
+                  userPostsQuery.loading ? (
+                    <ActivityIndicator size="large" color="#EF4036" style={{ marginTop: 20 }} />
+                  ) : !!userPostsQuery.error && userPostsQuery.data === undefined ? (
+                    <ErrorState
+                      inline
+                      text="Não foi possível carregar suas publicações."
+                      onRetry={userPostsQuery.refetch}
+                    />
+                  ) : userPosts?.length > 0 ? (
+                    <>
+                      {userPosts?.map((item: any) => (
+                        <PostCard
+                          key={item.id}
+                          nameUser={item.nameUser}
+                          userId={item.userId}
+                          getUserProfileImage={getUserProfileImage}
+                          postContent={item.input}
+                          numComments={item.numComments}
+                          date={item.createdAt}
+                          share
+                          postId={item.id}
+                        />
+                      ))}
+                      {hasMoreUserPosts && (
+                        <TouchableOpacity
+                          onPress={handleLoadMoreUserPosts}
+                          disabled={loadingMoreUserPosts}
+                          style={{
+                            backgroundColor: '#EF4036',
+                            padding: 12,
+                            borderRadius: 8,
+                            marginTop: 16,
+                            alignItems: 'center',
+                            opacity: loadingMoreUserPosts ? 0.6 : 1,
+                          }}>
+                          {loadingMoreUserPosts ? (
+                            <ActivityIndicator color="#fff" />
+                          ) : (
+                            <Text style={{ color: '#fff', fontFamily: 'inter-bold' }}>
+                              Carregar mais
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  ) : (
+                    <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
+                      Nenhuma Publicação encontrada
+                    </Text>
+                  )
+                ) : savedPostsQuery.loading ? (
+                  <ActivityIndicator size="large" color="#EF4036" style={{ marginTop: 20 }} />
+                ) : !!savedPostsQuery.error && savedPostsQuery.data === undefined ? (
+                  <ErrorState
+                    inline
+                    text="Não foi possível carregar seus posts salvos."
+                    onRetry={savedPostsQuery.refetch}
+                  />
+                ) : savedPosts?.length > 0 ? (
+                  <>
+                    {savedPosts?.map((item: any) => (
+                      <PostCard
+                        key={item.id}
+                        nameUser={item.nameUser}
+                        userId={item.userId}
+                        getUserProfileImage={getUserProfileImage}
+                        postContent={item.input}
+                        numComments={item.numComments}
+                        date={item.createdAt}
+                        share
+                        postId={item.id}
+                      />
+                    ))}
+                    {hasMoreSavedPosts && (
+                      <TouchableOpacity
+                        onPress={handleLoadMoreSavedPosts}
+                        disabled={loadingMoreSavedPosts}
+                        style={{
+                          backgroundColor: '#EF4036',
+                          padding: 12,
+                          borderRadius: 8,
+                          marginTop: 16,
+                          alignItems: 'center',
+                          opacity: loadingMoreSavedPosts ? 0.6 : 1,
+                        }}>
+                        {loadingMoreSavedPosts ? (
+                          <ActivityIndicator color="#fff" />
+                        ) : (
+                          <Text style={{ color: '#fff', fontFamily: 'inter-bold' }}>
+                            Carregar mais
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </>
+                ) : (
+                  <Text style={[style.noPostsText, { fontFamily: 'inter-regular' }]}>
+                    Nenhuma Publicação salva
+                  </Text>
+                )}
+              </ProfilePostsContent>
+            </ProfilePostsContainer>
+          </>
+        )}
       </HomePageWhite>
     </HomePageBlue>
   );

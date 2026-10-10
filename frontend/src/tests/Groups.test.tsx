@@ -45,6 +45,13 @@ jest.mock('expo-font', () => ({
 
 jest.mock('../assets/add-icon.svg', () => 'AddIcon');
 
+// As telas leem loggedId do AuthContext (preenchido pelo AuthProvider no App);
+// os testes renderizam a tela isolada, então simulamos o valor aqui.
+let mockLoggedId = 'regular-user';
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: mockLoggedId }),
+}));
+
 describe('Groups', () => {
   const mockedApi = api as jest.Mocked<typeof api>;
   const mockedStorage = storage as any;
@@ -67,6 +74,7 @@ describe('Groups', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLoggedId = 'regular-user';
   });
 
   it('Deve renderizar o cabecalho e a lista de grupos corretamente', async () => {
@@ -169,6 +177,7 @@ describe('Groups', () => {
   });
 
   it('deve mostrar um popup quando um moderador clica no botão de adicionar', async () => {
+    mockLoggedId = 'moderator-user';
     mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'moderator-user';
@@ -195,9 +204,7 @@ describe('Groups', () => {
     );
 
     await waitFor(() => {
-      expect(mockedApi.get).toHaveBeenCalledWith('/user/moderator-user', {
-        headers: { Authorization: 'Bearer fake-token' },
-      });
+      expect(mockedApi.get).toHaveBeenCalledWith('/user/moderator-user');
     });
 
     expect(queryByText('Criar Grupo')).toBeNull();
@@ -210,6 +217,7 @@ describe('Groups', () => {
   });
 
   it('deve navegar para "CreateGroup" quando um moderador seleciona a opção no popup', async () => {
+    mockLoggedId = 'moderator-user';
     mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'moderator-user';
@@ -236,9 +244,7 @@ describe('Groups', () => {
     );
 
     await waitFor(() => {
-      expect(mockedApi.get).toHaveBeenCalledWith('/user/moderator-user', {
-        headers: { Authorization: 'Bearer fake-token' },
-      });
+      expect(mockedApi.get).toHaveBeenCalledWith('/user/moderator-user');
     });
 
     const addButton = await findByTestId('add-button');
@@ -256,6 +262,7 @@ describe('Groups', () => {
   });
 
   it('deve navegar para "EntrarGrupo" quando um moderador seleciona a opção no popup', async () => {
+    mockLoggedId = 'moderator-user';
     mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'fake-token';
       if (key === 'loggedId') return 'moderator-user';
@@ -282,9 +289,7 @@ describe('Groups', () => {
     );
 
     await waitFor(() => {
-      expect(mockedApi.get).toHaveBeenCalledWith('/user/moderator-user', {
-        headers: { Authorization: 'Bearer fake-token' },
-      });
+      expect(mockedApi.get).toHaveBeenCalledWith('/user/moderator-user');
     });
 
     const addButton = await findByTestId('add-button');

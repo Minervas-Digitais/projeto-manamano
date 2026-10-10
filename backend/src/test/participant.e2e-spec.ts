@@ -223,15 +223,16 @@ describe('Participant (E2E)', () => {
       expect(res.status).toBe(403);
     });
 
-    it('deve retornar 404 se não houver participants', async () => {
+    it('deve retornar lista vazia se não houver participants', async () => {
       await prisma.participant.deleteMany();
 
       const res = await request(app.getHttpServer())
         .get('/participant')
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(res.status).toBe(404);
-      expect(res.body.message).toBe('Não há usuários em grupos.');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.total).toBe(0);
     });
 
     it('deve retornar 401 sem token', async () => {
@@ -344,7 +345,7 @@ describe('Participant (E2E)', () => {
       expect(res.status).toBe(404);
     });
 
-    it('deve retornar 404 se não houver participantes no grupo', async () => {
+    it('deve retornar lista vazia se não houver participantes no grupo', async () => {
       await prisma.participant.deleteMany({
         where: { groupId: group.id },
       });
@@ -353,8 +354,9 @@ describe('Participant (E2E)', () => {
         .get(`/participant/group/${group.id}/users`)
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(res.status).toBe(404);
-      expect(res.body.message).toBe('Não há usuários neste grupo.');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.total).toBe(0);
     });
 
     it('deve retornar 401 sem token', async () => {
@@ -423,12 +425,13 @@ describe('Participant (E2E)', () => {
       expect(postRes.title).toBe('Post teste');
     });
 
-    it('deve retornar 404 se não estiver em nenhum grupo', async () => {
+    it('deve retornar [] se não estiver em nenhum grupo', async () => {
       const res = await request(app.getHttpServer())
         .get('/participant/groups')
         .set('Authorization', `Bearer ${userToken}`);
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
     });
 
     it('deve retornar 401 sem token', async () => {

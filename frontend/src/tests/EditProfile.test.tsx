@@ -1,7 +1,8 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Alert, Button, TextInput } from 'react-native';
+import { Button, TextInput } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import Toast from 'react-native-toast-message';
 import { NavigationContainer } from '@react-navigation/native';
 import EditProfile from '../pages/EditProfile/EditProfile';
 import api from '../services/api';
@@ -67,9 +68,17 @@ jest.mock('../components/DropdownButton/DropdownCustom', () =>
 
 jest.mock('../components/SideMenu/SideMenu', () => 'SideMenu');
 
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: 'mock-user-id' }),
+}));
+
+jest.mock('react-native-toast-message', () => ({
+  __esModule: true,
+  default: { show: jest.fn() },
+}));
+
 const mockedApi = api as jest.Mocked<typeof api>;
 const mockedStorage = storage as any;
-const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(jest.fn());
 
 const renderWithNavigation = (component: React.ReactElement) =>
   render(<NavigationContainer>{component}</NavigationContainer>);
@@ -89,7 +98,6 @@ describe('EditProfile', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    alertSpy.mockClear();
 
     mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'mock-token';
@@ -122,20 +130,29 @@ describe('EditProfile', () => {
     });
   });
 
-  afterAll(() => {
-    alertSpy.mockRestore();
+  it('Deve exibir o botão de voltar', async () => {
+    const { findByTestId } = renderWithNavigation(<EditProfile />);
+
+    expect(await findByTestId('back-button', {}, { timeout: 5000 })).toBeTruthy();
+  });
+
+  it('Deve exibir o botão de voltar mesmo com erro e sem dados', async () => {
+    mockedApi.get.mockImplementation(() => Promise.reject(new Error('offline')));
+
+    const { findByTestId, getByTestId } = renderWithNavigation(<EditProfile />);
+
+    expect(await findByTestId('error-state', {}, { timeout: 5000 })).toBeTruthy();
+    expect(getByTestId('back-button')).toBeTruthy();
   });
 
   it('Deve renderizar corretamente com os dados na tela', async () => {
     const { getByLabelText } = renderWithNavigation(<EditProfile />);
 
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith('/user/mock-user-id', {
-        headers: { Authorization: 'Bearer mock-token' },
-      });
+      expect(api.get).toHaveBeenCalledWith('/user/mock-user-id');
+      expect(getByLabelText('Nome').props.value).toBe('Nome Teste');
     });
 
-    expect(getByLabelText('Nome').props.value).toBe('Nome Teste');
     expect(getByLabelText('Telefone').props.value).toBe('(11) 98765-4321');
     expect(getByLabelText('Data de Nascimento').props.value).toBe('19/10/1995');
     expect(getByLabelText('E-mail').props.value).toBe('teste@example.com');
@@ -154,9 +171,9 @@ describe('EditProfile', () => {
     fireEvent.press(getByLabelText('Salvar'));
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledTimes(1);
-      expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('Erros:'));
-      expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('Campo obrigatório'));
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ text1: 'Verifique os campos' }),
+      );
       expect(getByText('Campo obrigatório')).toBeTruthy();
     });
 
@@ -172,10 +189,8 @@ describe('EditProfile', () => {
     fireEvent.press(getByLabelText('Salvar'));
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledTimes(1);
-      expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('Erros:'));
-      expect(alertSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Apenas letras são permitidas'),
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ text1: 'Verifique os campos' }),
       );
       expect(getByText('Apenas letras são permitidas')).toBeTruthy();
     });
@@ -202,13 +217,12 @@ describe('EditProfile', () => {
           fullName: novoNome,
           birthday: new Date('1995-10-19').toISOString(),
         }),
-        {
-          headers: { Authorization: 'Bearer mock-token' },
-        },
       );
     });
 
-    expect(alertSpy).toHaveBeenCalledWith('Changes saved successfully!');
+    expect(Toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({ text1: 'Perfil atualizado!' }),
+    );
   });
 
   it('Deve lidar com os erros da API ao submitar e mostrar um alerta', async () => {
@@ -227,29 +241,31 @@ describe('EditProfile', () => {
       expect(api.patch).toHaveBeenCalled();
     });
 
-    expect(alertSpy).toHaveBeenCalledWith(`Failed to save data: ${mensagemErro}`);
+    expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ text2: mensagemErro }));
   });
 
   it('Deve permitir alterar a imagem de perfil', async () => {
     const { getByTestId } = renderWithNavigation(<EditProfile />);
 
     await waitFor(() => {
-      expect(mockedApi.get).toHaveBeenCalledWith('/user/mock-user-id', expect.any(Object));
+      expect(mockedApi.get).toHaveBeenCalledWith('/user/mock-user-id');
       expect(mockedApi.get).toHaveBeenCalledWith(
         '/user/mock-user-id/profile-picture',
         expect.any(Object),
       );
     });
 
-    const imageEditButton = getByTestId('edit-profile-picture-button');
-    fireEvent.press(imageEditButton);
+    let imageEditButton: ReturnType<typeof getByTestId>;
+    await waitFor(() => {
+      imageEditButton = getByTestId('edit-profile-picture-button');
+    });
+    fireEvent.press(imageEditButton!);
 
     await waitFor(() => {
       expect(DocumentPicker.getDocumentAsync).toHaveBeenCalled();
 
       expect(mockedApi.patch).toHaveBeenCalledWith('/user/profile-picture', expect.any(FormData), {
         headers: {
-          Authorization: 'Bearer mock-token',
           'Content-Type': 'multipart/form-data',
         },
       });

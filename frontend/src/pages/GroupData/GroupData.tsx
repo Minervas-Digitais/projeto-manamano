@@ -19,6 +19,9 @@ import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import GroupMembers from '../../components/GroupMembers/GroupMembers';
 import api from '../../services/api';
+import useFetch from '../../hooks/useFetch';
+import ErrorState from '../../components/ErrorState/ErrorState';
+import LoadingState from '../../components/LoadingState/LoadingState';
 import NotificationIcon from '../../assets/notification-icon.svg';
 import EditIcon from '../../assets/edit-icon.svg';
 import TrashCan from '../../assets/trash-can.svg';
@@ -31,12 +34,9 @@ export default function GroupData({ navigation }: any) {
 
   const { groupId } = route.params as { groupId: string };
   const duckPhoto = require('../../assets/duck.png');
-  const [groupInfo, setGroupInfo] = useState<any>();
-  const [groupParticipant, setGroupParticipant] = useState<any>([]);
-  const [userRole, setUserRole] = useState<string>('MEMBER');
-  const [loggedUserParticipantRole, setLoggedUserParticipantRole] = useState<string>('MEMBER');
+  const [extraMembers, setExtraMembers] = useState<any[]>([]);
   const [membersPage, setMembersPage] = useState(1);
-  const [hasMoreMembers, setHasMoreMembers] = useState(true);
+  const [hasMoreMembers, setHasMoreMembers] = useState(false);
   const [loadingMoreMembers, setLoadingMoreMembers] = useState(false);
   const [deleteModal, setDeleteModal] = useState({
     visible: false,
@@ -61,44 +61,52 @@ export default function GroupData({ navigation }: any) {
     }
   };
 
+  const groupQuery = useFetch(
+    () => api.get(`/group/${groupId}`).then((res) => res.data),
+    [loggedId, groupId],
+    { enabled: !!groupId && !!loggedId },
+  );
+  const groupInfo = groupQuery.data;
+
+  const userRoleQuery = useFetch(
+    () => api.get(`/user/${loggedId}`).then((res) => res.data),
+    [loggedId],
+    {
+      enabled: !!loggedId,
+      onError: (_error, { hadData }) => {
+        // Sem dados não avisa: o ErrorState da tela já cobre a falha
+        if (hadData) {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Erro ao atualizar os dados do usuário.',
+          });
+        }
+      },
+    },
+  );
+  const userRole = userRoleQuery.data?.sysRole ?? 'MEMBER';
+
+  const membersQuery = useFetch(
+    () =>
+      api
+        .get(`/participant/group/${groupId}/users`, { params: { page: 1, limit: 20 } })
+        .then((res) => res.data),
+    [loggedId, groupId],
+    { enabled: !!groupId && !!loggedId },
+  );
+
+  // Recarga no focus volta com a página 1
   useEffect(() => {
-    const fetchData = async () => {
-      if (groupId && loggedId) {
-        api.get(`/group/${groupId}`).then((res) => {
-          setGroupInfo(res.data);
-        });
-        api
-          .get(`/user/${loggedId}`)
-          .then((res) => {
-            setUserRole(res.data.sysRole);
-          })
-          .catch(() => {
-            Toast.show({
-              type: 'error',
-              text1: 'Erro',
-              text2: 'Erro ao buscar os dados do usuário.',
-            });
-          });
+    setExtraMembers([]);
+    const meta = membersQuery.data?.meta;
+    setMembersPage(meta?.page ?? 1);
+    setHasMoreMembers((meta?.page ?? 1) < (meta?.lastPage ?? 1));
+  }, [membersQuery.data]);
 
-        api
-          .get(`/participant/group/${groupId}/users`, { params: { page: 1, limit: 20 } })
-          .then((res) => {
-            const { data, meta } = res.data;
-            setGroupParticipant(data);
-            setHasMoreMembers(meta.page < meta.lastPage);
-            setMembersPage(meta.page);
-            const loggedUserParticipant = data.find(
-              (participant: any) => participant.userId === loggedId,
-            );
-            if (loggedUserParticipant) {
-              setLoggedUserParticipantRole(loggedUserParticipant.role);
-            }
-          });
-      }
-    };
-
-    fetchData();
-  }, [loggedId, groupId]);
+  const groupParticipant = [...(membersQuery.data?.data ?? []), ...extraMembers];
+  const loggedUserParticipantRole =
+    groupParticipant.find((participant: any) => participant.userId === loggedId)?.role ?? 'MEMBER';
 
   function handleRemoveParticipant() {
     api.delete(`/participant/group/${groupId}`).then(() => {
@@ -120,14 +128,7 @@ export default function GroupData({ navigation }: any) {
     try {
       await api.delete(`/participant/group/${groupId}`);
 
-      // Recarregar participantes após remoção
-      const response = await api.get(`/participant/group/${groupId}/users`, {
-        params: { page: 1, limit: 20 },
-      });
-      const { data, meta } = response.data;
-      setGroupParticipant(data);
-      setHasMoreMembers(meta.page < meta.lastPage);
-      setMembersPage(meta.page);
+      membersQuery.refetch();
       setDeleteModal({ visible: false, participantId: '', participantName: '' });
     } catch (error) {
       Toast.show({
@@ -147,7 +148,7 @@ export default function GroupData({ navigation }: any) {
         params: { page: nextPage, limit: 20 },
       });
       const { data, meta } = res.data;
-      setGroupParticipant((prev: any[]) => [...prev, ...data]);
+      setExtraMembers((prev: any[]) => [...prev, ...(Array.isArray(data) ? data : [])]);
       setHasMoreMembers(meta.page < meta.lastPage);
       setMembersPage(meta.page);
     } catch (e) {
@@ -166,6 +167,23 @@ export default function GroupData({ navigation }: any) {
     loggedUserParticipantRole === 'ADMIN' ||
     loggedUserParticipantRole === 'MODERATOR' ||
     loggedUserParticipantRole === 'INSTRUCTOR';
+
+  if (!!groupQuery.error && !groupInfo) {
+    return (
+      <ScreenWithHeader
+        headerProps={{
+          font: 'inter-bold',
+          text: 'Dados do grupo',
+          icon: <NotificationIcon />,
+          onPress: () => navigation.navigate('Notification'),
+        }}>
+        <ErrorState
+          text="Não foi possível carregar os dados do grupo."
+          onRetry={groupQuery.refetch}
+        />
+      </ScreenWithHeader>
+    );
+  }
 
   return (
     <ScreenWithHeader
@@ -209,7 +227,15 @@ export default function GroupData({ navigation }: any) {
                 <GroupDataText color="#3F3D3D" font="inter-bold" size="14px">
                   Docentes
                 </GroupDataText>
-                {groupParticipant?.length > 0 ? (
+                {membersQuery.loading && !groupParticipant.length ? (
+                  <LoadingState inline />
+                ) : !!membersQuery.error && !groupParticipant.length ? (
+                  <ErrorState
+                    inline
+                    text="Não foi possível carregar os membros."
+                    onRetry={membersQuery.refetch}
+                  />
+                ) : groupParticipant?.length > 0 ? (
                   groupParticipant?.map((item: any) => {
                     if (item.role === 'INSTRUCTOR') {
                       return (
@@ -250,7 +276,15 @@ export default function GroupData({ navigation }: any) {
                 <GroupDataText color="#3F3D3D" font="inter-bold" size="14px">
                   Colegas
                 </GroupDataText>
-                {groupParticipant?.length > 0 ? (
+                {membersQuery.loading && !groupParticipant.length ? (
+                  <LoadingState inline />
+                ) : !!membersQuery.error && !groupParticipant.length ? (
+                  <ErrorState
+                    inline
+                    text="Não foi possível carregar os membros."
+                    onRetry={membersQuery.refetch}
+                  />
+                ) : groupParticipant?.length > 0 ? (
                   groupParticipant?.map((item: any) => {
                     if (item.role === 'STUDENT' || item.role === 'MEMBER') {
                       return (

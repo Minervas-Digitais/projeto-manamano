@@ -1,9 +1,10 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { TouchableOpacity, Text, View } from 'react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { RefreshControl, TouchableOpacity, Text, View } from 'react-native';
 import GroupPage from '../pages/GroupPage/GroupPage';
 import api from '../services/api';
 import storage from '../services/secureStorage';
+import Toast from 'react-native-toast-message';
 
 const mockedNavigate = jest.fn();
 const mockedRoute = {
@@ -51,6 +52,17 @@ jest.mock('react-native-toast-message', () => ({
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
+}));
+
+// A tela lê loggedId do AuthContext (preenchido pelo AuthProvider no App).
+// O provider real só popula loggedId quando há token — aqui derivamos do
+// mesmo secureStorage mockado pelo teste para manter o mesmo contrato.
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => {
+    const storageMock = require('../services/secureStorage').default;
+    const hasToken = !!storageMock.getItem('accessToken');
+    return { loggedId: hasToken ? storageMock.getItem('loggedId') : null };
+  },
 }));
 
 jest.mock('expo-linear-gradient', () => ({
@@ -226,7 +238,7 @@ describe('GroupPage', () => {
         return Promise.resolve({ data: mockArchives });
       }
       if (url.includes('/participant/')) {
-        return Promise.resolve({ data: [{ userId: 'user-123', role: 'MEMBER' }] });
+        return Promise.resolve({ data: { userId: 'user-123', role: 'MEMBER' } });
       }
       if (url.includes('/saved-post')) {
         return Promise.resolve({ data: [] });
@@ -289,7 +301,6 @@ describe('GroupPage', () => {
       });
 
       expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
-        headers: { Authorization: 'Bearer fake-token' },
         params: {
           page: 1,
           limit: 10,
@@ -368,6 +379,38 @@ describe('GroupPage', () => {
   });
 
   // TESTES DE EDGE CASES
+  describe('Error without data', () => {
+    it('should show only header and retry when posts fail without data', async () => {
+      apiGetMock.mockImplementation((url: string) => {
+        if (url.includes('/post/group/')) {
+          return Promise.reject(new Error('offline'));
+        }
+        if (url.includes('/category/group/')) {
+          return Promise.resolve({ data: mockCategories });
+        }
+        if (url.includes('/archives/group/')) {
+          return Promise.resolve({ data: mockArchives });
+        }
+        if (url.includes('/participant/')) {
+          return Promise.resolve({ data: { userId: 'user-123', role: 'MEMBER' } });
+        }
+        if (url.includes('/saved-post')) {
+          return Promise.resolve({ data: [] });
+        }
+        return Promise.reject(new Error('Unknown endpoint'));
+      });
+
+      const { findByTestId, getByTestId, queryByText } = render(
+        <GroupPage navigation={{ navigate: mockedNavigate }} />,
+      );
+
+      expect(await findByTestId('error-state', {}, { timeout: 5000 })).toBeTruthy();
+      expect(getByTestId('retry-button')).toBeTruthy();
+      expect(queryByText('Mural')).toBeNull();
+      expect(queryByText('Aulas')).toBeNull();
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle empty posts list', async () => {
       apiGetMock.mockImplementation((url: string) => {
@@ -440,7 +483,6 @@ describe('GroupPage', () => {
 
       // Verifica que o usuário pode navegar normalmente (comportamento de MEMBER)
       expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
-        headers: { Authorization: 'Bearer fake-token' },
         params: {
           page: 1,
           limit: 10,
@@ -489,6 +531,36 @@ describe('GroupPage', () => {
       });
     });
 
+    it('shows the empty state when the group has no files', async () => {
+      apiGetMock.mockImplementation((url: string) => {
+        if (url.includes('/post/group/')) {
+          return Promise.resolve(buildPostsResponse(mockPosts));
+        }
+        if (url.includes('/category/group/')) {
+          return Promise.resolve({ data: mockCategories });
+        }
+        if (url.includes('/archives/group/')) {
+          return Promise.resolve({ data: [] });
+        }
+        if (url.includes('/participant/')) {
+          return Promise.resolve({ data: { userId: 'user-123', role: 'MEMBER' } });
+        }
+        if (url.includes('/saved-post')) {
+          return Promise.resolve({ data: [] });
+        }
+        return Promise.reject(new Error('Unknown endpoint'));
+      });
+
+      const { getByText, findByTestId } = render(
+        <GroupPage navigation={{ navigate: mockedNavigate }} />,
+      );
+
+      fireEvent.press(getByText('Arquivos'));
+
+      expect(await findByTestId('empty-state', {}, { timeout: 5000 })).toBeTruthy();
+      expect(getByText('Nenhum arquivo disponível.')).toBeTruthy();
+    });
+
     it('should handle category with "Aulas" filter', async () => {
       // Mock específico para testar filtro de categorias
       apiGetMock.mockImplementation((url: string) => {
@@ -511,9 +583,7 @@ describe('GroupPage', () => {
         expect(getByText('Categorias')).toBeTruthy();
       });
 
-      expect(apiGetMock).toHaveBeenCalledWith('/category/group/group-123', {
-        headers: { Authorization: 'Bearer fake-token' },
-      });
+      expect(apiGetMock).toHaveBeenCalledWith('/category/group/group-123');
     });
 
     it('should handle notification button press', async () => {
@@ -539,7 +609,6 @@ describe('GroupPage', () => {
       expect(postUser).toBeTruthy();
 
       expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
-        headers: { Authorization: 'Bearer fake-token' },
         params: {
           page: 1,
           limit: 10,
@@ -568,20 +637,15 @@ describe('GroupPage', () => {
 
       // Verifica que todas as APIs foram chamadas
       expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
-        headers: { Authorization: 'Bearer fake-token' },
         params: {
           page: 1,
           limit: 10,
         },
       });
 
-      expect(apiGetMock).toHaveBeenCalledWith('/category/group/group-123', {
-        headers: { Authorization: 'Bearer fake-token' },
-      });
+      expect(apiGetMock).toHaveBeenCalledWith('/category/group/group-123');
 
-      expect(apiGetMock).toHaveBeenCalledWith('/archives/group/group-123', {
-        headers: { Authorization: 'Bearer fake-token' },
-      });
+      expect(apiGetMock).toHaveBeenCalledWith('/archives/group/group-123');
     });
 
     it('should render all main components', async () => {
@@ -768,11 +832,11 @@ describe('GroupPage', () => {
       expect(mockedNavigate).toHaveBeenCalledWith('NewPost', { groupId: 'group-123' });
     });
 
-    it('should navigate to NewLesson when add button pressed on classes tab as ADMIN', async () => {
-      // Mock usuário como ADMIN para ver o botão na aba aulas
+    it('should navigate to NewLesson when add button pressed on classes tab as INSTRUCTOR', async () => {
+      // Somente INSTRUCTOR pode criar aulas (mesma regra do backend)
       apiGetMock.mockImplementation((url: string) => {
         if (url.includes('/participant/')) {
-          return Promise.resolve({ data: [{ userId: 'user-123', role: 'ADMIN' }] });
+          return Promise.resolve({ data: { userId: 'user-123', role: 'INSTRUCTOR' } });
         }
         if (url.includes('/post/group/')) {
           return Promise.resolve(buildPostsResponse(mockPosts));
@@ -783,7 +847,7 @@ describe('GroupPage', () => {
         return Promise.resolve({ data: [] });
       });
 
-      const { getByText, getByTestId } = render(
+      const { getByText, findByTestId } = render(
         <GroupPage navigation={{ navigate: mockedNavigate }} />,
       );
 
@@ -794,8 +858,8 @@ describe('GroupPage', () => {
         expect(getByText('Aulas')).toBeTruthy();
       });
 
-      // Agora o botão deve estar visível para role ADMIN
-      const classesAddButton = getByTestId('linear-gradient');
+      // Agora o botão deve estar visível para role INSTRUCTOR (espera a role carregar)
+      const classesAddButton = await findByTestId('linear-gradient');
       fireEvent.press(classesAddButton);
 
       expect(mockedNavigate).toHaveBeenCalledWith('NewLesson', { groupId: 'group-123' });
@@ -823,36 +887,19 @@ describe('GroupPage', () => {
 
       await waitFor(() => {
         // Deve chamar PATCH para atualizar post
-        expect(apiPatchMock).toHaveBeenCalledWith(
-          '/post/pin/post-1',
-          {},
-          {
-            headers: {
-              Authorization: 'Bearer fake-token',
-            },
-          },
-        );
+        expect(apiPatchMock).toHaveBeenCalledWith('/post/pin/post-1');
 
         // Deve enviar notificação ao fixar (quando !isPinned era false)
-        expect(apiPostMock).toHaveBeenCalledWith(
-          '/notifications',
-          {
-            groupId: 'group-123',
-            groupName: 'Grupo de Teste',
-            type: 'FIXED',
-            body: '',
-            idContent: 'post-1',
-          },
-          {
-            headers: {
-              Authorization: 'Bearer fake-token',
-            },
-          },
-        );
+        expect(apiPostMock).toHaveBeenCalledWith('/notifications', {
+          groupId: 'group-123',
+          groupName: 'Grupo de Teste',
+          type: 'FIXED',
+          body: '',
+          idContent: 'post-1',
+        });
 
         // Deve atualizar os posts
         expect(apiGetMock).toHaveBeenCalledWith('/post/group/group-123', {
-          headers: { Authorization: 'Bearer fake-token' },
           params: {
             page: 1,
             limit: 10,
@@ -900,21 +947,43 @@ describe('GroupPage', () => {
 
       await waitFor(() => {
         // Deve chamar PATCH para atualizar post
-        expect(apiPatchMock).toHaveBeenCalledWith(
-          '/post/unpin/pinned-post-1',
-          {},
-          {
-            headers: {
-              Authorization: 'Bearer fake-token',
-            },
-          },
-        );
+        expect(apiPatchMock).toHaveBeenCalledWith('/post/unpin/pinned-post-1');
 
         // NÃO deve enviar notificação ao desfixar (quando !isPinned era true)
         expect(apiPostMock).not.toHaveBeenCalled();
 
         expect(apiGetMock).toHaveBeenCalled();
       });
+    });
+
+    it('exibe o aviso de dados desatualizados quando a atualização falha', async () => {
+      const {
+        findByTestId,
+        getByTestId,
+        queryByTestId,
+        UNSAFE_getByType: getByType,
+      } = render(<GroupPage navigation={{ navigate: mockedNavigate }} />);
+
+      expect(await findByTestId('post-card-post-1')).toBeTruthy();
+      expect(queryByTestId('stale-data-banner')).toBeNull();
+
+      apiGetMock.mockImplementation(() => Promise.reject(new Error('offline')));
+
+      await act(async () => {
+        getByType(RefreshControl).props.onRefresh();
+      });
+
+      expect(await findByTestId('stale-data-banner', {}, { timeout: 5000 })).toBeTruthy();
+      expect(getByTestId('stale-data-refresh')).toBeTruthy();
+    });
+
+    it('não mostra toast quando a rede falha sem dados na tela', async () => {
+      apiGetMock.mockRejectedValue(new Error('Network error'));
+
+      const { findByTestId } = render(<GroupPage navigation={{ navigate: mockedNavigate }} />);
+
+      expect(await findByTestId('error-state', {}, { timeout: 5000 })).toBeTruthy();
+      expect(Toast.show).not.toHaveBeenCalled();
     });
 
     it('should handle fixActions error gracefully', async () => {
@@ -933,12 +1002,8 @@ describe('GroupPage', () => {
       await waitFor(() => {
         // Deve ter tentado chamar PATCH
         expect(apiPatchMock).toHaveBeenCalled();
-        // Erro deve ser tratado (console.error chamado)
-        // eslint-disable-next-line no-console
-        expect(console.error).toHaveBeenCalledWith(
-          'Erro ao fixar/desfixar post:',
-          expect.any(Error),
-        );
+        // Erro deve ser tratado com toast de erro
+        expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
       });
     });
 
@@ -963,15 +1028,7 @@ describe('GroupPage', () => {
 
       await waitFor(() => {
         // Deve chamar PATCH com token null
-        expect(apiPatchMock).toHaveBeenCalledWith(
-          '/post/pin/post-1',
-          {},
-          {
-            headers: {
-              Authorization: 'Bearer null',
-            },
-          },
-        );
+        expect(apiPatchMock).toHaveBeenCalledWith('/post/pin/post-1');
       });
     });
   });

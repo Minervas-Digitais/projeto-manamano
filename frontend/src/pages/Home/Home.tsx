@@ -7,7 +7,13 @@
 /* eslint-disable react/jsx-indent */
 /* eslint-disable implicit-arrow-linebreak */
 import React, { useEffect, useState, useCallback } from 'react';
-import { TouchableOpacity, View, ActivityIndicator, ScrollView } from 'react-native';
+import {
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  ScrollView,
+  RefreshControl,
+} from 'react-native';
 import { MMKV } from 'react-native-mmkv';
 import { Buffer } from 'buffer';
 import { StatusBar } from 'expo-status-bar';
@@ -34,154 +40,151 @@ import MenuIcon from '../../assets/menu-white-icon.svg';
 import LupaIcon from '../../assets/lupa-white-icon.svg';
 import { useAuth } from '../../context/auth/useAuth';
 import { useSideMenu } from '../../context/SideMenuContext';
+import useFetch from '../../hooks/useFetch';
+import ErrorState from '../../components/ErrorState/ErrorState';
+import StaleDataBanner from '../../components/StaleDataBanner/StaleDataBanner';
 
 export const storageHome = new MMKV();
 
 const POSTS_PER_PAGE = 15;
+const defaultAvatar = require('../../assets/user-profile.png');
+
+async function fetchFirstPostsPage(): Promise<{ posts: any[]; hasMore: boolean }> {
+  try {
+    const response = await api.get('participant/groups/posts', {
+      params: { page: 1, limit: POSTS_PER_PAGE },
+    });
+
+    const { data: newPosts, meta } = response.data;
+    return {
+      posts: Array.isArray(newPosts) ? newPosts : [],
+      hasMore: meta.page < meta.lastPage,
+    };
+  } catch (error: any) {
+    // Rota nova ainda não existe (404): usa a rota antiga
+    if (error?.response?.status !== 404) {
+      throw error;
+    }
+
+    const fallbackResponse = await api.get('participant/groups/');
+    const allGroups = Array.isArray(fallbackResponse.data) ? fallbackResponse.data : [];
+    const allPosts: any[] = [];
+
+    allGroups.forEach((group: any) => {
+      const groupPosts = group.group?.posts || group.group?.Post || [];
+      groupPosts.forEach((post: any) => {
+        allPosts.push({
+          ...post,
+          groupId: group.groupId,
+          group: {
+            name: group.group.name,
+          },
+          user: {
+            id: post.user?.id || post.userId,
+            fullName: post.user?.fullName || 'Usuário',
+          },
+        });
+      });
+    });
+
+    allPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const startIndex = 0;
+    const endIndex = POSTS_PER_PAGE;
+    return {
+      posts: allPosts.slice(startIndex, endIndex),
+      hasMore: endIndex < allPosts.length,
+    };
+  }
+}
 
 export default function Home({ navigation }: any) {
   const { toggleMenu } = useSideMenu();
   const { loggedId } = useAuth();
-  const defaultAvatar = require('../../assets/user-profile.png');
-  const [fullName, setFullName] = useState('');
-  const [groups, setGroups] = useState<any[]>([]);
   const [hiddenGroupIds, setHiddenGroupIds] = useState<string[]>([]);
   const [profileImage, setProfileImage] = useState<any>(null);
 
-  // Estados para paginação
-  const [posts, setPosts] = useState<any[]>([]);
+  const [extraPosts, setExtraPosts] = useState<any[]>([]);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!loggedId) return;
-
-      // Buscar informações do usuário
-      api
-        .get(`/user/${loggedId}`)
-        .then((res) => setFullName(res.data.fullName))
-        .catch(() => setFullName('Usuário'));
-
-      // Buscar grupos (sem posts)
-      api
-        .get('participant/groups/')
-        .then((res) => {
-          // Remover posts dos grupos pois vamos buscá-los separadamente
-          const groupsWithoutPosts = (res.data || []).map((group: any) => ({
-            ...group,
-            group: {
-              ...group.group,
-              Post: [],
-            },
-          }));
-          setGroups(groupsWithoutPosts);
-        })
-        .catch(() => setGroups([]));
-
-      // Carregar primeira página de posts
-      loadPosts(1, true);
-    };
-
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loggedId]);
-
-  const loadPosts = useCallback(
-    async (pageNumber: number, isInitial: boolean = false) => {
-      if (loading) return;
-
-      setLoading(true);
-      if (isInitial) setInitialLoading(true);
-
-      try {
-        const response = await api.get('participant/groups/posts', {
-          params: {
-            page: pageNumber,
-            limit: POSTS_PER_PAGE,
-          },
-        });
-
-        const { data: newPosts, meta } = response.data;
-        const hasMoreValue = meta.page < meta.lastPage;
-
-        setPosts((prevPosts) => (pageNumber === 1 ? newPosts : [...prevPosts, ...newPosts]));
-        setHasMore(hasMoreValue);
-        setPage(meta.page);
-      } catch (error: any) {
-        // Fallback: Se a rota não existir (404), usar a rota antiga
-        if (error?.response?.status === 404) {
-          try {
-            const fallbackResponse = await api.get('participant/groups/');
-
-            // Extrair e paginar posts manualmente
-            const allGroups = fallbackResponse.data || [];
-            const allPosts: any[] = [];
-
-            allGroups.forEach((group: any) => {
-              const groupPosts = group.group?.posts || group.group?.Post || [];
-              if (groupPosts.length > 0) {
-                groupPosts.forEach((post: any) => {
-                  allPosts.push({
-                    ...post,
-                    groupId: group.groupId,
-                    group: {
-                      name: group.group.name,
-                    },
-                    user: {
-                      id: post.user?.id || post.userId,
-                      fullName: post.user?.fullName || 'Usuário',
-                    },
-                  });
-                });
-              }
-            });
-
-            // Ordenar por data decrescente
-            allPosts.sort(
-              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-            );
-
-            // Paginar manualmente
-            const limit = POSTS_PER_PAGE;
-            const startIndex = (pageNumber - 1) * limit;
-            const endIndex = startIndex + limit;
-            const paginatedPosts = allPosts.slice(startIndex, endIndex);
-
-            setPosts((prevPosts) =>
-              pageNumber === 1 ? paginatedPosts : [...prevPosts, ...paginatedPosts],
-            );
-            setHasMore(endIndex < allPosts.length);
-            setPage(pageNumber);
-          } catch (fallbackError) {
-            Toast.show({
-              type: 'error',
-              text1: 'Erro inesperado',
-              text2: 'Não foi possível carregar os posts.',
-            });
-          }
-        } else {
-          Toast.show({
-            type: 'error',
-            text1: 'Erro inesperado',
-            text2: 'Não foi possível carregar os posts.',
-          });
-        }
-      } finally {
-        setLoading(false);
-        if (isInitial) setInitialLoading(false);
-      }
+  const userQuery = useFetch<any>(
+    async () => (await api.get(`/user/${loggedId}`)).data,
+    [loggedId],
+    {
+      enabled: !!loggedId,
     },
-    [loading],
   );
 
-  const handleLoadMore = useCallback(() => {
-    if (!loading && hasMore && loggedId) {
-      loadPosts(page + 1);
+  const groupsQuery = useFetch<any[]>(
+    async () => {
+      const res = await api.get('participant/groups/');
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+      // Zera os posts: o feed os busca separadamente
+      return (Array.isArray(list) ? list : []).map((group: any) => ({
+        ...group,
+        group: {
+          ...group.group,
+          Post: [],
+        },
+      }));
+    },
+    [loggedId],
+    {
+      enabled: !!loggedId,
+    },
+  );
+
+  const postsQuery = useFetch<{ posts: any[]; hasMore: boolean }>(fetchFirstPostsPage, [loggedId], {
+    enabled: !!loggedId,
+  });
+
+  const groups = groupsQuery.data ?? [];
+  const posts = [...(postsQuery.data?.posts ?? []), ...extraPosts];
+
+  useEffect(() => {
+    setPage(1);
+    setExtraPosts([]);
+    setHasMore(postsQuery.data?.hasMore ?? false);
+  }, [postsQuery.data]);
+
+  const loadMorePosts = useCallback(async () => {
+    if (loadingMore || !hasMore || !loggedId) return;
+
+    setLoadingMore(true);
+    try {
+      const response = await api.get('participant/groups/posts', {
+        params: { page: page + 1, limit: POSTS_PER_PAGE },
+      });
+
+      const { data: newPosts, meta } = response.data;
+      setExtraPosts((prev) => [...prev, ...(Array.isArray(newPosts) ? newPosts : [])]);
+      setPage(meta.page);
+      setHasMore(meta.page < meta.lastPage);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erro inesperado',
+        text2: 'Não foi possível carregar mais posts.',
+      });
+    } finally {
+      setLoadingMore(false);
     }
-  }, [loading, hasMore, page, loggedId, loadPosts]);
+  }, [loadingMore, hasMore, page, loggedId]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!loadingMore && hasMore && loggedId) {
+      loadMorePosts();
+    }
+  }, [loadingMore, hasMore, loggedId, loadMorePosts]);
+
+  const handleRefresh = useCallback(() => {
+    postsQuery.refresh();
+    groupsQuery.refresh();
+    userQuery.refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -276,6 +279,128 @@ export default function Home({ navigation }: any) {
     return isClose;
   };
 
+  const fullName = userQuery.data?.fullName ?? (userQuery.loading ? '' : 'Usuário');
+
+  const renderGroups = () => {
+    if (groupsQuery.loading) {
+      return <ActivityIndicator size="large" color="#EF4036" style={{ marginTop: 20 }} />;
+    }
+
+    if (groupsQuery.error && groupsQuery.data === undefined) {
+      return (
+        <ErrorState
+          inline
+          text="Não foi possível carregar seus grupos."
+          onRetry={groupsQuery.refetch}
+        />
+      );
+    }
+
+    if (groups.length === 0) {
+      return (
+        <GroupDataText font="inter-bold" color="#959393" size="20px">
+          Você não possui grupos...
+        </GroupDataText>
+      );
+    }
+
+    return groups.map((item: any) => (
+      <GroupButton
+        key={item.groupId}
+        testID={`group-button-${item.groupId}`}
+        onPress={() => {
+          navigation.navigate('GroupPage', {
+            groupId: item.groupId,
+            groupName: item.group.name,
+          });
+          storageHome.set('groupId', item.groupId);
+        }}
+        groupId={item.groupId}
+        groupName={item.group.name}
+        onlineMembers={item.participantCount}
+        onPressFilter={() => toggleGroupFilter(item.groupId)}
+        filterIcon={!hiddenGroupIds.includes(item.groupId)}
+      />
+    ));
+  };
+
+  const renderMural = () => {
+    if (postsQuery.loading) {
+      return <ActivityIndicator size="large" color="#EF4036" style={{ marginTop: 20 }} />;
+    }
+
+    if (postsQuery.error && postsQuery.data === undefined) {
+      return (
+        <ErrorState
+          inline
+          text="Não foi possível carregar os posts."
+          onRetry={postsQuery.refetch}
+        />
+      );
+    }
+
+    return (
+      <>
+        <View style={{ gap: 25 }}>
+          {filteredPosts.length > 0 ? (
+            filteredPosts.map((post: any) => (
+              <PostCard
+                key={post.id}
+                userId={post.user.id}
+                getUserProfileImage={getUserProfileImage}
+                nameUser={post.user.fullName}
+                postContent={post.input}
+                numComments={post.commentsCount}
+                date={formatRelativeDate(post.createdAt)}
+                originGroup={post.group.name}
+                tag
+                share
+                onPressPost={() => onPressPostAction(post.id)}
+                postId={post.id}
+              />
+            ))
+          ) : (
+            <GroupDataText font="inter-bold" color="#959393" size="20px">
+              Não há Posts...
+            </GroupDataText>
+          )}
+        </View>
+        {loadingMore && (
+          <ActivityIndicator
+            size="large"
+            color="#EF4036"
+            style={{ marginTop: 20, marginBottom: 20 }}
+          />
+        )}
+        {!loadingMore && hasMore && filteredPosts.length > 0 && (
+          <TouchableOpacity
+            onPress={handleLoadMore}
+            style={{
+              backgroundColor: '#EF4036',
+              padding: 15,
+              borderRadius: 10,
+              marginTop: 20,
+              marginBottom: 20,
+              alignItems: 'center',
+            }}>
+            <GroupDataText font="inter-bold" color="#fff" size="16px">
+              Carregar mais posts
+            </GroupDataText>
+          </TouchableOpacity>
+        )}
+        {!hasMore && filteredPosts.length > 0 && (
+          <GroupDataText
+            font="inter-bold"
+            color="#959393"
+            size="16px"
+            style={{ textAlign: 'center', marginTop: 20, marginBottom: 20 }}>
+            Você chegou ao fim! 🎉
+          </GroupDataText>
+        )}
+      </>
+    );
+  };
+
   return (
     <HomePageBlue style={{ display: loggedId ? 'flex' : 'none' }}>
       <StatusBar />
@@ -313,106 +438,37 @@ export default function Home({ navigation }: any) {
             handleLoadMore();
           }
         }}
-        scrollEventThrottle={200}>
+        scrollEventThrottle={200}
+        refreshControl={
+          <RefreshControl
+            refreshing={postsQuery.refreshing || groupsQuery.refreshing}
+            onRefresh={handleRefresh}
+            colors={['#EF4036']}
+            tintColor="#EF4036"
+          />
+        }>
         <HomePageWhite>
+          {(postsQuery.stale || groupsQuery.stale) && (
+            <StaleDataBanner
+              refreshing={postsQuery.refreshing || groupsQuery.refreshing}
+              onRefresh={() => {
+                postsQuery.refresh();
+                groupsQuery.refresh();
+              }}
+            />
+          )}
           <HomeContainerGroup>
             <GroupDataText font="inter-bold" color="#3F3D3D" size="20px">
               Grupos
             </GroupDataText>
-            <HomeContainerListGroup>
-              {groups?.length > 0 ? (
-                groups.map((item: any) => (
-                  <GroupButton
-                    key={item.groupId}
-                    testID={`group-button-${item.groupId}`}
-                    onPress={() => {
-                      navigation.navigate('GroupPage', {
-                        groupId: item.groupId,
-                        groupName: item.group.name,
-                      });
-                      storageHome.set('groupId', item.groupId);
-                    }}
-                    groupId={item.groupId}
-                    groupName={item.group.name}
-                    onlineMembers={item.participantCount}
-                    onPressFilter={() => toggleGroupFilter(item.groupId)}
-                    filterIcon={!hiddenGroupIds.includes(item.groupId)}
-                  />
-                ))
-              ) : (
-                <GroupDataText font="inter-bold" color="#959393" size="20px">
-                  Você não possui grupos...
-                </GroupDataText>
-              )}
-            </HomeContainerListGroup>
+            <HomeContainerListGroup>{renderGroups()}</HomeContainerListGroup>
           </HomeContainerGroup>
           <GroupDataLine />
           <HomeContainerMural>
             <GroupDataText font="inter-bold" color="#3F3D3D" size="20px">
               Mural
             </GroupDataText>
-            {initialLoading ? (
-              <ActivityIndicator size="large" color="#EF4036" style={{ marginTop: 20 }} />
-            ) : (
-              <>
-                <View style={{ gap: 25 }}>
-                  {filteredPosts.length > 0 ? (
-                    filteredPosts.map((post: any) => (
-                      <PostCard
-                        key={post.id}
-                        userId={post.user.id}
-                        getUserProfileImage={getUserProfileImage}
-                        nameUser={post.user.fullName}
-                        postContent={post.input}
-                        numComments={post.commentsCount}
-                        date={formatRelativeDate(post.createdAt)}
-                        originGroup={post.group.name}
-                        tag
-                        share
-                        onPressPost={() => onPressPostAction(post.id)}
-                        postId={post.id}
-                      />
-                    ))
-                  ) : (
-                    <GroupDataText font="inter-bold" color="#959393" size="20px">
-                      Não há Posts...
-                    </GroupDataText>
-                  )}
-                </View>
-                {loading && !initialLoading && (
-                  <ActivityIndicator
-                    size="large"
-                    color="#EF4036"
-                    style={{ marginTop: 20, marginBottom: 20 }}
-                  />
-                )}
-                {!loading && hasMore && filteredPosts.length > 0 && (
-                  <TouchableOpacity
-                    onPress={handleLoadMore}
-                    style={{
-                      backgroundColor: '#EF4036',
-                      padding: 15,
-                      borderRadius: 10,
-                      marginTop: 20,
-                      marginBottom: 20,
-                      alignItems: 'center',
-                    }}>
-                    <GroupDataText font="inter-bold" color="#fff" size="16px">
-                      Carregar mais posts
-                    </GroupDataText>
-                  </TouchableOpacity>
-                )}
-                {!hasMore && filteredPosts.length > 0 && (
-                  <GroupDataText
-                    font="inter-bold"
-                    color="#959393"
-                    size="16px"
-                    style={{ textAlign: 'center', marginTop: 20, marginBottom: 20 }}>
-                    Você chegou ao fim! 🎉
-                  </GroupDataText>
-                )}
-              </>
-            )}
+            {renderMural()}
           </HomeContainerMural>
         </HomePageWhite>
       </ScrollView>

@@ -34,6 +34,12 @@ jest.mock('../services/localStorage', () => ({
   },
 }));
 
+let mockLoggedId: string | undefined = 'user-123';
+
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: mockLoggedId }),
+}));
+
 jest.mock('../components/HeaderCustom/HeaderCustom', () => {
   function MockHeaderCustom({ text }: any) {
     return (
@@ -52,6 +58,7 @@ describe('EditGroup', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLoggedId = 'user-123';
 
     mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'accessToken') return 'mock-access-token';
@@ -91,13 +98,8 @@ describe('EditGroup', () => {
     render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
 
     await waitFor(() => {
-      expect(mockedStorage.getItem).toHaveBeenCalledWith('accessToken');
       expect(mockedLocalStorage.getString).toHaveBeenCalledWith('groupId');
-      expect(mockedApi.get).toHaveBeenCalledWith('/group/mock-group-id', {
-        headers: {
-          Authorization: 'Bearer mock-access-token',
-        },
-      });
+      expect(mockedApi.get).toHaveBeenCalledWith('/group/mock-group-id');
     });
   });
 
@@ -183,7 +185,7 @@ describe('EditGroup', () => {
     );
 
     await waitFor(() => {
-      expect(mockedApi.get).toHaveBeenCalled();
+      expect(getByLabelText('Nome do Grupo').props.value).toBe('Grupo de Teste');
     });
 
     const nameInput = getByLabelText('Nome do Grupo');
@@ -201,18 +203,10 @@ describe('EditGroup', () => {
     fireEvent.press(submitButton);
 
     await waitFor(() => {
-      expect(mockedApi.patch).toHaveBeenCalledWith(
-        '/group/mock-group-id',
-        {
-          name: 'Grupo Editado',
-          description: 'Descrição editada',
-        },
-        {
-          headers: {
-            Authorization: 'Bearer mock-access-token',
-          },
-        },
-      );
+      expect(mockedApi.patch).toHaveBeenCalledWith('/group/mock-group-id', {
+        name: 'Grupo Editado',
+        description: 'Descrição editada',
+      });
     });
   });
 
@@ -241,6 +235,7 @@ describe('EditGroup', () => {
   });
 
   it('não deve carregar dados quando não há token de acesso', async () => {
+    mockLoggedId = undefined;
     mockedStorage.getItem.mockResolvedValue(undefined);
     mockedLocalStorage.getString.mockReturnValue('mock-group-id');
 
@@ -252,6 +247,7 @@ describe('EditGroup', () => {
   });
 
   it('não deve submeter quando não há dados de autenticação', async () => {
+    mockLoggedId = undefined;
     mockedStorage.getItem.mockResolvedValue(undefined);
     mockedLocalStorage.getString.mockReturnValue('mock-group-id');
 

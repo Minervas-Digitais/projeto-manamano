@@ -123,9 +123,6 @@ export class ParticipantService {
       this.prismaService.participant.count(),
     ]);
 
-    if (participants.length === 0) {
-      throw new NotFoundException(PARTICIPANT_MESSAGES.EMPTY_GROUP);
-    }
     return new PaginatedResponseDto(participants, total, pagination);
   }
 
@@ -155,10 +152,6 @@ export class ParticipantService {
         },
       },
     });
-
-    if (groups.length === 0) {
-      throw new NotFoundException(PARTICIPANT_MESSAGES.NOT_IN_GROUPS);
-    }
 
     const allPostIds = groups.flatMap((g) => g.group.posts.map((p) => p.id));
     const allGroupIds = groups.map((g) => g.groupId);
@@ -306,9 +299,6 @@ export class ParticipantService {
       this.prismaService.participant.count({ where: { groupId } }),
     ]);
 
-    if (users.length === 0) {
-      throw new NotFoundException(PARTICIPANT_MESSAGES.NO_USERS_IN_GROUP);
-    }
     return new PaginatedResponseDto<UserInGroup>(users as UserInGroup[], total, pagination);
   }
 

@@ -7,7 +7,7 @@ import { BackButtonIcon } from './BackButtonStyle';
 export default function BackButton() {
   const navigation = useNavigation();
   return (
-    <TouchableOpacity onPress={() => navigation.goBack()}>
+    <TouchableOpacity testID="back-button" onPress={() => navigation.goBack()}>
       <BackButtonIcon />
     </TouchableOpacity>
   );

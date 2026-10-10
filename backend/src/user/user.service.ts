@@ -84,9 +84,6 @@ export class UserService {
 
   async findAll(): Promise<Omit<User, 'hash'>[]> {
     const users = await this.prismaService.user.findMany();
-    if (users.length === 0) {
-      throw new NotFoundException(USER_MESSAGES.EMPTY_LIST);
-    }
     return users.map(omitHash);
   }
 

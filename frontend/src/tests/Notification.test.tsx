@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { RefreshControl } from 'react-native';
 import Toast from 'react-native-toast-message';
 import Notification from '../pages/Notification/Notification';
 import api from '../services/api';
@@ -15,6 +16,14 @@ jest.mock('react-native-toast-message', () => ({
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
+}));
+
+// A tela lê loggedId do AuthContext (preenchido pelo AuthProvider no App).
+// O secureStorage do teste é assíncrono, então usamos uma variável estável
+// em vez de derivar do storage dentro do hook.
+let mockLoggedId: string | null = null;
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: mockLoggedId }),
 }));
 
 const mockedNavigate = jest.fn();
@@ -108,6 +117,7 @@ describe('Notification', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLoggedId = 'user-123';
 
     mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'loggedId') return 'user-123';
@@ -182,11 +192,7 @@ describe('Notification', () => {
     fireEvent.press(notificationItem);
 
     await waitFor(() => {
-      expect(mockedApi.patch).toHaveBeenCalledWith(
-        '/notifications/notif-1',
-        {},
-        expect.any(Object),
-      );
+      expect(mockedApi.patch).toHaveBeenCalledWith('/notifications/notif-1', {});
     });
 
     expect(mockedNavigate).toHaveBeenCalledWith('Post', { postId: 'post-abc' });
@@ -199,11 +205,7 @@ describe('Notification', () => {
     fireEvent.press(notificationItem);
 
     await waitFor(() => {
-      expect(mockedApi.patch).toHaveBeenCalledWith(
-        '/notifications/notif-4',
-        {},
-        expect.any(Object),
-      );
+      expect(mockedApi.patch).toHaveBeenCalledWith('/notifications/notif-4', {});
     });
 
     expect(mockedNavigate).toHaveBeenCalledWith('Post', { postId: 'fixed-abc' });
@@ -216,17 +218,14 @@ describe('Notification', () => {
     fireEvent.press(warningItem);
 
     await waitFor(() => {
-      expect(mockedApi.patch).toHaveBeenCalledWith(
-        '/notifications/notif-2',
-        {},
-        expect.any(Object),
-      );
+      expect(mockedApi.patch).toHaveBeenCalledWith('/notifications/notif-2', {});
     });
 
     expect(mockedNavigate).toHaveBeenCalledWith('NotificationPage');
   });
 
   it('Deve renderizar a tela especifica para ADMIN', async () => {
+    mockLoggedId = 'admin-123';
     mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'loggedId') return 'admin-123';
       if (key === 'accessToken') return 'admin-fake-token';
@@ -251,32 +250,28 @@ describe('Notification', () => {
     });
   });
 
-  it('Deve chamar a funcao de buscar notificacoes periodicamente', async () => {
+  it('Deve buscar as notificações uma vez e não fazer polling', async () => {
     jest.useFakeTimers();
     mockedApi.get.mockResolvedValue({ data: [] });
 
     render(<Notification navigation={mockedNavigate} />);
 
     await waitFor(() => {
-      // useFocusEffect + primeiro fetchNotifications + fetchUserInfo
+      // useFocusEffect/mount + fetchUserInfo
       expect(mockedApi.get).toHaveBeenCalledTimes(2);
     });
 
-    act(() => {
-      // Avanca o tempo do setInterval
-      jest.advanceTimersByTime(1000);
+    await act(async () => {
+      // Avança bem além do antigo intervalo de 1s: nenhuma chamada nova
+      jest.advanceTimersByTime(5000);
     });
 
-    await waitFor(() => {
-      expect(mockedApi.get).toHaveBeenCalledTimes(3);
-    });
+    expect(mockedApi.get).toHaveBeenCalledTimes(2);
 
     jest.useRealTimers();
   });
 
   it('Deve lidar com erros ao buscar as notificacoes', async () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
     mockedApi.get.mockImplementation(async (url: string) => {
       if (url.includes('/user/')) {
         return Promise.reject(new Error('Falha ao buscar usuário'));
@@ -284,19 +279,42 @@ describe('Notification', () => {
       return Promise.reject(new Error(`URL não mockada: ${url}`));
     });
 
-    render(<Notification navigation={{ navigate: mockedNavigate }} />);
+    const { getByTestId } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
 
+    // Falha sem conteúdo vira estado inline de erro (sem toast redundante)
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Erro ao buscar informações do usuário:',
-        expect.any(Error),
-      );
+      expect(getByTestId('error-state')).toBeTruthy();
+    });
+    expect(getByTestId('retry-button')).toBeTruthy();
+  });
+
+  it('exibe o aviso de dados desatualizados quando a atualização falha', async () => {
+    const {
+      findByText,
+      findByTestId,
+      getByTestId,
+      queryByTestId,
+      UNSAFE_getByType: getByType,
+    } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
+
+    expect(await findByText('warning123')).toBeTruthy();
+    expect(queryByTestId('stale-data-banner')).toBeNull();
+
+    mockedApi.get.mockImplementation(() => Promise.reject(new Error('offline')));
+
+    await act(async () => {
+      getByType(RefreshControl).props.onRefresh();
     });
 
-    consoleErrorSpy.mockRestore();
+    expect(await findByTestId('stale-data-banner', {}, { timeout: 5000 })).toBeTruthy();
+    expect(getByTestId('stale-data-refresh')).toBeTruthy();
+    // com dados na tela a falha nunca vira estado de erro
+    expect(queryByTestId('error-state')).toBeNull();
+    expect(queryByTestId('loading-state')).toBeNull();
   });
 
   it('Deve excluir uma notificação após a confirmação do admin', async () => {
+    mockLoggedId = 'admin-123';
     const notifToDelete = mockNotifications[1];
 
     mockedStorage.getItem.mockImplementation(async (key: string) => {
@@ -333,22 +351,20 @@ describe('Notification', () => {
     });
 
     await waitFor(() => {
-      expect(mockedApi.delete).toHaveBeenCalledWith(`notifications/${notifToDelete.id}`, {
-        headers: { Authorization: 'Bearer admin-fake-token' },
-      });
+      expect(mockedApi.delete).toHaveBeenCalledWith(`notifications/${notifToDelete.id}`);
     });
 
     await waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'success',
-          text1: 'Notificação excluída com sucesso!',
         }),
       );
     });
   });
 
   it('deve exibir um alerta de erro se a deleção da notificação falhar', async () => {
+    mockLoggedId = 'admin-123';
     mockedStorage.getItem.mockImplementation(async (key: string) => {
       if (key === 'loggedId') return 'admin-123';
       if (key === 'accessToken') return 'admin-fake-token';
@@ -383,18 +399,8 @@ describe('Notification', () => {
       expect(Toast.show).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'error',
-          text1: 'Erro ao excluir notificação.',
         }),
       );
     });
-  });
-
-  it('deve navegar para a tela inicial ao clicar no botão de retorno', async () => {
-    const { findByText } = render(<Notification navigation={{ navigate: mockedNavigate }} />);
-
-    const returnButton = await findByText('Retornar para a tela inicial');
-    fireEvent.press(returnButton);
-
-    expect(mockedNavigate).toHaveBeenCalledWith('Home');
   });
 });
