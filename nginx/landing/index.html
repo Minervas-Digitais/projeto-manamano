@@ -3,13 +3,348 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Download do App</title>
+    <meta name="theme-color" content="#F2F6FA" />
+    <meta
+      name="description"
+      content="Baixe o aplicativo ManaMano para Android. Conectando microempreendedoras da periferia através do conhecimento." />
+    <title>ManaMano | Baixe o aplicativo</title>
+    <link rel="icon" type="image/png" href="assets/logo.png" />
+    <link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="index.css" />
   </head>
   <body>
-    <div class="box">
-      <h1>Baixe o App</h1>
-      <p>Disponível para Android</p>
-      <a href="/downloads/app.apk">Baixar APK</a>
-    </div>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+    <header class="site-header" id="topo">
+      <div class="container header-inner">
+        <a class="brand" href="#inicio" aria-label="ManaMano, início">
+          <img src="assets/logo.png" width="188" height="188" alt="" />
+          <span class="brand-name">Mana<span>Mano</span></span>
+        </a>
+
+        <nav class="nav" id="nav" aria-label="Principal">
+          <ul>
+            <li><a href="#inicio">Início</a></li>
+            <li><a href="#recursos">Recursos</a></li>
+            <li><a href="#instalacao">Como instalar</a></li>
+            <li><a href="#faq">Perguntas frequentes</a></li>
+            <li class="nav-download">
+              <a class="btn btn-primary btn-sm" href="/downloads/app.apk" download>
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 3v10" />
+                  <path d="M8 9.5 12 13.5 16 9.5" />
+                  <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+                </svg>
+                Baixar o Aplicativo
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        <button
+          class="nav-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="nav"
+          aria-label="Abrir menu">
+          <svg class="icon icon-menu" viewBox="0 0 24 16" aria-hidden="true">
+            <path d="M0 1.5h24" />
+            <path d="M0 8h24" />
+            <path d="M0 14.5h24" />
+          </svg>
+          <svg class="icon icon-close" viewBox="0 0 24 16" aria-hidden="true">
+            <path d="M5 3 19 13" />
+            <path d="M19 3 5 13" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="conteudo">
+      <section class="hero" id="inicio">
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Aplicativo</p>
+            <h1 class="hero-title">Mana<span>Mano</span></h1>
+            <p class="hero-sub">
+              Conectando microempreendedoras<br />da periferia através do conhecimento.
+            </p>
+            <a class="btn btn-primary btn-hero" href="/downloads/app.apk" download>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v10" />
+                <path d="M8 9.5 12 13.5 16 9.5" />
+                <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+              </svg>
+              Baixar o Aplicativo
+            </a>
+            <p class="hero-note">Disponível para Android 7.0 ou superior</p>
+          </div>
+
+          <div class="hero-art">
+            <div class="phone" aria-hidden="true">
+              <div class="phone-screen">
+                <div class="welcome-pattern"></div>
+                <div class="welcome-card">
+                  <img class="welcome-logo" src="assets/logo-boas-vindas.svg" alt="" />
+                  <div class="welcome-actions">
+                    <span class="welcome-btn welcome-btn-solid">Cadastre-se</span>
+                    <span class="welcome-btn welcome-btn-outline">Entrar</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section features" id="recursos" aria-labelledby="recursos-titulo">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Recursos</p>
+            <h2 id="recursos-titulo">Tudo o que você encontra no app</h2>
+            <p class="section-lead">
+              Feito para acompanhar o dia a dia das participantes do projeto: conteúdo, conversa e
+              organização em um só lugar.
+            </p>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-5A3.5 3.5 0 0 0 4 18.5V20" />
+                <circle cx="10" cy="8" r="3.2" />
+                <path d="M20 20v-1.5a3.5 3.5 0 0 0-2.6-3.4" />
+                <path d="M15.5 5.2a3.2 3.2 0 0 1 0 5.6" />
+              </svg>
+            </span>
+            <h3>Grupos da comunidade</h3>
+            <p>
+              Participe de grupos, troque experiências e construa uma rede de apoio com outras
+              empreendedoras.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M3 5.5A1.5 1.5 0 0 1 4.5 4H10a2.5 2.5 0 0 1 2 1v13a2.5 2.5 0 0 0-2-1H4.5A1.5 1.5 0 0 1 3 15.5z" />
+                <path
+                  d="M21 5.5A1.5 1.5 0 0 0 19.5 4H14a2.5 2.5 0 0 0-2 1v13a2.5 2.5 0 0 1 2-1h5.5a1.5 1.5 0 0 0 1.5-1.5z" />
+              </svg>
+            </span>
+            <h3>Aulas e materiais</h3>
+            <p>
+              Acesse conteúdos de aulas, arquivos e links compartilhados pela coordenação do
+              projeto.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 3V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5z" />
+                <path d="M8 9h8" />
+                <path d="M8 12.5h5" />
+              </svg>
+            </span>
+            <h3>Publicações no feed</h3>
+            <p>
+              Compartilhe avisos, dúvidas e conquistas para toda a comunidade acompanhar e
+              interagir.
+            </p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M18 9a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9" />
+                <path d="M10.5 19a2 2 0 0 0 3 0" />
+              </svg>
+            </span>
+            <h3>Avisos e notificações</h3>
+            <p>
+              Receba alertas de novos posts, aulas e comunicados na hora, direto no seu celular.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section howto" id="instalacao" aria-labelledby="instalacao-titulo">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Instalação</p>
+            <h2 id="instalacao-titulo">Como instalar em 3 passos</h2>
+            <p class="section-lead">
+              O app é distribuído em arquivo APK, então a instalação acontece fora da Play Store.
+            </p>
+          </div>
+
+          <ol class="steps">
+            <li class="step">
+              <span class="step-number" aria-hidden="true">1</span>
+              <div>
+                <h3>Baixe o APK</h3>
+                <p>Toque em “Baixar o Aplicativo” e aguarde o download do arquivo terminar.</p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="step-number" aria-hidden="true">2</span>
+              <div>
+                <h3>Autorize a instalação</h3>
+                <p>
+                  Abra o arquivo baixado e permita a instalação de apps de fontes desconhecidas, se
+                  o Android solicitar.
+                </p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="step-number" aria-hidden="true">3</span>
+              <div>
+                <h3>Instale e entre</h3>
+                <p>Conclua a instalação, abra o ManaMano e entre com a sua conta.</p>
+              </div>
+            </li>
+          </ol>
+
+          <a class="btn btn-primary btn-hero btn-inline" href="/downloads/app.apk" download>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v10" />
+              <path d="M8 9.5 12 13.5 16 9.5" />
+              <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+            </svg>
+            Baixar o Aplicativo
+          </a>
+        </div>
+      </section>
+
+      <section class="section faq" id="faq" aria-labelledby="faq-titulo">
+        <div class="container">
+          <div class="section-head">
+            <p class="eyebrow">Dúvidas</p>
+            <h2 id="faq-titulo">Perguntas frequentes</h2>
+          </div>
+
+          <div class="faq-list">
+            <details class="faq-item">
+              <summary>O aplicativo é gratuito?</summary>
+              <p>
+                Sim. O download e o uso do ManaMano são gratuitos, sem cobranças dentro do
+                aplicativo.
+              </p>
+            </details>
+
+            <details class="faq-item">
+              <summary>Quais são os requisitos para instalar?</summary>
+              <p>
+                Um aparelho Android 7.0 ou superior com espaço livre para o arquivo do aplicativo.
+              </p>
+            </details>
+
+            <details class="faq-item">
+              <summary>Preciso permitir “fontes desconhecidas”?</summary>
+              <p>
+                Sim. Como o APK é distribuído fora da Play Store, o Android pede uma autorização
+                extra para instalar arquivos baixados. Você pode revogar essa permissão depois.
+              </p>
+            </details>
+
+            <details class="faq-item">
+              <summary>Existe versão para iPhone?</summary>
+              <p>
+                Por enquanto a versão disponível para download é a de Android. O desenvolvimento
+                para iOS segue em análise pela equipe.
+              </p>
+            </details>
+
+            <details class="faq-item">
+              <summary>De onde vem o arquivo que estou baixando?</summary>
+              <p>
+                O APK é publicado diretamente pelo servidor do projeto, sem intermediários, e pode
+                ser conferido antes da instalação.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta" aria-labelledby="cta-titulo">
+        <div class="container cta-inner">
+          <div>
+            <h2 id="cta-titulo">Baixe o ManaMano agora</h2>
+            <p>Leve a comunidade com você para onde for.</p>
+          </div>
+          <a class="btn btn-primary btn-hero" href="/downloads/app.apk" download>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v10" />
+              <path d="M8 9.5 12 13.5 16 9.5" />
+              <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15" />
+            </svg>
+            Baixar o Aplicativo
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="#inicio" aria-label="ManaMano, início">
+            <img src="assets/logo.png" width="188" height="188" alt="" />
+            <span class="brand-name">Mana<span>Mano</span></span>
+          </a>
+          <p>Conectando microempreendedoras da periferia através do conhecimento.</p>
+        </div>
+
+        <nav class="footer-nav" aria-label="Rodapé">
+          <a href="#inicio">Início</a>
+          <a href="#recursos">Recursos</a>
+          <a href="#instalacao">Como instalar</a>
+          <a href="#faq">Perguntas frequentes</a>
+          <a href="/downloads/app.apk" download>Baixar o APK</a>
+        </nav>
+      </div>
+
+      <div class="container footer-bottom">
+        <p>© 2026 ManaMano • Minerv@s Digitais</p>
+        <a
+          href="https://github.com/Minervas-Digitais/projeto-manamano"
+          rel="noopener noreferrer"
+          target="_blank">
+          Código-fonte no GitHub
+        </a>
+      </div>
+    </footer>
+
+    <script>
+      const header = document.querySelector('.site-header');
+      const toggle = document.querySelector('.nav-toggle');
+      const nav = document.getElementById('nav');
+
+      const setOpen = (open) => {
+        header.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+      };
+
+      toggle.addEventListener('click', () => {
+        setOpen(!header.classList.contains('is-open'));
+      });
+
+      nav.addEventListener('click', (event) => {
+        if (event.target.closest('a')) setOpen(false);
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') setOpen(false);
+      });
+
+      window.matchMedia('(min-width: 960px)').addEventListener('change', (event) => {
+        if (event.matches) setOpen(false);
+      });
+    </script>
   </body>
 </html>
