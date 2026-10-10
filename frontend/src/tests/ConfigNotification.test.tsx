@@ -32,6 +32,10 @@ jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));
 
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: 'user-123' }),
+}));
+
 const Stack = createStackNavigator();
 const renderWithNavigation = () =>
   render(

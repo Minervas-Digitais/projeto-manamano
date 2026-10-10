@@ -18,6 +18,10 @@ import {
   StyledButton,
 } from './ResultSectionStyle';
 import PostItem from '../PostItem/PostItem';
+import LoadingState from '../LoadingState/LoadingState';
+import EmptyState from '../EmptyState/EmptyState';
+import StaleDataBanner from '../StaleDataBanner/StaleDataBanner';
+import ErrorState from '../ErrorState/ErrorState';
 import api from '../../services/api';
 import TrashCan from '../../assets/trash-can.svg';
 import DeleteOneConfirmation from '../DeleteOneConfirmation/DeleteOneConfirmation';
@@ -47,6 +51,7 @@ interface Post {
 
 interface ResultSectionProps {
   searchText: string;
+  pending?: boolean;
   saveRecentUser: (user: { id: string; name: string; avatar: any }) => void;
   admin: boolean;
 }
@@ -65,14 +70,23 @@ interface PaginationMeta {
 }
 
 const DEFAULT_PAGE_SIZE = 10;
+const MIN_RESULTS_FOR_VIEW_ALL = 3;
 
-export default function ResultSection({ searchText, saveRecentUser, admin }: ResultSectionProps) {
+export default function ResultSection({
+  searchText,
+  pending = false,
+  saveRecentUser,
+  admin,
+}: ResultSectionProps) {
   const { loggedId } = useAuth();
   const [selectedSection, setSelectedSection] = useState<keyof DataState | ''>('');
   const [data, setData] = useState<DataState>({ users: [], groups: [], posts: [] });
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [searchError, setSearchError] = useState(false);
+  const [searchDone, setSearchDone] = useState(false);
   const [deleteModal, setDeleteModal] = useState({
     visible: false,
     type: '', // 'user', 'group', or 'post'
@@ -89,6 +103,10 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
   });
 
   const [userAvatars, setUserAvatars] = useState<Record<string, any>>({});
+
+  const hasAnyResults = data.users.length > 0 || data.groups.length > 0 || data.posts.length > 0;
+
+  const showFilter = (section: keyof DataState) => data[section].length > 0;
 
   const getUserProfileImage = async (userId: string) => {
     if (!loggedId) {
@@ -119,21 +137,23 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
       return;
     }
 
+    setLoading(true);
+    setSearchError(false);
+
     try {
       const response = await api.post('/search', { input: searchText });
 
-      const json = response.data;
+      const json = response.data ?? {};
       setData({
-        users: json.users ?? [],
-        groups: json.groups ?? [],
-        posts: json.posts ?? [],
+        users: Array.isArray(json.users) ? json.users : [],
+        groups: Array.isArray(json.groups) ? json.groups : [],
+        posts: Array.isArray(json.posts) ? json.posts : [],
       });
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Não foi possível buscar os dados.',
-      });
+      setSearchDone(true);
+    } catch {
+      setSearchError(true);
+    } finally {
+      setLoading(false);
     }
   }, [loggedId, searchText]);
 
@@ -148,6 +168,12 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
         return;
       }
 
+      const isFirstPage = pageNumber === 1;
+      if (isFirstPage) {
+        setLoading(true);
+        setSearchError(false);
+      }
+
       try {
         const response = await api.post(
           `/search/filter/${section}?page=${pageNumber}&limit=${DEFAULT_PAGE_SIZE}`,
@@ -156,21 +182,33 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
           },
         );
 
-        const { data: items, meta }: { data: (User | Group | Post)[]; meta: PaginationMeta } =
-          response.data;
+        const payload = response.data ?? {};
+        const items: (User | Group | Post)[] = Array.isArray(payload.data) ? payload.data : [];
+        const meta: Partial<PaginationMeta> = payload.meta ?? {};
+        const currentPage = meta.page ?? pageNumber;
+        const lastPage = meta.lastPage ?? currentPage;
 
         setData((prevData) => ({
           ...prevData,
-          [section]: pageNumber === 1 ? items : [...prevData[section], ...items],
+          [section]: pageNumber === 1 ? items : [...(prevData[section] ?? []), ...items],
         }));
-        setPage(meta.page);
-        setHasMore(meta.page < meta.lastPage);
-      } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro',
-          text2: 'Não foi possível buscar os dados filtrados.',
-        });
+        setPage(currentPage);
+        setHasMore(currentPage < lastPage);
+        setSearchDone(true);
+      } catch {
+        if (isFirstPage) {
+          setSearchError(true);
+        } else {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro',
+            text2: 'Não foi possível buscar os dados filtrados.',
+          });
+        }
+      } finally {
+        if (isFirstPage) {
+          setLoading(false);
+        }
       }
     },
     [loggedId, searchText],
@@ -180,6 +218,14 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
     if (isLoadingMore) return;
     setIsLoadingMore(true);
     fetchFiltered(section, page + 1).finally(() => setIsLoadingMore(false));
+  };
+
+  const handleRetry = (): void => {
+    if (selectedSection) {
+      fetchFiltered(selectedSection, 1);
+    } else {
+      fetchSearch();
+    }
   };
 
   // Delete user
@@ -307,14 +353,13 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
       setUserAvatars(newUserAvatars);
     };
 
-    if (data.users.length > 0) {
+    if ((data.users ?? []).length > 0) {
       loadUserAvatars();
     }
   }, [data.users]);
 
   const handleFilterPress = (section: keyof DataState): void => {
     const newSection = selectedSection === section ? '' : section;
-    setData({ users: [], groups: [], posts: [] });
     setPage(1);
     setHasMore(false);
     setIsLoadingMore(false);
@@ -360,321 +405,369 @@ export default function ResultSection({ searchText, saveRecentUser, admin }: Res
         onCancel={() => setDeleteModal({ visible: false, type: '', id: '' })}
       />
       <Container>
-        <View
-          style={{
-            paddingLeft: 10,
-            paddingRight: 10,
-            paddingBottom: 10,
-            borderBottomWidth: 1,
-            borderBottomColor: '#E0E0E0',
-          }}>
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: 'bold',
-              marginBottom: 10,
-              fontFamily: 'inter-bold',
-              color: '#515151',
-              marginTop: 20,
-            }}>
-            Filtros
-          </Text>
+        {!loading && !pending && !searchError && (selectedSection !== '' || hasAnyResults) && (
           <View
             style={{
-              flexDirection: 'row',
-              gap: 10,
+              paddingLeft: 10,
+              paddingRight: 10,
+              paddingBottom: 10,
+              borderBottomWidth: 1,
+              borderBottomColor: '#E0E0E0',
             }}>
-            <TouchableOpacity
-              testID="filtro-pessoas"
+            <Text
               style={{
-                flex: 1,
-                backgroundColor: selectedSection === 'users' ? '#FFA8A6' : '#E0E0E0',
-                borderRadius: 30,
-                width: screenWidth * 0.277,
-                height: screenHeight * 0.05,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              onPress={() => handleFilterPress('users')}>
-              <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Pessoas</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="filtro-grupos"
+                fontSize: 12,
+                fontWeight: 'bold',
+                marginBottom: 10,
+                fontFamily: 'inter-bold',
+                color: '#515151',
+                marginTop: 20,
+              }}>
+              Filtros
+            </Text>
+            <View
               style={{
-                backgroundColor: selectedSection === 'groups' ? '#FFA8A6' : '#E0E0E0',
-                borderRadius: 30,
-                flex: 1,
-                width: screenWidth * 0.277,
-                height: screenHeight * 0.05,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              onPress={() => handleFilterPress('groups')}>
-              <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Grupos</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              testID="filtro-publicacoes"
-              style={{
-                backgroundColor: selectedSection === 'posts' ? '#FFA8A6' : '#E0E0E0',
-                borderRadius: 30,
-                flex: 1,
-                width: screenWidth * 0.277,
-                height: screenHeight * 0.05,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-              onPress={() => handleFilterPress('posts')}>
-              <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Publicações</Text>
-            </TouchableOpacity>
+                flexDirection: 'row',
+                gap: 10,
+              }}>
+              {showFilter('users') && (
+                <TouchableOpacity
+                  testID="filtro-pessoas"
+                  style={{
+                    flex: 1,
+                    backgroundColor: selectedSection === 'users' ? '#FFA8A6' : '#E0E0E0',
+                    borderRadius: 30,
+                    width: screenWidth * 0.277,
+                    height: screenHeight * 0.05,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                  onPress={() => handleFilterPress('users')}>
+                  <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Pessoas</Text>
+                </TouchableOpacity>
+              )}
+              {showFilter('groups') && (
+                <TouchableOpacity
+                  testID="filtro-grupos"
+                  style={{
+                    backgroundColor: selectedSection === 'groups' ? '#FFA8A6' : '#E0E0E0',
+                    borderRadius: 30,
+                    flex: 1,
+                    width: screenWidth * 0.277,
+                    height: screenHeight * 0.05,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                  onPress={() => handleFilterPress('groups')}>
+                  <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Grupos</Text>
+                </TouchableOpacity>
+              )}
+              {showFilter('posts') && (
+                <TouchableOpacity
+                  testID="filtro-publicacoes"
+                  style={{
+                    backgroundColor: selectedSection === 'posts' ? '#FFA8A6' : '#E0E0E0',
+                    borderRadius: 30,
+                    flex: 1,
+                    width: screenWidth * 0.277,
+                    height: screenHeight * 0.05,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                  onPress={() => handleFilterPress('posts')}>
+                  <Text style={{ fontFamily: 'inter-regular', fontSize: 14 }}>Publicações</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        </View>
+        )}
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={{ height: '100%' }}>
-          {(selectedSection === 'users' || selectedSection === '') && (
-            <Section style={{ zIndex: 2 }}>
-              <SectionTitle
-                style={{
-                  fontSize: 12,
-                  fontWeight: 'bold',
-                  marginBottom: 25,
-                  fontFamily: 'inter-bold',
-                  color: '#3F3D3D',
-                }}>
-                Pessoas
-              </SectionTitle>
-              {data.users.map((person) => {
-                const fullNameParts = person.fullName.split(' ');
-                return (
-                  <Card
-                    key={person.id}
-                    style={{ marginBottom: 10 }}
-                    testID={`user-card-${person.id}`}>
-                    <TouchableOpacity
-                      testID={`user-touchable-${person.id}`}
-                      onPress={() => {
-                        saveRecentUser({
-                          id: person.id,
-                          name: person.fullName,
-                          avatar: userAvatars[person.id] || defaultAvatar,
-                        });
-                        if (person.id === loggedId) {
-                          navigation.navigate('Profile', { id: person.id });
-                        } else {
-                          navigation.navigate('VisitorProfile', { id: person.id });
-                        }
-                      }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
-                        <Avatar source={userAvatars[person.id] || defaultAvatar} />
-                        <Name
-                          testID={`user-name-${person.id}`}
-                          fontFamily="inter-regular"
-                          fontColor="#3F3D3D">
-                          {`${fullNameParts[0]} ${fullNameParts[1] || ''}`}
-                        </Name>
-                      </View>
-                    </TouchableOpacity>
-                    {admin && (
-                      <TouchableOpacity
-                        testID={`user-delete-button-${person.id}`}
-                        onPress={() => handleDeletePress('user', person.id)}>
-                        <TrashCan />
-                      </TouchableOpacity>
-                    )}
-                  </Card>
-                );
-              })}
-              {selectedSection === '' && (
-                <View style={{ marginTop: 20 }}>
-                  <View
-                    style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
-                  />
-                  <StyledButton
-                    testID="ver-todos-pessoas"
-                    onPress={() => handleFilterPress('users')}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 'bold',
-                        marginBottom: 10,
-                        fontFamily: 'inter-bold',
-                        color: '#3F3D3D',
-                      }}>
-                      Ver todos os resultados de Pessoas
-                    </Text>
-                  </StyledButton>
-                </View>
-              )}
-              {selectedSection === 'users' && hasMore && (
-                <LoadMoreSection>
-                  <LoadMoreDivider />
-                  <StyledButton
-                    testID="carregar-mais-pessoas"
-                    onPress={() => handleLoadMore('users')}
-                    disabled={isLoadingMore}>
-                    <LoadMoreText>{isLoadingMore ? 'Carregando...' : 'Carregar mais'}</LoadMoreText>
-                  </StyledButton>
-                </LoadMoreSection>
-              )}
-            </Section>
-          )}
-
-          {(selectedSection === 'groups' || selectedSection === '') && (
-            <Section>
-              <SectionTitle
-                style={{
-                  fontSize: 12,
-                  fontWeight: 'bold',
-                  marginBottom: 25,
-                  fontFamily: 'inter-bold',
-                  color: '#3F3D3D',
-                }}>
-                Grupos
-              </SectionTitle>
-              {data.groups.map((group) => (
-                <Card key={group.id} style={{ marginBottom: 10 }} testID={`group-card-${group.id}`}>
-                  <TouchableOpacity
-                    testID={`group-touchable-${group.id}`}
-                    onPress={() => {
-                      saveRecentUser({
-                        id: group.id,
-                        name: group.name,
-                        avatar: defaultAvatar,
-                      });
-                      navigation.navigate('GroupPage', {
-                        groupId: group.id,
-                        groupName: group.name,
-                      });
+          {loading || pending ? (
+            <LoadingState inline text="Buscando..." />
+          ) : !!searchError && !hasAnyResults ? (
+            <ErrorState inline text="Não foi possível realizar a busca." onRetry={handleRetry} />
+          ) : searchDone &&
+            data.users.length === 0 &&
+            data.groups.length === 0 &&
+            data.posts.length === 0 ? (
+            <EmptyState inline text="Nenhum resultado encontrado." />
+          ) : (
+            <>
+              {!!searchError && hasAnyResults && <StaleDataBanner onRefresh={handleRetry} />}
+              {(selectedSection === 'users' ||
+                (selectedSection === '' && data.users.length > 0)) && (
+                <Section style={{ zIndex: 2 }}>
+                  <SectionTitle
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      marginBottom: 25,
+                      fontFamily: 'inter-bold',
+                      color: '#3F3D3D',
                     }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
-                      <Avatar source={defaultAvatar} testID={`group-avatar-${group.id}`} />
-                      <Name
-                        fontFamily="inter-regular"
-                        fontColor="#3F3D3D"
-                        testID={`group-name-${group.id}`}>
-                        {group.name}
-                      </Name>
-                    </View>
-                  </TouchableOpacity>
-                  {admin && (
-                    <TouchableOpacity
-                      testID={`group-delete-button-${group.id}`}
-                      onPress={() => handleDeletePress('group', group.id)}>
-                      <TrashCan />
-                    </TouchableOpacity>
-                  )}
-                </Card>
-              ))}
-              {selectedSection === '' && (
-                <View style={{ marginTop: 20 }}>
-                  <View
-                    style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
-                  />
-                  <StyledButton
-                    testID="ver-todos-grupos"
-                    onPress={() => handleFilterPress('groups')}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 'bold',
-                        marginBottom: 10,
-                        fontFamily: 'inter-bold',
-                        color: '#3F3D3D',
-                      }}>
-                      Ver todos os resultados de Grupos
-                    </Text>
-                  </StyledButton>
-                </View>
-              )}
-              {selectedSection === 'groups' && hasMore && (
-                <LoadMoreSection>
-                  <LoadMoreDivider />
-                  <StyledButton
-                    testID="carregar-mais-grupos"
-                    onPress={() => handleLoadMore('groups')}
-                    disabled={isLoadingMore}>
-                    <LoadMoreText>{isLoadingMore ? 'Carregando...' : 'Carregar mais'}</LoadMoreText>
-                  </StyledButton>
-                </LoadMoreSection>
-              )}
-            </Section>
-          )}
-
-          {(selectedSection === 'posts' || selectedSection === '') && (
-            <Section>
-              <SectionTitle
-                style={{
-                  fontSize: 12,
-                  fontWeight: 'bold',
-                  marginBottom: 25,
-                  fontFamily: 'inter-bold',
-                  color: '#3F3D3D',
-                }}>
-                Publicações
-              </SectionTitle>
-
-              {data.posts.map((item) => {
-                const date = new Date(item.createdAt);
-                const formattedDate = `${String(date.getDate()).padStart(2, '0')}-${String(
-                  date.getMonth() + 1,
-                ).padStart(2, '0')}-${date.getFullYear()}, ${String(date.getHours()).padStart(
-                  2,
-                  '0',
-                )}:${String(date.getMinutes()).padStart(2, '0')}`;
-                return (
-                  <Card key={item.id}>
-                    <View style={{ flex: 1, paddingLeft: 15 }}>
-                      <PostItem
-                        post={item}
-                        formattedDate={formattedDate}
-                        fetchUserName={fetchUserName}
-                        fetchNumComments={fetchNumComments}
-                        testID={`post-item-${item.id}`}
+                    Pessoas
+                  </SectionTitle>
+                  {data.users.map((person) => {
+                    const fullNameParts = person.fullName.split(' ');
+                    return (
+                      <Card
+                        key={person.id}
+                        style={{ marginBottom: 10 }}
+                        testID={`user-card-${person.id}`}>
+                        <TouchableOpacity
+                          testID={`user-touchable-${person.id}`}
+                          onPress={() => {
+                            saveRecentUser({
+                              id: person.id,
+                              name: person.fullName,
+                              avatar: userAvatars[person.id] || defaultAvatar,
+                            });
+                            if (person.id === loggedId) {
+                              navigation.navigate('Profile', { id: person.id });
+                            } else {
+                              navigation.navigate('VisitorProfile', { id: person.id });
+                            }
+                          }}>
+                          <View
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
+                            <Avatar source={userAvatars[person.id] || defaultAvatar} />
+                            <Name
+                              testID={`user-name-${person.id}`}
+                              fontFamily="inter-regular"
+                              fontColor="#3F3D3D">
+                              {`${fullNameParts[0]} ${fullNameParts[1] || ''}`}
+                            </Name>
+                          </View>
+                        </TouchableOpacity>
+                        {admin && (
+                          <TouchableOpacity
+                            testID={`user-delete-button-${person.id}`}
+                            onPress={() => handleDeletePress('user', person.id)}>
+                            <TrashCan />
+                          </TouchableOpacity>
+                        )}
+                      </Card>
+                    );
+                  })}
+                  {selectedSection === '' && data.users.length >= MIN_RESULTS_FOR_VIEW_ALL && (
+                    <View style={{ marginTop: 20 }}>
+                      <View
+                        style={{
+                          borderBottomWidth: 1,
+                          borderBottomColor: '#E0E0E0',
+                          marginBottom: 10,
+                        }}
                       />
+                      <StyledButton
+                        testID="ver-todos-pessoas"
+                        onPress={() => handleFilterPress('users')}>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            marginBottom: 10,
+                            fontFamily: 'inter-bold',
+                            color: '#3F3D3D',
+                          }}>
+                          Ver todos os resultados de Pessoas
+                        </Text>
+                      </StyledButton>
                     </View>
-                    {admin && (
-                      <TouchableOpacity
-                        testID={`post-delete-button-${item.id}`}
-                        style={{ marginLeft: 10 }}
-                        onPress={() => handleDeletePress('post', item.id)}>
-                        <TrashCan />
-                      </TouchableOpacity>
-                    )}
-                  </Card>
-                );
-              })}
+                  )}
+                  {selectedSection === 'users' && hasMore && (
+                    <LoadMoreSection>
+                      <LoadMoreDivider />
+                      <StyledButton
+                        testID="carregar-mais-pessoas"
+                        onPress={() => handleLoadMore('users')}
+                        disabled={isLoadingMore}>
+                        <LoadMoreText>
+                          {isLoadingMore ? 'Carregando...' : 'Carregar mais'}
+                        </LoadMoreText>
+                      </StyledButton>
+                    </LoadMoreSection>
+                  )}
+                </Section>
+              )}
 
-              {selectedSection === '' && (
-                <View style={{ marginTop: 20 }}>
-                  <View
-                    style={{ borderBottomWidth: 1, borderBottomColor: '#E0E0E0', marginBottom: 10 }}
-                  />
-                  <StyledButton
-                    testID="ver-todos-publicacoes"
-                    onPress={() => handleFilterPress('posts')}>
-                    <Text
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 'bold',
-                        marginBottom: 10,
-                        fontFamily: 'inter-bold',
-                        color: '#3F3D3D',
-                      }}>
-                      Ver todos os resultados de Posts
-                    </Text>
-                  </StyledButton>
-                </View>
+              {(selectedSection === 'groups' ||
+                (selectedSection === '' && data.groups.length > 0)) && (
+                <Section>
+                  <SectionTitle
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      marginBottom: 25,
+                      fontFamily: 'inter-bold',
+                      color: '#3F3D3D',
+                    }}>
+                    Grupos
+                  </SectionTitle>
+                  {data.groups.map((group) => (
+                    <Card
+                      key={group.id}
+                      style={{ marginBottom: 10 }}
+                      testID={`group-card-${group.id}`}>
+                      <TouchableOpacity
+                        testID={`group-touchable-${group.id}`}
+                        onPress={() => {
+                          saveRecentUser({
+                            id: group.id,
+                            name: group.name,
+                            avatar: defaultAvatar,
+                          });
+                          navigation.navigate('GroupPage', {
+                            groupId: group.id,
+                            groupName: group.name,
+                          });
+                        }}>
+                        <View
+                          style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 15 }}>
+                          <Avatar source={defaultAvatar} testID={`group-avatar-${group.id}`} />
+                          <Name
+                            fontFamily="inter-regular"
+                            fontColor="#3F3D3D"
+                            testID={`group-name-${group.id}`}>
+                            {group.name}
+                          </Name>
+                        </View>
+                      </TouchableOpacity>
+                      {admin && (
+                        <TouchableOpacity
+                          testID={`group-delete-button-${group.id}`}
+                          onPress={() => handleDeletePress('group', group.id)}>
+                          <TrashCan />
+                        </TouchableOpacity>
+                      )}
+                    </Card>
+                  ))}
+                  {selectedSection === '' && data.groups.length >= MIN_RESULTS_FOR_VIEW_ALL && (
+                    <View style={{ marginTop: 20 }}>
+                      <View
+                        style={{
+                          borderBottomWidth: 1,
+                          borderBottomColor: '#E0E0E0',
+                          marginBottom: 10,
+                        }}
+                      />
+                      <StyledButton
+                        testID="ver-todos-grupos"
+                        onPress={() => handleFilterPress('groups')}>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            marginBottom: 10,
+                            fontFamily: 'inter-bold',
+                            color: '#3F3D3D',
+                          }}>
+                          Ver todos os resultados de Grupos
+                        </Text>
+                      </StyledButton>
+                    </View>
+                  )}
+                  {selectedSection === 'groups' && hasMore && (
+                    <LoadMoreSection>
+                      <LoadMoreDivider />
+                      <StyledButton
+                        testID="carregar-mais-grupos"
+                        onPress={() => handleLoadMore('groups')}
+                        disabled={isLoadingMore}>
+                        <LoadMoreText>
+                          {isLoadingMore ? 'Carregando...' : 'Carregar mais'}
+                        </LoadMoreText>
+                      </StyledButton>
+                    </LoadMoreSection>
+                  )}
+                </Section>
               )}
-              {selectedSection === 'posts' && hasMore && (
-                <LoadMoreSection>
-                  <LoadMoreDivider />
-                  <StyledButton
-                    testID="carregar-mais-publicacoes"
-                    onPress={() => handleLoadMore('posts')}
-                    disabled={isLoadingMore}>
-                    <LoadMoreText>{isLoadingMore ? 'Carregando...' : 'Carregar mais'}</LoadMoreText>
-                  </StyledButton>
-                </LoadMoreSection>
+
+              {(selectedSection === 'posts' ||
+                (selectedSection === '' && data.posts.length > 0)) && (
+                <Section>
+                  <SectionTitle
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 'bold',
+                      marginBottom: 25,
+                      fontFamily: 'inter-bold',
+                      color: '#3F3D3D',
+                    }}>
+                    Publicações
+                  </SectionTitle>
+
+                  {data.posts.map((item) => {
+                    const date = new Date(item.createdAt);
+                    const formattedDate = `${String(date.getDate()).padStart(2, '0')}-${String(
+                      date.getMonth() + 1,
+                    ).padStart(2, '0')}-${date.getFullYear()}, ${String(date.getHours()).padStart(
+                      2,
+                      '0',
+                    )}:${String(date.getMinutes()).padStart(2, '0')}`;
+                    return (
+                      <Card key={item.id}>
+                        <View style={{ flex: 1, paddingLeft: 15 }}>
+                          <PostItem
+                            post={item}
+                            formattedDate={formattedDate}
+                            fetchUserName={fetchUserName}
+                            fetchNumComments={fetchNumComments}
+                            testID={`post-item-${item.id}`}
+                          />
+                        </View>
+                        {admin && (
+                          <TouchableOpacity
+                            testID={`post-delete-button-${item.id}`}
+                            style={{ marginLeft: 10 }}
+                            onPress={() => handleDeletePress('post', item.id)}>
+                            <TrashCan />
+                          </TouchableOpacity>
+                        )}
+                      </Card>
+                    );
+                  })}
+
+                  {selectedSection === '' && data.posts.length >= MIN_RESULTS_FOR_VIEW_ALL && (
+                    <View style={{ marginTop: 20 }}>
+                      <View
+                        style={{
+                          borderBottomWidth: 1,
+                          borderBottomColor: '#E0E0E0',
+                          marginBottom: 10,
+                        }}
+                      />
+                      <StyledButton
+                        testID="ver-todos-publicacoes"
+                        onPress={() => handleFilterPress('posts')}>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            marginBottom: 10,
+                            fontFamily: 'inter-bold',
+                            color: '#3F3D3D',
+                          }}>
+                          Ver todos os resultados de Posts
+                        </Text>
+                      </StyledButton>
+                    </View>
+                  )}
+                  {selectedSection === 'posts' && hasMore && (
+                    <LoadMoreSection>
+                      <LoadMoreDivider />
+                      <StyledButton
+                        testID="carregar-mais-publicacoes"
+                        onPress={() => handleLoadMore('posts')}
+                        disabled={isLoadingMore}>
+                        <LoadMoreText>
+                          {isLoadingMore ? 'Carregando...' : 'Carregar mais'}
+                        </LoadMoreText>
+                      </StyledButton>
+                    </LoadMoreSection>
+                  )}
+                </Section>
               )}
-            </Section>
+            </>
           )}
         </ScrollView>
       </Container>

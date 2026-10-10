@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { TouchableOpacity, View, Text } from 'react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
+import { TouchableOpacity, View, Text, RefreshControl } from 'react-native';
 import Home from '../pages/Home/Home';
 import api from '../services/api';
 import storage from '../services/secureStorage';
@@ -29,6 +29,12 @@ jest.mock('../services/secureStorage', () => ({
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
+}));
+
+// A tela lê loggedId do AuthContext (preenchido pelo AuthProvider no App);
+// o teste renderiza a tela isolada, então simulamos o valor aqui.
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: 'user-123' }),
 }));
 
 jest.mock('expo-linear-gradient', () => ({
@@ -90,21 +96,18 @@ describe('Home Page', () => {
     },
   ];
 
+  // Formato real do backend: PaginatedResponseDto { data, meta }
   const mockPostsResponse = {
     data: {
-      posts: mockPosts,
-      pagination: {
-        hasMore: false,
-      },
+      data: mockPosts,
+      meta: { total: 1, page: 1, lastPage: 1, limit: 15 },
     },
   };
 
   const emptyPostsResponse = {
     data: {
-      posts: [],
-      pagination: {
-        hasMore: false,
-      },
+      data: [],
+      meta: { total: 0, page: 1, lastPage: 1, limit: 15 },
     },
   };
 
@@ -265,5 +268,28 @@ describe('Home Page', () => {
     fireEvent.press(filterButton);
 
     expect(await findByText('Conteúdo do primeiro post.')).toBeTruthy();
+  });
+
+  it('exibe o banner de dados desatualizados quando a atualização falha', async () => {
+    const {
+      UNSAFE_getByType: getByType,
+      findByText,
+      getByTestId,
+      queryByTestId,
+    } = render(<Home navigation={{ navigate: mockedNavigate }} />);
+
+    await findByText('Grupo de Teste 1');
+    expect(queryByTestId('stale-data-banner')).toBeNull();
+
+    apiGetMock.mockImplementation(() => Promise.reject(new Error('offline')));
+
+    await act(async () => {
+      getByType(RefreshControl).props.onRefresh();
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('stale-data-banner')).toBeTruthy();
+    });
+    expect(getByTestId('stale-data-refresh')).toBeTruthy();
   });
 });

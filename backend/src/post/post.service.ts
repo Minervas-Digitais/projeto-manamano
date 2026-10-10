@@ -144,10 +144,6 @@ export class PostService {
   async findAll(): Promise<SerializedPost[]> {
     const posts = await this.findPosts();
 
-    if (posts.length === 0) {
-      throw new NotFoundException(POST_MESSAGES.NO_POST_IN_LIST);
-    }
-
     return posts.map(this.serializePost);
   }
 

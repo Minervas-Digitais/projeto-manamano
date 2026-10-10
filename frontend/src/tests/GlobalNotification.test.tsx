@@ -37,6 +37,10 @@ jest.mock('../services/secureStorage', () => ({
 
 const mockGoBack = jest.fn();
 
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: 'admin-123' }),
+}));
+
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useRoute: () => ({
@@ -91,7 +95,7 @@ describe('GlobalNotification', () => {
     );
 
     await waitFor(() => {
-      expect(mockedStorage.getItem).toHaveBeenCalledWith('accessToken');
+      expect(mockedApi.get).not.toHaveBeenCalled();
     });
 
     const inputText = 'Este é um comunicado de teste.';
@@ -102,18 +106,10 @@ describe('GlobalNotification', () => {
 
     // aguarda e verifica se a API foi chamada corretamente
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith(
-        '/notifications/global',
-        {
-          type: 'WARNING',
-          body: inputText,
-        },
-        {
-          headers: {
-            Authorization: 'Bearer fake-token',
-          },
-        },
-      );
+      expect(api.post).toHaveBeenCalledWith('/notifications/global', {
+        type: 'WARNING',
+        body: inputText,
+      });
     });
 
     // verifica se o toast de sucesso foi chamado

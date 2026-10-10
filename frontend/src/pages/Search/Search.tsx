@@ -23,8 +23,10 @@ import {
   ContentContainer,
 } from './SearchStyle';
 import ResultSection from '../../components/ResultSection/ResultSection';
+import LoadingState from '../../components/LoadingState/LoadingState';
 import Lupa from '../../assets/lupa-search.svg';
 import api from '../../services/api';
+import useFetch from '../../hooks/useFetch';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
 
@@ -42,7 +44,6 @@ export default function Search() {
   const [debouncedSearchText, setDebouncedSearchText] = useState<string>('');
   const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const avatar = require('../../assets/user-profile.png');
 
@@ -71,23 +72,12 @@ export default function Search() {
     }
   }, []);
 
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (!loggedId) return;
-
-      try {
-        const res = await api.get(`/user/${loggedId}`);
-
-        if (res.data?.sysRole === 'ADMIN') {
-          setIsAdmin(true);
-        }
-      } catch {
-        setIsAdmin(false);
-      }
-    };
-
-    fetchUserRole();
-  }, [loggedId]);
+  const userRoleQuery = useFetch(
+    () => api.get(`/user/${loggedId}`).then((res) => res.data),
+    [loggedId],
+    { enabled: !!loggedId },
+  );
+  const isAdmin = userRoleQuery.data?.sysRole === 'ADMIN';
 
   const saveRecentUser = async (user: { id: string; name: string }) => {
     const image = await getUserProfileImage(user.id);
@@ -128,7 +118,7 @@ export default function Search() {
     }
 
     const id = setTimeout(() => {
-      setDebouncedSearchText(text);
+      setDebouncedSearchText(text.trim());
     }, 2000);
     setTimeoutId(id);
   };
@@ -166,9 +156,13 @@ export default function Search() {
           {debouncedSearchText.length > 0 && loggedId ? (
             <ResultSection
               searchText={debouncedSearchText}
+              pending={searchText.trim() !== debouncedSearchText}
               saveRecentUser={saveRecentUser}
               admin={isAdmin}
             />
+          ) : searchText.trim().length > 0 && loggedId ? (
+            // Termo novo digitado: feedback imediato enquanto o debounce não dispara
+            <LoadingState inline text="Buscando..." />
           ) : (
             <RecentSection>
               {recentUsers.length > 0 && (

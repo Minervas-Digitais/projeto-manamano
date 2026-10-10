@@ -9,15 +9,16 @@ import Toast from 'react-native-toast-message';
 
 import { StatusBar } from 'expo-status-bar';
 import { TextInputMask } from 'react-native-masked-text';
-import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/auth/useAuth';
+import useFetch from '../../hooks/useFetch';
+import LoadingState from '../../components/LoadingState/LoadingState';
+import ErrorState from '../../components/ErrorState/ErrorState';
 import DropdownComponent from '../../components/DropdownButton/DropdownCustom';
 import { useSideMenu } from '../../context/SideMenuContext';
 import {
   BlueBackground,
   BottomPart,
   EditImageButton,
-  MenuW,
   MiddlePart,
   NamePart,
   PencilButton,
@@ -32,6 +33,7 @@ import { district, ethnicity, expertise } from './EditProfileData';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import api from '../../services/api';
 import Menu from '../../assets/menuw-icon.svg';
+import BackButton from '../../components/BackButton/BackButton';
 import EditButton from '../../assets/edit-button.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
 
@@ -55,7 +57,7 @@ export default function EditProfile() {
     },
     mode: 'onSubmit',
   });
-  const { width } = Dimensions.get('window');
+  const { width, height } = Dimensions.get('window');
   const defaultAvatar = require('../../assets/user-profile.png');
   const { loggedId } = useAuth();
   const onSubmit = async (data: any) => {
@@ -179,76 +181,110 @@ export default function EditProfile() {
     return format(date, 'dd/MM/yyyy'); // Using date-fns for formatting (optional)
   };
 
-  useFocusEffect(() => {
-    const fetchUserProfilePicture = async () => {
-      if (loggedId) {
-        try {
-          const imageResponse = await api.get(`/user/${loggedId}/profile-picture`, {
-            responseType: 'arraybuffer',
-          });
+  const userQuery = useFetch(
+    () => api.get(`/user/${loggedId}`).then((response) => response.data),
+    [loggedId],
+    { enabled: !!loggedId },
+  );
 
+  const imageQuery = useFetch(
+    () =>
+      api
+        .get(`/user/${loggedId}/profile-picture`, { responseType: 'arraybuffer' })
+        .then((imageResponse) => {
           const imageStr = Buffer.from(imageResponse.data, 'binary').toString('base64');
-          const imageUri = `data:image/jpeg;base64,${imageStr}`;
-          setProfileData((prev: any) => ({
-            ...prev,
-            profileImage: { uri: imageUri },
-          }));
-        } catch (error) {
-          setProfileData((prev: any) => ({
-            ...prev,
-            profileImage: defaultAvatar,
-          }));
-        }
-      }
-    };
-
-    fetchUserProfilePicture();
-  });
+          return { uri: `data:image/jpeg;base64,${imageStr}` };
+        }),
+    [loggedId],
+    { enabled: !!loggedId },
+  );
 
   useEffect(() => {
-    const fetchUser = async () => {
-      if (loggedId) {
-        try {
-          const response = await api.get(`/user/${loggedId}`);
+    const userData = userQuery.data;
+    if (!userData) {
+      return;
+    }
 
-          const userData = response.data;
-
-          const profileInfo = {
-            profileImage: defaultProfImage,
-            phone: userData.phone || '',
-            fullName: userData.fullName || '',
-            email: userData.email || '',
-            ethnicity: userData.ethnicity || '',
-            birthday: userData.birthday ? formatDateToDDMMYYYY(userData.birthday) : '',
-            bio: userData.bio || '',
-            expertise: userData.expertise || '',
-            neighborhood: userData.neighborhood || '',
-            enterprise: userData.enterprise || '',
-          };
-
-          setProfileData(profileInfo);
-
-          setValue('phone', profileInfo.phone);
-          setValue('fullName', profileInfo.fullName);
-          setValue('email', profileInfo.email);
-          setValue('birthday', profileInfo.birthday);
-          setValue('enterprise', profileInfo.enterprise);
-          setValue('bio', profileInfo.bio);
-          setValue('ethnicity', profileInfo.ethnicity);
-          setValue('expertise', profileInfo.expertise);
-          setValue('neighborhood', profileInfo.neighborhood);
-        } catch (error) {
-          Toast.show({
-            type: 'error',
-            text1: 'Erro',
-            text2: 'Erro ao buscar os dados do usuário.',
-          });
-        }
-      }
+    const profileInfo = {
+      profileImage: defaultProfImage,
+      phone: userData.phone || '',
+      fullName: userData.fullName || '',
+      email: userData.email || '',
+      ethnicity: userData.ethnicity || '',
+      birthday: userData.birthday ? formatDateToDDMMYYYY(userData.birthday) : '',
+      bio: userData.bio || '',
+      expertise: userData.expertise || '',
+      neighborhood: userData.neighborhood || '',
+      enterprise: userData.enterprise || '',
     };
 
-    fetchUser();
-  }, [setValue, loggedId]);
+    setProfileData((prev: any) => ({
+      ...profileInfo,
+      profileImage: prev?.profileImage ?? profileInfo.profileImage,
+    }));
+
+    setValue('phone', profileInfo.phone);
+    setValue('fullName', profileInfo.fullName);
+    setValue('email', profileInfo.email);
+    setValue('birthday', profileInfo.birthday);
+    setValue('enterprise', profileInfo.enterprise);
+    setValue('bio', profileInfo.bio);
+    setValue('ethnicity', profileInfo.ethnicity);
+    setValue('expertise', profileInfo.expertise);
+    setValue('neighborhood', profileInfo.neighborhood);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userQuery.data, setValue]);
+
+  useEffect(() => {
+    if (imageQuery.data) {
+      setProfileData((prev: any) => ({
+        ...prev,
+        profileImage: imageQuery.data,
+      }));
+    } else if (imageQuery.error && !imageQuery.data) {
+      setProfileData((prev: any) => ({
+        ...prev,
+        profileImage: defaultAvatar,
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageQuery.data, imageQuery.error]);
+
+  const pageHeader = (
+    <View
+      style={{
+        position: 'absolute',
+        top: height * 0.054,
+        left: width * 0.058,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 24,
+        zIndex: 10,
+      }}>
+      <TouchableOpacity onPress={toggleMenu}>
+        <Menu width={24} height={24} />
+      </TouchableOpacity>
+      <BackButton />
+    </View>
+  );
+
+  if (userQuery.loading && !userQuery.data) {
+    return (
+      <BlueBackground>
+        {pageHeader}
+        <LoadingState />
+      </BlueBackground>
+    );
+  }
+
+  if (!!userQuery.error && !userQuery.data) {
+    return (
+      <BlueBackground>
+        {pageHeader}
+        <ErrorState text="Erro ao carregar os dados do perfil." onRetry={userQuery.refetch} />
+      </BlueBackground>
+    );
+  }
 
   const onInvalid = (validationErrors: any) => {
     Toast.show({
@@ -264,11 +300,7 @@ export default function EditProfile() {
   return (
     <BlueBackground>
       <StatusBar />
-      <TouchableOpacity onPress={toggleMenu}>
-        <MenuW>
-          <Menu width={24} height={24} />
-        </MenuW>
-      </TouchableOpacity>
+      {pageHeader}
       <WhiteBackground>
         <UpperPart>
           <EditImageButton

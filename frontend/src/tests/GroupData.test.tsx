@@ -29,6 +29,10 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => mockRoute,
 }));
 
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: 'user-logged-id' }),
+}));
+
 const mockedApi = jest.mocked(api);
 const mockedStorage = jest.mocked(storage);
 
@@ -40,18 +44,26 @@ describe('GroupData', () => {
 
   const mockGroupParticipants = [
     {
-      role: 'LEADER', // prof
+      userId: 'prof-1',
+      role: 'INSTRUCTOR', // prof
       user: { fullName: 'Prof. Albus Dumbledore' },
     },
     {
+      userId: 'student-1',
       role: 'MEMBER', // aluno
       user: { fullName: 'Harry Potter' },
     },
     {
+      userId: 'student-2',
       role: 'MEMBER', // aluno
       user: { fullName: 'Hermione Granger' },
     },
   ];
+
+  const membersPage = (participants: any[]) => ({
+    data: participants,
+    meta: { page: 1, lastPage: 1, total: participants.length },
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -69,8 +81,8 @@ describe('GroupData', () => {
       if (url === '/user/user-logged-id') {
         return Promise.resolve({ data: { sysRole: 'ADMIN' } });
       }
-      if (url === `/participant/group/${mockRoute.params.groupId}`) {
-        return Promise.resolve({ data: mockGroupParticipants });
+      if (url === `/participant/group/${mockRoute.params.groupId}/users`) {
+        return Promise.resolve({ data: membersPage(mockGroupParticipants) });
       }
       return Promise.reject(new Error('URL não encontrada'));
     });
@@ -130,11 +142,6 @@ describe('GroupData', () => {
     await waitFor(() => {
       expect(mockedApi.delete).toHaveBeenCalledWith(
         `/participant/group/${mockRoute.params.groupId}`,
-        {
-          headers: {
-            Authorization: 'Bearer fake-token',
-          },
-        },
       );
       expect(mockNavigate).toHaveBeenCalledWith('Home');
     });
@@ -148,8 +155,8 @@ describe('GroupData', () => {
       if (url === '/user/user-logged-id') {
         return Promise.resolve({ data: { sysRole: 'ADMIN' } });
       }
-      if (url === `/participant/group/${mockRoute.params.groupId}`) {
-        return Promise.resolve({ data: [] }); // Retorna array vazio
+      if (url === `/participant/group/${mockRoute.params.groupId}/users`) {
+        return Promise.resolve({ data: membersPage([]) }); // Retorna lista vazia
       }
       return Promise.reject(new Error('URL não encontrada'));
     });
@@ -164,21 +171,41 @@ describe('GroupData', () => {
     expect(emptyMessages.length).toBe(2); // dois pq aparece o para docentes e de colegas
   });
 
-  it('deve renderizar os erros corretamente quando a API nao conseguir carregar os dados', () => {
+  it('deve mostrar o estado de carregamento enquanto a API nao responde', () => {
     mockedApi.get.mockResolvedValue(new Promise(() => {}));
 
-    const { getByText, getAllByText } = render(
+    const { getByText, getAllByTestId } = render(
       <NavigationContainer>
         <GroupData navigation={{ navigate: mockNavigate }} />
       </NavigationContainer>,
     );
 
-    // no estado inicial (antes da API retornar), o componente mostra textos de fallback
+    // no estado inicial (antes da API retornar), o cabeçalho mostra textos de fallback
     expect(getByText('Erro')).toBeTruthy();
     expect(getByText('Erro carregar os dados')).toBeTruthy();
 
-    // a mensagem "Vazio..." também aparece, pois `groupParticipant` ainda está indefinido
-    const emptyMessages = getAllByText('Vazio...');
-    expect(emptyMessages.length).toBe(2);
+    // a lista de membros mostra o estado de loading
+    const loadingMessages = getAllByTestId('loading-state');
+    expect(loadingMessages.length).toBe(2); // docentes e colegas
+  });
+
+  it('deve mostrar apenas o aviso e o botao de tentar novamente quando o grupo falha sem dados', async () => {
+    mockedApi.get.mockImplementation((url: string): Promise<any> => {
+      if (url.startsWith('/group/')) {
+        return Promise.reject(new Error('offline'));
+      }
+      return Promise.resolve({ data: {} });
+    });
+
+    const { findByTestId, getByTestId, queryByText } = render(
+      <NavigationContainer>
+        <GroupData navigation={{ navigate: mockNavigate }} />
+      </NavigationContainer>,
+    );
+
+    expect(await findByTestId('error-state', {}, { timeout: 5000 })).toBeTruthy();
+    expect(getByTestId('retry-button')).toBeTruthy();
+    expect(queryByText('Membros')).toBeNull();
+    expect(queryByText('Editar')).toBeNull();
   });
 });

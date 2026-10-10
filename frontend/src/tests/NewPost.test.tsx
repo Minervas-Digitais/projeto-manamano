@@ -37,6 +37,7 @@ jest.mock('../services/secureStorage', () => ({
 jest.mock('expo-document-picker', () => ({
   getDocumentAsync: jest.fn(() =>
     Promise.resolve({
+      canceled: false,
       assets: [
         {
           uri: 'file://mock.pdf',
@@ -75,6 +76,10 @@ jest.mock('../pages/NewPost/NewPost', () => {
     validateHourInternal: jest.fn(() => true),
   };
 });
+
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: 'admin-123' }),
+}));
 
 describe('NewPost Page', () => {
   const originalConsoleError = console.error;
@@ -161,7 +166,6 @@ describe('NewPost Page', () => {
           input: 'Conteúdo do post',
           groupId: 'group-123',
         }),
-        expect.any(Object),
       );
       expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
       expect(mockGoBack).toHaveBeenCalled();
@@ -235,7 +239,10 @@ describe('NewPost Page', () => {
   });
 
   it('should show toast error if no file is picked', async () => {
-    jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValueOnce({ assets: [] });
+    jest.mocked(DocumentPicker.getDocumentAsync).mockResolvedValueOnce({
+      canceled: false,
+      assets: [],
+    });
     const { getByTestId, findByText } = render(<NewPost />);
     // Aguarde a categoria "Geral" aparecer
     await findByText('Geral');
@@ -277,7 +284,6 @@ describe('NewPost Page', () => {
           type: 'EVENT',
           title: 'Título do Evento',
         }),
-        expect.any(Object),
       );
       expect(Toast.show).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
       expect(mockGoBack).toHaveBeenCalled();

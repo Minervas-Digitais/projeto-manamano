@@ -228,15 +228,15 @@ describe('Posts', () => {
       expect(response.body[0]).toHaveProperty('title', post.title);
     });
 
-    it('deve retornar 404 quando não houver posts', async () => {
+    it('deve retornar [] quando não houver posts', async () => {
       await prismaService.post.deleteMany();
 
       const response = await request(app.getHttpServer())
         .get('/post')
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe('Nenhuma publicação encontrada.');
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
     });
 
     it('deve retornar erro 401 caso o JWT token seja inválido', async () => {

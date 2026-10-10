@@ -1,7 +1,8 @@
 /* eslint-disable global-require */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
+import { RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { Toast } from 'react-native-toast-message/lib/src/Toast';
+import Toast from 'react-native-toast-message';
 import {
   ConfigNotificationContainer,
   NotificationInfoContainer,
@@ -9,7 +10,6 @@ import {
   NotificationInfoText,
   NotificationBodyContainer,
 } from './NotificationStyle';
-import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import NotificationCard from '../../components/NotificationCard/NotificationCard';
 import secureStorage from '../../services/secureStorage';
 import api from '../../services/api';
@@ -19,6 +19,10 @@ import DeleteOneConfirmation from '../../components/DeleteOneConfirmation/Delete
 import NoNotification from '../../assets/no-notification-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import useFetch from '../../hooks/useFetch';
+import LoadingState from '../../components/LoadingState/LoadingState';
+import ErrorState from '../../components/ErrorState/ErrorState';
+import StaleDataBanner from '../../components/StaleDataBanner/StaleDataBanner';
 
 export interface IUser {
   id: string;
@@ -50,77 +54,44 @@ export interface INotification {
 export default function Notification({ navigation }: any) {
   const duckPhoto = require('../../assets/duck.png');
   const { loggedId } = useAuth();
-  const [notification, setNotification] = useState<INotification[]>([]);
   const [display, setDisplay] = useState(false);
-  const [admin, setAdmin] = useState(false);
   const [deleteModal, setDeleteModal] = useState({
     visible: false,
     notifId: '',
   });
-  const fetchFailed = useRef(false);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!loggedId) return;
-    api
-      .get('/notifications/user')
-      .then((res) => {
-        setNotification(res.data);
-        fetchFailed.current = false;
-      })
-      .catch(() => {
-        if (fetchFailed.current) return;
-        fetchFailed.current = true;
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao carregar notificações',
-          text2: 'Não foi possível buscar suas notificações. Tente novamente.',
-        });
-      });
-  }, [loggedId]);
+  const notificationQuery = useFetch<INotification[]>(
+    async () => {
+      const res = await api.get('/notifications/user');
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    [loggedId],
+    {
+      enabled: !!loggedId,
+    },
+  );
 
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      if (loggedId) {
-        try {
-          const response = await api.get(`/user/${loggedId}`);
+  const userQuery = useFetch<IUser>(
+    async () => (await api.get(`/user/${loggedId}`)).data,
+    [loggedId],
+    // Falha aqui só afeta o título/admin; o erro principal da tela é o das notificações
+    { enabled: !!loggedId },
+  );
 
-          const userData: IUser = response.data;
-
-          if (userData.sysRole === 'ADMIN') {
-            setAdmin(true);
-          } else {
-            setAdmin(false);
-          }
-        } catch (error) {
-          Toast.show({
-            type: 'error',
-            text1: 'Erro ao buscar informações do usuário',
-            text2: 'Não foi possível carregar as informações do usuário.',
-          });
-        }
-      }
-    };
-
-    fetchUserInfo();
-  }, [loggedId]);
-  useEffect(() => {
-    // fetchNotifications();
-    const interval = setInterval(fetchNotifications, 1000);
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  const notification = notificationQuery.data ?? [];
+  const admin = userQuery.data?.sysRole === 'ADMIN';
 
   useFocusEffect(
     useCallback(() => {
-      fetchNotifications();
       secureStorage.removeItem('body').catch(() => {});
       secureStorage.removeItem('displayNotif').catch(() => {});
-    }, [fetchNotifications]),
+    }, []),
   );
 
   const onPressActions = (body: string, id: string, type: string, idContent?: string) => {
     secureStorage.setItem('body', body).catch(() => {});
-    setNotification((prev) =>
-      prev?.map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
+    notificationQuery.mutate((prev) =>
+      (prev ?? []).map((notif) => (notif.id === id ? { ...notif, isRead: true } : notif)),
     );
     api.patch(`/notifications/${id}`, {}).catch(() => {});
 
@@ -141,7 +112,9 @@ export default function Notification({ navigation }: any) {
   const handleConfirmDelete = async () => {
     try {
       await api.delete(`/notifications/${deleteModal.notifId}`);
-      setNotification((prev) => prev.filter((n: any) => n.id !== deleteModal.notifId));
+      notificationQuery.mutate((prev) =>
+        (prev ?? []).filter((n: any) => n.id !== deleteModal.notifId),
+      );
       Toast.show({
         type: 'success',
         text1: 'Notificação excluída',
@@ -186,8 +159,31 @@ export default function Notification({ navigation }: any) {
           admin={admin}
         />
         <NotificationBodyContainer>
-          <NotificationScrollContainer>
-            {notification && notification.length > 0 ? (
+          <NotificationScrollContainer
+            refreshControl={
+              <RefreshControl
+                refreshing={notificationQuery.refreshing}
+                onRefresh={() => notificationQuery.refresh()}
+                colors={['#EF4036']}
+                tintColor="#EF4036"
+              />
+            }>
+            {notificationQuery.stale && (
+              <StaleDataBanner
+                refreshing={notificationQuery.refreshing}
+                onRefresh={() => notificationQuery.refresh()}
+                style={{ alignSelf: 'stretch', marginTop: 10, marginBottom: 0 }}
+              />
+            )}
+            {notificationQuery.loading ? (
+              <LoadingState text="Carregando notificações..." />
+            ) : !!notificationQuery.error && notificationQuery.data === undefined ? (
+              <ErrorState
+                inline
+                text="Não foi possível carregar suas notificações."
+                onRetry={notificationQuery.refetch}
+              />
+            ) : notification.length > 0 ? (
               notification.map((item: any) => (
                 <NotificationCard
                   key={item.id}
@@ -215,16 +211,6 @@ export default function Notification({ navigation }: any) {
                 </NotificationInfoContainer>
               </>
             )}
-
-            <ButtonCustom
-              onPress={() => {
-                navigation.navigate('Home');
-              }}
-              backColor="#EF4036"
-              fontColor="#ffff"
-              text="Retornar para a tela inicial"
-              border={false}
-            />
           </NotificationScrollContainer>
         </NotificationBodyContainer>
       </ConfigNotificationContainer>

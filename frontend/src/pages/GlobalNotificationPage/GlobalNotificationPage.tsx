@@ -1,11 +1,12 @@
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Toast from 'react-native-toast-message';
 import { useRoute } from '@react-navigation/native';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import api from '../../services/api';
+import useFetch from '../../hooks/useFetch';
 import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import { GlobalNotificationContainer } from './GlobalNotificationPageStyle';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
@@ -21,25 +22,21 @@ export default function GlobalNotificationPage({ navigation }: any) {
     formState: { errors },
     setValue,
   } = useForm({});
-  const [existingNotification, setExistingNotification] = useState<any>(null);
+  const notificationsQuery = useFetch(
+    () => api.get('/notifications/user').then((response) => response.data),
+    [loggedId, body],
+    { enabled: !!loggedId && !!body },
+  );
+
+  const existingNotification = Array.isArray(notificationsQuery.data)
+    ? (notificationsQuery.data.find((notif: any) => notif.id === id) ?? null)
+    : null;
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!loggedId || !body) return;
-
-      if (body) {
-        api.get('/notifications/user').then((response) => {
-          const notification = response.data.find((notif: any) => notif.id === id);
-          if (notification) {
-            setExistingNotification(notification);
-            setValue('input', notification.body);
-          }
-        });
-      }
-    };
-
-    fetchData();
-  }, [loggedId, body, id, setValue]);
+    if (existingNotification) {
+      setValue('input', existingNotification.body);
+    }
+  }, [existingNotification, setValue]);
 
   const onSubmit = async (data: any) => {
     try {

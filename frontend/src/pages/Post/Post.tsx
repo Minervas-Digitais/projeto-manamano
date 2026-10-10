@@ -1,8 +1,16 @@
 /* eslint-disable import/no-duplicates */
 /* eslint-disable global-require */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Dimensions, Pressable, ScrollView, View, Share } from 'react-native';
+import {
+  Dimensions,
+  Pressable,
+  ScrollView,
+  View,
+  Share,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { format, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -25,6 +33,8 @@ import CommentInputTextCustom from '../../components/CommentInput/CommentInputTe
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import ModalOptions from '../../components/ModalOptions/ModalOptions';
 import api from '../../services/api';
+import useFetch from '../../hooks/useFetch';
+import ErrorState from '../../components/ErrorState/ErrorState';
 import DotsMenuIcon from '../../assets/dots-menu-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import { useSavedPosts } from '../../context/SavedPostsContext';
@@ -66,118 +76,102 @@ export default function Post() {
   const { postId } = route.params as { postId: string };
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [isFocused, setIsFocused] = useState(false);
-  const [post, setPost] = useState<PostInterface | null>(null);
-  const [postUser, setPostUser] = useState<User | null>(null);
-  const [postUserImage, setPostUserImage] = useState<any>(defaultAvatar);
-  const [commentUsers, setCommentUsers] = useState<Record<string, User>>({});
-  const [postArchives, setPostArchives] = useState<Archive[]>([]);
-  const [recipientId, setRecipientId] = useState('');
-  const [idGroup, setIdGroup] = useState('');
-  const [userName, setUserName] = useState('');
   const [modalOptions, setModalOptions] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!loggedId) return;
-      api
-        .get(`/user/${loggedId}`)
-        .then((res) => setUserName(res.data.fullName))
-        .catch(() => {
-          Toast.show({
-            type: 'error',
-            text1: 'Erro inesperado',
-            text2: 'Não foi possível carregar o nome do usuário logado.',
-          });
-          setUserName('Usuário');
-        });
-    };
-    fetchData();
-  }, [loggedId]);
-
-  useEffect(() => {
-    if (!loggedId) return;
-    const fetchPost = async () => {
-      try {
-        const response = await api.get(`post/${postId}`);
-        setPost(response.data);
-        setRecipientId(response.data.userId);
-        setIdGroup(response.data.groupId);
-      } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao buscar publicação. Tente novamente mais tarde.',
-        });
-      }
-    };
-    fetchPost();
-  }, [loggedId, postId]);
-
-  useEffect(() => {
-    if (!loggedId || !post?.userId) return;
-
-    const fetchUserAndImage = async () => {
-      try {
-        const responseUser = await api.get(`/user/${post.userId}`);
-        const userData: User = responseUser.data;
-        setPostUser(userData);
-
-        const image = await getUserProfileImage(userData.id);
-        setPostUserImage(image);
-      } catch (error) {
+  const meQuery = useFetch(() => api.get(`/user/${loggedId}`).then((res) => res.data), [loggedId], {
+    enabled: !!loggedId,
+    onError: (_error, { hadData }) => {
+      if (hadData) {
         Toast.show({
           type: 'error',
           text1: 'Erro inesperado',
-          text2: 'Não foi possível carregar o usuário ou a imagem do post.',
-        });
-        setPostUserImage(defaultAvatar);
-      }
-    };
-
-    fetchUserAndImage();
-  }, [loggedId, post?.userId]);
-
-  useEffect(() => {
-    if (!loggedId) return;
-    const fetchArchives = async () => {
-      try {
-        const response = await api.get(`archives/post/${postId}`);
-        setPostArchives(response.data);
-      } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao buscar arquivos da publicação. Tente novamente mais tarde.',
+          text2: 'Não foi possível atualizar o nome do usuário logado.',
         });
       }
-    };
-    fetchArchives();
-  }, [loggedId, postId]);
+    },
+  });
+  const userName = meQuery.data?.fullName ?? 'Usuário';
 
-  useEffect(() => {
-    if (!loggedId || !post?.Comment?.length) return;
-    const fetchCommentUsers = async () => {
-      try {
-        const uniqueUserIds = [...new Set(post.Comment.map((comment) => comment.userId))];
-        const usersData = await Promise.all(
-          uniqueUserIds.map(async (userId) => {
-            const response = await api.get(`/user/${userId}`);
-            return { userId, data: response.data };
-          }),
-        );
-        const usersMap = usersData.reduce<Record<string, User>>((acc, user) => {
-          acc[user.userId] = user.data;
-          return acc;
-        }, {});
-        setCommentUsers(usersMap);
-      } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao buscar usuários dos comentários. Tente novamente mais tarde.',
-        });
-      }
-    };
+  const postQuery = useFetch(
+    () => api.get(`post/${postId}`).then((response) => response.data),
+    [loggedId, postId],
+    { enabled: !!loggedId },
+  );
+  const post: PostInterface | null = postQuery.data ?? null;
+  const recipientId = post?.userId ?? '';
+  const idGroup = post?.groupId ?? '';
 
-    fetchCommentUsers();
-  }, [loggedId, post?.Comment]);
+  const postUserQuery = useFetch(
+    async () => {
+      const responseUser = await api.get(`/user/${post?.userId}`);
+      const userData: User = responseUser.data;
+      const image = await getUserProfileImage(userData.id);
+      return { user: userData, image };
+    },
+    [loggedId, post?.userId],
+    {
+      enabled: !!loggedId && !!post?.userId,
+      onError: (_error, { hadData }) => {
+        if (hadData) {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro inesperado',
+            text2: 'Não foi possível atualizar o usuário ou a imagem do post.',
+          });
+        }
+      },
+    },
+  );
+  const postUser = postUserQuery.data?.user ?? null;
+  const postUserImage = postUserQuery.data?.image ?? defaultAvatar;
+
+  const archivesQuery = useFetch(
+    () => api.get(`archives/post/${postId}`).then((response) => response.data),
+    [loggedId, postId],
+    {
+      enabled: !!loggedId,
+      onError: (_error, { hadData }) => {
+        if (hadData) {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro ao buscar arquivos da publicação. Tente novamente mais tarde.',
+          });
+        }
+      },
+    },
+  );
+  const postArchives: Archive[] = Array.isArray(archivesQuery.data) ? archivesQuery.data : [];
+
+  const commentUserIds = post?.Comment?.length
+    ? [...new Set(post.Comment.map((comment) => comment.userId))]
+    : [];
+  const commentUsersQuery = useFetch(
+    async () => {
+      const usersData = await Promise.all(
+        commentUserIds.map(async (userId) => {
+          const response = await api.get(`/user/${userId}`);
+          return { userId, data: response.data };
+        }),
+      );
+      return usersData.reduce<Record<string, User>>((acc, user) => {
+        acc[user.userId] = user.data;
+        return acc;
+      }, {});
+    },
+    [loggedId, post?.Comment],
+    {
+      enabled: !!loggedId && commentUserIds.length > 0,
+      onError: (_error, { hadData }) => {
+        if (hadData) {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro ao buscar usuários dos comentários. Tente novamente mais tarde.',
+          });
+        }
+      },
+    },
+  );
+  const commentUsers = commentUsersQuery.data ?? {};
   const postDate = post?.createdAt ? new Date(post.createdAt) : null;
   const formattedDate =
     postDate && isValid(postDate)
@@ -309,68 +303,90 @@ export default function Post() {
         )}
         <ScrollView
           showsVerticalScrollIndicator={false}
-          style={{ backgroundColor: '#f2f6fa', flex: 1 }}>
-          <PostContainer>
-            <PostUpperPart>
-              <ProfileImage source={postUserImage} />
-              <ProfileName font="inter-bold">{postUser?.fullName}</ProfileName>
-              <PostDate font="inter-semibold">{formattedDate}</PostDate>
-            </PostUpperPart>
-            <PostText font="inter-regular">{post?.input}</PostText>
-            <ScrollView
-              showsHorizontalScrollIndicator={false}
-              horizontal
-              contentContainerStyle={{ gap: 15 }}
-              style={{ maxHeight: 85 }}>
-              {postArchives.map((archive) => (
-                <PostAttachment archive key={archive.id} text={archive.name} file={archive} />
-              ))}
-            </ScrollView>
-            <View style={{ width: '100%', left: -0.06 * width }}>
-              <HorizontalSeparator />
-            </View>
-            <CommentsContainer>
-              <Controller
-                control={control}
-                name="input"
-                defaultValue=""
-                rules={{
-                  required: true,
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <Pressable testID="input-container" onPress={() => setIsFocused(true)}>
-                    <CommentInputTextCustom
-                      onChangeText={onChange}
-                      value={value}
-                      isFocused={isFocused}
-                      onPressSubmit={handleSubmit(onSubmit)}
-                      onBlur={handleBlur}
-                    />
-                  </Pressable>
+          style={{ backgroundColor: '#f2f6fa', flex: 1 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={postQuery.refreshing}
+              onRefresh={() => {
+                postQuery.refresh();
+                archivesQuery.refresh();
+                commentUsersQuery.refresh();
+              }}
+              colors={['#EF4036']}
+              tintColor="#EF4036"
+            />
+          }>
+          {postQuery.loading && !post ? (
+            <ActivityIndicator size="large" color="#EF4036" style={{ marginTop: 40 }} />
+          ) : !!postQuery.error && !post ? (
+            <ErrorState
+              inline
+              text="Não foi possível carregar a publicação."
+              onRetry={postQuery.refetch}
+            />
+          ) : (
+            <PostContainer>
+              <PostUpperPart>
+                <ProfileImage source={postUserImage} />
+                <ProfileName font="inter-bold">{postUser?.fullName}</ProfileName>
+                <PostDate font="inter-semibold">{formattedDate}</PostDate>
+              </PostUpperPart>
+              <PostText font="inter-regular">{post?.input}</PostText>
+              <ScrollView
+                showsHorizontalScrollIndicator={false}
+                horizontal
+                contentContainerStyle={{ gap: 15 }}
+                style={{ maxHeight: 85 }}>
+                {postArchives.map((archive) => (
+                  <PostAttachment archive key={archive.id} text={archive.name} file={archive} />
+                ))}
+              </ScrollView>
+              <View style={{ width: '100%', left: -0.06 * width }}>
+                <HorizontalSeparator />
+              </View>
+              <CommentsContainer>
+                <Controller
+                  control={control}
+                  name="input"
+                  defaultValue=""
+                  rules={{
+                    required: true,
+                  }}
+                  render={({ field: { onChange, value } }) => (
+                    <Pressable testID="input-container" onPress={() => setIsFocused(true)}>
+                      <CommentInputTextCustom
+                        onChangeText={onChange}
+                        value={value}
+                        isFocused={isFocused}
+                        onPressSubmit={handleSubmit(onSubmit)}
+                        onBlur={handleBlur}
+                      />
+                    </Pressable>
+                  )}
+                />
+                {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
+                {Array.isArray(post?.Comment) && post.Comment.length > 0 ? (
+                  post?.Comment.map((item: any) => {
+                    const commentDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
+                      locale: ptBR,
+                    });
+                    const commentUser = commentUsers[item.userId];
+                    return (
+                      <CommentCard
+                        key={item.id}
+                        fullName={commentUser?.fullName || 'Usuário desconhecido'}
+                        input={item.content}
+                        createdAt={commentDate}
+                        userId={item.userId}
+                      />
+                    );
+                  })
+                ) : (
+                  <View />
                 )}
-              />
-              {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
-              {Array.isArray(post?.Comment) && post.Comment.length > 0 ? (
-                post?.Comment.map((item: any) => {
-                  const commentDate = format(new Date(item.createdAt), "dd 'de' MMM'.', HH:mm", {
-                    locale: ptBR,
-                  });
-                  const commentUser = commentUsers[item.userId];
-                  return (
-                    <CommentCard
-                      key={item.id}
-                      fullName={commentUser?.fullName || 'Usuário desconhecido'}
-                      input={item.content}
-                      createdAt={commentDate}
-                      userId={item.userId}
-                    />
-                  );
-                })
-              ) : (
-                <View />
-              )}
-            </CommentsContainer>
-          </PostContainer>
+              </CommentsContainer>
+            </PostContainer>
+          )}
         </ScrollView>
       </View>
     </ScreenWithHeader>

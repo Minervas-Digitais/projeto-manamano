@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -70,10 +70,6 @@ export class GroupService {
       }),
       this.prismaService.group.count(),
     ]);
-
-    if (groups.length === 0) {
-      throw new NotFoundException(GROUP_MESSAGES.EMPTY_GROUPS);
-    }
 
     return new PaginatedResponseDto<Group>(groups, total, pagination);
   }

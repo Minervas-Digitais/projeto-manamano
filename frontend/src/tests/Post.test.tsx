@@ -15,6 +15,10 @@ jest.mock('../context/SavedPostsContext', () => ({
   }),
 }));
 
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: '123' }),
+}));
+
 interface User {
   fullName: string;
 }
@@ -319,7 +323,6 @@ describe('About', () => {
         expect.objectContaining({
           content: 'Meu comentário de teste',
         }),
-        expect.any(Object),
       );
     });
 
@@ -341,38 +344,32 @@ describe('About', () => {
     });
   });
 
-  it('mostra toast de erro se a busca do post falhar', async () => {
+  it('mostra estado de erro com tentar novamente se a busca do post falhar', async () => {
     (useRoute as jest.Mock).mockReturnValue({
       params: { postId: '001' },
     });
 
-    renderWithNavigation();
+    const { getByTestId } = renderWithNavigation();
 
     await waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'error',
-          text1: 'Erro ao buscar publicação. Tente novamente mais tarde.',
-        }),
-      );
+      expect(getByTestId('error-state')).toBeTruthy();
     });
+    expect(getByTestId('retry-button')).toBeTruthy();
   });
 
-  it('mostra toast de erro se a busca dos arquivos do post falhar', async () => {
+  it('não mostra toast quando a busca dos arquivos falha sem dados na tela', async () => {
     (useRoute as jest.Mock).mockReturnValue({
       params: { postId: '001' },
     });
 
-    renderWithNavigation();
+    const { findByTestId } = renderWithNavigation();
 
-    await waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'error',
-          text1: 'Erro ao buscar arquivos da publicação. Tente novamente mais tarde.',
-        }),
-      );
-    });
+    expect(await findByTestId('error-state', {}, { timeout: 5000 })).toBeTruthy();
+    expect(Toast.show).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        text1: 'Erro ao buscar arquivos da publicação. Tente novamente mais tarde.',
+      }),
+    );
   });
 
   it('mostra toast de erro ao enviar comentário', async () => {
@@ -413,19 +410,21 @@ describe('About', () => {
     });
   });
 
-  it('mostra toast de erro ao buscar usuários dos comentários', async () => {
+  it('não mostra toast quando a busca de usuários dos comentários falha sem dados', async () => {
     (useRoute as jest.Mock).mockReturnValue({
       params: { postId: '003' },
     });
 
-    renderWithNavigation();
+    const { findByText } = renderWithNavigation();
 
-    await waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledWith({
-        type: 'error',
+    expect(
+      await findByText('Texto com erro no usuário do comentário', {}, { timeout: 5000 }),
+    ).toBeTruthy();
+    expect(Toast.show).not.toHaveBeenCalledWith(
+      expect.objectContaining({
         text1: 'Erro ao buscar usuários dos comentários. Tente novamente mais tarde.',
-      });
-    });
+      }),
+    );
   });
 
   it('mostra mensagem de erro se tentar enviar comentário vazio', async () => {

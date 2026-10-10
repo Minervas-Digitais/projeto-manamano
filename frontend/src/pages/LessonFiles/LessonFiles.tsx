@@ -6,6 +6,7 @@ import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import ErrorState from '../../components/ErrorState/ErrorState';
 import api from '../../services/api';
 import { GroupDataText } from '../GroupData/GroupDataStyle';
 import ArchiveIcon from '../../assets/archive-icon.svg';
@@ -38,18 +39,17 @@ export default function LessonFiles() {
   const { postId, title } = route.params as { postId: string; title?: string };
   const [archives, setArchives] = useState<Archive[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchArchives = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError(false);
       const response = await api.get(`/archives/post/${postId}`);
       setArchives(response.data);
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro ao carregar arquivos da aula.',
-      });
       setArchives([]);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -144,6 +144,14 @@ export default function LessonFiles() {
       Toast.show({ type: 'error', text1: 'Erro', text2: 'Não foi possível salvar o arquivo.' });
     }
   };
+
+  if (loadError) {
+    return (
+      <ScreenWithHeader headerProps={{ font: 'inter-bold', text: title || 'Conteúdos da aula' }}>
+        <ErrorState text="Não foi possível carregar os arquivos da aula." onRetry={fetchArchives} />
+      </ScreenWithHeader>
+    );
+  }
 
   if (loading) {
     return (

@@ -9,7 +9,7 @@
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { View } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { EditGroupContainer, EditGroupForm, EditGroupPage } from './EditGroupStyle';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
@@ -17,30 +17,29 @@ import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import localStorage from '../../services/localStorage';
 import api from '../../services/api';
+import useFetch from '../../hooks/useFetch';
+import ErrorState from '../../components/ErrorState/ErrorState';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
 
 export default function EditGroup({ navigation }: any) {
   const { loggedId } = useAuth();
   const [groupId, setGroupId] = useState('');
-  const [groupName, setGroupName] = useState('');
-  const [descriptionGroup, setDescriptionGroup] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
-      const groupIdAux = localStorage.getString('groupId');
+    const groupIdAux = localStorage.getString('groupId');
+    if (groupIdAux) {
+      setGroupId(groupIdAux);
+    }
+  }, []);
 
-      if (loggedId && groupIdAux) {
-        setGroupId(groupIdAux);
-
-        api.get(`/group/${groupIdAux}`).then((res) => {
-          setGroupName(res.data.name);
-          setDescriptionGroup(res.data.description);
-        });
-      }
-    };
-    fetchData();
-  }, [loggedId]);
+  const groupQuery = useFetch(
+    () => api.get(`/group/${groupId}`).then((res) => res.data),
+    [loggedId, groupId],
+    { enabled: !!loggedId && !!groupId },
+  );
+  const groupName = groupQuery.data?.name ?? '';
+  const descriptionGroup = groupQuery.data?.description ?? '';
 
   const {
     control,
@@ -81,41 +80,56 @@ export default function EditGroup({ navigation }: any) {
       <EditGroupPage>
         <EditGroupContainer>
           <View>
-            <EditGroupForm>
-              <Controller
-                control={control}
-                name="name"
-                rules={{
-                  maxLength: { value: 20, message: 'Máximo de 20 caracteres' },
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <InputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="Nome do Grupo"
-                    imageIcon={null}
-                  />
-                )}
+            {groupQuery.loading && !groupQuery.data ? (
+              <ActivityIndicator
+                testID="group-loading"
+                size="large"
+                color="#EF4036"
+                style={{ marginTop: 20 }}
               />
-              {errors.name && <ErrorWarning errorText={errors.name.message} />}
+            ) : !!groupQuery.error && !groupQuery.data ? (
+              <ErrorState
+                inline
+                text="Não foi possível carregar os dados do grupo."
+                onRetry={groupQuery.refetch}
+              />
+            ) : (
+              <EditGroupForm>
+                <Controller
+                  control={control}
+                  name="name"
+                  rules={{
+                    maxLength: { value: 20, message: 'Máximo de 20 caracteres' },
+                  }}
+                  render={({ field: { onChange, value } }) => (
+                    <InputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      label="Nome do Grupo"
+                      imageIcon={null}
+                    />
+                  )}
+                />
+                {errors.name && <ErrorWarning errorText={errors.name.message} />}
 
-              <Controller
-                control={control}
-                name="description"
-                rules={{
-                  maxLength: { value: 500, message: 'Máximo de 500 caracteres' },
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <BigInputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="Descrição do Grupo"
-                    imageIcon={null}
-                  />
-                )}
-              />
-              {errors.description && <ErrorWarning errorText={errors.description.message} />}
-            </EditGroupForm>
+                <Controller
+                  control={control}
+                  name="description"
+                  rules={{
+                    maxLength: { value: 500, message: 'Máximo de 500 caracteres' },
+                  }}
+                  render={({ field: { onChange, value } }) => (
+                    <BigInputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      label="Descrição do Grupo"
+                      imageIcon={null}
+                    />
+                  )}
+                />
+                {errors.description && <ErrorWarning errorText={errors.description.message} />}
+              </EditGroupForm>
+            )}
           </View>
           <ButtonCustom
             onPress={handleSubmit(onSubmit)}

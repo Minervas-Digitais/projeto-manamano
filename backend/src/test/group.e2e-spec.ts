@@ -257,24 +257,25 @@ describe('Group (e2e)', () => {
       expect(res.status).toBe(401);
     });
 
-    it('deve retornar 404 se não houver grupos', async () => {
+    it('deve retornar lista vazia se não houver grupos', async () => {
       await prismaService.group.deleteMany();
 
       const res = await request(app.getHttpServer())
         .get('/group')
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(res.status).toBe(404);
-      expect(res.body.message).toBe(GROUP_MESSAGES.EMPTY_GROUPS);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.total).toBe(0);
     });
 
-    it('deve retornar 404 se página além do total (lista vazia)', async () => {
+    it('deve retornar lista vazia se página além do total', async () => {
       const res = await request(app.getHttpServer())
         .get('/group?page=999&limit=10')
         .set('Authorization', `Bearer ${adminToken}`);
 
-      expect(res.status).toBe(404);
-      expect(res.body.message).toBe(GROUP_MESSAGES.EMPTY_GROUPS);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
     });
 
     it('deve retornar 400 para paginação inválida (page=0)', async () => {

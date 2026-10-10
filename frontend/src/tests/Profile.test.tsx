@@ -1,7 +1,7 @@
 import React from 'react';
-import { render, waitFor, fireEvent } from '@testing-library/react-native';
+import { render, waitFor, fireEvent, act } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { Text } from 'react-native';
+import { RefreshControl, Text } from 'react-native';
 import Profile from '../pages/Profile/Profile';
 import api from '../services/api';
 import storage from '../services/secureStorage';
@@ -182,5 +182,38 @@ describe('Profile', () => {
     await waitFor(() => {
       expect(getByText('Nenhuma Publicação salva')).toBeTruthy();
     });
+  });
+
+  it('deve mostrar erro com tentar novamente quando o perfil falha sem dados', async () => {
+    mockedApi.get.mockImplementation(() => Promise.reject(new Error('offline')));
+
+    const { findByTestId, getByTestId, queryByTestId } = renderWithNavigation(<Profile />);
+
+    expect(await findByTestId('error-state', {}, { timeout: 5000 })).toBeTruthy();
+    expect(getByTestId('retry-button')).toBeTruthy();
+    expect(queryByTestId('go-home-button')).toBeNull();
+  });
+
+  it('exibe o aviso de dados desatualizados quando a atualização falha', async () => {
+    const {
+      UNSAFE_getByType: getByType,
+      findByText,
+      getByTestId,
+      queryByTestId,
+    } = renderWithNavigation(<Profile />);
+
+    await findByText('Postagem da Maria');
+    expect(queryByTestId('stale-data-banner')).toBeNull();
+
+    mockedApi.get.mockImplementation(() => Promise.reject(new Error('offline')));
+
+    await act(async () => {
+      getByType(RefreshControl).props.onRefresh();
+    });
+
+    await waitFor(() => {
+      expect(getByTestId('stale-data-banner')).toBeTruthy();
+    });
+    expect(getByTestId('stale-data-refresh')).toBeTruthy();
   });
 });

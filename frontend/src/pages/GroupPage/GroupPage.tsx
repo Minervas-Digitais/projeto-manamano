@@ -2,7 +2,7 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/jsx-closing-bracket-location */
 /* eslint-disable global-require */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Buffer } from 'buffer';
 import {
   StyleSheet,
@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute } from '@react-navigation/native';
-import { AxiosError } from 'axios';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Toast from 'react-native-toast-message';
 import {
@@ -46,6 +45,10 @@ import BellIcon from '../../assets/notification-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
 import ModalGroupOptions from '../../components/ModalGroupOptions/ModalGroupOptions';
+import useFetch from '../../hooks/useFetch';
+import ErrorState from '../../components/ErrorState/ErrorState';
+import StaleDataBanner from '../../components/StaleDataBanner/StaleDataBanner';
+import EmptyState from '../../components/EmptyState/EmptyState';
 
 export default function GroupPage({ navigation }: any) {
   const route = useRoute();
@@ -59,21 +62,87 @@ export default function GroupPage({ navigation }: any) {
   const [filesSelect, setFilesSelect] = useState(false);
   const [filterPosts, setFilterPosts] = useState('Geral');
   const [filterFiles, setFilterFiles] = useState('Fotos');
-  const [categories, setCategories] = useState<any[]>([]);
-  const [posts, setPosts] = useState<any[]>([]);
-  const [archives, setArchives] = useState<any[]>([]);
-  const [userRole, setUserRole] = useState<string>('');
 
+  const [extraPosts, setExtraPosts] = useState<any[]>([]);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [aulasPage, setAulasPage] = useState(1);
 
   const [modalOptions, setModalOptions] = useState(false);
 
   const POSTS_PER_PAGE = 10;
   const CLASSES_PER_PAGE = 5;
+
+  const fetchEnabled = !!loggedId && !!groupId;
+
+  const postsQuery = useFetch<{ posts: any[]; hasMore: boolean }>(
+    async () => {
+      const response = await api.get(`/post/group/${groupId}`, {
+        params: {
+          page: 1,
+          limit: POSTS_PER_PAGE,
+        },
+      });
+      const { data: newPosts, meta } = response.data;
+      return {
+        posts: Array.isArray(newPosts) ? newPosts : [],
+        hasMore: meta.page < meta.lastPage,
+      };
+    },
+    [groupId, loggedId],
+    { enabled: fetchEnabled },
+  );
+
+  const categoriesQuery = useFetch<any[]>(
+    async () => {
+      const response = await api.get(`/category/group/${groupId}`);
+      const list = Array.isArray(response.data) ? response.data : [];
+      return list.filter((category: any) => category.name !== 'Aulas');
+    },
+    [groupId, loggedId],
+    { enabled: fetchEnabled },
+  );
+
+  const archivesQuery = useFetch<any[]>(
+    async () => {
+      try {
+        const response = await api.get(`/archives/group/${groupId}`);
+        return Array.isArray(response.data) ? response.data : [];
+      } catch (error: any) {
+        // Sem arquivos cadastrados a API responde 404: trata como lista vazia
+        if (error?.response?.status === 404) {
+          return [];
+        }
+        throw error;
+      }
+    },
+    [groupId, loggedId],
+    { enabled: fetchEnabled },
+  );
+
+  const roleQuery = useFetch<any>(
+    async () => (await api.get(`/participant/group/${groupId}/me`)).data,
+    [groupId, loggedId],
+    {
+      enabled: fetchEnabled,
+      onError: (error: any) => {
+        // 404 é resposta da API (não participa do grupo): avisa sempre.
+        if (error?.response?.status === 404) {
+          Toast.show({
+            type: 'warning',
+            text1: 'Você não faz parte deste grupo',
+            text2: 'Entre no grupo para ver o conteúdo completo.',
+          });
+        }
+      },
+    },
+  );
+
+  const categories = categoriesQuery.data ?? [];
+  const archives = archivesQuery.data ?? [];
+  const posts = [...(postsQuery.data?.posts ?? []), ...extraPosts];
+  const userRole = roleQuery.data?.role ?? 'MEMBER';
 
   // Paginação por páginas para Aulas (filtrado de posts)
   const classPosts = posts.filter((p: any) => p.type === 'CLASS');
@@ -83,60 +152,38 @@ export default function GroupPage({ navigation }: any) {
     aulasPage * CLASSES_PER_PAGE,
   );
 
-  const getGroupPosts = useCallback(
-    async (pageNum: number, refresh = false) => {
-      if (loading || (!hasMore && !refresh)) return;
+  // Recarga no focus volta com a página 1
+  useEffect(() => {
+    setPage(1);
+    setExtraPosts([]);
+    setHasMore(postsQuery.data?.hasMore ?? false);
+  }, [postsQuery.data]);
 
-      if (!loggedId || !groupId) return;
+  const loadMorePosts = async () => {
+    if (loadingMore || !hasMore || !fetchEnabled) return;
 
-      try {
-        setLoading(true);
-
-        const response = await api.get(`/post/group/${groupId}`, {
-          params: {
-            page: pageNum,
-            limit: POSTS_PER_PAGE,
-          },
-        });
-        const { data: newPosts, meta } = response.data;
-        const moreAvailable = meta.page < meta.lastPage;
-        const currentPage = meta.page;
-
-        if (refresh) {
-          setPosts(newPosts);
-          setPage(currentPage);
-          setHasMore(moreAvailable);
-        } else {
-          setPosts((prev) => [...prev, ...newPosts]);
-          setHasMore(moreAvailable);
-          setPage(currentPage);
-        }
-      } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro',
-          text2: 'Não foi possível carregar os posts. Tente novamente mais tarde.',
-        });
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [groupId, loading, hasMore, loggedId],
-  );
-  const loadMorePosts = () => {
-    if (!loading && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      getGroupPosts(nextPage);
+    setLoadingMore(true);
+    try {
+      const response = await api.get(`/post/group/${groupId}`, {
+        params: {
+          page: page + 1,
+          limit: POSTS_PER_PAGE,
+        },
+      });
+      const { data: newPosts, meta } = response.data;
+      setExtraPosts((prev) => [...prev, ...(Array.isArray(newPosts) ? newPosts : [])]);
+      setPage(meta.page);
+      setHasMore(meta.page < meta.lastPage);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível carregar mais posts. Tente novamente mais tarde.',
+      });
+    } finally {
+      setLoadingMore(false);
     }
   };
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setHasMore(true);
-    getGroupPosts(1, true);
-  }, [getGroupPosts]);
 
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
@@ -145,63 +192,10 @@ export default function GroupPage({ navigation }: any) {
     const isCloseToBottom =
       layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
 
-    if (isCloseToBottom && !loading && hasMore) {
+    if (isCloseToBottom && !loadingMore && hasMore) {
       loadMorePosts();
     }
   };
-
-  const getGroupCategory = useCallback(async () => {
-    if (!loggedId || !groupId) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Não foi possível carregar as categorias do grupo.',
-      });
-      return;
-    }
-    try {
-      const response = await api.get(`/category/group/${groupId}`);
-      const filteredData = response.data.filter((category: any) => category.name !== 'Aulas');
-      setCategories(filteredData);
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Não foi possível carregar as categorias do grupo.',
-      });
-    }
-  }, [groupId, loggedId]);
-
-  const getGroupArchives = useCallback(async () => {
-    if (!loggedId || !groupId) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Não foi possível carregar os arquivos do grupo.',
-      });
-      return;
-    }
-    try {
-      const response = await api.get(`/archives/group/${groupId}`);
-      setArchives(response.data);
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        Toast.show({
-          type: 'warning',
-          text1: 'Nenhum arquivo encontrado',
-          text2: 'Não há arquivos disponíveis para este grupo.',
-        });
-        setArchives([]);
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao buscar arquivos',
-          text2: 'Não foi possível buscar os arquivos do grupo. Tente novamente mais tarde.',
-        });
-        setArchives([]);
-      }
-    }
-  }, [groupId, loggedId]);
 
   const getUserProfileImage = async (userId: string) => {
     if (!loggedId) {
@@ -221,47 +215,12 @@ export default function GroupPage({ navigation }: any) {
     }
   };
 
-  const getUserRoleInGroup = useCallback(async () => {
-    if (!groupId || !loggedId) return;
-    try {
-      const response = await api.get(`/participant/group/${groupId}/me`);
-
-      setUserRole(response.data.role);
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && (error as AxiosError).isAxiosError) {
-        const axiosError = error as AxiosError;
-        if (axiosError.response?.status === 404) {
-          Toast.show({
-            type: 'warning',
-            text1: 'Você não faz parte deste grupo',
-            text2: 'Entre no grupo para ver o conteúdo completo.',
-          });
-        } else {
-          Toast.show({
-            type: 'error',
-            text1: 'Erro',
-            text2: 'Não foi possível carregar suas permissões no grupo.',
-          });
-          setUserRole('MEMBER');
-        }
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro',
-          text2: 'Não foi possível carregar suas permissões no grupo.',
-        });
-      }
-
-      setUserRole('MEMBER'); // Default para membro
-    }
-  }, [groupId, loggedId]);
-
-  useEffect(() => {
-    getGroupPosts(1, true);
-    getGroupCategory();
-    getGroupArchives();
-    getUserRoleInGroup();
-  }, [getGroupCategory, getGroupArchives, getUserRoleInGroup]);
+  const handleRefresh = () => {
+    postsQuery.refresh();
+    categoriesQuery.refresh();
+    archivesQuery.refresh();
+    roleQuery.refresh();
+  };
 
   const fileCategory = [
     { categoryName: 'Fotos' },
@@ -320,7 +279,7 @@ export default function GroupPage({ navigation }: any) {
         });
       }
 
-      getGroupPosts(1, true);
+      postsQuery.refetch();
     } catch (error) {
       Toast.show({
         type: 'error',
@@ -350,6 +309,22 @@ export default function GroupPage({ navigation }: any) {
     });
     setModalOptions(false);
   };
+
+  if (!!postsQuery.error && postsQuery.data === undefined) {
+    return (
+      <ScreenWithHeader
+        headerProps={{
+          font: 'inter-bold',
+          text: groupName,
+          menu: true,
+        }}>
+        <ErrorState
+          text="Não foi possível carregar o conteúdo do grupo."
+          onRetry={postsQuery.refetch}
+        />
+      </ScreenWithHeader>
+    );
+  }
 
   return (
     <ScreenWithHeader
@@ -417,6 +392,25 @@ export default function GroupPage({ navigation }: any) {
           </GroupPageTabsContainer>
         </GroupPageTabs>
         <GroupPageContent>
+          {(postsQuery.stale ||
+            categoriesQuery.stale ||
+            archivesQuery.stale ||
+            roleQuery.stale) && (
+            <StaleDataBanner
+              refreshing={
+                postsQuery.refreshing ||
+                categoriesQuery.refreshing ||
+                archivesQuery.refreshing ||
+                roleQuery.refreshing
+              }
+              onRefresh={() => {
+                postsQuery.refresh();
+                categoriesQuery.refresh();
+                archivesQuery.refresh();
+                roleQuery.refresh();
+              }}
+            />
+          )}
           {muralSelect ? (
             <ScrollView
               style={{ flex: 1 }}
@@ -425,11 +419,32 @@ export default function GroupPage({ navigation }: any) {
               scrollEventThrottle={16}
               refreshControl={
                 <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
+                  refreshing={postsQuery.refreshing}
+                  onRefresh={handleRefresh}
                   colors={['#EF4036']}
                 />
               }>
+              {postsQuery.loading && postsQuery.data === undefined && (
+                <View style={style.loadingContainer}>
+                  <ActivityIndicator size="large" color="#EF4036" />
+                  <GroupDataText
+                    color="#8F8F8F"
+                    size="12px"
+                    font="inter-regular"
+                    style={{ marginTop: 8, textAlign: 'center' }}>
+                    Carregando publicações...
+                  </GroupDataText>
+                </View>
+              )}
+
+              {!!postsQuery.error && postsQuery.data === undefined && (
+                <ErrorState
+                  inline
+                  text="Não foi possível carregar as publicações."
+                  onRetry={postsQuery.refetch}
+                />
+              )}
+
               <GroupPageListFixPost>
                 {posts.length > 0 ? (
                   posts
@@ -516,11 +531,11 @@ export default function GroupPage({ navigation }: any) {
                     return null;
                   })
                 ) : (
-                  <View />
+                  <EmptyState inline text="Não há publicações neste mural." />
                 )}
               </GroupPagePostList>
 
-              {loading && (
+              {loadingMore && (
                 <View style={style.loadingContainer}>
                   <ActivityIndicator size="large" color="#EF4036" />
                   <GroupDataText
@@ -554,7 +569,7 @@ export default function GroupPage({ navigation }: any) {
                       urlLive={item.urlLive}
                       urlVOD={item.urlRecorded}
                       isInstructor={userRole === 'INSTRUCTOR'}
-                      onDeleteSuccess={() => getGroupPosts(1, true)}
+                      onDeleteSuccess={() => postsQuery.refetch()}
                     />
                   ))
                 ) : (
@@ -652,25 +667,41 @@ export default function GroupPage({ navigation }: any) {
                   <View />
                 )}
               </GroupPageLessonsContainer>
-              <GroupPageArchivesContainer>
-                {archives?.map((item: any) => {
-                  const fileType = getFileTypeFromMime(item.mimeType);
-                  if (filterFiles === fileType) {
-                    return (
-                      <GroupArchives
-                        key={item.id}
-                        archive={{
-                          id: item.id,
-                          name: item.name || 'Arquivo',
-                          uri: item.contentBase64,
-                          mimeType: item.mimeType || 'application/octet-stream',
-                        }}
-                      />
-                    );
-                  }
-                  return null;
-                })}
-              </GroupPageArchivesContainer>
+              {archivesQuery.loading ? (
+                <ActivityIndicator
+                  size="large"
+                  color="#EF4036"
+                  style={{ marginTop: 20, alignSelf: 'center' }}
+                />
+              ) : !!archivesQuery.error && archivesQuery.data === undefined ? (
+                <ErrorState
+                  inline
+                  text="Não foi possível carregar os arquivos."
+                  onRetry={archivesQuery.refetch}
+                />
+              ) : archives.length === 0 ? (
+                <EmptyState inline text="Nenhum arquivo disponível." />
+              ) : (
+                <GroupPageArchivesContainer>
+                  {archives.map((item: any) => {
+                    const fileType = getFileTypeFromMime(item.mimeType);
+                    if (filterFiles === fileType) {
+                      return (
+                        <GroupArchives
+                          key={item.id}
+                          archive={{
+                            id: item.id,
+                            name: item.name || 'Arquivo',
+                            uri: item.contentBase64,
+                            mimeType: item.mimeType || 'application/octet-stream',
+                          }}
+                        />
+                      );
+                    }
+                    return null;
+                  })}
+                </GroupPageArchivesContainer>
+              )}
             </ScrollView>
           )}
         </GroupPageContent>

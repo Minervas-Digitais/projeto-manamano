@@ -53,6 +53,16 @@ jest.mock('@react-navigation/native', () => ({
   useRoute: () => mockRoute,
 }));
 
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: '123' }),
+}));
+
+const mockToggleMenu = jest.fn();
+
+jest.mock('../context/SideMenuContext', () => ({
+  useSideMenu: () => ({ toggleMenu: mockToggleMenu }),
+}));
+
 jest.mock('../services/secureStorage', () => ({
   __esModule: true,
   default: {
@@ -119,8 +129,19 @@ describe('VisitorProfile', () => {
     });
   });
 
-  it('deve exibir mensagem de "usuário não encontrado" se a API falhar', async () => {
+  it('deve exibir erro com tentar novamente quando a API falha sem responder', async () => {
     mockApi.get.mockRejectedValue(new Error('User not found'));
+
+    const { findByTestId, getByTestId } = render(
+      <VisitorProfile navigation={{ navigate: mockNavigation }} />,
+    );
+
+    expect(await findByTestId('error-state', {}, { timeout: 5000 })).toBeTruthy();
+    expect(getByTestId('retry-button')).toBeTruthy();
+  });
+
+  it('deve exibir mensagem de "usuário não encontrado" quando a API responde 404', async () => {
+    mockApi.get.mockRejectedValue({ response: { status: 404 } });
 
     const { getByText } = render(<VisitorProfile navigation={{ navigate: mockNavigation }} />);
 
@@ -157,7 +178,7 @@ describe('VisitorProfile', () => {
     });
   });
 
-  it('Deve abrir/fechar o menu lateral ao apertar o botao', async () => {
+  it('deve abrir/fechar o menu lateral ao apertar o botao', async () => {
     mockApi.get.mockImplementation((url) => {
       if (url.includes(`/user/${mockRoute.params.id}/profile-picture`)) {
         return Promise.resolve({ data: mockImageBinary });
@@ -171,21 +192,20 @@ describe('VisitorProfile', () => {
       return Promise.reject(new Error(`URL não mockada: ${url}`));
     });
 
-    const { getByTestId, findByTestId } = render(
+    const { getByTestId, findByText } = render(
       <VisitorProfile navigation={{ navigate: mockNavigation }} />,
     );
 
-    const sideMenuComponente = await findByTestId('mock-sidemenu');
-    // o menu lateral tem que ta ativo
-    expect(sideMenuComponente.props.display).toBe(true);
+    // espera o perfil carregar para garantir que o botão está ativo
+    await findByText('Test User');
 
     const menuButton = getByTestId('menu-toggle-button');
     fireEvent.press(menuButton);
 
-    expect(getByTestId('mock-sidemenu').props.display).toBe(false);
+    expect(mockToggleMenu).toHaveBeenCalledTimes(1);
 
     fireEvent.press(menuButton);
-    expect(getByTestId('mock-sidemenu').props.display).toBe(true);
+    expect(mockToggleMenu).toHaveBeenCalledTimes(2);
   });
 
   it('deve chamar a função de copiar para o clipboard com o email', async () => {

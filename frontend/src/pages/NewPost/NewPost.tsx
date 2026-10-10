@@ -1,9 +1,9 @@
 /* eslint-disable global-require */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRoute } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
-import { View, ScrollView, Dimensions } from 'react-native';
+import { View, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import CategoryButton from '../../components/CategoryButton/CategoryButton';
@@ -23,6 +23,8 @@ import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import { MiddlePart, NamePart } from '../EditProfile/EditProfileStyle';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import api from '../../services/api';
+import useFetch from '../../hooks/useFetch';
+import ErrorState from '../../components/ErrorState/ErrorState';
 import NewPostArchive from '../../components/NewPostArchive/NewPostArchive';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 import AttachmentIcon from '../../assets/add-attachment-icon.svg';
@@ -77,7 +79,15 @@ export default function NewPost({ navigation }: any) {
     type: string;
   }
   const { loggedId } = useAuth();
-  const [categories, setCategories] = useState<Category[]>([]);
+  const categoriesQuery = useFetch(
+    () => api.get(`/category/group/${groupId}`).then((response) => response.data),
+    [loggedId, groupId],
+    { enabled: !!loggedId },
+  );
+  const categories: Category[] = useMemo(
+    () => (Array.isArray(categoriesQuery.data) ? categoriesQuery.data : []),
+    [categoriesQuery.data],
+  );
   const [selectedCategoryType, setSelectedCategoryType] = useState<string | null>(null);
   const [filterPosts, setFilterPosts] = useState('Geral');
   const dateRef = useRef<any>(null);
@@ -96,21 +106,6 @@ export default function NewPost({ navigation }: any) {
     const selectedCategory = categories.find((category) => category.name === filterPosts);
     setSelectedCategoryType(selectedCategory ? selectedCategory.type : null);
   }, [filterPosts, categories]);
-  useEffect(() => {
-    if (!loggedId) return;
-    const fetchCategories = async () => {
-      try {
-        const response = await api.get(`/category/group/${groupId}`);
-        setCategories(response.data);
-      } catch (error) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao buscar categorias.',
-        });
-      }
-    };
-    fetchCategories();
-  }, [loggedId, groupId]);
   const {
     control,
     handleSubmit,
@@ -251,16 +246,31 @@ export default function NewPost({ navigation }: any) {
               Categoria
             </GroupDataText>
             <GroupPageCategoryList>
-              {categories
-                .filter((category) => category.name !== 'Aulas')
-                .map((category) => (
-                  <CategoryButton
-                    key={category.id}
-                    categoryName={category.name}
-                    onPress={() => setFilterPosts(category.name)}
-                    filter={filterPosts}
-                  />
-                ))}
+              {categoriesQuery.loading && !categories.length ? (
+                <ActivityIndicator
+                  testID="categories-loading"
+                  size="large"
+                  color="#EF4036"
+                  style={{ marginTop: 10 }}
+                />
+              ) : !!categoriesQuery.error && !categories.length ? (
+                <ErrorState
+                  inline
+                  text="Não foi possível carregar as categorias."
+                  onRetry={categoriesQuery.refetch}
+                />
+              ) : (
+                categories
+                  .filter((category) => category.name !== 'Aulas')
+                  .map((category) => (
+                    <CategoryButton
+                      key={category.id}
+                      categoryName={category.name}
+                      onPress={() => setFilterPosts(category.name)}
+                      filter={filterPosts}
+                    />
+                  ))
+              )}
             </GroupPageCategoryList>
           </GroupPageCategoryContainer>
           {selectedCategoryType !== 'EVENT' ? (
