@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { isAxiosError } from 'axios';
 import Toast from 'react-native-toast-message';
 import api from '../services/api';
-// import { useAuth } from './auth/useAuth';
 import { useAuth } from './auth/useAuth';
 
 export const OWN_POST_SAVE_MESSAGE = 'Você não pode salvar sua própria publicação.';
@@ -70,7 +70,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
         text1: 'Post salvo com sucesso!',
       });
     } catch (error) {
-      if (error?.response?.status === 409) {
+      if (isAxiosError(error) && error.response?.status === 409) {
         // Já estava salvo
         setSavedPostIds((prev) => new Set(prev).add(postId));
         return;
@@ -85,7 +85,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
         newSet.delete(postId);
         return newSet;
       });
-      const serverMessage = error?.response?.data?.message;
+      const serverMessage = isAxiosError(error) ? error.response?.data?.message : undefined;
       Toast.show({
         type: 'error',
         text1: Array.isArray(serverMessage)
@@ -108,7 +108,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
         text1: 'Post removido dos salvos!',
       });
     } catch (error) {
-      if (error?.response?.status === 404) {
+      if (isAxiosError(error) && error.response?.status === 404) {
         // Já não estava salvo.
         return;
       }
