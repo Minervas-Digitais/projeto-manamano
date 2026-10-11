@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import Toast from 'react-native-toast-message';
 import SignUp from '../pages/SignUp/SignUp';
 import api from '../services/api';
 
@@ -20,7 +20,12 @@ jest.mock('expo-font', () => ({
   useFonts: () => [true], // simula q as fontes carregaram
 }));
 
-(global as any).alert = jest.fn();
+jest.mock('react-native-toast-message', () => ({
+  __esModule: true,
+  default: {
+    show: jest.fn(),
+  },
+}));
 
 describe('SignUp', () => {
   const apiPostMock = api.post as jest.Mock;
@@ -70,10 +75,15 @@ describe('SignUp', () => {
     });
 
     expect(mockedNavigate).toHaveBeenLastCalledWith('SignIn');
+
+    expect(Toast.show).toHaveBeenCalledWith({
+      type: 'success',
+      text1: 'Cadastro realizado',
+      text2: 'Seu cadastro foi realizado com sucesso!',
+    });
   });
 
   it('Deve exibir um alerta de erro se o email ou celular ja estiver em uso', async () => {
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     apiPostMock.mockRejectedValue({
       response: {
         status: 409,
@@ -95,11 +105,13 @@ describe('SignUp', () => {
       expect(apiPostMock).toHaveBeenCalledTimes(1);
     });
 
-    expect(alertSpy).toHaveBeenCalledWith('E-mail ou celular já está associado a outra conta!');
+    expect(Toast.show).toHaveBeenCalledWith({
+      type: 'error',
+      text1: 'Erro no cadastro',
+      text2: 'E-mail ou celular já está associado a outra conta!',
+    });
 
     expect(mockedNavigate).not.toHaveBeenCalled();
-
-    alertSpy.mockRestore();
   });
 
   it('Deve exibir mensagens de erro para campos obrigatórios vazios', async () => {

@@ -12,11 +12,20 @@ jest.mock('expo-font', () => ({
 }));
 
 jest.mock('react-native-toast-message', () => ({
-  show: jest.fn(),
+  __esModule: true,
+  default: {
+    show: jest.fn(),
+  },
 }));
 
 jest.mock('../services/api');
 const mockPatch = api.patch as jest.Mock;
+
+let mockLoggedId: string | null = 'user-123';
+
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: mockLoggedId }),
+}));
 
 const Stack = createStackNavigator();
 const renderWithNavigation = () =>
@@ -28,17 +37,6 @@ const renderWithNavigation = () =>
       </Stack.Navigator>
     </NavigationContainer>,
   );
-
-jest.mock('../services/secureStorage', () => ({
-  __esModule: true,
-  default: {
-    getItem: async (key: string) => {
-      if (key === 'accessToken') return 'fake-token';
-      if (key === 'loggedId') return '123';
-      return null;
-    },
-  },
-}));
 
 (global as any).alert = jest.fn();
 
@@ -62,6 +60,7 @@ describe('ChangePassword', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLoggedId = 'user-123';
   });
 
   it('deve renderizar os campos do formulário', async () => {
@@ -70,7 +69,7 @@ describe('ChangePassword', () => {
     expect(await findByLabelText('Digite a senha atual')).toBeTruthy();
     expect(await findByLabelText('Digite a nova senha')).toBeTruthy();
     expect(await findByLabelText('Confirme a nova senha')).toBeTruthy();
-    expect(await findByText('Confirmar')).toBeTruthy();
+    expect(await findByText('Salvar')).toBeTruthy();
   });
 
   it('deve submeter e navegar após sucesso', async () => {
@@ -82,17 +81,13 @@ describe('ChangePassword', () => {
     fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
     fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'novaSenha1');
 
-    fireEvent.press(await findByText('Confirmar'));
+    fireEvent.press(await findByText('Salvar'));
 
     await waitFor(() => {
-      expect(mockPatch).toHaveBeenCalledWith(
-        expect.stringContaining('/change-password'),
-        expect.objectContaining({
-          oldPassword: 'senhaAntiga123',
-          newPassword: 'novaSenha1',
-        }),
-        expect.any(Object),
-      );
+      expect(mockPatch).toHaveBeenCalledWith('/user/change-password', {
+        oldPassword: 'senhaAntiga123',
+        newPassword: 'novaSenha1',
+      });
       expect(Toast.show).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'success',
@@ -105,7 +100,7 @@ describe('ChangePassword', () => {
   it('deve mostrar erro ao submeter sem preencher campos', async () => {
     const { findByText, getAllByText } = renderWithNavigation();
 
-    fireEvent.press(await findByText('Confirmar'));
+    fireEvent.press(await findByText('Salvar'));
 
     await waitFor(() => {
       const errors = getAllByText('Campo obrigatório');
@@ -120,7 +115,7 @@ describe('ChangePassword', () => {
     fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
     fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'senhaDiferente');
 
-    fireEvent.press(await findByText('Confirmar'));
+    fireEvent.press(await findByText('Salvar'));
 
     expect(await findByText('Senhas não coincidem')).toBeTruthy();
   });
@@ -134,7 +129,7 @@ describe('ChangePassword', () => {
     fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
     fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'novaSenha1');
 
-    fireEvent.press(await findByText('Confirmar'));
+    fireEvent.press(await findByText('Salvar'));
 
     await waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith(
