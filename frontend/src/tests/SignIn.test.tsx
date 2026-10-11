@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import Toast from 'react-native-toast-message';
-import api from '../services/api';
 import SignIn from '../pages/SignIn/SignIn';
 
 const mockedNavigate = jest.fn();
@@ -12,8 +11,12 @@ jest.mock('@react-navigation/native', () => ({
     goBack: jest.fn(),
   }),
 }));
-(global as any).alert = jest.fn();
 jest.mock('../services/api');
+
+const mockedLogin = jest.fn();
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ login: mockedLogin }),
+}));
 
 jest.mock('../hooks/useNotification', () => ({
   registerForPushNotificationsAsync: jest.fn(async () => null),
@@ -31,10 +34,9 @@ jest.mock('expo-font', () => ({
 }));
 
 describe('SignIn', () => {
-  const apiPostMock = api.post as jest.Mock;
-
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedLogin.mockResolvedValue(undefined);
   });
   it('Deve renderizar todos os campos do formulario e o botao', () => {
     const { getByText, getByLabelText } = render(
@@ -51,19 +53,11 @@ describe('SignIn', () => {
 
     fireEvent.changeText(getByLabelText('E-mail'), 'jorge@gmail.com');
     fireEvent.changeText(getByLabelText('Senha'), 'senha123');
-    apiPostMock.mockResolvedValueOnce({
-      data: {
-        accessToken: 'fake-token',
-        loggedId: '123',
-      },
-    });
+
     fireEvent.press(getByText('Entrar'));
 
     await waitFor(() => {
-      expect(apiPostMock).toHaveBeenCalledWith('/auth/login', {
-        email: 'jorge@gmail.com',
-        password: 'senha123',
-      });
+      expect(mockedLogin).toHaveBeenCalledWith('jorge@gmail.com', 'senha123');
       expect(mockedNavigate).toHaveBeenCalledWith('Home');
     });
   });
@@ -87,17 +81,12 @@ describe('SignIn', () => {
     fireEvent.changeText(getByLabelText('E-mail'), 'usuario@invalido.com');
     fireEvent.changeText(getByLabelText('Senha'), 'senhaerrada');
 
-    apiPostMock.mockResolvedValueOnce({
-      data: {},
-    });
+    mockedLogin.mockRejectedValueOnce(new Error('Credenciais inválidas'));
 
     fireEvent.press(getByText('Entrar'));
 
     await waitFor(() => {
-      expect(apiPostMock).toHaveBeenCalledWith('/auth/login', {
-        email: 'usuario@invalido.com',
-        password: 'senhaerrada',
-      });
+      expect(mockedLogin).toHaveBeenCalledWith('usuario@invalido.com', 'senhaerrada');
 
       expect(Toast.show).toHaveBeenCalledWith({
         type: 'error',

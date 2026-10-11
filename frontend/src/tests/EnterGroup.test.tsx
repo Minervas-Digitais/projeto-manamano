@@ -4,6 +4,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import Toast from 'react-native-toast-message';
 import api from '../services/api';
 import EnterGroup from '../pages/EnterGroup/EnterGroup';
 
@@ -14,16 +15,19 @@ jest.mock('expo-font', () => ({
 jest.mock('../services/api');
 const mockPost = api.post as jest.Mock;
 
-jest.mock('../services/secureStorage', () => ({
+jest.mock('react-native-toast-message', () => ({
   __esModule: true,
   default: {
-    getItem: async (key: string) => {
-      if (key === 'accessToken') return 'fake-token';
-      if (key === 'loggedId') return '123';
-      return null;
-    },
+    show: jest.fn(),
   },
 }));
+
+let mockLoggedId: string | null = 'user-123';
+
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: mockLoggedId }),
+}));
+
 const Stack = createStackNavigator();
 const GroupsScreen = () => <Text>Groups Screen</Text>;
 
@@ -46,6 +50,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockLoggedId = 'user-123';
 });
 
 describe('EnterGroup', () => {
@@ -65,16 +70,15 @@ describe('EnterGroup', () => {
     fireEvent.press(getByText('Entrar'));
 
     await waitFor(() => {
-      expect(mockPost).toHaveBeenCalledWith(
-        '/participant',
-        expect.objectContaining({
-          role: 'STUDENT',
-          inviteCode: 'ABC123',
-        }),
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer fake-token' },
-        }),
-      );
+      expect(mockPost).toHaveBeenCalledWith('/participant', {
+        inviteCode: 'ABC123',
+      });
+    });
+
+    expect(Toast.show).toHaveBeenCalledWith({
+      type: 'success',
+      text1: 'Sucesso',
+      text2: 'Você entrou no grupo com sucesso!',
     });
 
     expect(await findByText('Groups Screen')).toBeTruthy();

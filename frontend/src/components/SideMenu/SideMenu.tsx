@@ -34,6 +34,11 @@ export default function SideMenu({ display, onPress }: any) {
   const insets = useSafeAreaInsets();
   const containerPaddingBottom = Math.max(insets.bottom, 16);
 
+  const navigateTo = navigation.navigate.bind(navigation) as <T extends keyof RootStackParamList>(
+    screen: T,
+    params: RootStackParamList[T],
+  ) => void;
+
   const handleNavigate = <T extends keyof RootStackParamList>(
     screen: T,
     params?: RootStackParamList[T],
@@ -41,7 +46,7 @@ export default function SideMenu({ display, onPress }: any) {
     if (onPress) {
       onPress();
     }
-    navigation.navigate(screen, params as never);
+    navigateTo(screen, params as RootStackParamList[T]);
   };
 
   const [fontsLoaded] = useFonts({
