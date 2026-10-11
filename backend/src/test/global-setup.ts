@@ -17,6 +17,10 @@ export default async function globalSetup(): Promise<void> {
 
   process.env.DATABASE_URL = `${container.getConnectionUri()}?schema=public`;
 
+  process.env.JWT_SECRET ??= 'test-jwt-secret';
+  process.env.JWT_ACCESS_SECRET ??= 'test-jwt-access-secret';
+  process.env.JWT_REFRESH_SECRET ??= 'test-jwt-refresh-secret';
+
   const migrate = spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
     cwd: REPO_ROOT,
     env: process.env,

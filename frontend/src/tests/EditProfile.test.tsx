@@ -88,7 +88,7 @@ describe('EditProfile', () => {
     fullName: 'Nome Teste',
     phone: '(11) 98765-4321',
     email: 'teste@example.com',
-    birthday: '1995-10-20',
+    birthday: '1995-10-20T12:00:00.000Z',
     ethnicity: 'Parda',
     expertise: 'Tecnologia',
     neighborhood: 'Centro',
@@ -154,7 +154,7 @@ describe('EditProfile', () => {
     });
 
     expect(getByLabelText('Telefone').props.value).toBe('(11) 98765-4321');
-    expect(getByLabelText('Data de Nascimento').props.value).toBe('19/10/1995');
+    expect(getByLabelText('Data de Nascimento').props.value).toBe('20/10/1995');
     expect(getByLabelText('E-mail').props.value).toBe('teste@example.com');
     expect(getByLabelText('Bio').props.value).toBe('Desenvolvedora React Native.');
     expect(getByLabelText('Empreendimento').props.value).toBe('Tech Corp');
@@ -215,7 +215,7 @@ describe('EditProfile', () => {
         '/user',
         expect.objectContaining({
           fullName: novoNome,
-          birthday: new Date('1995-10-19').toISOString(),
+          birthday: new Date('1995-10-20').toISOString(),
         }),
       );
     });
