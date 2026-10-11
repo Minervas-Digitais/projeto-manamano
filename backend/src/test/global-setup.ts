@@ -21,6 +21,12 @@ export default async function globalSetup(): Promise<void> {
   process.env.JWT_ACCESS_SECRET ??= 'test-jwt-access-secret';
   process.env.JWT_REFRESH_SECRET ??= 'test-jwt-refresh-secret';
 
+  process.env.SMTP_HOST ??= 'smtp.test.local';
+  process.env.SMTP_PORT ??= '587';
+  process.env.SMTP_USERNAME ??= 'test@test.com';
+  process.env.SMTP_PASSWORD ??= 'test-smtp-password';
+  process.env.SMTP_TLS ??= 'no';
+
   const migrate = spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
     cwd: REPO_ROOT,
     env: process.env,
