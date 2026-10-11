@@ -1,8 +1,7 @@
 import React from 'react';
-import { Alert } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import Toast from 'react-native-toast-message';
 import api from '../services/api';
-import storage from '../services/secureStorage';
 import GetInTouch from '../pages/GetInTouch/GetInTouch';
 
 // MOCKS
@@ -23,45 +22,43 @@ jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));
 
-jest.mock('../services/secureStorage', () => ({
+jest.mock('react-native-toast-message', () => ({
   __esModule: true,
   default: {
-    getItem: jest.fn(),
+    show: jest.fn(),
   },
+}));
+
+let mockLoggedId: string | null = 'user-123';
+
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: mockLoggedId }),
 }));
 
 jest.mock('../assets/arrow-icon.svg', () => 'ArrowIcon');
 
-jest.spyOn(Alert, 'alert');
-
 const mockedApi = api as jest.Mocked<typeof api>;
-const mockedStorage = storage as any;
 
 describe('GetInTouch', () => {
-  const mockLoggedUser = () => {
-    mockedStorage.getItem.mockImplementation(async (key: string) => {
-      if (key === 'accessToken') return 'fake-token';
-      if (key === 'loggedId') return 'user-123';
-      return null;
-    });
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLoggedId = 'user-123';
   });
 
-  it('Não deve renderizar o formulário se o usuário não estiver logado', () => {
-    mockedStorage.getItem.mockResolvedValue(undefined);
+  it('Não deve exibir o formulário se o usuário não estiver logado', () => {
+    mockLoggedId = null;
 
     const { queryByText } = render(<GetInTouch />);
 
     expect(queryByText('Assunto')).toBeNull();
     expect(queryByText('Enviar')).toBeNull();
+
+    // o formulário é renderizado, mas oculto (display: 'none')
+    expect(queryByText('Assunto', { includeHiddenElements: true })).toBeTruthy();
+    expect(queryByText('Enviar', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('Deve renderizar o formulário quando logado', async () => {
-    mockLoggedUser();
-
     const { getByText, getByLabelText } = render(<GetInTouch />);
 
     await waitFor(() => {
@@ -74,8 +71,6 @@ describe('GetInTouch', () => {
   });
 
   it('Deve exibir mensagens de erro ao tentar submeter com campos vazios', async () => {
-    mockLoggedUser();
-
     const { getByLabelText, findAllByText } = render(<GetInTouch />);
 
     await waitFor(() => {
@@ -89,7 +84,6 @@ describe('GetInTouch', () => {
   });
 
   it('Deve submeter o formulário com sucesso', async () => {
-    mockLoggedUser();
     mockedApi.post.mockResolvedValue({ data: { message: 'Success' } });
 
     const { getByLabelText } = render(<GetInTouch />);
@@ -108,26 +102,20 @@ describe('GetInTouch', () => {
     fireEvent.press(getByLabelText('Enviar'));
 
     await waitFor(() => {
-      expect(mockedApi.post).toHaveBeenCalledWith(
-        '/mail',
-        {
-          subject: 'Problema com o App',
-          text: 'O botão principal não funciona.',
-        },
-        {
-          headers: {
-            Authorization: 'Bearer fake-token',
-          },
-        },
-      );
+      expect(mockedApi.post).toHaveBeenCalledWith('/mail', {
+        subject: 'Problema com o App',
+        text: 'O botão principal não funciona.',
+      });
     });
 
-    expect(Alert.alert).toHaveBeenCalledWith('Mensagem enviada com sucesso!');
+    expect(Toast.show).toHaveBeenCalledWith({
+      type: 'success',
+      text1: 'Mensagem enviada',
+      text2: 'Sua mensagem foi enviada com sucesso!',
+    });
   });
 
   it('Deve exibir um alerta de erro se a submissão da API falhar', async () => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    mockLoggedUser();
     mockedApi.post.mockRejectedValue(new Error('Network Error'));
 
     const { getByLabelText } = render(<GetInTouch />);
@@ -149,8 +137,10 @@ describe('GetInTouch', () => {
       expect(mockedApi.post).toHaveBeenCalled();
     });
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      'Erro ao enviar mensagem. Tente novamente mais tarde.',
-    );
+    expect(Toast.show).toHaveBeenCalledWith({
+      type: 'error',
+      text1: 'Erro',
+      text2: 'Não foi possível enviar a mensagem. Tente novamente mais tarde.',
+    });
   });
 });

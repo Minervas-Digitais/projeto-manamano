@@ -4,7 +4,6 @@ import Toast from 'react-native-toast-message';
 import { NavigationContainer } from '@react-navigation/native';
 import CreateGroup from '../pages/CreateGroup/CreateGroup';
 import api from '../services/api';
-import storage from '../services/secureStorage';
 
 // MOCKS
 const mockNavigate = jest.fn();
@@ -23,32 +22,29 @@ jest.mock('../services/api', () => ({
   post: jest.fn(),
 }));
 
-jest.mock('../services/secureStorage', () => ({
-  __esModule: true,
-  default: {
-    getItem: jest.fn(),
-  },
-}));
-
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));
 
 jest.mock('react-native-toast-message', () => ({
-  show: jest.fn(),
+  __esModule: true,
+  default: {
+    show: jest.fn(),
+  },
+}));
+
+let mockLoggedId: string | null = 'user-123';
+
+jest.mock('../context/auth/useAuth', () => ({
+  useAuth: () => ({ loggedId: mockLoggedId }),
 }));
 
 describe('CreateGroup Page', () => {
-  const mockStorage = storage as any;
   const mockApi = api as jest.Mocked<typeof api>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockStorage.getItem.mockImplementation(async (key: string) => {
-      if (key === 'accessToken') return 'fake-access-token';
-      if (key === 'loggedId') return 'user-123';
-      return null;
-    });
+    mockLoggedId = 'user-123';
   });
 
   it('should render CreateGroup page correctly', async () => {
@@ -59,19 +55,17 @@ describe('CreateGroup Page', () => {
     );
 
     await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
+      expect(getByText('Criar Grupo')).toBeTruthy();
+      expect(getByText('Nome do Grupo')).toBeTruthy();
+      expect(getByText('Descrição do Grupo')).toBeTruthy();
+      expect(getByText('Categorias')).toBeTruthy();
+      expect(getByText('Criar')).toBeTruthy();
+      expect(getByTestId('group-name-input')).toBeTruthy();
+      expect(getByTestId('group-description-input')).toBeTruthy();
+      expect(getByTestId('category-input')).toBeTruthy();
+      expect(getByTestId('add-category-button')).toBeTruthy();
+      expect(getByTestId('create-group-button')).toBeTruthy();
     });
-
-    expect(getByText('Criar Grupo')).toBeTruthy();
-    expect(getByText('Nome do Grupo')).toBeTruthy();
-    expect(getByText('Descrição do Grupo')).toBeTruthy();
-    expect(getByText('Categorias')).toBeTruthy();
-    expect(getByText('Criar')).toBeTruthy();
-    expect(getByTestId('group-name-input')).toBeTruthy();
-    expect(getByTestId('group-description-input')).toBeTruthy();
-    expect(getByTestId('category-input')).toBeTruthy();
-    expect(getByTestId('add-category-button')).toBeTruthy();
-    expect(getByTestId('create-group-button')).toBeTruthy();
   });
 
   it('should render default categories correctly', async () => {
@@ -82,12 +76,10 @@ describe('CreateGroup Page', () => {
     );
 
     await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
+      expect(getByText('Geral')).toBeTruthy();
+      expect(getByText('Aulas')).toBeTruthy();
+      expect(getByText('Eventos')).toBeTruthy();
     });
-
-    expect(getByText('Geral')).toBeTruthy();
-    expect(getByText('Aulas')).toBeTruthy();
-    expect(getByText('Eventos')).toBeTruthy();
   });
 
   it('should add a new category when typing and pressing Enter', async () => {
@@ -96,10 +88,6 @@ describe('CreateGroup Page', () => {
         <CreateGroup />
       </NavigationContainer>,
     );
-
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
 
     const categoryInput = getByTestId('category-input');
     fireEvent.changeText(categoryInput, 'Nova Categoria');
@@ -114,10 +102,6 @@ describe('CreateGroup Page', () => {
         <CreateGroup />
       </NavigationContainer>,
     );
-
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
 
     const categoryInput = getByTestId('category-input');
     const addButton = getByTestId('add-category-button');
@@ -134,10 +118,6 @@ describe('CreateGroup Page', () => {
         <CreateGroup />
       </NavigationContainer>,
     );
-
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
 
     const categoryInput = getByTestId('category-input');
     const addButton = getByTestId('add-category-button');
@@ -162,10 +142,6 @@ describe('CreateGroup Page', () => {
       </NavigationContainer>,
     );
 
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
-
     const categoryInput = getByTestId('category-input');
     const addButton = getByTestId('add-category-button');
 
@@ -181,10 +157,6 @@ describe('CreateGroup Page', () => {
         <CreateGroup />
       </NavigationContainer>,
     );
-
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
 
     const categoryInput = getByTestId('category-input');
     const addButton = getByTestId('add-category-button');
@@ -211,10 +183,6 @@ describe('CreateGroup Page', () => {
       </NavigationContainer>,
     );
 
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
-
     const descriptionInput = getByTestId('group-description-input');
     fireEvent.changeText(descriptionInput, 'Descrição válida');
 
@@ -236,10 +204,6 @@ describe('CreateGroup Page', () => {
       </NavigationContainer>,
     );
 
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
-
     const nameInput = getByTestId('group-name-input');
     fireEvent.changeText(nameInput, 'Nome válido');
 
@@ -254,21 +218,37 @@ describe('CreateGroup Page', () => {
     expect(mockApi.post).not.toHaveBeenCalled();
   });
 
-  it('should show error when access token is missing', async () => {
-    mockStorage.getItem.mockImplementation(async (key: string) => {
-      if (key === 'loggedId') return 'user-123';
-      return null; // No access token
-    });
-
+  it('should show error when trying to create group with whitespace-only fields', async () => {
     const { getByTestId } = render(
       <NavigationContainer>
         <CreateGroup />
       </NavigationContainer>,
     );
 
+    const nameInput = getByTestId('group-name-input');
+    const descriptionInput = getByTestId('group-description-input');
+
+    fireEvent.changeText(nameInput, '   ');
+    fireEvent.changeText(descriptionInput, '   ');
+    fireEvent.press(getByTestId('create-group-button'));
+
     await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'error', text2: 'Preencha corretamente os campos.' }),
+      );
     });
+
+    expect(mockApi.post).not.toHaveBeenCalled();
+  });
+
+  it('should show error when loggedId is missing', async () => {
+    mockLoggedId = null;
+
+    const { getByTestId } = render(
+      <NavigationContainer>
+        <CreateGroup />
+      </NavigationContainer>,
+    );
 
     const nameInput = getByTestId('group-name-input');
     const descriptionInput = getByTestId('group-description-input');
@@ -284,27 +264,22 @@ describe('CreateGroup Page', () => {
     });
 
     expect(mockApi.post).not.toHaveBeenCalled();
+    expect(mockGoBack).not.toHaveBeenCalled();
   });
 
-  it('should create group successfully and navigate to Home', async () => {
-    mockApi.post
-      .mockResolvedValueOnce({
-        data: {
-          id: 'group-123',
-          inviteCode: 'INVITE123',
-        },
-      })
-      .mockResolvedValue({ data: {} });
+  it('should create group successfully and go back', async () => {
+    mockApi.post.mockResolvedValueOnce({
+      data: {
+        id: 'group-123',
+        inviteCode: 'INVITE123',
+      },
+    });
 
     const { getByTestId } = render(
       <NavigationContainer>
         <CreateGroup />
       </NavigationContainer>,
     );
-
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
 
     const nameInput = getByTestId('group-name-input');
     const descriptionInput = getByTestId('group-description-input');
@@ -314,18 +289,10 @@ describe('CreateGroup Page', () => {
     fireEvent.press(getByTestId('create-group-button'));
 
     await waitFor(() => {
-      expect(mockApi.post).toHaveBeenCalledWith(
-        '/group',
-        {
-          name: 'Meu Grupo Teste',
-          description: 'Descrição do meu grupo de teste',
-        },
-        {
-          headers: {
-            Authorization: 'Bearer fake-access-token',
-          },
-        },
-      );
+      expect(mockApi.post).toHaveBeenCalledWith('/group', {
+        name: 'Meu Grupo Teste',
+        description: 'Descrição do meu grupo de teste',
+      });
     });
 
     await waitFor(() => {
@@ -335,8 +302,10 @@ describe('CreateGroup Page', () => {
           text2: 'Grupo criado com sucesso! ID: group-123',
         }),
       );
-      expect(mockNavigate).toHaveBeenCalledWith('Home');
     });
+
+    expect(mockGoBack).toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('should create group with custom categories', async () => {
@@ -347,10 +316,6 @@ describe('CreateGroup Page', () => {
         <CreateGroup />
       </NavigationContainer>,
     );
-
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
 
     const nameInput = getByTestId('group-name-input');
     const descriptionInput = getByTestId('group-description-input');
@@ -368,14 +333,23 @@ describe('CreateGroup Page', () => {
     fireEvent.press(getByTestId('create-group-button'));
 
     await waitFor(() => {
-      // Verify multiple API calls were made:
-      // group + 4 default categories + 2 custom categories + participant = 8 total
-      expect(mockApi.post).toHaveBeenCalledTimes(8);
+      // group + 2 custom categories (default categories are static, not POSTed)
+      expect(mockApi.post).toHaveBeenCalledTimes(3);
     });
 
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('Home');
+    expect(mockApi.post).toHaveBeenCalledWith('/category', {
+      name: 'Categoria Custom 1',
+      type: 'NORMAL',
+      groupId: 'group-123',
     });
+    expect(mockApi.post).toHaveBeenCalledWith('/category', {
+      name: 'Categoria Custom 2',
+      type: 'NORMAL',
+      groupId: 'group-123',
+    });
+
+    expect(mockGoBack).toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it('should handle API error during group creation', async () => {
@@ -386,10 +360,6 @@ describe('CreateGroup Page', () => {
         <CreateGroup />
       </NavigationContainer>,
     );
-
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
 
     const nameInput = getByTestId('group-name-input');
     const descriptionInput = getByTestId('group-description-input');
@@ -404,10 +374,12 @@ describe('CreateGroup Page', () => {
       );
     });
 
+    // a página chama goBack mesmo quando a criação falha
+    expect(mockGoBack).toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it('should handle error when adding participant fails', async () => {
+  it('should handle API error during category creation', async () => {
     mockApi.post
       .mockResolvedValueOnce({
         data: {
@@ -415,11 +387,7 @@ describe('CreateGroup Page', () => {
           inviteCode: 'INVITE123',
         },
       }) // Group creation
-      .mockResolvedValueOnce({ data: {} }) // Category 1: Geral
-      .mockResolvedValueOnce({ data: {} }) // Category 2: Avisos
-      .mockResolvedValueOnce({ data: {} }) // Category 3: Eventos
-      .mockResolvedValueOnce({ data: {} }) // Category 4: Aulas
-      .mockRejectedValueOnce({ response: { status: 400 } });
+      .mockRejectedValueOnce(new Error('Falha ao criar categoria'));
 
     const { getByTestId } = render(
       <NavigationContainer>
@@ -427,17 +395,19 @@ describe('CreateGroup Page', () => {
       </NavigationContainer>,
     );
 
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
-
     const nameInput = getByTestId('group-name-input');
     const descriptionInput = getByTestId('group-description-input');
+    const categoryInput = getByTestId('category-input');
+    const addButton = getByTestId('add-category-button');
 
     fireEvent.changeText(nameInput, 'Grupo Teste');
     fireEvent.changeText(descriptionInput, 'Descrição teste');
+    fireEvent.changeText(categoryInput, 'Categoria Que Falha');
+    fireEvent.press(addButton);
+
     fireEvent.press(getByTestId('create-group-button'));
 
+    // group creation succeeds
     await waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -447,67 +417,17 @@ describe('CreateGroup Page', () => {
       );
     });
 
+    // then category creation fails
     await waitFor(() => {
       expect(Toast.show).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'error',
-          text2: 'Falha ao adicionar usuário como moderador',
+          text2: 'Falha ao criar grupo ou categoria',
         }),
       );
     });
 
-    expect(mockNavigate).not.toHaveBeenCalled();
-  });
-
-  it('should handle unknown error when adding participant fails', async () => {
-    // Setup mocks: group creation succeeds, each category succeeds, participant fails
-    mockApi.post
-      .mockResolvedValueOnce({
-        data: {
-          id: 'group-123',
-          inviteCode: 'INVITE123',
-        },
-      }) // Group creation
-      .mockResolvedValueOnce({ data: {} }) // Category 1: Geral
-      .mockResolvedValueOnce({ data: {} }) // Category 2: Avisos
-      .mockResolvedValueOnce({ data: {} }) // Category 3: Eventos
-      .mockResolvedValueOnce({ data: {} }) // Category 4: Aulas
-      .mockRejectedValueOnce(new Error('Falha desconhecida')); // Participant creation fails
-
-    const { getByTestId } = render(
-      <NavigationContainer>
-        <CreateGroup />
-      </NavigationContainer>,
-    );
-
-    await waitFor(() => {
-      expect(mockStorage.getItem).toHaveBeenCalledWith('accessToken');
-    });
-
-    const nameInput = getByTestId('group-name-input');
-    const descriptionInput = getByTestId('group-description-input');
-
-    fireEvent.changeText(nameInput, 'Grupo Teste');
-    fireEvent.changeText(descriptionInput, 'Descrição teste');
-    fireEvent.press(getByTestId('create-group-button'));
-
-    // First, success alert should be called when group is created
-    await waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'success',
-          text2: 'Grupo criado com sucesso! ID: group-123',
-        }),
-      );
-    });
-
-    // Then, error alert should be called when participant fails
-    await waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'error', text2: 'Falha desconhecida' }),
-      );
-    });
-
+    expect(mockGoBack).toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
