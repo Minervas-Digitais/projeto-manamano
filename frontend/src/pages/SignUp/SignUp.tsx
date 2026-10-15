@@ -32,7 +32,9 @@ export default function SignUp({ navigation }: any) {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<SignUpFormData>();
+  } = useForm<SignUpFormData>({
+    mode: 'onChange',
+  });
 
   const onSubmit = async (data: SignUpFormData) => {
     const onlyNumPhone = cleanPhoneNumber(data.phone);

@@ -64,10 +64,12 @@ export default function EditProfile() {
     try {
       const formattedData = { ...data };
 
-      if (formattedData.birthday) {
+      if (formattedData.birthday && formattedData.birthday.trim() !== '') {
         const [day, month, year] = formattedData.birthday.split('/');
 
         formattedData.birthday = new Date(`${year}-${month}-${day}`).toISOString();
+      } else {
+        delete formattedData.birthday;
       }
 
       if (!loggedId) {
@@ -367,9 +369,12 @@ export default function EditProfile() {
               control={control}
               name="birthday"
               rules={{
-                required: 'Campo obrigatório',
                 validate: (value) => {
-                  if (!value || value.length !== 10) {
+                  if (!value || !value.trim()) {
+                    return true;
+                  }
+
+                  if (value.length !== 10) {
                     return 'Data de nascimento inválida';
                   }
 
@@ -429,9 +434,6 @@ export default function EditProfile() {
             <Controller
               control={control}
               name="ethnicity"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
               render={({ field: { onChange, value } }) => (
                 <>
                   <DropdownComponent
@@ -448,9 +450,6 @@ export default function EditProfile() {
             <Controller
               control={control}
               name="expertise"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
               render={({ field: { onChange, value } }) => (
                 <>
                   <DropdownComponent
@@ -466,9 +465,6 @@ export default function EditProfile() {
             <Controller
               control={control}
               name="neighborhood"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
               render={({ field: { onChange, value } }) => (
                 <>
                   <DropdownComponent
@@ -502,9 +498,6 @@ export default function EditProfile() {
             <Controller
               control={control}
               name="enterprise"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
               render={({ field: { onChange, value } }) => (
                 <>
                   <InputTextCustom

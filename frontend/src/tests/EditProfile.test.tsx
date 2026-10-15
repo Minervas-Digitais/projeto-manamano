@@ -295,4 +295,39 @@ describe('EditProfile', () => {
       });
     });
   });
+
+  it('Deve permitir salvar o perfil mesmo com campos complementares vazios', async () => {
+    mockedApi.get.mockImplementation(async (url: string) => {
+      if (url === '/user/mock-user-id') {
+        return {
+          data: {
+            fullName: 'Usuário Sem Opcionais',
+            email: 'sem.opcionais@teste.com',
+            phone: '(21) 99999-8888',
+            birthday: null,
+            ethnicity: '',
+            neighborhood: '',
+            expertise: '',
+            enterprise: '',
+            bio: '',
+          },
+        } as any;
+      }
+      return { data: {} } as any;
+    });
+
+    const { getByText, getByLabelText } = renderWithNavigation(<EditProfile />);
+
+    await waitFor(() => expect(getByLabelText('Nome').props.value).toBe('Usuário Sem Opcionais'));
+
+    fireEvent.press(getByText('Salvar'));
+
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledTimes(1);
+    });
+
+    expect(Toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({ text1: 'Perfil atualizado!' }),
+    );
+  });
 });
