@@ -23,8 +23,12 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
   const [savedPostIds, setSavedPostIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    setSavedPostIds(new Set());
+    if (!loggedId) return undefined;
+
+    let active = true;
+
     const fetchSavedPosts = async () => {
-      if (!loggedId) return;
       try {
         const ids = new Set<string>();
         let page = 1;
@@ -34,6 +38,7 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
           const response = await api.get('/saved-post', {
             params: { page, limit: 20 },
           });
+          if (!active) return;
           const payload = response.data;
           const list = Array.isArray(payload) ? payload : (payload?.data ?? []);
           list.forEach((p: any) => {
@@ -42,8 +47,11 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
           lastPage = Array.isArray(payload) ? 1 : (payload?.meta?.lastPage ?? 1);
           page += 1;
         } while (page <= lastPage);
-        setSavedPostIds(ids);
+        if (active) {
+          setSavedPostIds(ids);
+        }
       } catch (error) {
+        if (!active) return;
         Toast.show({
           type: 'error',
           text1: 'Erro',
@@ -52,6 +60,10 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
       }
     };
     fetchSavedPosts();
+
+    return () => {
+      active = false;
+    };
   }, [loggedId]);
 
   const savePost = async (postId: string, ownerId?: string) => {
