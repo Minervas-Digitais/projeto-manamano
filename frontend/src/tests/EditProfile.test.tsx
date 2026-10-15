@@ -198,6 +198,30 @@ describe('EditProfile', () => {
     expect(api.patch).not.toHaveBeenCalled();
   });
 
+  it('Deve aceitar nomes com acento ao salvar', async () => {
+    const { getByText, getByLabelText } = renderWithNavigation(<EditProfile />);
+
+    await waitFor(() => expect(getByLabelText('Nome').props.value).toBe(mockUserData.fullName));
+
+    const nomeComAcento = 'João Cláudia Vitória';
+    fireEvent.changeText(getByLabelText('Nome'), nomeComAcento);
+    fireEvent.press(getByText('Salvar'));
+
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledTimes(1);
+      expect(api.patch).toHaveBeenCalledWith(
+        '/user',
+        expect.objectContaining({
+          fullName: nomeComAcento,
+        }),
+      );
+    });
+
+    expect(Toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({ text1: 'Perfil atualizado!' }),
+    );
+  });
+
   it('Deve submitar os novos dados corretamente ao salvar', async () => {
     const { getByText, getByLabelText } = renderWithNavigation(<EditProfile />);
 

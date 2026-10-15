@@ -39,11 +39,16 @@ export default function ChangePassword() {
         text2: 'Senha atualizada com sucesso!',
       });
       navigation.navigate('Config');
-    } catch (error) {
+    } catch (error: any) {
+      const backendMessage = error?.response?.data?.message;
+      const errorMessage = Array.isArray(backendMessage)
+        ? backendMessage.join('\n')
+        : backendMessage || 'Erro ao mudar senha. Tente novamente mais tarde.';
+
       Toast.show({
         type: 'error',
         text1: 'Erro',
-        text2: 'Erro ao mudar senha. Tente novamente mais tarde.',
+        text2: errorMessage,
       });
     }
   };

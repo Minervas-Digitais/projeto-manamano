@@ -345,7 +345,7 @@ export default function EditProfile() {
               rules={{
                 required: 'Campo obrigatório',
                 pattern: {
-                  value: /^[A-Za-z\s]+$/,
+                  value: /^[A-Za-zÀ-ÿ\s]+$/,
                   message: 'Apenas letras são permitidas',
                 },
               }}
