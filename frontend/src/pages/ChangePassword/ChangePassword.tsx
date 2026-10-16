@@ -25,7 +25,9 @@ export default function ChangePassword() {
     handleSubmit,
     formState: { errors },
     getValues,
-  } = useForm({});
+  } = useForm({
+    mode: 'onChange',
+  });
 
   const onSubmit = async (data: any) => {
     try {
@@ -67,7 +69,7 @@ export default function ChangePassword() {
               control={control}
               name="oldpassword"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
@@ -79,12 +81,18 @@ export default function ChangePassword() {
                 />
               )}
             />
-            {errors.oldpassword && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.oldpassword && (
+              <ErrorWarning errorText={errors.oldpassword.message || 'Campo obrigatório'} />
+            )}
             <Controller
               control={control}
               name="newpassword"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
+                minLength: {
+                  value: 8,
+                  message: 'A senha deve ter no mínimo 8 caracteres',
+                },
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
@@ -96,12 +104,14 @@ export default function ChangePassword() {
                 />
               )}
             />
-            {errors.newpassword && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.newpassword && (
+              <ErrorWarning errorText={errors.newpassword.message || 'Campo obrigatório'} />
+            )}
             <Controller
               control={control}
               name="confirmedpassword"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
                 validate: (value) => value === getValues('newpassword') || 'Senhas não coincidem',
               }}
               render={({ field: { onChange, value } }) => (
@@ -114,7 +124,11 @@ export default function ChangePassword() {
                 />
               )}
             />
-            {errors.confirmedpassword && <ErrorWarning errorText="Senhas não coincidem" />}
+            {errors.confirmedpassword && (
+              <ErrorWarning
+                errorText={errors.confirmedpassword.message || 'Senhas não coincidem'}
+              />
+            )}
           </SignInInputContainer>
           <ButtonCustom
             onPress={handleSubmit(onSubmit)}

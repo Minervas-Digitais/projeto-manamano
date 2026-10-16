@@ -194,4 +194,17 @@ describe('ChangePassword', () => {
       );
     });
   });
+
+  it('deve rejeitar nova senha com menos de 8 caracteres', async () => {
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), '1234567');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), '1234567');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    expect(await findByText('A senha deve ter no mínimo 8 caracteres')).toBeTruthy();
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
 });
