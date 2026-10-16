@@ -330,4 +330,16 @@ describe('EditProfile', () => {
       expect.objectContaining({ text1: 'Perfil atualizado!' }),
     );
   });
+
+  it('Deve rejeitar nome com menos de 3 caracteres ao editar', async () => {
+    const { getByText, getByLabelText, findByText } = renderWithNavigation(<EditProfile />);
+
+    await waitFor(() => expect(getByLabelText('Nome').props.value).toBe(mockUserData.fullName));
+
+    fireEvent.changeText(getByLabelText('Nome'), 'Ab');
+    fireEvent.press(getByText('Salvar'));
+
+    expect(await findByText('O nome deve ter no mínimo 3 caracteres')).toBeTruthy();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
 });

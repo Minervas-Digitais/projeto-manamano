@@ -6,15 +6,21 @@ const { width, height } = Dimensions.get('window');
 
 export const BlueBackground = styled.View`
   background-color: #170e49;
-  width: ${width}px;
-  height: ${height}px;
+  flex: 1;
+  width: 100%;
 `;
 
-export const WhiteBackground = styled.ScrollView`
+export const WhiteBackground = styled.ScrollView.attrs(() => ({
+  contentContainerStyle: {
+    paddingBottom: 60,
+  },
+  keyboardShouldPersistTaps: 'handled',
+}))`
   background-color: #f2f6fa;
   margin-top: ${height * 0.1}px;
   border-top-right-radius: 40px;
   border-top-left-radius: 40px;
+  flex: 1;
 `;
 
 export const EditImageButton = styled.Pressable`
