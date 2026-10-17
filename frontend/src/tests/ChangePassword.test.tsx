@@ -140,4 +140,71 @@ describe('ChangePassword', () => {
       );
     });
   });
+
+  it('deve mostrar mensagem específica do backend para senha atual incorreta', async () => {
+    mockPatch.mockRejectedValueOnce({
+      response: {
+        status: 401,
+        data: { message: 'Senha inválida.' },
+      },
+      isAxiosError: true,
+    });
+
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaErrada');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'novaSenha1');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Senha inválida.',
+        }),
+      );
+    });
+  });
+
+  it('deve mostrar mensagem específica do backend para nova senha igual à antiga', async () => {
+    mockPatch.mockRejectedValueOnce({
+      response: {
+        status: 409,
+        data: { message: 'A nova senha não pode ser igual à senha antiga.' },
+      },
+      isAxiosError: true,
+    });
+
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'mesmaSenha123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'mesmaSenha123');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'mesmaSenha123');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'A nova senha não pode ser igual à senha antiga.',
+        }),
+      );
+    });
+  });
+
+  it('deve rejeitar nova senha com menos de 8 caracteres', async () => {
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), '1234567');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), '1234567');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    expect(await findByText('A senha deve ter no mínimo 8 caracteres')).toBeTruthy();
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
 });

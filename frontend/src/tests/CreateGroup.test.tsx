@@ -374,8 +374,8 @@ describe('CreateGroup Page', () => {
       );
     });
 
-    // a página chama goBack mesmo quando a criação falha
-    expect(mockGoBack).toHaveBeenCalled();
+    // a página não chama goBack quando a criação falha
+    expect(mockGoBack).not.toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
@@ -427,7 +427,7 @@ describe('CreateGroup Page', () => {
       );
     });
 
-    expect(mockGoBack).toHaveBeenCalled();
+    expect(mockGoBack).not.toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
