@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { isAxiosError } from 'axios';
 import Toast from 'react-native-toast-message';
 import api from '../services/api';
@@ -66,48 +66,47 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
     };
   }, [loggedId]);
 
-  const savePost = async (postId: string, ownerId?: string) => {
-    if (ownerId && loggedId && ownerId === loggedId) {
-      Toast.show({
-        type: 'error',
-        text1: OWN_POST_SAVE_MESSAGE,
-      });
-      return;
-    }
-    setSavedPostIds((prev) => new Set(prev).add(postId));
-    try {
-      await api.post('/saved-post', { postId });
-      Toast.show({
-        type: 'success',
-        text1: 'Post salvo com sucesso!',
-      });
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        // Já estava salvo
-        setSavedPostIds((prev) => new Set(prev).add(postId));
+  const savePost = useCallback(
+    async (postId: string, ownerId?: string) => {
+      if (ownerId && loggedId && ownerId === loggedId) {
+        Toast.show({
+          type: 'error',
+          text1: OWN_POST_SAVE_MESSAGE,
+        });
         return;
       }
-      Toast.show({
-        type: 'error',
-        text1: 'Erro ao salvar post',
-        text2: 'Não foi possível salvar o post. Tente novamente.',
-      });
-      setSavedPostIds((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(postId);
-        return newSet;
-      });
-      const serverMessage = isAxiosError(error) ? error.response?.data?.message : undefined;
-      Toast.show({
-        type: 'error',
-        text1: Array.isArray(serverMessage)
-          ? serverMessage[0]
-          : serverMessage || 'Erro ao salvar post. Tente novamente mais tarde.',
-      });
-    }
-  };
+      setSavedPostIds((prev) => new Set(prev).add(postId));
+      try {
+        await api.post('/saved-post', { postId });
+        Toast.show({
+          type: 'success',
+          text1: 'Post salvo com sucesso!',
+        });
+      } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 409) {
+          // Já estava salvo
+          setSavedPostIds((prev) => new Set(prev).add(postId));
+          return;
+        }
+        setSavedPostIds((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+        const serverMessage = isAxiosError(error) ? error.response?.data?.message : undefined;
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao salvar post',
+          text2: Array.isArray(serverMessage)
+            ? serverMessage[0]
+            : serverMessage || 'Não foi possível salvar o post. Tente novamente.',
+        });
+      }
+    },
+    [loggedId],
+  );
 
-  const unsavePost = async (postId: string) => {
+  const unsavePost = useCallback(async (postId: string) => {
     setSavedPostIds((prev) => {
       const newSet = new Set(prev);
       newSet.delete(postId);
@@ -124,20 +123,22 @@ export function SavedPostsProvider({ children }: SavedPostsProviderProps) {
         // Já não estava salvo.
         return;
       }
+      setSavedPostIds((prev) => new Set(prev).add(postId));
+      const serverMessage = isAxiosError(error) ? error.response?.data?.message : undefined;
       Toast.show({
         type: 'error',
         text1: 'Erro ao remover post dos salvos',
-        text2: 'Não foi possível remover o post. Tente novamente.',
-      });
-      setSavedPostIds((prev) => new Set(prev).add(postId));
-      Toast.show({
-        type: 'error',
-        text1: 'Erro ao remover post dos salvos. Tente novamente.',
+        text2: Array.isArray(serverMessage)
+          ? serverMessage[0]
+          : serverMessage || 'Não foi possível remover o post. Tente novamente.',
       });
     }
-  };
+  }, []);
 
-  const value = useMemo(() => ({ savedPostIds, savePost, unsavePost }), [savedPostIds]);
+  const value = useMemo(
+    () => ({ savedPostIds, savePost, unsavePost }),
+    [savedPostIds, savePost, unsavePost],
+  );
 
   return <SavedPostsContext.Provider value={value}>{children}</SavedPostsContext.Provider>;
 }
