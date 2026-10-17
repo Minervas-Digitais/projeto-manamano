@@ -99,10 +99,12 @@ export default function SignUp({ navigation }: any) {
                   message: 'Apenas letras são permitidas',
                 },
                 validate: (value) => {
-                  if (!value || !value.trim()) {
+                  const trimmed = value?.trim();
+
+                  if (!trimmed) {
                     return 'Campo obrigatório';
                   }
-                  if (value.trim().length < 3) {
+                  if (trimmed.length < 3) {
                     return 'O nome deve ter no mínimo 3 caracteres';
                   }
                   return true;

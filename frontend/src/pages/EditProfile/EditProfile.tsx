@@ -71,11 +71,9 @@ export default function EditProfile() {
     try {
       const formattedData = { ...data };
 
-      if (formattedData.fullName) {
-        formattedData.fullName = formattedData.fullName.trim();
-      }
+      formattedData.fullName = formattedData.fullName?.trim();
 
-      if (formattedData.birthday && formattedData.birthday.trim() !== '') {
+      if (formattedData.birthday?.trim()) {
         const [day, month, year] = formattedData.birthday.split('/');
 
         formattedData.birthday = new Date(`${year}-${month}-${day}`).toISOString();
@@ -373,10 +371,11 @@ export default function EditProfile() {
                     message: 'Apenas letras são permitidas',
                   },
                   validate: (value) => {
-                    if (!value || !value.trim()) {
+                    const trimmed = value.trim();
+                    if (!trimmed) {
                       return 'Campo obrigatório';
                     }
-                    if (value.trim().length < 3) {
+                    if (trimmed.length < 3) {
                       return 'O nome deve ter no mínimo 3 caracteres';
                     }
                     return true;
@@ -401,15 +400,16 @@ export default function EditProfile() {
                 name="birthday"
                 rules={{
                   validate: (value) => {
-                    if (!value || !value.trim()) {
+                    const trimmed = value.trim();
+                    if (!trimmed) {
                       return true;
                     }
 
-                    if (value.length !== 10) {
+                    if (trimmed.length !== 10) {
                       return 'Data de nascimento inválida';
                     }
 
-                    const [day, month, year] = value.split('/').map(Number);
+                    const [day, month, year] = trimmed.split('/').map(Number);
 
                     const date = new Date(year, month - 1, day);
 
