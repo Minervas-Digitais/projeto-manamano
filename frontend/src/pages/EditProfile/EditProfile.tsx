@@ -418,7 +418,18 @@ export default function EditProfile() {
                       date.getMonth() === month - 1 &&
                       date.getDate() === day;
 
-                    return isValid || 'Data de nascimento inválida';
+                    if (!isValid) {
+                      return 'Data de nascimento inválida';
+                    }
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    if (date > today) {
+                      return 'Data de nascimento não pode ser no futuro';
+                    }
+
+                    return true;
                   },
                 }}
                 render={({ field: { onChange, value } }) => (

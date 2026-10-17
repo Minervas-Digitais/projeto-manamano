@@ -342,4 +342,16 @@ describe('EditProfile', () => {
     expect(await findByText('O nome deve ter no mínimo 3 caracteres')).toBeTruthy();
     expect(api.patch).not.toHaveBeenCalled();
   });
+
+  it('Deve rejeitar data de nascimento no futuro', async () => {
+    const { getByText, getByLabelText, findByText } = renderWithNavigation(<EditProfile />);
+
+    await waitFor(() => expect(getByLabelText('Nome').props.value).toBe(mockUserData.fullName));
+
+    fireEvent.changeText(getByLabelText('Data de Nascimento'), '01/01/3000');
+    fireEvent.press(getByText('Salvar'));
+
+    expect(await findByText('Data de nascimento não pode ser no futuro')).toBeTruthy();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
 });
