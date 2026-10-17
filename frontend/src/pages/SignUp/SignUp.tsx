@@ -32,11 +32,17 @@ export default function SignUp({ navigation }: any) {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<SignUpFormData>();
+  } = useForm<SignUpFormData>({
+    mode: 'onChange',
+  });
 
   const onSubmit = async (data: SignUpFormData) => {
     const onlyNumPhone = cleanPhoneNumber(data.phone);
-    const updatedData = { ...data, phone: onlyNumPhone };
+    const updatedData = {
+      ...data,
+      fullName: data.fullName.trim(),
+      phone: onlyNumPhone,
+    };
 
     try {
       await api.post('/user', updatedData);
@@ -79,7 +85,30 @@ export default function SignUp({ navigation }: any) {
               control={control}
               name="fullName"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
+                minLength: {
+                  value: 3,
+                  message: 'O nome deve ter no mínimo 3 caracteres',
+                },
+                maxLength: {
+                  value: 120,
+                  message: 'O nome deve ter no máximo 120 caracteres',
+                },
+                pattern: {
+                  value: /^[A-Za-zÀ-ÿ\s]+$/,
+                  message: 'Apenas letras são permitidas',
+                },
+                validate: (value) => {
+                  const trimmed = value?.trim();
+
+                  if (!trimmed) {
+                    return 'Campo obrigatório';
+                  }
+                  if (trimmed.length < 3) {
+                    return 'O nome deve ter no mínimo 3 caracteres';
+                  }
+                  return true;
+                },
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
@@ -90,12 +119,18 @@ export default function SignUp({ navigation }: any) {
                 />
               )}
             />
-            {errors.fullName && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.fullName && (
+              <ErrorWarning errorText={errors.fullName.message || 'Campo obrigatório'} />
+            )}
             <Controller
               control={control}
               name="email"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: 'E-mail inválido',
+                },
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
@@ -103,15 +138,19 @@ export default function SignUp({ navigation }: any) {
                   value={value}
                   label="E-mail"
                   imageIcon={<IconEmail height={20} width={20} />}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                 />
               )}
             />
-            {errors.email && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.email && (
+              <ErrorWarning errorText={errors.email.message || 'Campo obrigatório'} />
+            )}
             <Controller
               control={control}
               name="phone"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
@@ -123,12 +162,18 @@ export default function SignUp({ navigation }: any) {
                 />
               )}
             />
-            {errors.phone && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.phone && (
+              <ErrorWarning errorText={errors.phone.message || 'Campo obrigatório'} />
+            )}
             <Controller
               control={control}
               name="password"
               rules={{
-                required: true,
+                required: 'Campo obrigatório',
+                minLength: {
+                  value: 8,
+                  message: 'A senha deve ter no mínimo 8 caracteres',
+                },
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
@@ -140,7 +185,9 @@ export default function SignUp({ navigation }: any) {
                 />
               )}
             />
-            {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
+            {errors.password && (
+              <ErrorWarning errorText={errors.password.message || 'Campo obrigatório'} />
+            )}
           </SignUpInputContainer>
         </View>
         <ButtonCustom
