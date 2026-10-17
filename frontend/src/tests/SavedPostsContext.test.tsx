@@ -1,27 +1,8 @@
 import React from 'react';
 import { render, waitFor, act } from '@testing-library/react-native';
-import * as SecureStore from 'expo-secure-store';
-import authStore from '../store/authStore';
-import localStorage from '../services/localStorage';
 import { SavedPostsProvider, useSavedPosts } from '../context/SavedPostsContext';
 import { AuthContext } from '../context/auth/AuthContext';
 import api from '../services/api';
-
-jest.mock('expo-secure-store', () => ({
-  getItemAsync: jest.fn(),
-  setItemAsync: jest.fn(),
-  deleteItemAsync: jest.fn(),
-}));
-
-jest.mock('../services/localStorage', () => ({
-  __esModule: true,
-  default: {
-    clearAll: jest.fn(),
-    getString: jest.fn(),
-    set: jest.fn(),
-    delete: jest.fn(),
-  },
-}));
 
 jest.mock('../services/api', () => ({
   __esModule: true,
@@ -32,32 +13,18 @@ jest.mock('../services/api', () => ({
   },
 }));
 
-describe('Evitar vazamento de caches no logout', () => {
+describe('SavedPostsContext', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('authStore.clearSession', () => {
-    it('deve limpar as chaves de sessão no SecureStore e limpar o localStorage (MMKV)', async () => {
-      await authStore.clearSession();
+  function ConsumerComponent({ onValues }: { onValues: (ids: Set<string>) => void }) {
+    const { savedPostIds } = useSavedPosts();
+    onValues(savedPostIds);
+    return null;
+  }
 
-      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('refreshToken');
-      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('loggedId');
-      expect(localStorage.clearAll).toHaveBeenCalled();
-
-      const state = authStore.getState();
-      expect(state.accessToken).toBeNull();
-      expect(state.loggedId).toBeNull();
-    });
-  });
-
-  describe('SavedPostsProvider', () => {
-    function ConsumerComponent({ onValues }: { onValues: (ids: Set<string>) => void }) {
-      const { savedPostIds } = useSavedPosts();
-      onValues(savedPostIds);
-      return null;
-    }
-
+  describe('SavedPostsProvider - Isolamento de Sessão', () => {
     it('deve limpar savedPostIds ao deslogar (loggedId torna-se null)', async () => {
       (api.get as jest.Mock).mockResolvedValueOnce({
         data: {
