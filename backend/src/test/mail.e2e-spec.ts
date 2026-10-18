@@ -1,5 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ThrottlerStorage, ThrottlerStorageService } from '@nestjs/throttler';
 import request from 'supertest';
 
 import { MailModule } from 'src/mail/mail.module';
@@ -15,6 +16,7 @@ describe('Mail (e2e)', () => {
   let prismaService: PrismaService;
   let mailService: MailService;
   let authService: AuthService;
+  let throttlerStorage: ThrottlerStorageService;
 
   let user: any;
   let userToken: string;
@@ -37,9 +39,11 @@ describe('Mail (e2e)', () => {
     prismaService = moduleFixture.get(PrismaService);
     authService = moduleFixture.get(AuthService);
     mailService = moduleFixture.get(MailService);
+    throttlerStorage = moduleFixture.get<ThrottlerStorageService>(ThrottlerStorage);
   });
 
   beforeEach(async () => {
+    throttlerStorage.storage.clear();
     await prismaService.user.deleteMany();
 
     const result = await createUserWithToken(prismaService, authService);
@@ -151,6 +155,50 @@ describe('Mail (e2e)', () => {
           cc: user.email,
         }),
       );
+    });
+
+    it('deve retornar 400 se o assunto exceder 150 caracteres', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/mail')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          subject: 'a'.repeat(151),
+          text: 'Conteudo valido',
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 400 se o corpo exceder 5000 caracteres', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/mail')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          subject: 'Assunto valido',
+          text: 'a'.repeat(5001),
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar 429 ao exceder o limite de 5 emails por minuto', async () => {
+      const dto = { subject: 'Teste', text: 'Teste' };
+
+      for (let i = 0; i < 5; i++) {
+        const res = await request(app.getHttpServer())
+          .post('/mail')
+          .set('Authorization', `Bearer ${userToken}`)
+          .send(dto);
+
+        expect(res.status).toBe(201);
+      }
+
+      const blocked = await request(app.getHttpServer())
+        .post('/mail')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(dto);
+
+      expect(blocked.status).toBe(429);
     });
   });
 });

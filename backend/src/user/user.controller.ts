@@ -108,6 +108,7 @@ export class UserController {
   }
 
   @Get(':id/profile-picture')
+  @UseGuards(JwtAuthGuard)
   async getProfilePicture(@Param('id') id: string, @Res() res: express.Response): Promise<void> {
     const { buffer, mimeType, name } = await this.userService.getProfilePictureBuffer(id);
 
