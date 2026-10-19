@@ -77,7 +77,7 @@ const authStore = {
     await SecureStore.deleteItemAsync(STORAGE_KEYS.refreshToken);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.loggedId);
     try {
-      localStorage.clearAll?.();
+      localStorage.clearAll();
     } catch {
       /* empty */
     }
