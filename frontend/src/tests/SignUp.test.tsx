@@ -127,4 +127,98 @@ describe('SignUp', () => {
     expect(api.post).not.toHaveBeenCalled();
     expect(mockedNavigate).not.toHaveBeenCalled();
   });
+
+  it('Deve rejeitar e-mail malformado', async () => {
+    const { getByText, getByLabelText, findByText } = render(
+      <SignUp navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('Nome Completo'), 'Nome Valido');
+    fireEvent.changeText(getByLabelText('E-mail'), 'email-invalido');
+    fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 98888-7777');
+    fireEvent.changeText(getByLabelText('Senha'), 'senha12345');
+
+    fireEvent.press(getByText('Cadastrar'));
+
+    expect(await findByText('E-mail inválido')).toBeTruthy();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
+  it('Deve rejeitar senha de um caractere', async () => {
+    const { getByText, getByLabelText, findByText } = render(
+      <SignUp navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('Nome Completo'), 'Nome Valido');
+    fireEvent.changeText(getByLabelText('E-mail'), 'valido@teste.com');
+    fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 98888-7777');
+    fireEvent.changeText(getByLabelText('Senha'), '1');
+
+    fireEvent.press(getByText('Cadastrar'));
+
+    expect(await findByText('A senha deve ter no mínimo 8 caracteres')).toBeTruthy();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
+  it('Deve rejeitar nome com menos de 3 caracteres', async () => {
+    const { getByText, getByLabelText, findByText } = render(
+      <SignUp navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('Nome Completo'), 'Ab');
+    fireEvent.changeText(getByLabelText('E-mail'), 'valido@teste.com');
+    fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 98888-7777');
+    fireEvent.changeText(getByLabelText('Senha'), 'senha12345');
+
+    fireEvent.press(getByText('Cadastrar'));
+
+    expect(await findByText('O nome deve ter no mínimo 3 caracteres')).toBeTruthy();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
+  it('Deve rejeitar nome malformado com números ou caracteres especiais', async () => {
+    const { getByText, getByLabelText, findByText } = render(
+      <SignUp navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('Nome Completo'), 'João123');
+    fireEvent.changeText(getByLabelText('E-mail'), 'valido@teste.com');
+    fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 98888-7777');
+    fireEvent.changeText(getByLabelText('Senha'), 'senha12345');
+
+    fireEvent.press(getByText('Cadastrar'));
+
+    expect(await findByText('Apenas letras são permitidas')).toBeTruthy();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
+  it('Deve aceitar nome válido com acentos e aplicar trim ao enviar', async () => {
+    apiPostMock.mockResolvedValue({ data: { success: true } });
+
+    const { getByText, getByLabelText } = render(
+      <SignUp navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('Nome Completo'), '  Vitória Conceição  ');
+    fireEvent.changeText(getByLabelText('E-mail'), 'vitoria@teste.com');
+    fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 98888-7777');
+    fireEvent.changeText(getByLabelText('Senha'), 'senha12345');
+
+    fireEvent.press(getByText('Cadastrar'));
+
+    await waitFor(() => {
+      expect(apiPostMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(apiPostMock).toHaveBeenCalledWith('/user', {
+      fullName: 'Vitória Conceição',
+      email: 'vitoria@teste.com',
+      phone: '21988887777',
+      password: 'senha12345',
+    });
+  });
 });

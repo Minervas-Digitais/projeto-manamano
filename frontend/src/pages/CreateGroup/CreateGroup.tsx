@@ -96,6 +96,7 @@ export default function CreateGroup() {
 
       // Wait for all categories to be created
       await Promise.all(allCategoryPromises);
+      navigation.goBack();
     } catch (error) {
       Toast.show({
         type: 'error',
@@ -103,7 +104,6 @@ export default function CreateGroup() {
         text2: 'Falha ao criar grupo ou categoria',
       });
     }
-    navigation.goBack();
   };
 
   return (
