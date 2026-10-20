@@ -45,6 +45,3 @@ pnpm-debug.log*
 coverage
 
 .vscode
-# Planos e testes locais
-docs/plans/
-docs/smoke-test-pin-unpin.md
