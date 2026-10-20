@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import localStorage from '../services/localStorage';
 
 type AuthState = {
   accessToken: string | null;
@@ -75,6 +76,11 @@ const authStore = {
   async clearSession() {
     await SecureStore.deleteItemAsync(STORAGE_KEYS.refreshToken);
     await SecureStore.deleteItemAsync(STORAGE_KEYS.loggedId);
+    try {
+      localStorage.clearAll();
+    } catch {
+      /* empty */
+    }
     setState({ accessToken: null, loggedId: null, isLoading: false });
   },
 };
