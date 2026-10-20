@@ -8,7 +8,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType, PostType, Prisma, UserRole } from '@prisma/client';
+import { NotificationType, PostType, Prisma, RoleType, UserRole } from '@prisma/client';
 import { POST_MESSAGES } from '../messages/post.messages';
 import { CATEGORY_MESSAGES } from '../messages/category.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
@@ -209,8 +209,20 @@ export class PostService {
     return this.serializePost(deleted);
   }
 
-  async setPinStatus(postId: string, pinned: boolean): Promise<SerializedPost> {
+  async setPinStatus(callerId: string, postId: string, pinned: boolean): Promise<SerializedPost> {
     const post = await this.validator.validatePostExists(postId);
+
+    const callerUser = await this.validator.validateUserExists(callerId);
+    const callerParticipant = await this.prismaService.participant.findUnique({
+      where: { userId_groupId: { userId: callerId, groupId: post.groupId } },
+    });
+
+    const isAdmin = callerUser.sysRole === RoleType.ADMIN;
+    const isInstructor = callerParticipant?.role === UserRole.INSTRUCTOR;
+
+    if (!isAdmin && !isInstructor) {
+      throw new ForbiddenException(POST_MESSAGES.UNAUTHORIZED_ACCESS);
+    }
 
     if (post.isPinned === pinned) {
       throw new NotFoundException(POST_MESSAGES.POST_PINNED_STATUS_UNCHANGED);
