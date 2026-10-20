@@ -200,5 +200,34 @@ describe('Mail (e2e)', () => {
 
       expect(blocked.status).toBe(429);
     });
+
+    it('deve limitar por usuário e não bloquear outro usuário no mesmo IP', async () => {
+      const dto = { subject: 'Teste', text: 'Teste' };
+
+      for (let i = 0; i < 5; i++) {
+        const res = await request(app.getHttpServer())
+          .post('/mail')
+          .set('Authorization', `Bearer ${userToken}`)
+          .send(dto);
+
+        expect(res.status).toBe(201);
+      }
+
+      const blocked = await request(app.getHttpServer())
+        .post('/mail')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send(dto);
+
+      expect(blocked.status).toBe(429);
+
+      const secondUser = await createUserWithToken(prismaService, authService);
+
+      const res = await request(app.getHttpServer())
+        .post('/mail')
+        .set('Authorization', `Bearer ${secondUser.token}`)
+        .send(dto);
+
+      expect(res.status).toBe(201);
+    });
   });
 });
