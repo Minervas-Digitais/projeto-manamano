@@ -517,7 +517,9 @@ describe('User', () => {
         .set('Authorization', 'Bearer ' + token)
         .attach('file', file.buffer, file.originalname);
 
-      const response = await request(app.getHttpServer()).get(`/user/${user.id}/profile-picture`);
+      const response = await request(app.getHttpServer())
+        .get(`/user/${user.id}/profile-picture`)
+        .set('Authorization', 'Bearer ' + token);
 
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toBe('image/png');
@@ -525,17 +527,54 @@ describe('User', () => {
       expect(response.body).toBeDefined();
     });
 
-    it('deve retornar 404 caso usuario nao tenha imagem', async () => {
+    it('deve retornar 401 sem token', async () => {
       const { user } = await createUserWithToken(prismaService, authService);
 
       const response = await request(app.getHttpServer()).get(`/user/${user.id}/profile-picture`);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('deve permitir acesso com token de outro usuario logado', async () => {
+      const { user, token } = await createUserWithToken(prismaService, authService);
+
+      const file = {
+        originalname: 'avatar.png',
+        mimetype: 'image/png',
+        buffer: Buffer.from('fake-image'),
+      } as Express.Multer.File;
+
+      await request(app.getHttpServer())
+        .patch('/user/profile-picture')
+        .set('Authorization', 'Bearer ' + token)
+        .attach('file', file.buffer, file.originalname);
+
+      const { token: otherToken } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer())
+        .get(`/user/${user.id}/profile-picture`)
+        .set('Authorization', 'Bearer ' + otherToken);
+
+      expect(response.status).toBe(200);
+    });
+
+    it('deve retornar 404 caso usuario nao tenha imagem', async () => {
+      const { user, token } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer())
+        .get(`/user/${user.id}/profile-picture`)
+        .set('Authorization', 'Bearer ' + token);
 
       expect(response.status).toBe(404);
       expect(response.body.message).toBe(USER_MESSAGES.PROFILE_PICTURE_NOT_FOUND);
     });
 
     it('deve retornar 404 caso usuario nao exista', async () => {
-      const response = await request(app.getHttpServer()).get(`/user/id-invalido/profile-picture`);
+      const { token } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer())
+        .get(`/user/id-invalido/profile-picture`)
+        .set('Authorization', 'Bearer ' + token);
 
       expect(response.status).toBe(404);
     });
