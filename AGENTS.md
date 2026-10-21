@@ -26,8 +26,8 @@ npm run prisma:migrate -w backend -- --name x   # other prisma scripts: generate
 ## Gotchas
 
 - Backend `npm test` only runs `backend/src/test/*.e2e-spec.ts` (jest config `testRegex`), `--runInBand`, coverage always on. `npm run test:e2e` is broken — it points to a nonexistent `backend/test/jest-e2e.json`. Full backend suite: 381 tests, green on `develop`.
-- Frontend suite is **not green on `develop`**: 6 failing suites / 28 tests (`SignIn`, `SignUp`, `EnterGroup`, `CreateGroup`, `ChangePassword`, `GetInTouch` — async form-submit / `waitFor` failures). Don't treat them as your regression and don't fix them unless asked; ensure you add no _new_ failures.
+- Frontend suite is green on `develop` (Jest with the `react-native` preset). Reproduce CI with `npm test -w frontend -- --ci`; if form tests fail with `waitFor` timeouts, check whether your branch is stale before treating it as a regression.
 - Prisma CLI is configured at the repo root (`prisma.config.ts` imports `backend/src/load-env.ts`). Backend prisma scripts `cd ..` to the root — run them via `npm run prisma:* -w backend`, not from inside `backend/` with a bare `npx prisma`.
-- CI (`.github/workflows`) runs only `lint` + `format:check` on PRs — no tests, no typecheck. The pre-commit hook (`husky` → `npx lint-staged`) auto-fixes eslint/prettier on staged `*.{ts,tsx,json,md,css}`; if hooks are dead, root `npm install` re-activates them.
+- CI (`.github/workflows`) runs `lint`, `format:check`, `typecheck` and tests (frontend + backend) on PRs. The pre-commit hook (`husky` → `npx lint-staged`) auto-fixes eslint/prettier on staged `*.{ts,tsx,json,md,css}`; if hooks are dead, root `npm install` re-activates them.
 - Docker: `docker compose up -d --build` = postgres + backend + nginx (landing page + APK at `/downloads/app.apk`). Backend `entrypoint.sh`: `APP_ENV=development` → `prisma migrate dev --name init` + watch; otherwise `migrate deploy` + prod. Dockerfile uses `npm ci --ignore-scripts` + `npm rebuild bcrypt`.
 - Repo rules: no `.env` commits, no `console.log` in production code, no commented-out code, single-scope PRs (`docs/standards.md`).
