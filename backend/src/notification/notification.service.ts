@@ -5,13 +5,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Notification, NotificationType, User } from '@prisma/client';
+import { Notification, NotificationType } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { Expo } from 'expo-server-sdk';
 import { NOTIFICATION_MESSAGES } from 'src/messages/notification.messages';
-import { omitHash } from 'src/utils/user.util';
+import { toPrivateUser } from 'src/user/user.mapper';
 import { ValidatorService } from 'src/common/validators/validator.service';
+import { UserPrivateFields } from 'src/user/user.types';
 
 import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto';
 
@@ -253,10 +254,7 @@ export class NotificationService {
     });
   }
 
-  async registerPushNotifToken(
-    userId: string,
-    pushNotifToken: string,
-  ): Promise<Omit<User, 'hash'>> {
+  async registerPushNotifToken(userId: string, pushNotifToken: string): Promise<UserPrivateFields> {
     await this.validator.validateUserExists(userId);
 
     const updatedUser = await this.prisma.user.update({
@@ -264,7 +262,7 @@ export class NotificationService {
       data: { pushNotifToken },
     });
 
-    return omitHash(updatedUser);
+    return toPrivateUser(updatedUser);
   }
 
   async getNotificationSettings(id: string): Promise<NotificationSettings> {
@@ -290,7 +288,7 @@ export class NotificationService {
   async updateNotificationSettings(
     id: string,
     dto: UpdateNotificationSettingsDto,
-  ): Promise<Omit<User, 'hash'>> {
+  ): Promise<UserPrivateFields> {
     if (Object.values(dto).every((value) => value === undefined)) {
       throw new BadRequestException(NOTIFICATION_MESSAGES.NO_SETTINGS_TO_UPDATE);
     }
@@ -302,7 +300,7 @@ export class NotificationService {
       data: dto,
     });
 
-    return omitHash(updatedUser);
+    return toPrivateUser(updatedUser);
   }
 
   async sendPushNotification(

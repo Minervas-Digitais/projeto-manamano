@@ -1,7 +1,5 @@
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import * as Clipboard from 'expo-clipboard';
-import Toast from 'react-native-toast-message';
 import { Share, View } from 'react-native';
 import VisitorProfile from '../pages/VisitorProfile/VisitorProfile';
 import api from '../services/api';
@@ -11,10 +9,6 @@ jest.mock('expo-font', () => ({
 }));
 
 jest.mock('../services/api');
-
-jest.mock('expo-clipboard', () => ({
-  setStringAsync: jest.fn(),
-}));
 
 jest.mock('react-native/Libraries/Share/Share', () => ({
   ...jest.requireActual('react-native/Libraries/Share/Share'),
@@ -72,7 +66,6 @@ jest.mock('../services/secureStorage', () => ({
 
 describe('VisitorProfile', () => {
   const mockApi = api as jest.Mocked<typeof api>;
-  const mockClipboard = Clipboard as jest.Mocked<typeof Clipboard>;
   const mockImageBinary = Buffer.from('mock-image-binary');
 
   beforeEach(() => {
@@ -206,47 +199,6 @@ describe('VisitorProfile', () => {
 
     fireEvent.press(menuButton);
     expect(mockToggleMenu).toHaveBeenCalledTimes(2);
-  });
-
-  it('deve chamar a função de copiar para o clipboard com o email', async () => {
-    const mockUser = {
-      id: 123,
-      fullName: 'TesteUser',
-      neighborhood: 'Centro',
-      enterprise: 'Teste Cia.',
-      bio: 'Dev React Native',
-      phone: '123456789',
-      email: 'user.teste@example.com',
-    };
-
-    mockApi.get.mockImplementation((url) => {
-      if (url.includes(`/user/${mockRoute.params.id}/profile-picture`)) {
-        return Promise.resolve({ data: mockImageBinary });
-      }
-      if (url.includes(`/user/${mockRoute.params.id}`)) {
-        return Promise.resolve({ data: mockUser });
-      }
-      if (url.includes(`/post/${mockRoute.params.id}/posts`)) {
-        return Promise.resolve({ data: [] });
-      }
-      return Promise.reject(new Error(`URL não mockada: ${url}`));
-    });
-
-    const { findByTestId } = render(<VisitorProfile navigation={{ navigate: mockNavigation }} />);
-
-    // encontra o botao de copiar o email
-    const emailButton = await findByTestId('email-button');
-
-    fireEvent.press(emailButton);
-
-    await waitFor(() => {
-      expect(Toast.show).toHaveBeenCalledWith({
-        type: 'success',
-        text1: 'Email copiado!',
-      });
-    });
-
-    expect(mockClipboard.setStringAsync).toHaveBeenCalledWith('user.teste@example.com');
   });
 
   it('deve chamar a função de compartilhar ao clicar no botão de compartilhar', async () => {

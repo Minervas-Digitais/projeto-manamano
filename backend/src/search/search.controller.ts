@@ -13,7 +13,9 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateSearchDto } from './dto/create-search.dto';
 import { SearchResult, SearchService } from './search.service';
 import { SearchFilter } from './search-filter.enum';
-import { Group, Post as PostEntity, User } from '@prisma/client';
+import { Post as PostEntity } from '@prisma/client';
+import { UserPublicFields } from 'src/user/user.types';
+import { GroupPublic } from 'src/group/group.types';
 import { SEARCH_MESSAGES } from 'src/messages/search.messages';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
@@ -44,7 +46,7 @@ export class SearchController {
     )
     filter: SearchFilter,
     @Query() pagination: PaginationDto,
-  ): Promise<PaginatedResponseDto<Omit<User, 'hash'> | Group | PostEntity>> {
+  ): Promise<PaginatedResponseDto<UserPublicFields | GroupPublic | PostEntity>> {
     return this.searchService.searchByFilter(createSearchDto, filter, pagination);
   }
 }
