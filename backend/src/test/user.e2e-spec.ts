@@ -77,6 +77,9 @@ describe('User', () => {
         phone: userDto.phone,
         fullName: userDto.fullName,
       });
+      expect(response.body).not.toHaveProperty('hash');
+      expect(response.body).not.toHaveProperty('refreshToken');
+      expect(response.body).not.toHaveProperty('pushNotifToken');
     });
 
     it('deve retornar erro 409 caso o email esteja em uso', async () => {
@@ -128,6 +131,25 @@ describe('User', () => {
       expect(response.body.length).toBeGreaterThanOrEqual(2);
     });
 
+    it('não deve expor segredos na listagem de usuários', async () => {
+      const { token: adminToken } = await createUserWithToken(prismaService, authService, {
+        sysRole: RoleType.ADMIN,
+      });
+
+      await createUser(prismaService);
+
+      const response = await request(app.getHttpServer())
+        .get('/user')
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      expect(response.status).toBe(200);
+      response.body.forEach((u: any) => {
+        expect(u).not.toHaveProperty('hash');
+        expect(u).not.toHaveProperty('refreshToken');
+        expect(u).not.toHaveProperty('pushNotifToken');
+      });
+    });
+
     it('deve retornar erro 401 caso token seja invalido', async () => {
       const response = await request(app.getHttpServer())
         .get('/user')
@@ -166,6 +188,36 @@ describe('User', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.id).toBe(id);
+    });
+
+    it('não deve expor dados de contato nem segredos ao consultar outra pessoa', async () => {
+      const { id } = await createUser(prismaService);
+
+      const response = await request(app.getHttpServer())
+        .get('/user/' + id)
+        .set('Authorization', 'Bearer ' + token);
+
+      expect(response.status).toBe(200);
+      expect(response.body).not.toHaveProperty('email');
+      expect(response.body).not.toHaveProperty('phone');
+      expect(response.body).not.toHaveProperty('hash');
+      expect(response.body).not.toHaveProperty('refreshToken');
+      expect(response.body).not.toHaveProperty('pushNotifToken');
+    });
+
+    it('deve retornar os dados de contato do próprio usuário, mas nunca os segredos', async () => {
+      const { user, token: selfToken } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer())
+        .get('/user/' + user.id)
+        .set('Authorization', 'Bearer ' + selfToken);
+
+      expect(response.status).toBe(200);
+      expect(response.body.email).toBe(user.email);
+      expect(response.body.phone).toBe(user.phone);
+      expect(response.body).not.toHaveProperty('hash');
+      expect(response.body).not.toHaveProperty('refreshToken');
+      expect(response.body).not.toHaveProperty('pushNotifToken');
     });
 
     it('deve retornar erro 404 caso nao seja encontrado usuario', async () => {

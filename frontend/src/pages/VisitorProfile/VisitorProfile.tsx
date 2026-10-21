@@ -16,7 +16,6 @@ import {
 import { Buffer } from 'buffer';
 import { useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import * as Clipboard from 'expo-clipboard';
 import Toast from 'react-native-toast-message';
 import {
   ProfileContainerButtons,
@@ -39,8 +38,6 @@ import LocationIcon from '../../assets/location-icon.svg';
 import ShareWhiteIcon from '../../assets/share-white-icon.svg';
 import MenuIcon from '../../assets/menu-white-icon.svg';
 import BusinessIcon from '../../assets/business-icon.svg';
-import WhatsappIcon from '../../assets/whatsapp-icon.svg';
-import EmailIcon from '../../assets/email-icon.svg';
 
 const defaultAvatar = require('../../assets/user-profile.png');
 
@@ -54,21 +51,6 @@ export default function VisitorProfile({ navigation }: any) {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const { loggedId } = useAuth();
-
-  const copyToClipboard = async (text: string, message: string) => {
-    if (text) {
-      await Clipboard.setStringAsync(text);
-      Toast.show({
-        type: 'success',
-        text1: message,
-      });
-    } else {
-      Toast.show({
-        type: 'error',
-        text1: 'Informação não disponível.',
-      });
-    }
-  };
 
   const onShareProfile = async () => {
     const deepLink = `manamano://visitorprofile/${userId}`;
@@ -286,17 +268,6 @@ export default function VisitorProfile({ navigation }: any) {
                 {user.enterprise || 'Não informado'}
               </GroupDataText>
             </ProfileContainerData>
-            <View style={style.viewStyleInfo}>
-              <TouchableOpacity
-                onPress={() => copyToClipboard(user?.phone, 'Número de telefone copiado!')}>
-                <WhatsappIcon height="22px" width="22px" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                testID="email-button"
-                onPress={() => copyToClipboard(user?.email, 'Email copiado!')}>
-                <EmailIcon height="22px" width="22px" />
-              </TouchableOpacity>
-            </View>
           </View>
         </ProfileContainerData>
       </ProfileContainerInfo>
@@ -384,12 +355,5 @@ const style = StyleSheet.create({
   line: {
     borderBottomColor: '#D9D9D9',
     borderBottomWidth: 1,
-  },
-  viewStyleInfo: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 15,
-    marginTop: 5,
   },
 });

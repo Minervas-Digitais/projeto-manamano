@@ -10,7 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { createGroupDto } from 'src/group/dto/create-group.dto.factory';
 import { updateGroupDto } from 'src/group/dto/update-group.dto.factory';
 import { AuthService } from 'src/auth/auth.service';
-import { createUserWithToken, createGroup } from './test-helpers';
+import { createUserWithToken, createGroup, createParticipant } from './test-helpers';
 import { GROUP_MESSAGES } from 'src/messages/group.messages';
 
 describe('Group (e2e)', () => {
@@ -369,6 +369,36 @@ describe('Group (e2e)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.id).toBe(groupId);
+    });
+
+    it('não deve expor o código de convite para quem não é membro do grupo', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/group/${groupId}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty('inviteCode');
+    });
+
+    it('deve expor o código de convite para membros do grupo', async () => {
+      const { user, token } = await createUserWithToken(prismaService, authService);
+      await createParticipant(prismaService, { userId: user.id, groupId });
+
+      const res = await request(app.getHttpServer())
+        .get(`/group/${groupId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('inviteCode');
+    });
+
+    it('deve expor o código de convite para administradores', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/group/${groupId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('inviteCode');
     });
 
     it('deve retornar 404 se não existir', async () => {

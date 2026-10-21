@@ -17,6 +17,7 @@ import { GroupService } from './group.service';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Group } from '@prisma/client';
+import { GroupPublic } from './group.types';
 import { User } from 'src/user/user.decorator';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
@@ -42,8 +43,11 @@ export class GroupController {
 
   @HttpCode(200)
   @Get(':groupId')
-  findOne(@Param('groupId') groupId: string): Promise<Group> {
-    return this.groupService.findOne(groupId);
+  findOne(
+    @Param('groupId') groupId: string,
+    @User('id') callerId: string,
+  ): Promise<Group | GroupPublic> {
+    return this.groupService.findOne(groupId, callerId);
   }
 
   @HttpCode(201)
