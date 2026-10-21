@@ -4,13 +4,13 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
-import { Archive, RoleType, User } from '@prisma/client';
+import { Archive, RoleType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { USER_MESSAGES } from 'src/messages/user.messages';
-import { omitHash } from 'src/utils/user.util';
+import { toPrivateUser, toPublicUser } from './user.mapper';
 import { ValidatorService } from 'src/common/validators/validator.service';
 import { UserPrivateFields, UserPublicFields } from './user.types';
 export const roundsOfHashing = 10;
@@ -28,7 +28,7 @@ export class UserService {
     private readonly validator: ValidatorService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<Omit<User, 'hash'>> {
+  async create(createUserDto: CreateUserDto): Promise<UserPrivateFields> {
     const existingUser = await this.prismaService.user.findFirst({
       where: {
         OR: [{ email: createUserDto.email }, { phone: createUserDto.phone }],
@@ -56,7 +56,7 @@ export class UserService {
 
     const user = await this.prismaService.user.create({ data: userData });
 
-    return omitHash(user);
+    return toPrivateUser(user);
   }
 
   async findOne(
@@ -66,34 +66,24 @@ export class UserService {
     const user = await this.validator.validateUserExists(targetUserId);
 
     if (requesterUserId === targetUserId) {
-      return omitHash(user);
+      return toPrivateUser(user);
     }
 
-    return {
-      id: user.id,
-      fullName: user.fullName,
-      bio: user.bio,
-      enterprise: user.enterprise,
-      expertise: user.expertise,
-      neighborhood: user.neighborhood,
-      ethnicity: user.ethnicity,
-      birthday: user.birthday,
-      profilePictureId: user.profilePictureId,
-    };
+    return toPublicUser(user);
   }
 
-  async findAll(): Promise<Omit<User, 'hash'>[]> {
+  async findAll(): Promise<UserPrivateFields[]> {
     const users = await this.prismaService.user.findMany();
-    return users.map(omitHash);
+    return users.map(toPrivateUser);
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<User, 'hash'>> {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserPrivateFields> {
     await this.validator.validateUserExists(id);
     const updatedUser = await this.prismaService.user.update({
       where: { id },
       data: updateUserDto,
     });
-    return omitHash(updatedUser);
+    return toPrivateUser(updatedUser);
   }
 
   async remove(id: string): Promise<{ message: string }> {
@@ -108,7 +98,7 @@ export class UserService {
     id: string,
     oldPassword: string,
     newPassword: string,
-  ): Promise<Omit<User, 'hash'>> {
+  ): Promise<UserPrivateFields> {
     const user = await this.validator.validateUserExists(id);
 
     if (oldPassword === newPassword) {
@@ -127,10 +117,10 @@ export class UserService {
       data: { hash: hashedPassword },
     });
 
-    return omitHash(updatedUser);
+    return toPrivateUser(updatedUser);
   }
 
-  async updateUserRole(id: string, sysRole: RoleType): Promise<Omit<User, 'hash'>> {
+  async updateUserRole(id: string, sysRole: RoleType): Promise<UserPrivateFields> {
     await this.validator.validateUserExists(id);
 
     const updatedUser = await this.prismaService.user.update({
@@ -138,13 +128,13 @@ export class UserService {
       data: { sysRole: sysRole },
     });
 
-    return omitHash(updatedUser);
+    return toPrivateUser(updatedUser);
   }
 
   async updateProfilePicture(
     id: string,
     file: Express.Multer.File,
-  ): Promise<Omit<User, 'hash'> & { profilePicture: Archive | null }> {
+  ): Promise<UserPrivateFields & { profilePicture: Archive | null }> {
     const user = await this.validator.validateUserExists(id);
 
     if (user.profilePictureId) {
@@ -173,7 +163,7 @@ export class UserService {
     });
 
     return {
-      ...omitHash(updatedUser),
+      ...toPrivateUser(updatedUser),
       profilePicture: updatedUser.profilePicture,
     };
   }
@@ -195,8 +185,8 @@ export class UserService {
     };
   }
 
-  async findById(id: string): Promise<Omit<User, 'hash'>> {
+  async findById(id: string): Promise<UserPrivateFields> {
     const user = await this.validator.validateUserExists(id);
-    return user;
+    return toPrivateUser(user);
   }
 }

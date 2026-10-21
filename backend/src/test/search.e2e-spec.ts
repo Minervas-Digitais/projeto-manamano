@@ -113,6 +113,27 @@ describe('SearchController', () => {
       });
     });
 
+    it('não deve expor dados sensíveis de usuários nem código de convite de grupos', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/search')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test' });
+
+      expect(response.status).toBe(201);
+
+      response.body.users.forEach((u: any) => {
+        expect(u).not.toHaveProperty('email');
+        expect(u).not.toHaveProperty('phone');
+        expect(u).not.toHaveProperty('hash');
+        expect(u).not.toHaveProperty('refreshToken');
+        expect(u).not.toHaveProperty('pushNotifToken');
+      });
+
+      response.body.groups.forEach((g: any) => {
+        expect(g).not.toHaveProperty('inviteCode');
+      });
+    });
+
     it('deve retornar metadados de paginação com valores padrão (page=1, limit=5, PaginatedResponseDto)', async () => {
       const response = await request(app.getHttpServer())
         .post('/search')
@@ -386,6 +407,32 @@ describe('SearchController', () => {
         limit: 10,
         total: 1,
         lastPage: 1,
+      });
+    });
+
+    it('não deve expor dados sensíveis nem inviteCode na busca por filtro', async () => {
+      const usersRes = await request(app.getHttpServer())
+        .post('/search/filter/users')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test' });
+
+      expect(usersRes.status).toBe(200);
+      usersRes.body.data.forEach((u: any) => {
+        expect(u).not.toHaveProperty('email');
+        expect(u).not.toHaveProperty('phone');
+        expect(u).not.toHaveProperty('hash');
+        expect(u).not.toHaveProperty('refreshToken');
+        expect(u).not.toHaveProperty('pushNotifToken');
+      });
+
+      const groupsRes = await request(app.getHttpServer())
+        .post('/search/filter/groups')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ input: 'Test' });
+
+      expect(groupsRes.status).toBe(200);
+      groupsRes.body.data.forEach((g: any) => {
+        expect(g).not.toHaveProperty('inviteCode');
       });
     });
 

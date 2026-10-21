@@ -22,7 +22,7 @@ import { UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import express from 'express';
 import { Res } from '@nestjs/common';
-import { Archive, RoleType, User } from '@prisma/client';
+import { Archive, RoleType } from '@prisma/client';
 import { User as UserDecorator } from './user.decorator';
 import { UserPrivateFields, UserPublicFields } from './user.types';
 
@@ -32,7 +32,7 @@ export class UserController {
 
   @HttpCode(201)
   @Post()
-  create(@Body() createUserDto: CreateUserDto): Promise<Omit<User, 'hash'>> {
+  create(@Body() createUserDto: CreateUserDto): Promise<UserPrivateFields> {
     return this.userService.create(createUserDto);
   }
 
@@ -40,7 +40,7 @@ export class UserController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleType.ADMIN)
-  findAll(): Promise<Omit<User, 'hash'>[]> {
+  findAll(): Promise<UserPrivateFields[]> {
     return this.userService.findAll();
   }
 
@@ -61,7 +61,7 @@ export class UserController {
     @UserDecorator('id') id: string,
     @Body('oldPassword') oldPassword: string,
     @Body('newPassword') newPassword: string,
-  ): Promise<Omit<User, 'hash'>> {
+  ): Promise<UserPrivateFields> {
     return this.userService.changePassword(id, oldPassword, newPassword);
   }
 
@@ -71,7 +71,7 @@ export class UserController {
   update(
     @UserDecorator('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<Omit<User, 'hash'>> {
+  ): Promise<UserPrivateFields> {
     return this.userService.update(id, updateUserDto);
   }
 
@@ -89,7 +89,7 @@ export class UserController {
   async updateRole(
     @Param('id') id: string,
     @Body() updateUserRoleDto: UpdateUserRoleDto,
-  ): Promise<Omit<User, 'hash'>> {
+  ): Promise<UserPrivateFields> {
     const { sysRole } = updateUserRoleDto;
     return this.userService.updateUserRole(id, sysRole);
   }
@@ -100,7 +100,7 @@ export class UserController {
   async updateProfilePicture(
     @UserDecorator('id') id: string,
     @UploadedFile() file: Express.Multer.File,
-  ): Promise<Omit<User, 'hash'> & { profilePicture: Archive | null }> {
+  ): Promise<UserPrivateFields & { profilePicture: Archive | null }> {
     if (!file) {
       throw new BadRequestException('Um arquivo é necessário.');
     }

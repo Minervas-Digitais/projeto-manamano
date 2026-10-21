@@ -3,8 +3,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSearchDto } from './dto/create-search.dto';
 import { SearchFilter } from './search-filter.enum';
 import { SEARCH_MESSAGES } from 'src/messages/search.messages';
-import { Group, Post, User } from '@prisma/client';
-import { omitHash } from 'src/utils/user.util';
+import { Post } from '@prisma/client';
+import { toPublicUser } from 'src/user/user.mapper';
+import { GroupPublic } from 'src/group/group.types';
+import { toPublicGroup } from 'src/group/group.mapper';
+import { UserPublicFields } from 'src/user/user.types';
 import { Prisma } from '@prisma/client';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
@@ -18,8 +21,8 @@ export interface SearchPaginationMeta {
 }
 
 export interface SearchResult {
-  users: Omit<User, 'hash'>[];
-  groups: Group[];
+  users: UserPublicFields[];
+  groups: GroupPublic[];
   posts: Post[];
   pagination: {
     page: number;
@@ -79,8 +82,8 @@ export class SearchService {
     ]);
 
     return {
-      users: users.map(omitHash),
-      groups,
+      users: users.map(toPublicUser),
+      groups: groups.map(toPublicGroup),
       posts,
       pagination: {
         page,
@@ -96,7 +99,7 @@ export class SearchService {
     createSearchDto: CreateSearchDto,
     filter: SearchFilter,
     pagination: PaginationDto,
-  ): Promise<PaginatedResponseDto<Omit<User, 'hash'> | Group | Post>> {
+  ): Promise<PaginatedResponseDto<UserPublicFields | GroupPublic | Post>> {
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? FILTER_DEFAULT_LIMIT;
     const skip = (page - 1) * limit;
@@ -112,7 +115,7 @@ export class SearchService {
           this.prismaService.user.findMany({ where, skip, take: limit }),
           this.prismaService.user.count({ where }),
         ]);
-        return new PaginatedResponseDto(users.map(omitHash) as Omit<User, 'hash'>[], total, {
+        return new PaginatedResponseDto(users.map(toPublicUser), total, {
           page,
           limit,
         });
@@ -123,7 +126,7 @@ export class SearchService {
           this.prismaService.group.findMany({ where, skip, take: limit }),
           this.prismaService.group.count({ where }),
         ]);
-        return new PaginatedResponseDto(groups, total, { page, limit });
+        return new PaginatedResponseDto(groups.map(toPublicGroup), total, { page, limit });
       }
       case SearchFilter.POSTS: {
         const where = this.buildPostWhere(createSearchDto.input);
