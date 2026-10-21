@@ -5,6 +5,7 @@ type AuthState = {
   accessToken: string | null;
   loggedId: string | null;
   isLoading: boolean;
+  sessionExpired: boolean;
 };
 
 type Listener = () => void;
@@ -24,6 +25,7 @@ let state: AuthState = {
   accessToken: null,
   loggedId: null,
   isLoading: true,
+  sessionExpired: false,
 };
 
 const listeners = new Set<Listener>();
@@ -31,6 +33,22 @@ const listeners = new Set<Listener>();
 function setState(patch: Partial<AuthState>) {
   state = { ...state, ...patch };
   listeners.forEach((listener) => listener());
+}
+
+/**
+ * Remove os dados persistidos de uma sessão: tokens do armazenamento seguro e
+ * caches não sensíveis do MMKV. Usado tanto no logout explícito quanto no
+ * encerramento forçado pelo servidor.
+ */
+async function clearPersistedSession() {
+  await SecureStore.deleteItemAsync(STORAGE_KEYS.refreshToken);
+  await SecureStore.deleteItemAsync(STORAGE_KEYS.loggedId);
+
+  try {
+    localStorage.clearAll();
+  } catch {
+    /* MMKV indisponível: não impede o encerramento da sessão. */
+  }
 }
 
 const authStore = {
@@ -65,7 +83,7 @@ const authStore = {
   async setSession({ accessToken, refreshToken, loggedId }: SessionInput) {
     await SecureStore.setItemAsync(STORAGE_KEYS.refreshToken, refreshToken);
     await SecureStore.setItemAsync(STORAGE_KEYS.loggedId, loggedId);
-    setState({ accessToken, loggedId, isLoading: false });
+    setState({ accessToken, loggedId, isLoading: false, sessionExpired: false });
   },
 
   async updateTokens(accessToken: string, refreshToken: string) {
@@ -73,15 +91,38 @@ const authStore = {
     setState({ accessToken, isLoading: false });
   },
 
+  /**
+   * Encerra a sessão de forma explícita (o próprio usuário saiu).
+   */
   async clearSession() {
-    await SecureStore.deleteItemAsync(STORAGE_KEYS.refreshToken);
-    await SecureStore.deleteItemAsync(STORAGE_KEYS.loggedId);
-    try {
-      localStorage.clearAll();
-    } catch {
-      /* empty */
+    await clearPersistedSession();
+    setState({ accessToken: null, loggedId: null, isLoading: false, sessionExpired: false });
+  },
+
+  /**
+   * Encerra a sessão porque o servidor rejeitou o refresh token (expirou ou foi
+   * invalidado por um novo login em outro aparelho). Sinaliza para a interface
+   * avisar a pessoa e levá-la de volta ao login, em vez de sumir silenciosamente.
+   */
+  async expireSession() {
+    await clearPersistedSession();
+    setState({ accessToken: null, loggedId: null, isLoading: false, sessionExpired: true });
+  },
+
+  /**
+   * Falha transitória (rede/timeout) na renovação: mantém a sessão guardada e
+   * apenas libera a interface, para não deslogar a pessoa sem motivo.
+   */
+  finishLoading() {
+    if (state.isLoading) {
+      setState({ isLoading: false });
     }
-    setState({ accessToken: null, loggedId: null, isLoading: false });
+  },
+
+  acknowledgeSessionExpired() {
+    if (state.sessionExpired) {
+      setState({ sessionExpired: false });
+    }
   },
 };
 

@@ -38,8 +38,10 @@ import EditLesson from './src/pages/EditLesson/EditLesson';
 import { useNotifications } from './src/hooks/useNotification';
 import { SavedPostsProvider } from './src/context/SavedPostsContext';
 import { AuthProvider } from './src/context/auth/AuthProvider';
+import { SessionExpiredHandler } from './src/context/auth/SessionExpiredHandler';
 import { SideMenuProvider, useSideMenu } from './src/context/SideMenuContext';
 import { toastConfig } from './src/components/Toast/ToastConfig';
+import { navigationRef } from './src/navigation/navigationRef';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -55,7 +57,11 @@ function AppNavigator({ linking }: { linking: any }) {
   const { isOpen, closeMenu } = useSideMenu();
 
   return (
-    <NavigationContainer independent linking={linking} onStateChange={closeMenu}>
+    <NavigationContainer
+      ref={navigationRef}
+      independent
+      linking={linking}
+      onStateChange={closeMenu}>
       <SideMenu display={!isOpen} onPress={closeMenu} />
       <Stack.Navigator initialRouteName="WelcomeScreen">
         <Stack.Screen
@@ -119,6 +125,7 @@ function AppNavigator({ linking }: { linking: any }) {
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
+      <SessionExpiredHandler />
       <Toast config={toastConfig} />
     </NavigationContainer>
   );

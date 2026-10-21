@@ -45,11 +45,27 @@ export default function SignIn({ navigation }: any) {
 
       navigation.navigate('Home');
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Erro ao entrar',
-        text2: 'E-mail ou senha incorretos',
-      });
+      const status = (error as any)?.response?.status;
+
+      if (status === 401 || status === 404) {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao entrar',
+          text2: 'E-mail ou senha incorretos',
+        });
+      } else if (status === undefined) {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao entrar',
+          text2: 'Não foi possível conectar. Verifique sua internet e tente novamente.',
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao entrar',
+          text2: 'Não foi possível entrar agora. Tente novamente em instantes.',
+        });
+      }
     }
   };
 

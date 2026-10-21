@@ -81,7 +81,9 @@ describe('SignIn', () => {
     fireEvent.changeText(getByLabelText('E-mail'), 'usuario@invalido.com');
     fireEvent.changeText(getByLabelText('Senha'), 'senhaerrada');
 
-    mockedLogin.mockRejectedValueOnce(new Error('Credenciais inválidas'));
+    mockedLogin.mockRejectedValueOnce(
+      Object.assign(new Error('Credenciais inválidas'), { response: { status: 401 } }),
+    );
 
     fireEvent.press(getByText('Entrar'));
 
@@ -92,6 +94,30 @@ describe('SignIn', () => {
         type: 'error',
         text1: 'Erro ao entrar',
         text2: 'E-mail ou senha incorretos',
+      });
+      expect(mockedNavigate).not.toHaveBeenCalled();
+    });
+  });
+
+  it('Deve exibir alerta de conexão quando a falha for de rede (sem resposta do servidor)', async () => {
+    const { getByLabelText, getByText } = render(
+      <SignIn navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('E-mail'), 'jorge@gmail.com');
+    fireEvent.changeText(getByLabelText('Senha'), 'senha123');
+
+    mockedLogin.mockRejectedValueOnce(new Error('Network Error'));
+
+    fireEvent.press(getByText('Entrar'));
+
+    await waitFor(() => {
+      expect(mockedLogin).toHaveBeenCalledWith('jorge@gmail.com', 'senha123');
+
+      expect(Toast.show).toHaveBeenCalledWith({
+        type: 'error',
+        text1: 'Erro ao entrar',
+        text2: 'Não foi possível conectar. Verifique sua internet e tente novamente.',
       });
       expect(mockedNavigate).not.toHaveBeenCalled();
     });

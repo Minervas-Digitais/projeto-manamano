@@ -35,11 +35,16 @@ async function doRefresh() {
     await authStore.updateTokens(response.data.accessToken, response.data.refreshToken);
     return response.data.accessToken;
   } catch (error) {
-    // Só encerra a sessão quando o servidor rejeita o refresh token;
-    // queda de rede/timeout não desloga o usuário.
-    if (axios.isAxiosError(error) && error.response) {
-      await authStore.clearSession();
+    // Só encerra a sessão quando o servidor rejeita o refresh token (401/403).
+    // Queda de rede, timeout ou erro 5xx (ex.: reinício do servidor) são falhas
+    // transitórias e não devem deslogar o usuário.
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    const isRejectedByServer = status === 401 || status === 403;
+
+    if (isRejectedByServer) {
+      await authStore.expireSession();
     }
+
     return null;
   }
 }
