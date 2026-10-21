@@ -1,6 +1,13 @@
 /* eslint-disable global-require */
 import React, { useRef, useState, useEffect } from 'react';
-import { TouchableOpacity, View, Dimensions, ActivityIndicator } from 'react-native';
+import {
+  TouchableOpacity,
+  View,
+  Dimensions,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { format } from 'date-fns';
 import { Buffer } from 'buffer';
@@ -64,10 +71,14 @@ export default function EditProfile() {
     try {
       const formattedData = { ...data };
 
-      if (formattedData.birthday) {
+      formattedData.fullName = formattedData.fullName?.trim();
+
+      if (formattedData.birthday?.trim()) {
         const [day, month, year] = formattedData.birthday.split('/');
 
         formattedData.birthday = new Date(`${year}-${month}-${day}`).toISOString();
+      } else {
+        delete formattedData.birthday;
       }
 
       if (!loggedId) {
@@ -301,235 +312,262 @@ export default function EditProfile() {
     <BlueBackground>
       <StatusBar />
       {pageHeader}
-      <WhiteBackground>
-        <UpperPart>
-          <EditImageButton
-            testID="edit-profile-picture-button"
-            onPress={() => {
-              pickFile();
-            }}
-          />
-          <ProfilePic source={profileData ? profileData.profileImage : defaultProfImage} />
-          <PencilButton>
-            <TouchableOpacity onPress={() => {}}>
-              <EditButton width={24} height={24} />
-            </TouchableOpacity>
-          </PencilButton>
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field: { onChange, value } }) => (
-              <InputTextCustom
-                onChangeText={onChange}
-                value={value}
-                label="Telefone"
-                imageIcon={null}
-                type="cel-phone"
-                innerRef={(input: TextInputMask) => {
-                  phoneInputRef.current = input;
-                }}
-              />
-            )}
-            rules={{
-              required: 'Telefone obrigatório!',
-              validate: validatePhoneNumber,
-            }}
-          />
-          {errors.phone && <ErrorWarning errorText={errors.phone.message} />}
-        </UpperPart>
-        <View style={{ gap: width * 0.035, marginBottom: 10 }}>
-          <NamePart>
-            <Controller
-              control={control}
-              name="fullName"
-              rules={{
-                required: 'Campo obrigatório',
-                pattern: {
-                  value: /^[A-Za-z\s]+$/,
-                  message: 'Apenas letras são permitidas',
-                },
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}>
+        <WhiteBackground>
+          <UpperPart>
+            <EditImageButton
+              testID="edit-profile-picture-button"
+              onPress={() => {
+                pickFile();
               }}
-              render={({ field: { onChange, value } }) => (
-                <>
-                  <InputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="Nome"
-                    imageIcon={null}
-                  />
-                  {errors.fullName && <ErrorWarning errorText={errors.fullName.message} />}
-                </>
-              )}
             />
-          </NamePart>
-          <MiddlePart>
+            <ProfilePic source={profileData ? profileData.profileImage : defaultProfImage} />
+            <PencilButton>
+              <TouchableOpacity onPress={() => {}}>
+                <EditButton width={24} height={24} />
+              </TouchableOpacity>
+            </PencilButton>
             <Controller
               control={control}
-              name="birthday"
-              rules={{
-                required: 'Campo obrigatório',
-                validate: (value) => {
-                  if (!value || value.length !== 10) {
-                    return 'Data de nascimento inválida';
-                  }
-
-                  const [day, month, year] = value.split('/').map(Number);
-
-                  const date = new Date(year, month - 1, day);
-
-                  const isValid =
-                    date.getFullYear() === year &&
-                    date.getMonth() === month - 1 &&
-                    date.getDate() === day;
-
-                  return isValid || 'Data de nascimento inválida';
-                },
-              }}
+              name="phone"
               render={({ field: { onChange, value } }) => (
-                <>
-                  <InputTextCustom
+                <InputTextCustom
+                  onChangeText={onChange}
+                  value={value}
+                  label="Telefone"
+                  imageIcon={null}
+                  type="cel-phone"
+                  innerRef={(input: TextInputMask) => {
+                    phoneInputRef.current = input;
+                  }}
+                />
+              )}
+              rules={{
+                required: 'Telefone obrigatório!',
+                validate: validatePhoneNumber,
+              }}
+            />
+            {errors.phone && <ErrorWarning errorText={errors.phone.message} />}
+          </UpperPart>
+          <View style={{ gap: width * 0.035, marginBottom: 10 }}>
+            <NamePart>
+              <Controller
+                control={control}
+                name="fullName"
+                rules={{
+                  required: 'Campo obrigatório',
+                  minLength: {
+                    value: 3,
+                    message: 'O nome deve ter no mínimo 3 caracteres',
+                  },
+                  maxLength: {
+                    value: 120,
+                    message: 'O nome deve ter no máximo 120 caracteres',
+                  },
+                  pattern: {
+                    value: /^[A-Za-zÀ-ÿ\s]+$/,
+                    message: 'Apenas letras são permitidas',
+                  },
+                  validate: (value) => {
+                    const trimmed = value.trim();
+                    if (!trimmed) {
+                      return 'Campo obrigatório';
+                    }
+                    if (trimmed.length < 3) {
+                      return 'O nome deve ter no mínimo 3 caracteres';
+                    }
+                    return true;
+                  },
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <>
+                    <InputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      label="Nome"
+                      imageIcon={null}
+                    />
+                    {errors.fullName && <ErrorWarning errorText={errors.fullName.message} />}
+                  </>
+                )}
+              />
+            </NamePart>
+            <MiddlePart>
+              <Controller
+                control={control}
+                name="birthday"
+                rules={{
+                  validate: (value) => {
+                    const trimmed = value.trim();
+                    if (!trimmed) {
+                      return true;
+                    }
+
+                    if (trimmed.length !== 10) {
+                      return 'Data de nascimento inválida';
+                    }
+
+                    const [day, month, year] = trimmed.split('/').map(Number);
+
+                    const date = new Date(year, month - 1, day);
+
+                    const isValid =
+                      date.getFullYear() === year &&
+                      date.getMonth() === month - 1 &&
+                      date.getDate() === day;
+
+                    if (!isValid) {
+                      return 'Data de nascimento inválida';
+                    }
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    if (date > today) {
+                      return 'Data de nascimento não pode ser no futuro';
+                    }
+
+                    return true;
+                  },
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <>
+                    <InputTextCustom
+                      onChangeText={(text: string) => {
+                        onChange(text);
+                      }}
+                      value={value}
+                      label="Data de Nascimento"
+                      imageIcon={<CalendarIcon width={15} height={15} />}
+                      type="datetime"
+                      options={{ format: 'DD/MM/YYYY' }}
+                    />
+
+                    {errors.birthday && <ErrorWarning errorText={errors.birthday.message} />}
+                  </>
+                )}
+              />
+            </MiddlePart>
+            <BottomPart>
+              <Controller
+                control={control}
+                name="email"
+                rules={{
+                  required: 'Campo obrigatório',
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: 'Endereço de e-mail inválido',
+                  },
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <>
+                    <InputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      label="E-mail"
+                      imageIcon={null}
+                    />
+                    {errors.email && <ErrorWarning errorText={errors.email.message} />}
+                  </>
+                )}
+              />
+              <Controller
+                control={control}
+                name="ethnicity"
+                render={({ field: { onChange, value } }) => (
+                  <>
+                    <DropdownComponent
+                      data={ethnicity}
+                      label="Etnia"
+                      onChange={onChange}
+                      value={value}
+                    />
+
+                    {errors.ethnicity && <ErrorWarning errorText={errors.ethnicity.message} />}
+                  </>
+                )}
+              />
+              <Controller
+                control={control}
+                name="expertise"
+                render={({ field: { onChange, value } }) => (
+                  <>
+                    <DropdownComponent
+                      data={expertise}
+                      label="Especialidade"
+                      onChange={onChange}
+                      value={value}
+                    />
+                    {errors.expertise && <ErrorWarning errorText={errors.expertise.message} />}
+                  </>
+                )}
+              />
+              <Controller
+                control={control}
+                name="neighborhood"
+                render={({ field: { onChange, value } }) => (
+                  <>
+                    <DropdownComponent
+                      data={district}
+                      label="Bairro"
+                      onChange={onChange}
+                      value={value}
+                    />
+                    {errors.neighborhood && (
+                      <ErrorWarning errorText={errors.neighborhood.message} />
+                    )}
+                  </>
+                )}
+              />
+              <Controller
+                control={control}
+                name="bio"
+                rules={{
+                  maxLength: { value: 500, message: 'Excedido o máximo de caracteres' },
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <BigInputTextCustom
                     onChangeText={(text: string) => {
                       onChange(text);
                     }}
                     value={value}
-                    label="Data de Nascimento"
-                    imageIcon={<CalendarIcon width={15} height={15} />}
-                    type="datetime"
-                    options={{ format: 'DD/MM/YYYY' }}
-                  />
-
-                  {errors.birthday && <ErrorWarning errorText={errors.birthday.message} />}
-                </>
-              )}
-            />
-          </MiddlePart>
-          <BottomPart>
-            <Controller
-              control={control}
-              name="email"
-              rules={{
-                required: 'Campo obrigatório',
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: 'Endereço de e-mail inválido',
-                },
-              }}
-              render={({ field: { onChange, value } }) => (
-                <>
-                  <InputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="E-mail"
+                    label="Bio"
                     imageIcon={null}
                   />
-                  {errors.email && <ErrorWarning errorText={errors.email.message} />}
-                </>
-              )}
-            />
-            <Controller
-              control={control}
-              name="ethnicity"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
-              render={({ field: { onChange, value } }) => (
-                <>
-                  <DropdownComponent
-                    data={ethnicity}
-                    label="Etnia"
-                    onChange={onChange}
-                    value={value}
-                  />
-
-                  {errors.ethnicity && <ErrorWarning errorText={errors.ethnicity.message} />}
-                </>
-              )}
-            />
-            <Controller
-              control={control}
-              name="expertise"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
-              render={({ field: { onChange, value } }) => (
-                <>
-                  <DropdownComponent
-                    data={expertise}
-                    label="Especialidade"
-                    onChange={onChange}
-                    value={value}
-                  />
-                  {errors.expertise && <ErrorWarning errorText={errors.expertise.message} />}
-                </>
-              )}
-            />
-            <Controller
-              control={control}
-              name="neighborhood"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
-              render={({ field: { onChange, value } }) => (
-                <>
-                  <DropdownComponent
-                    data={district}
-                    label="Bairro"
-                    onChange={onChange}
-                    value={value}
-                  />
-                  {errors.neighborhood && <ErrorWarning errorText={errors.neighborhood.message} />}
-                </>
-              )}
-            />
-            <Controller
-              control={control}
-              name="bio"
-              rules={{
-                maxLength: { value: 500, message: 'Excedido o máximo de caracteres' },
-              }}
-              render={({ field: { onChange, value } }) => (
-                <BigInputTextCustom
-                  onChangeText={(text: string) => {
-                    onChange(text);
-                  }}
-                  value={value}
-                  label="Bio"
-                  imageIcon={null}
+                )}
+              />
+              {errors.bio && <ErrorWarning errorText={errors.bio.message} />}
+              <Controller
+                control={control}
+                name="enterprise"
+                render={({ field: { onChange, value } }) => (
+                  <>
+                    <InputTextCustom
+                      onChangeText={onChange}
+                      value={value}
+                      label="Empreendimento"
+                      imageIcon={null}
+                    />
+                    {errors.enterprise && <ErrorWarning errorText={errors.enterprise.message} />}
+                  </>
+                )}
+              />
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color="#32936F" />
+              ) : (
+                <ButtonCustom
+                  onPress={handleSubmit(onSubmit, onInvalid)}
+                  backColor="#32936F"
+                  fontColor="white"
+                  text="Salvar"
                 />
               )}
-            />
-            {errors.bio && <ErrorWarning errorText={errors.bio.message} />}
-            <Controller
-              control={control}
-              name="enterprise"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
-              render={({ field: { onChange, value } }) => (
-                <>
-                  <InputTextCustom
-                    onChangeText={onChange}
-                    value={value}
-                    label="Empreendimento"
-                    imageIcon={null}
-                  />
-                  {errors.enterprise && <ErrorWarning errorText={errors.enterprise.message} />}
-                </>
-              )}
-            />
-            {isSubmitting ? (
-              <ActivityIndicator size="small" color="#32936F" />
-            ) : (
-              <ButtonCustom
-                onPress={handleSubmit(onSubmit, onInvalid)}
-                backColor="#32936F"
-                fontColor="white"
-                text="Salvar"
-              />
-            )}
-          </BottomPart>
-        </View>
-      </WhiteBackground>
+            </BottomPart>
+          </View>
+        </WhiteBackground>
+      </KeyboardAvoidingView>
     </BlueBackground>
   );
 }

@@ -67,14 +67,20 @@ export class PostController {
 
   @HttpCode(201)
   @Patch('pin/:postId')
-  async pinPost(@Param('postId') postId: string): Promise<SerializedPost> {
-    return this.postService.setPinStatus(postId, true);
+  async pinPost(
+    @User('id') callerId: string,
+    @Param('postId') postId: string,
+  ): Promise<SerializedPost> {
+    return this.postService.setPinStatus(callerId, postId, true);
   }
 
   @HttpCode(201)
   @Patch('unpin/:postId')
-  async unpinPost(@Param('postId') postId: string): Promise<SerializedPost> {
-    return this.postService.setPinStatus(postId, false);
+  async unpinPost(
+    @User('id') callerId: string,
+    @Param('postId') postId: string,
+  ): Promise<SerializedPost> {
+    return this.postService.setPinStatus(callerId, postId, false);
   }
 
   @HttpCode(200)

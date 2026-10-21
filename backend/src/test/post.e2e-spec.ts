@@ -583,10 +583,33 @@ describe('Posts', () => {
   });
 
   describe('pinPost', () => {
-    it('deve fixar um post com sucesso', async () => {
+    let instructorToken: string;
+
+    beforeEach(async () => {
+      const instructorRes = await createUserWithToken(prismaService, authService, {
+        fullName: 'Instructor Pin',
+      });
+      await createParticipant(prismaService, {
+        userId: instructorRes.user.id,
+        groupId: group.id,
+        role: UserRole.INSTRUCTOR,
+      });
+      instructorToken = instructorRes.token;
+    });
+
+    it('deve fixar um post com sucesso (INSTRUCTOR)', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/post/pin/${post.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
+
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('isPinned', true);
+    });
+
+    it('deve permitir que um ADMIN fixe um post', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/post/pin/${post.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('isPinned', true);
@@ -595,20 +618,46 @@ describe('Posts', () => {
     it('deve retornar 404 quando já está fixado (branch POST_PINNED_STATUS_UNCHANGED)', async () => {
       await request(app.getHttpServer())
         .patch(`/post/pin/${post.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
       const second = await request(app.getHttpServer())
         .patch(`/post/pin/${post.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(second.status).toBe(404);
       expect(second.body.message).toBe(POST_MESSAGES.POST_PINNED_STATUS_UNCHANGED);
     });
 
-    it('deve retornar 404 ao tentar fixar post inexistente', async () => {
-      const postId = 'invalidId';
+    it('deve retornar 403 se um STUDENT tentar fixar', async () => {
+      await createParticipant(prismaService, {
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
 
       const response = await request(app.getHttpServer())
-        .patch(`/post/pin/${postId}`)
+        .patch(`/post/pin/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe(POST_MESSAGES.UNAUTHORIZED_ACCESS);
+    });
+
+    it('deve retornar 403 se usuário não for participante do grupo', async () => {
+      const outsider = await createUserWithToken(prismaService, authService, {
+        fullName: 'Outsider Pin',
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/post/pin/${post.id}`)
+        .set('Authorization', `Bearer ${outsider.token}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe(POST_MESSAGES.UNAUTHORIZED_ACCESS);
+    });
+
+    it('deve retornar 404 (não 403) para post inexistente, mesmo por não autorizado', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/post/pin/invalidId`)
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(response.status).toBe(404);
@@ -626,14 +675,41 @@ describe('Posts', () => {
   });
 
   describe('unpinPost', () => {
-    it('deve desfixar um post com sucesso', async () => {
+    let instructorToken: string;
+
+    beforeEach(async () => {
+      const instructorRes = await createUserWithToken(prismaService, authService, {
+        fullName: 'Instructor Unpin',
+      });
+      await createParticipant(prismaService, {
+        userId: instructorRes.user.id,
+        groupId: group.id,
+        role: UserRole.INSTRUCTOR,
+      });
+      instructorToken = instructorRes.token;
+    });
+
+    it('deve desfixar um post com sucesso (INSTRUCTOR)', async () => {
       await request(app.getHttpServer())
         .patch(`/post/pin/${post.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       const response = await request(app.getHttpServer())
         .patch(`/post/unpin/${post.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
+
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('isPinned', false);
+    });
+
+    it('deve permitir que um ADMIN desfixe um post', async () => {
+      await request(app.getHttpServer())
+        .patch(`/post/pin/${post.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/post/unpin/${post.id}`)
+        .set('Authorization', `Bearer ${adminToken}`);
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('isPinned', false);
@@ -642,10 +718,38 @@ describe('Posts', () => {
     it('deve retornar 404 quando já está desfixado (branch UNCHANGED)', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/post/unpin/${post.id}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.message).toBe(POST_MESSAGES.POST_PINNED_STATUS_UNCHANGED);
+    });
+
+    it('deve retornar 403 se um STUDENT tentar desfixar', async () => {
+      await createParticipant(prismaService, {
+        userId: user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/post/unpin/${post.id}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe(POST_MESSAGES.UNAUTHORIZED_ACCESS);
+    });
+
+    it('deve retornar 403 se usuário não for participante do grupo', async () => {
+      const outsider = await createUserWithToken(prismaService, authService, {
+        fullName: 'Outsider Unpin',
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch(`/post/unpin/${post.id}`)
+        .set('Authorization', `Bearer ${outsider.token}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe(POST_MESSAGES.UNAUTHORIZED_ACCESS);
     });
 
     it('deve retornar 404 ao tentar desfixar post inexistente', async () => {
@@ -653,7 +757,7 @@ describe('Posts', () => {
 
       const response = await request(app.getHttpServer())
         .patch(`/post/unpin/${postId}`)
-        .set('Authorization', `Bearer ${userToken}`);
+        .set('Authorization', `Bearer ${instructorToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('Publicação não encontrada.');

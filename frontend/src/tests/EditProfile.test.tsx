@@ -88,7 +88,7 @@ describe('EditProfile', () => {
     fullName: 'Nome Teste',
     phone: '(11) 98765-4321',
     email: 'teste@example.com',
-    birthday: '1995-10-20',
+    birthday: '1995-10-20T12:00:00.000Z',
     ethnicity: 'Parda',
     expertise: 'Tecnologia',
     neighborhood: 'Centro',
@@ -154,7 +154,7 @@ describe('EditProfile', () => {
     });
 
     expect(getByLabelText('Telefone').props.value).toBe('(11) 98765-4321');
-    expect(getByLabelText('Data de Nascimento').props.value).toBe('19/10/1995');
+    expect(getByLabelText('Data de Nascimento').props.value).toBe('20/10/1995');
     expect(getByLabelText('E-mail').props.value).toBe('teste@example.com');
     expect(getByLabelText('Bio').props.value).toBe('Desenvolvedora React Native.');
     expect(getByLabelText('Empreendimento').props.value).toBe('Tech Corp');
@@ -198,6 +198,30 @@ describe('EditProfile', () => {
     expect(api.patch).not.toHaveBeenCalled();
   });
 
+  it('Deve aceitar nomes com acento ao salvar', async () => {
+    const { getByText, getByLabelText } = renderWithNavigation(<EditProfile />);
+
+    await waitFor(() => expect(getByLabelText('Nome').props.value).toBe(mockUserData.fullName));
+
+    const nomeComAcento = 'João Cláudia Vitória';
+    fireEvent.changeText(getByLabelText('Nome'), nomeComAcento);
+    fireEvent.press(getByText('Salvar'));
+
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledTimes(1);
+      expect(api.patch).toHaveBeenCalledWith(
+        '/user',
+        expect.objectContaining({
+          fullName: nomeComAcento,
+        }),
+      );
+    });
+
+    expect(Toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({ text1: 'Perfil atualizado!' }),
+    );
+  });
+
   it('Deve submitar os novos dados corretamente ao salvar', async () => {
     const { getByText, getByLabelText } = renderWithNavigation(<EditProfile />);
 
@@ -215,7 +239,7 @@ describe('EditProfile', () => {
         '/user',
         expect.objectContaining({
           fullName: novoNome,
-          birthday: new Date('1995-10-19').toISOString(),
+          birthday: new Date('1995-10-20').toISOString(),
         }),
       );
     });
@@ -270,5 +294,64 @@ describe('EditProfile', () => {
         },
       });
     });
+  });
+
+  it('Deve permitir salvar o perfil mesmo com campos complementares vazios', async () => {
+    mockedApi.get.mockImplementation(async (url: string) => {
+      if (url === '/user/mock-user-id') {
+        return {
+          data: {
+            fullName: 'Usuário Sem Opcionais',
+            email: 'sem.opcionais@teste.com',
+            phone: '(21) 99999-8888',
+            birthday: null,
+            ethnicity: '',
+            neighborhood: '',
+            expertise: '',
+            enterprise: '',
+            bio: '',
+          },
+        } as any;
+      }
+      return { data: {} } as any;
+    });
+
+    const { getByText, getByLabelText } = renderWithNavigation(<EditProfile />);
+
+    await waitFor(() => expect(getByLabelText('Nome').props.value).toBe('Usuário Sem Opcionais'));
+
+    fireEvent.press(getByText('Salvar'));
+
+    await waitFor(() => {
+      expect(api.patch).toHaveBeenCalledTimes(1);
+    });
+
+    expect(Toast.show).toHaveBeenCalledWith(
+      expect.objectContaining({ text1: 'Perfil atualizado!' }),
+    );
+  });
+
+  it('Deve rejeitar nome com menos de 3 caracteres ao editar', async () => {
+    const { getByText, getByLabelText, findByText } = renderWithNavigation(<EditProfile />);
+
+    await waitFor(() => expect(getByLabelText('Nome').props.value).toBe(mockUserData.fullName));
+
+    fireEvent.changeText(getByLabelText('Nome'), 'Ab');
+    fireEvent.press(getByText('Salvar'));
+
+    expect(await findByText('O nome deve ter no mínimo 3 caracteres')).toBeTruthy();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
+  it('Deve rejeitar data de nascimento no futuro', async () => {
+    const { getByText, getByLabelText, findByText } = renderWithNavigation(<EditProfile />);
+
+    await waitFor(() => expect(getByLabelText('Nome').props.value).toBe(mockUserData.fullName));
+
+    fireEvent.changeText(getByLabelText('Data de Nascimento'), '01/01/3000');
+    fireEvent.press(getByText('Salvar'));
+
+    expect(await findByText('Data de nascimento não pode ser no futuro')).toBeTruthy();
+    expect(api.patch).not.toHaveBeenCalled();
   });
 });
