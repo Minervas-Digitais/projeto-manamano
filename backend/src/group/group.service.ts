@@ -2,9 +2,11 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import { Group, PostType, UserRole } from '@prisma/client';
+import { Group, PostType, RoleType, UserRole } from '@prisma/client';
 import { GROUP_MESSAGES } from 'src/messages/group.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
+import { GroupPublic } from './group.types';
+import { toPublicGroup } from './group.mapper';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
 
@@ -74,9 +76,27 @@ export class GroupService {
     return new PaginatedResponseDto<Group>(groups, total, pagination);
   }
 
-  async findOne(groupId: string): Promise<Group> {
+  async findOne(groupId: string, callerId: string): Promise<Group | GroupPublic> {
     const group = await this.validator.validateGroupExists(groupId);
-    return group;
+
+    const [caller, participant] = await Promise.all([
+      this.prismaService.user.findUnique({
+        where: { id: callerId },
+        select: { sysRole: true },
+      }),
+      this.prismaService.participant.findUnique({
+        where: { userId_groupId: { userId: callerId, groupId } },
+      }),
+    ]);
+
+    const isAdmin = caller?.sysRole === RoleType.ADMIN;
+
+    // O código de convite só é revelado para membros do grupo ou administradores.
+    if (isAdmin || participant) {
+      return group;
+    }
+
+    return toPublicGroup(group);
   }
 
   async update(groupId: string, updateGroupDto: UpdateGroupDto): Promise<Group> {
