@@ -33,6 +33,31 @@ export class MailService {
     }
   }
 
+  async sendPasswordResetCode(
+    to: string,
+    fullName: string,
+    code: string,
+    ttlMinutes: number,
+  ): Promise<void> {
+    await this.getTransporter().sendMail({
+      from: process.env.SMTP_USERNAME,
+      to,
+      subject: MAIL_MESSAGES.PASSWORD_RESET_SUBJECT,
+      text: MAIL_MESSAGES.PASSWORD_RESET_TEXT(fullName, code, ttlMinutes),
+    });
+  }
+
+  async sendPasswordChangedAlert(to: string, fullName: string, changedAt: Date): Promise<void> {
+    const formattedDate = changedAt.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+    await this.getTransporter().sendMail({
+      from: process.env.SMTP_USERNAME,
+      to,
+      subject: MAIL_MESSAGES.PASSWORD_CHANGED_SUBJECT,
+      text: MAIL_MESSAGES.PASSWORD_CHANGED_TEXT(fullName, formattedDate),
+    });
+  }
+
   getTransporter(): Transporter {
     return createTransport({
       host: process.env.SMTP_HOST,

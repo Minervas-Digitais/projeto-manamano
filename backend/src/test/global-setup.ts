@@ -20,6 +20,7 @@ export default async function globalSetup(): Promise<void> {
   process.env.JWT_SECRET ??= 'test-jwt-secret';
   process.env.JWT_ACCESS_SECRET ??= 'test-jwt-access-secret';
   process.env.JWT_REFRESH_SECRET ??= 'test-jwt-refresh-secret';
+  process.env.PASSWORD_RESET_SECRET ??= 'test-password-reset-secret';
 
   process.env.SMTP_HOST ??= 'smtp.test.local';
   process.env.SMTP_PORT ??= '587';

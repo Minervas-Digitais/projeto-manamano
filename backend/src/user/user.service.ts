@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
   ConflictException,
@@ -9,10 +10,14 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { USER_MESSAGES } from 'src/messages/user.messages';
 import { toPrivateUser, toPublicUser } from './user.mapper';
 import { ValidatorService } from 'src/common/validators/validator.service';
 import { UserPrivateFields, UserPublicFields } from './user.types';
+import { TokenService } from 'src/auth/token.service';
+import { AuthEntity } from 'src/auth/entity/auth.entity';
+import { MailService } from 'src/mail/mail.service';
 export const roundsOfHashing = 10;
 
 interface ProfilePictureBuffer {
@@ -23,9 +28,13 @@ interface ProfilePictureBuffer {
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     private prismaService: PrismaService,
     private readonly validator: ValidatorService,
+    private readonly tokenService: TokenService,
+    private readonly mailService: MailService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<UserPrivateFields> {
@@ -96,9 +105,8 @@ export class UserService {
 
   async changePassword(
     id: string,
-    oldPassword: string,
-    newPassword: string,
-  ): Promise<UserPrivateFields> {
+    { oldPassword, newPassword }: ChangePasswordDto,
+  ): Promise<AuthEntity> {
     const user = await this.validator.validateUserExists(id);
 
     if (oldPassword === newPassword) {
@@ -112,12 +120,25 @@ export class UserService {
 
     const hashedPassword = await bcrypt.hash(newPassword, roundsOfHashing);
 
-    const updatedUser = await this.prismaService.user.update({
+    await this.prismaService.user.update({
       where: { id: id },
       data: { hash: hashedPassword },
     });
 
-    return toPrivateUser(updatedUser);
+    // Rotaciona a sessão: o refresh token anterior (de qualquer aparelho) deixa
+    // de valer e o aparelho atual recebe um novo par de tokens.
+    const tokens = await this.tokenService.generateTokens(user);
+
+    this.mailService
+      .sendPasswordChangedAlert(user.email, user.fullName, new Date())
+      .catch((error: unknown) => {
+        this.logger.error(
+          `Falha ao enviar alerta de senha alterada para o usuário ${user.id}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      });
+
+    return { ...tokens, loggedId: user.id };
   }
 
   async updateUserRole(id: string, sysRole: RoleType): Promise<UserPrivateFields> {

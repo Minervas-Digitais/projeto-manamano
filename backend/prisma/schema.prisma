@@ -41,6 +41,21 @@ model User {
   Participant           Participant[]
   post                  Post[]
   savedPosts SavedPost[]
+  passwordResets        PasswordReset[]
+}
+
+model PasswordReset {
+  id            String    @id @default(uuid())
+  userId        String
+  codeHash      String
+  attempts      Int       @default(0)
+  expiresAt     DateTime
+  invalidatedAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model Group {
