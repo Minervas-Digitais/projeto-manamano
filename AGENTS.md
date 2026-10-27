@@ -21,6 +21,7 @@ npm test -w frontend
 npm test -w backend -- auth # single suite (pattern match); same for frontend: -- SignIn
 npm run seed -w backend
 npm run prisma:migrate -w backend -- --name x   # other prisma scripts: generate/deploy/reset/studio
+npm run release:android -w frontend -- --bump <major|minor|patch>  # build local + APK em frontend/dist/manamano.apk
 ```
 
 ## Gotchas
@@ -29,5 +30,5 @@ npm run prisma:migrate -w backend -- --name x   # other prisma scripts: generate
 - Frontend suite is green on `develop` (Jest with the `react-native` preset). Reproduce CI with `npm test -w frontend -- --ci`; if form tests fail with `waitFor` timeouts, check whether your branch is stale before treating it as a regression.
 - Prisma CLI is configured at the repo root (`prisma.config.ts` imports `backend/src/load-env.ts`). Backend prisma scripts `cd ..` to the root — run them via `npm run prisma:* -w backend`, not from inside `backend/` with a bare `npx prisma`.
 - CI (`.github/workflows`) runs `lint`, `format:check`, `typecheck` and tests (frontend + backend) on PRs. The pre-commit hook (`husky` → `npx lint-staged`) auto-fixes eslint/prettier on staged `*.{ts,tsx,json,md,css}`; if hooks are dead, root `npm install` re-activates them.
-- Docker: `docker compose up -d --build` = postgres + backend + nginx (landing page + APK at `/downloads/app.apk`). Backend `entrypoint.sh`: `APP_ENV=development` → `prisma migrate dev --name init` + watch; otherwise `migrate deploy` + prod. Dockerfile uses `npm ci --ignore-scripts` + `npm rebuild bcrypt`.
+- Docker: `docker compose up -d --build` = postgres + backend + nginx (landing page). Backend `entrypoint.sh`: `APP_ENV=development` → `prisma migrate dev --name init` + watch; otherwise `migrate deploy` + prod. Dockerfile uses `npm ci --ignore-scripts` + `npm rebuild bcrypt`.
 - Repo rules: no `.env` commits, no `console.log` in production code, no commented-out code, single-scope PRs (`docs/standards.md`).
