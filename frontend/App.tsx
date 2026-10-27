@@ -41,6 +41,7 @@ import { AuthProvider } from './src/context/auth/AuthProvider';
 import { SessionExpiredHandler } from './src/context/auth/SessionExpiredHandler';
 import { SideMenuProvider, useSideMenu } from './src/context/SideMenuContext';
 import { toastConfig } from './src/components/Toast/ToastConfig';
+import AppUpdateGuard from './src/components/AppUpdateGuard/AppUpdateGuard';
 import { navigationRef } from './src/navigation/navigationRef';
 
 Notifications.setNotificationHandler({
@@ -126,6 +127,7 @@ function AppNavigator({ linking }: { linking: any }) {
         />
       </Stack.Navigator>
       <SessionExpiredHandler />
+      <AppUpdateGuard />
       <Toast config={toastConfig} />
     </NavigationContainer>
   );
