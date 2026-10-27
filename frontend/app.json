@@ -3,7 +3,7 @@
     "scheme": "manamano",
     "name": "ManaMano",
     "slug": "manamanoapp",
-    "version": "1.0.0",
+    "version": "0.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -17,6 +17,7 @@
       "bundleIdentifier": "com.manamano.app"
     },
     "android": {
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
@@ -37,12 +38,6 @@
           "ios": {}
         }
       ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "bc157627-f7ac-4034-8e10-04bb7dd02292"
-      }
-    },
-    "owner": "manamano"
+    ]
   }
 }
