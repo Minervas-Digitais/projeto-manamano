@@ -40,7 +40,7 @@ A plataforma ManaMano é um aplicativo com o objetivo de criar um espaço de int
 
 A utilização do Docker é o método recomendado para rodar o projeto.
 
-O aplicativo mobile utilizará o build previamente feito via EAS Build, localizado em projeto-manamano/nginx/downloads/app.apk.
+O aplicativo mobile é distribuído pelas [GitHub Releases](https://github.com/Minervas-Digitais/projeto-manamano/releases) do projeto.
 
 O fluxo completo sem usar o docker esta descrito no arquivo de [setup](./docs/setup.md)
 
@@ -75,13 +75,13 @@ Isso irá iniciar:
 
 - Backend
 - Banco de dados
-- Nginx (servindo o APK do aplicativo)
+- Nginx (servindo a landing page)
 
 ### 5. Instalando o Aplicativo
 
-A versão estável do aplicativo pode ser baixada no ambiente local via Nginx:
+A versão mais recente do aplicativo pode ser baixada na página de releases:
 
-    http://localhost/downloads/app.apk
+    https://github.com/Minervas-Digitais/projeto-manamano/releases/latest
 
 ## Configuração
 

@@ -122,7 +122,7 @@ http://localhost:3000
 
 O frontend utiliza React Native com Expo.
 
-O aplicativo pode ser executado diretamente no Android Emulator ou através de builds Android utilizando EAS Build.
+O aplicativo pode ser executado diretamente no Android Emulator ou através de builds Android locais.
 
 ## 1. Configurar variáveis de ambiente
 
@@ -179,55 +179,15 @@ para abrir o aplicativo no Android Emulator.
 
 # Build Android
 
-O projeto utiliza EAS Build para geração dos APKs Android.
+O APK é gerado localmente com o Gradle, sem EAS Cloud. É necessário ter o Android SDK e o JDK
+configurados (o Android Studio instala ambos).
 
-## EAS Build
+## Gerar o APK
 
-### 1. Instalar EAS CLI
-
-```bash
-npm install -g eas-cli
-```
-
-### 2. Login no Expo
+Na pasta `frontend/`:
 
 ```bash
-eas login
-```
-
-### 3. Build de Preview
-
-Build utilizada para testes internos.
-
-```bash
-eas build --platform android --profile preview
-```
-
----
-
-## Script de Build
-
-Existe um script localizado em:
-
-```text
-frontend/scripts/build.sh
-```
-
-Esse script é responsável por:
-
-- Gerar o build Android
-- Integrar com o sistema de versionamento do backend
-- Baixar automaticamente o APK
-- Alocar o APK no diretório utilizado pelo nginx
-
----
-
-## Build Local
-
-Para propósitos de teste, existe um comando para realizar build local sem depender da cloud do EAS.
-
-```bash
-npm run build:android:test
+npm run build:android
 ```
 
 O APK será gerado em:
@@ -236,24 +196,26 @@ O APK será gerado em:
 frontend/android/app/build/outputs/apk/release/app-release.apk
 ```
 
----
+O comando executa o `expo prebuild` antes do Gradle para sincronizar `frontend/app.json` (versão,
+`versionCode` e configurações nativas) com o projeto Android.
 
-# Servindo APK localmente
-
-Os APKs gerados podem ser colocados em:
-
-```text
-nginx/downloads/
-```
-
-Para disponibilizar o APK localmente:
+Para gerar o APK já com a versão incrementada e pronto para a release:
 
 ```bash
-docker compose up -d nginx
+npm run release:android -- --bump <major|minor|patch>
 ```
 
-O APK ficará disponível em:
+O script atualiza `expo.version` e `android.versionCode` em `frontend/app.json`, roda o build e salva
+o APK em `frontend/dist/manamano.apk`. Escolha o bump conforme SemVer. Não há bump padrão: sem
+`--bump`, a versão atual é mantida.
 
-```text
-http://localhost/downloads/app.apk
-```
+Antes de publicar, garanta que `expo.version` e `android.versionCode` em `frontend/app.json` estão
+atualizados.
+
+---
+
+# Publicando uma release
+
+Use `npm run release:android -- --bump <major|minor|patch>` (ou copie o APK gerado para
+`manamano.apk`) e publique-o como asset de uma GitHub Release seguindo o processo em
+[Publicação de releases](./releases.md).

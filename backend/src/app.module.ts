@@ -14,6 +14,7 @@ import { NotificationModule } from './notification/notification.module';
 import { ArchiveModule } from './archive/archive.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SavedPostModule } from './saved-post/saved-post.module';
+import { VersionModule } from './version/version.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SavedPostModule } from './saved-post/saved-post.module';
     ArchiveModule,
     PrismaModule,
     SavedPostModule,
+    VersionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
