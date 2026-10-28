@@ -16,6 +16,11 @@ build
 **/coverage/
 .nyc_output
 
+# Release artifacts
+*.apk
+*.aab
+nginx/downloads/
+
 # Expo
 .expo
 web-build
