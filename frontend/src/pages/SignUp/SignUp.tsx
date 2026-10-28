@@ -57,7 +57,16 @@ export default function SignUp({ navigation }: any) {
         Toast.show({
           type: 'error',
           text1: 'Erro no cadastro',
-          text2: 'E-mail ou celular já está associado a outra conta!',
+          text2: 'Não foi possível concluir o cadastro. Verifique os dados informados.',
+        });
+        return;
+      }
+
+      if (isAxiosError(error) && error.response?.status === 429) {
+        Toast.show({
+          type: 'error',
+          text1: 'Muitas tentativas',
+          text2: 'Aguarde alguns minutos e tente novamente.',
         });
         return;
       }

@@ -99,6 +99,32 @@ describe('SignIn', () => {
     });
   });
 
+  it('Deve exibir alerta de muitas tentativas quando a API responder 429', async () => {
+    const { getByLabelText, getByText } = render(
+      <SignIn navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('E-mail'), 'jorge@gmail.com');
+    fireEvent.changeText(getByLabelText('Senha'), 'senha123');
+
+    mockedLogin.mockRejectedValueOnce(
+      Object.assign(new Error('Too Many Requests'), { response: { status: 429 } }),
+    );
+
+    fireEvent.press(getByText('Entrar'));
+
+    await waitFor(() => {
+      expect(mockedLogin).toHaveBeenCalledWith('jorge@gmail.com', 'senha123');
+
+      expect(Toast.show).toHaveBeenCalledWith({
+        type: 'error',
+        text1: 'Muitas tentativas',
+        text2: 'Aguarde alguns instantes e tente novamente.',
+      });
+      expect(mockedNavigate).not.toHaveBeenCalled();
+    });
+  });
+
   it('Deve exibir alerta de conexão quando a falha for de rede (sem resposta do servidor)', async () => {
     const { getByLabelText, getByText } = render(
       <SignIn navigation={{ navigate: mockedNavigate }} />,
