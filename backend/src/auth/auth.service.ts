@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -9,6 +9,8 @@ import { BASE_MESSAGES } from 'src/messages/base.messages';
 
 const ACCESS_TOKEN_EXPIRATION: string = '15m';
 const REFRESH_TOKEN_EXPIRATION: string = '7d';
+
+const DUMMY_PASSWORD_HASH = '$2b$10$RpmeAafxmnTkrO1B7ByU7.nwSnXpyjAQFYA7PSNUeceVhisyj5sXS';
 
 @Injectable()
 export class AuthService {
@@ -48,32 +50,27 @@ export class AuthService {
   }
 
   async login(createLoginDto: LoginDto): Promise<AuthEntity> {
-    try {
-      const user = await this.prismaService.user.findUnique({
-        where: {
-          email: createLoginDto.email,
-        },
-      });
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email: createLoginDto.email,
+      },
+    });
 
-      if (!user) {
-        throw new NotFoundException('Usuário não encontrado.');
-      }
+    const isPasswordValid = await bcrypt.compare(
+      createLoginDto.password,
+      user?.hash ?? DUMMY_PASSWORD_HASH,
+    );
 
-      const isPasswordValid = await bcrypt.compare(createLoginDto.password, user.hash);
-
-      if (!isPasswordValid) {
-        throw new UnauthorizedException('Senha incorreta.');
-      }
-
-      const tokens = await this.generateTokens(user);
-
-      return {
-        ...tokens,
-        loggedId: user.id,
-      };
-    } catch (error) {
-      throw error;
+    if (!user || !isPasswordValid) {
+      throw new UnauthorizedException(BASE_MESSAGES.INVALID_CREDENTIALS);
     }
+
+    const tokens = await this.generateTokens(user);
+
+    return {
+      ...tokens,
+      loggedId: user.id,
+    };
   }
 
   async refresh(refreshLoginDto: RefreshDto) {

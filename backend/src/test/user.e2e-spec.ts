@@ -82,7 +82,7 @@ describe('User', () => {
       expect(response.body).not.toHaveProperty('pushNotifToken');
     });
 
-    it('deve retornar erro 409 caso o email esteja em uso', async () => {
+    it('deve retornar erro 409 genérico caso o email esteja em uso', async () => {
       const existingUser = await createUser(prismaService);
 
       const userDto = makeUserDto({
@@ -93,6 +93,24 @@ describe('User', () => {
       const response = await request(app.getHttpServer()).post('/user').send(userDto);
 
       expect(response.status).toBe(409);
+      expect(response.body.message).toBe(USER_MESSAGES.REGISTRATION_CONFLICT);
+    });
+
+    it('não deve revelar se o conflito foi por email ou telefone', async () => {
+      const existingUser = await createUser(prismaService);
+
+      const emailConflict = await request(app.getHttpServer())
+        .post('/user')
+        .send(makeUserDto({ email: existingUser.email }));
+
+      const phoneConflict = await request(app.getHttpServer())
+        .post('/user')
+        .send(makeUserDto({ phone: existingUser.phone }));
+
+      expect(emailConflict.status).toBe(409);
+      expect(phoneConflict.status).toBe(409);
+      expect(emailConflict.body.message).toBe(phoneConflict.body.message);
+      expect(emailConflict.body.message).toBe(USER_MESSAGES.REGISTRATION_CONFLICT);
     });
 
     it('deve retornar erro 400 se faltar campos obrigatorios', async () => {

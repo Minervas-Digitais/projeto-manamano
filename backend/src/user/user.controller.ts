@@ -11,7 +11,12 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import {
+  THROTTLE_REGISTER_LIMIT,
+  THROTTLE_REGISTER_TTL_MS,
+} from 'src/common/throttling/throttling.constants';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,6 +37,9 @@ export class UserController {
 
   @HttpCode(201)
   @Post()
+  @Throttle({
+    default: { limit: THROTTLE_REGISTER_LIMIT, ttl: THROTTLE_REGISTER_TTL_MS },
+  })
   create(@Body() createUserDto: CreateUserDto): Promise<UserPrivateFields> {
     return this.userService.create(createUserDto);
   }

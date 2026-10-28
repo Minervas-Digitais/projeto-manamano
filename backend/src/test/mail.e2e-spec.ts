@@ -5,6 +5,7 @@ import request from 'supertest';
 
 import { MailModule } from 'src/mail/mail.module';
 import { AuthModule } from 'src/auth/auth.module';
+import { ThrottlingModule } from 'src/common/throttling/throttling.module';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MailService } from 'src/mail/mail.service';
 import { AuthService } from 'src/auth/auth.service';
@@ -23,7 +24,7 @@ describe('Mail (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [MailModule, AuthModule],
+      imports: [ThrottlingModule, MailModule, AuthModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
