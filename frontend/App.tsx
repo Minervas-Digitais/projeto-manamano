@@ -8,6 +8,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import EnterGroup from './src/pages/EnterGroup/EnterGroup';
 import ChangePassword from './src/pages/ChangePassword/ChangePassword';
+import ForgotPasswordEmail from './src/pages/ForgotPassword/ForgotPasswordEmail';
+import ForgotPasswordCode from './src/pages/ForgotPassword/ForgotPasswordCode';
+import ForgotPasswordNewPassword from './src/pages/ForgotPassword/ForgotPasswordNewPassword';
 import Config from './src/pages/Configuration/Configuration';
 import ConfigNotification from './src/pages/ConfigNotification/ConfigNotification';
 import SignIn from './src/pages/SignIn/SignIn';
@@ -92,6 +95,21 @@ function AppNavigator({ linking }: { linking: any }) {
         />
 
         <Stack.Screen name="SignIn" component={SignIn} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="ForgotPasswordEmail"
+          component={ForgotPasswordEmail}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ForgotPasswordCode"
+          component={ForgotPasswordCode}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ForgotPasswordNewPassword"
+          component={ForgotPasswordNewPassword}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="SignUp" component={SignUp} options={{ headerShown: false }} />
         <Stack.Screen name="Search" component={Search} options={{ headerShown: false }} />
         <Stack.Screen

@@ -58,8 +58,17 @@ export async function refreshAccessToken() {
   return refreshPromise;
 }
 
+const AUTH_ENDPOINTS = [
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/forgot-password',
+  '/auth/verify-reset-code',
+  '/auth/reset-password',
+];
+
 function isAuthEndpoint(url?: string) {
-  return Boolean(url && (url.includes('/auth/login') || url.includes('/auth/refresh')));
+  return Boolean(url && AUTH_ENDPOINTS.some((endpoint) => url.includes(endpoint)));
 }
 
 api.interceptors.request.use((config) => {
