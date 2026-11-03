@@ -22,4 +22,8 @@ export type RootStackParamList = {
   EditLesson: { lessonId: string };
   LessonFiles: { postId: string; title?: string };
   EntrarGrupo: undefined;
+  SignIn: undefined;
+  ForgotPasswordEmail: { email?: string } | undefined;
+  ForgotPasswordCode: { email: string };
+  ForgotPasswordNewPassword: { resetToken: string };
 };
