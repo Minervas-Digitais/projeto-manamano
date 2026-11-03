@@ -4,7 +4,7 @@
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import React from 'react';
+import React, { useState } from 'react';
 import Toast from 'react-native-toast-message';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
@@ -12,6 +12,7 @@ import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import { useAuth } from '../../context/auth/useAuth';
 import api from '../../services/api';
+import authStore from '../../store/authStore';
 import IconPassword from '../../assets/lock-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
@@ -19,6 +20,7 @@ import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader
 export default function ChangePassword() {
   const { loggedId } = useAuth();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     control,
@@ -30,11 +32,18 @@ export default function ChangePassword() {
   });
 
   const onSubmit = async (data: any) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
-      await api.patch('/user/change-password', {
+      const response = await api.patch('/user/change-password', {
         oldPassword: data.oldpassword,
         newPassword: data.newpassword,
       });
+
+      if (response?.data?.accessToken && response?.data?.refreshToken) {
+        await authStore.updateTokens(response.data.accessToken, response.data.refreshToken);
+      }
+
       Toast.show({
         type: 'success',
         text1: 'Sucesso',
@@ -52,6 +61,8 @@ export default function ChangePassword() {
         text1: 'Erro',
         text2: errorMessage,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -93,6 +104,11 @@ export default function ChangePassword() {
                   value: 8,
                   message: 'A senha deve ter no mínimo 8 caracteres',
                 },
+                maxLength: {
+                  value: 72,
+                  message: 'A senha deve ter no máximo 72 caracteres',
+                },
+                deps: ['confirmedpassword'],
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom
@@ -134,7 +150,8 @@ export default function ChangePassword() {
             onPress={handleSubmit(onSubmit)}
             backColor="#160E47"
             fontColor="white"
-            text="Salvar"
+            text={isSubmitting ? 'Salvando...' : 'Salvar'}
+            disabled={isSubmitting}
           />
         </SignInForm>
       </View>

@@ -4,8 +4,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
 import api from '../services/api';
+import authStore from '../store/authStore';
 import ChangePassword from '../pages/ChangePassword/ChangePassword';
 import Config from '../pages/Configuration/Configuration';
+
+jest.mock('../store/authStore', () => ({
+  __esModule: true,
+  default: {
+    updateTokens: jest.fn(),
+  },
+}));
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
@@ -73,7 +81,12 @@ describe('ChangePassword', () => {
   });
 
   it('deve submeter e navegar após sucesso', async () => {
-    mockPatch.mockResolvedValueOnce({ data: {} });
+    mockPatch.mockResolvedValueOnce({
+      data: {
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+      },
+    });
 
     const { findByLabelText, findByText } = renderWithNavigation();
 
@@ -88,6 +101,7 @@ describe('ChangePassword', () => {
         oldPassword: 'senhaAntiga123',
         newPassword: 'novaSenha1',
       });
+      expect(authStore.updateTokens).toHaveBeenCalledWith('new-access-token', 'new-refresh-token');
       expect(Toast.show).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'success',
@@ -205,6 +219,19 @@ describe('ChangePassword', () => {
     fireEvent.press(await findByText('Salvar'));
 
     expect(await findByText('A senha deve ter no mínimo 8 caracteres')).toBeTruthy();
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it('deve rejeitar nova senha com mais de 72 caracteres', async () => {
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'a'.repeat(73));
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'a'.repeat(73));
+
+    fireEvent.press(await findByText('Salvar'));
+
+    expect(await findByText('A senha deve ter no máximo 72 caracteres')).toBeTruthy();
     expect(mockPatch).not.toHaveBeenCalled();
   });
 });
