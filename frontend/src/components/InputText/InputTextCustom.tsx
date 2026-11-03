@@ -22,6 +22,8 @@ export default function InputTextCustom({
   options,
   innerRef,
   testID,
+  keyboardType,
+  autoCapitalize,
 }: any) {
   const [eyeIcon, setEyeIcon] = useState(true);
 
@@ -47,6 +49,8 @@ export default function InputTextCustom({
             onChangeText={onChangeText}
             value={value}
             secureTextEntry={eyeIcon && isPassword}
+            keyboardType={keyboardType}
+            autoCapitalize={autoCapitalize}
             // ADICIONADO PARA O TESTE
             accessibilityLabel={label}
             testID={testID}
