@@ -8,6 +8,7 @@ import { ValidatorModule } from 'src/common/validators/validator.module';
 @Module({
   controllers: [MailController],
   providers: [MailService],
+  exports: [MailService],
   imports: [
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60000, limit: 5 }]),
     PrismaModule,

@@ -114,4 +114,15 @@ describe('AuthController (e2e)', () => {
     const victimAfter = await prisma.user.findUnique({ where: { id: victim.id } });
     expect(victimAfter.refreshToken).not.toBeNull();
   });
+
+  it('deve recusar um refresh token anterior apos nova emissao', async () => {
+    const owner = await createUser(prisma);
+    const first = await auth.login({ email: owner.email, password: 'password123' });
+    const second = await auth.login({ email: owner.email, password: 'password123' });
+
+    await expect(auth.refresh({ refreshToken: first.refreshToken })).rejects.toThrow();
+
+    const refreshed = await auth.refresh({ refreshToken: second.refreshToken });
+    expect(refreshed.accessToken).toBeDefined();
+  });
 });

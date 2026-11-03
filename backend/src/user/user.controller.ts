@@ -25,6 +25,10 @@ import { Res } from '@nestjs/common';
 import { Archive, RoleType } from '@prisma/client';
 import { User as UserDecorator } from './user.decorator';
 import { UserPrivateFields, UserPublicFields } from './user.types';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { Throttle } from '@nestjs/throttler';
+import { UserThrottlerGuard } from 'src/auth/user-throttler.guard';
+import { AuthEntity } from 'src/auth/entity/auth.entity';
 
 @Controller('user')
 export class UserController {
@@ -56,13 +60,13 @@ export class UserController {
 
   @HttpCode(201)
   @Patch('/change-password')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, UserThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 15 * 60 * 1000 } })
   changePassword(
     @UserDecorator('id') id: string,
-    @Body('oldPassword') oldPassword: string,
-    @Body('newPassword') newPassword: string,
-  ): Promise<UserPrivateFields> {
-    return this.userService.changePassword(id, oldPassword, newPassword);
+    @Body() changePasswordDto: ChangePasswordDto,
+  ): Promise<AuthEntity> {
+    return this.userService.changePassword(id, changePasswordDto);
   }
 
   @HttpCode(201)

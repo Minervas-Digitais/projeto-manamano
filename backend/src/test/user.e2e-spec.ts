@@ -8,6 +8,8 @@ import { RoleType } from '@prisma/client';
 import { AuthService } from 'src/auth/auth.service';
 import { UpdateUserDto } from 'src/user/dto/update-user.dto';
 import { USER_MESSAGES } from 'src/messages/user.messages';
+import { MAIL_MESSAGES } from 'src/messages/mail.messages';
+import { MailService } from 'src/mail/mail.service';
 import { createUser, createUserWithToken } from './test-helpers';
 
 function makeUserDto(overrides = {}) {
@@ -35,6 +37,7 @@ describe('User', () => {
   let prismaService: PrismaService;
 
   let authService: AuthService;
+  let mailService: MailService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -53,6 +56,7 @@ describe('User', () => {
 
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
     authService = moduleFixture.get<AuthService>(AuthService);
+    mailService = moduleFixture.get<MailService>(MailService);
 
     await prismaService.user.deleteMany({});
   });
@@ -388,6 +392,17 @@ describe('User', () => {
   });
 
   describe('changePassword()', () => {
+    let sendMailMock: jest.Mock;
+
+    beforeEach(() => {
+      sendMailMock = jest.fn().mockResolvedValue(true);
+      jest.spyOn(mailService, 'getTransporter').mockReturnValue({ sendMail: sendMailMock } as any);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
     it('deve alterar a senha do usuario', async () => {
       const oldPassword = 'password123';
       const newPassword = 'newPassword123';
@@ -403,7 +418,10 @@ describe('User', () => {
         });
 
       expect(response.status).toBe(201);
-      expect(response.body.id).toBe(user.id);
+      expect(response.body.loggedId).toBe(user.id);
+      expect(response.body.accessToken).toBeDefined();
+      expect(response.body.refreshToken).toBeDefined();
+      expect(response.body).not.toHaveProperty('hash');
 
       const loginOld = await authService
         .login({
@@ -420,6 +438,67 @@ describe('User', () => {
       });
 
       expect(loginNew.accessToken).toBeDefined();
+    });
+
+    it('deve revogar o refresh token anterior e manter valido o novo', async () => {
+      const user = await createUser(prismaService);
+      const previousSession = await authService.login({
+        email: user.email,
+        password: 'password123',
+      });
+
+      const response = await request(app.getHttpServer())
+        .patch('/user/change-password')
+        .set('Authorization', 'Bearer ' + previousSession.accessToken)
+        .send({ oldPassword: 'password123', newPassword: 'newPassword123' });
+
+      expect(response.status).toBe(201);
+
+      await expect(
+        authService.refresh({ refreshToken: previousSession.refreshToken }),
+      ).rejects.toThrow();
+
+      const refreshed = await authService.refresh({ refreshToken: response.body.refreshToken });
+      expect(refreshed.accessToken).toBeDefined();
+    });
+
+    it('deve enviar e-mail de alerta de senha alterada', async () => {
+      const { user, token } = await createUserWithToken(prismaService, authService);
+
+      await request(app.getHttpServer())
+        .patch('/user/change-password')
+        .set('Authorization', 'Bearer ' + token)
+        .send({ oldPassword: 'password123', newPassword: 'newPassword123' });
+
+      expect(sendMailMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: user.email,
+          subject: MAIL_MESSAGES.PASSWORD_CHANGED_SUBJECT,
+        }),
+      );
+    });
+
+    it('deve retornar erro 400 caso a nova senha tenha menos de 8 caracteres', async () => {
+      const { token } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer())
+        .patch('/user/change-password')
+        .set('Authorization', 'Bearer ' + token)
+        .send({ oldPassword: 'password123', newPassword: 'curta' });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('deve retornar erro 409 caso a nova senha seja igual a antiga', async () => {
+      const { token } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer())
+        .patch('/user/change-password')
+        .set('Authorization', 'Bearer ' + token)
+        .send({ oldPassword: 'password123', newPassword: 'password123' });
+
+      expect(response.status).toBe(409);
+      expect(response.body.message).toBe(USER_MESSAGES.SAME_PASSWORD);
     });
 
     it('deve retornar erro 401 caso a senha antiga seja invalida', async () => {
