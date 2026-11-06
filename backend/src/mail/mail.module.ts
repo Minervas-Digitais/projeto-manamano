@@ -7,6 +7,7 @@ import { ValidatorModule } from 'src/common/validators/validator.module';
 @Module({
   controllers: [MailController],
   providers: [MailService],
+  exports: [MailService],
   imports: [PrismaModule, ValidatorModule],
 })
 export class MailModule {}
