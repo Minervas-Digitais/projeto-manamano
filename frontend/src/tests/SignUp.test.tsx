@@ -78,40 +78,9 @@ describe('SignUp', () => {
 
     expect(Toast.show).toHaveBeenCalledWith({
       type: 'success',
-      text1: 'Cadastro realizado',
-      text2: 'Seu cadastro foi realizado com sucesso!',
+      text1: 'Cadastro recebido',
+      text2: 'Se você já tinha uma conta, use Entrar ou recupere sua senha.',
     });
-  });
-
-  it('Deve exibir um alerta de erro se o email ou celular ja estiver em uso', async () => {
-    apiPostMock.mockRejectedValue({
-      response: {
-        status: 409,
-      },
-      isAxiosError: true,
-    });
-    const { getByText, getByLabelText } = render(
-      <SignUp navigation={{ navigate: mockedNavigate }} />,
-    );
-
-    fireEvent.changeText(getByLabelText('Nome Completo'), 'Usuário Repetido');
-    fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 91234-5678');
-    fireEvent.changeText(getByLabelText('Senha'), 'outraSenha');
-    fireEvent.changeText(getByLabelText('E-mail'), 'repetido@teste.com');
-
-    fireEvent.press(getByText('Cadastrar'));
-
-    await waitFor(() => {
-      expect(apiPostMock).toHaveBeenCalledTimes(1);
-    });
-
-    expect(Toast.show).toHaveBeenCalledWith({
-      type: 'error',
-      text1: 'Erro no cadastro',
-      text2: 'Não foi possível concluir o cadastro. Verifique os dados informados.',
-    });
-
-    expect(mockedNavigate).not.toHaveBeenCalled();
   });
 
   it('Deve exibir um alerta de muitas tentativas quando a API responder 429', async () => {

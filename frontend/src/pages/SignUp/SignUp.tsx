@@ -48,20 +48,11 @@ export default function SignUp({ navigation }: any) {
       await api.post('/user', updatedData);
       Toast.show({
         type: 'success',
-        text1: 'Cadastro realizado',
-        text2: 'Seu cadastro foi realizado com sucesso!',
+        text1: 'Cadastro recebido',
+        text2: 'Se você já tinha uma conta, use Entrar ou recupere sua senha.',
       });
       navigation.navigate('SignIn');
     } catch (error: unknown) {
-      if (isAxiosError(error) && error.response?.status === 409) {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro no cadastro',
-          text2: 'Não foi possível concluir o cadastro. Verifique os dados informados.',
-        });
-        return;
-      }
-
       if (isAxiosError(error) && error.response?.status === 429) {
         Toast.show({
           type: 'error',
