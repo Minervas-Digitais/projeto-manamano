@@ -28,7 +28,7 @@ export class UserService {
     private readonly validator: ValidatorService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserPrivateFields> {
+  async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, roundsOfHashing);
 
     const existingUser = await this.prismaService.user.findFirst({
@@ -38,7 +38,7 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new ConflictException(USER_MESSAGES.REGISTRATION_CONFLICT);
+      return { message: USER_MESSAGES.REGISTRATION_RECEIVED };
     }
 
     const userData = {
@@ -55,12 +55,12 @@ export class UserService {
     };
 
     try {
-      const user = await this.prismaService.user.create({ data: userData });
+      await this.prismaService.user.create({ data: userData });
 
-      return toPrivateUser(user);
+      return { message: USER_MESSAGES.REGISTRATION_RECEIVED };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException(USER_MESSAGES.REGISTRATION_CONFLICT);
+        return { message: USER_MESSAGES.REGISTRATION_RECEIVED };
       }
 
       throw error;

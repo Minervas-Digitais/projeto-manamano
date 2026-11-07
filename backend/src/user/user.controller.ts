@@ -50,7 +50,7 @@ export class UserController {
       getTracker: accountTracker,
     },
   })
-  create(@Body() createUserDto: CreateUserDto): Promise<UserPrivateFields> {
+  create(@Body() createUserDto: CreateUserDto): Promise<{ message: string }> {
     return this.userService.create(createUserDto);
   }
 
