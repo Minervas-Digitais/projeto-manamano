@@ -1,7 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ThrottlerStorage, ThrottlerStorageService } from '@nestjs/throttler';
 import request from 'supertest';
+import { randomUUID } from 'crypto';
 
 import { MailModule } from 'src/mail/mail.module';
 import { AuthModule } from 'src/auth/auth.module';
@@ -9,15 +9,26 @@ import { ThrottlingModule } from 'src/common/throttling/throttling.module';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MailService } from 'src/mail/mail.service';
 import { AuthService } from 'src/auth/auth.service';
-import { createUserWithToken } from './test-helpers';
+import { createUserWithToken as baseCreateUserWithToken } from './test-helpers';
 import { MAIL_MESSAGES } from 'src/messages/mail.messages';
+
+const MAIL_E2E_PREFIX = `mail_e2e_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+function createUserWithToken(prisma: PrismaService, auth: AuthService) {
+  return baseCreateUserWithToken(prisma, auth, {
+    email: `${MAIL_E2E_PREFIX}_${randomUUID()}@test.com`,
+  });
+}
+
+function cleanupUsers(prisma: PrismaService) {
+  return prisma.user.deleteMany({ where: { email: { startsWith: MAIL_E2E_PREFIX } } });
+}
 
 describe('Mail (e2e)', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let mailService: MailService;
   let authService: AuthService;
-  let throttlerStorage: ThrottlerStorageService;
 
   let user: any;
   let userToken: string;
@@ -40,13 +51,9 @@ describe('Mail (e2e)', () => {
     prismaService = moduleFixture.get(PrismaService);
     authService = moduleFixture.get(AuthService);
     mailService = moduleFixture.get(MailService);
-    throttlerStorage = moduleFixture.get<ThrottlerStorageService>(ThrottlerStorage);
   });
 
   beforeEach(async () => {
-    throttlerStorage.storage.clear();
-    await prismaService.user.deleteMany();
-
     const result = await createUserWithToken(prismaService, authService);
 
     user = result.user;
@@ -54,6 +61,7 @@ describe('Mail (e2e)', () => {
   });
 
   afterAll(async () => {
+    await cleanupUsers(prismaService);
     await app.close();
   });
 
@@ -182,7 +190,7 @@ describe('Mail (e2e)', () => {
       expect(res.status).toBe(400);
     });
 
-    it('deve retornar 429 ao exceder o limite de 5 emails por minuto', async () => {
+    it('deve retornar 429 ao exceder o limite de 5 emails por minuto por usuário', async () => {
       const dto = { subject: 'Teste', text: 'Teste' };
 
       for (let i = 0; i < 5; i++) {

@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import { randomUUID } from 'crypto';
 import { AuthModule } from 'src/auth/auth.module';
 import { AuthService } from 'src/auth/auth.service';
 import {
@@ -11,7 +12,17 @@ import { MailService } from 'src/mail/mail.service';
 import { AUTH_MESSAGES } from 'src/messages/auth.messages';
 import { MAIL_MESSAGES } from 'src/messages/mail.messages';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { createUser } from './test-helpers';
+import { createUser as baseCreateUser } from './test-helpers';
+
+const AUTH_E2E_PREFIX = `auth_e2e_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+function createUser(prisma: PrismaService) {
+  return baseCreateUser(prisma, { email: `${AUTH_E2E_PREFIX}_${randomUUID()}@test.com` });
+}
+
+function cleanupUsers(prisma: PrismaService) {
+  return prisma.user.deleteMany({ where: { email: { startsWith: AUTH_E2E_PREFIX } } });
+}
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -44,14 +55,9 @@ describe('AuthController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await prisma.notification.deleteMany();
-    await prisma.user.deleteMany();
+    await cleanupUsers(prisma);
 
     await prisma.$disconnect();
-    await app.close();
-  });
-
-  afterAll(async () => {
     await app.close();
   });
 
