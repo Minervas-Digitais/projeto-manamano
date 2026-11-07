@@ -86,6 +86,8 @@ O serviço `postgres_db` deve aparecer com status `healthy`.
 
 O backend carrega o `.env` da raiz do projeto (criado no passo 1). Nenhuma ação extra aqui, cada variável está documentada com comentário no `.env.example`.
 
+`TRUST_PROXY` deve ser habilitado apenas quando a API estiver atrás de um proxy/load balancer confiável. Caso contrário, o header `X-Forwarded-For` pode ser forjado e burlar os limites por IP.
+
 ## 3. Instalar dependências
 
 ```bash

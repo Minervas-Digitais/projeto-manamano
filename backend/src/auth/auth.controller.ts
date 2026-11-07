@@ -1,5 +1,7 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { RouteThrottlerGuard } from 'src/common/throttling/route-throttler.guard';
+import { accountTracker } from 'src/common/throttling/throttle-trackers';
 import {
   THROTTLE_LOGIN_LIMIT,
   THROTTLE_LOGIN_TTL_MS,
@@ -22,7 +24,14 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  @Throttle({ default: { limit: THROTTLE_LOGIN_LIMIT, ttl: THROTTLE_LOGIN_TTL_MS } })
+  @UseGuards(RouteThrottlerGuard)
+  @Throttle({
+    default: {
+      limit: THROTTLE_LOGIN_LIMIT,
+      ttl: THROTTLE_LOGIN_TTL_MS,
+      getTracker: accountTracker,
+    },
+  })
   login(@Body() createLoginDto: LoginDto) {
     return this.authService.login(createLoginDto);
   }
