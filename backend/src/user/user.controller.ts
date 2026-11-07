@@ -11,7 +11,17 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { RouteThrottlerGuard } from 'src/common/throttling/route-throttler.guard';
+import { accountTracker } from 'src/common/throttling/throttle-trackers';
+import {
+  THROTTLE_PASSWORD_LIMIT,
+  THROTTLE_PASSWORD_TTL_MS,
+  THROTTLE_REGISTER_LIMIT,
+  THROTTLE_REGISTER_TTL_MS,
+} from 'src/common/throttling/throttling.constants';
+import { UserThrottlerGuard } from 'src/common/throttling/user-throttler.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,7 +42,15 @@ export class UserController {
 
   @HttpCode(201)
   @Post()
-  create(@Body() createUserDto: CreateUserDto): Promise<UserPrivateFields> {
+  @UseGuards(RouteThrottlerGuard)
+  @Throttle({
+    default: {
+      limit: THROTTLE_REGISTER_LIMIT,
+      ttl: THROTTLE_REGISTER_TTL_MS,
+      getTracker: accountTracker,
+    },
+  })
+  create(@Body() createUserDto: CreateUserDto): Promise<{ message: string }> {
     return this.userService.create(createUserDto);
   }
 
@@ -56,7 +74,13 @@ export class UserController {
 
   @HttpCode(201)
   @Patch('/change-password')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, UserThrottlerGuard)
+  @Throttle({
+    default: {
+      limit: THROTTLE_PASSWORD_LIMIT,
+      ttl: THROTTLE_PASSWORD_TTL_MS,
+    },
+  })
   changePassword(
     @UserDecorator('id') id: string,
     @Body('oldPassword') oldPassword: string,

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ThrottlingModule } from 'src/common/throttling/throttling.module';
 import { MailModule } from 'src/mail/mail.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { UserModule } from 'src/user/user.module';
@@ -19,6 +20,7 @@ import { PasswordResetService } from './password-reset.service';
     }),
     UserModule,
     MailModule,
+    ThrottlingModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, PasswordResetService],

@@ -1,7 +1,7 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { UserThrottlerGuard } from 'src/auth/user-throttler.guard';
+import { UserThrottlerGuard } from 'src/common/throttling/user-throttler.guard';
 import { CreateMailDto } from './dto/create-mail.dto';
 import { MailService } from './mail.service';
 

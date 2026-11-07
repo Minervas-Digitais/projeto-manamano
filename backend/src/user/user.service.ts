@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
-import { Archive, RoleType } from '@prisma/client';
+import { Archive, Prisma, RoleType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -28,7 +28,9 @@ export class UserService {
     private readonly validator: ValidatorService,
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserPrivateFields> {
+  async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
+    const hashedPassword = await bcrypt.hash(createUserDto.password, roundsOfHashing);
+
     const existingUser = await this.prismaService.user.findFirst({
       where: {
         OR: [{ email: createUserDto.email }, { phone: createUserDto.phone }],
@@ -36,10 +38,8 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new ConflictException(USER_MESSAGES.EMAIL_OR_PHONE_IN_USE);
+      return { message: USER_MESSAGES.REGISTRATION_RECEIVED };
     }
-
-    const hashedPassword = await bcrypt.hash(createUserDto.password, roundsOfHashing);
 
     const userData = {
       fullName: createUserDto.fullName,
@@ -54,9 +54,17 @@ export class UserService {
       bio: createUserDto.bio,
     };
 
-    const user = await this.prismaService.user.create({ data: userData });
+    try {
+      await this.prismaService.user.create({ data: userData });
 
-    return toPrivateUser(user);
+      return { message: USER_MESSAGES.REGISTRATION_RECEIVED };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return { message: USER_MESSAGES.REGISTRATION_RECEIVED };
+      }
+
+      throw error;
+    }
   }
 
   async findOne(

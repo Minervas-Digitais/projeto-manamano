@@ -6,7 +6,7 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-  setupFiles: ['<rootDir>/src/load-env.ts'],
+  setupFiles: ['<rootDir>/src/test/setup-env.ts', '<rootDir>/src/load-env.ts'],
   globalSetup: '<rootDir>/src/test/global-setup.ts',
   globalTeardown: '<rootDir>/src/test/global-teardown.ts',
 
