@@ -41,6 +41,8 @@ export default function ForgotPasswordEmail() {
   });
 
   const onSubmit = async (data: FormData) => {
+    if (isLoading) return;
+
     const email = data.email.trim();
 
     if (isResendBlocked(email)) {

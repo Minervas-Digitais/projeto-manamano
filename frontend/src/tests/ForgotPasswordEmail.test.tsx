@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Toast from 'react-native-toast-message';
 import api from '../services/api';
 import ForgotPasswordEmail from '../pages/ForgotPassword/ForgotPasswordEmail';
@@ -130,6 +130,76 @@ describe('ForgotPasswordEmail', () => {
           text2: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
         }),
       );
+    });
+  });
+
+  it('deve exibir toast de conexão quando a API não responder', async () => {
+    mockPost.mockRejectedValueOnce({ isAxiosError: true });
+
+    const { getByText, getByLabelText } = render(<ForgotPasswordEmail />);
+
+    fireEvent.changeText(getByLabelText('E-mail'), 'usuario@email.com');
+    fireEvent.press(getByText('Enviar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Não foi possível conectar. Verifique sua internet e tente novamente.',
+        }),
+      );
+    });
+  });
+
+  it('deve exibir toast de indisponibilidade quando a API responder com 5xx', async () => {
+    mockPost.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 503 },
+    });
+
+    const { getByText, getByLabelText } = render(<ForgotPasswordEmail />);
+
+    fireEvent.changeText(getByLabelText('E-mail'), 'usuario@email.com');
+    fireEvent.press(getByText('Enviar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Recuperação de senha indisponível no momento. Tente mais tarde.',
+        }),
+      );
+    });
+  });
+
+  it('deve enviar apenas uma requisição ao confirmar rapidamente duas vezes', async () => {
+    let resolveRequest: (value: unknown) => void = () => {};
+    mockPost.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }),
+    );
+
+    const { getByLabelText, getByTestId } = render(<ForgotPasswordEmail />);
+
+    fireEvent.changeText(getByLabelText('E-mail'), 'usuario@email.com');
+    fireEvent.press(getByTestId('forgot-email-submit'));
+
+    await waitFor(() => {
+      expect(mockPost).toHaveBeenCalledTimes(1);
+    });
+
+    fireEvent.press(getByTestId('forgot-email-submit'));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mockPost).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveRequest({ data: { message: 'Código enviado' } });
     });
   });
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,13 +25,19 @@ type RouteType = RouteProp<RootStackParamList, 'ForgotPasswordCode'>;
 export default function ForgotPasswordCode() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
-  const { email } = route.params;
+  const email = route.params?.email;
 
   const [code, setCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
-  const { limitReached, remainingMs, registerSent } = useResendCooldown(email);
+  const { limitReached, remainingMs, registerSent } = useResendCooldown(email ?? '');
+
+  useEffect(() => {
+    if (!email) {
+      navigation.replace('ForgotPasswordEmail');
+    }
+  }, [email, navigation]);
 
   const formatCountdown = (ms: number) => {
     const totalSeconds = Math.ceil(ms / 1000);
@@ -70,12 +76,22 @@ export default function ForgotPasswordCode() {
   };
 
   const onSubmit = async () => {
-    if (code.length !== 6 || isSubmitting) return;
+    if (!email || code.length !== 6 || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       const response = await api.post('/auth/verify-reset-code', { email, code });
       const resetToken = response.data?.resetToken;
+
+      if (!resetToken) {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Não foi possível validar o código. Tente novamente.',
+        });
+        return;
+      }
+
       navigation.replace('ForgotPasswordNewPassword', { resetToken });
     } catch (error) {
       showForgotPasswordError(error);
@@ -87,6 +103,8 @@ export default function ForgotPasswordCode() {
 
   const isTimerActive = remainingMs > 0;
   const isButtonDisabled = code.length !== 6 || isSubmitting;
+
+  if (!email) return null;
 
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Redefinir senha' }}>
@@ -113,13 +131,15 @@ export default function ForgotPasswordCode() {
 
               {limitReached ? (
                 <ForgotPasswordText style={{ textAlign: 'center', marginTop: 10 }}>
-                  Limite de reenvios atingido. Tente novamente mais tarde.
+                  Limite de reenvios atingido. Tente novamente em {formatCountdown(remainingMs)}.
                 </ForgotPasswordText>
               ) : (
                 <ResendButton
                   onPress={handleResend}
                   testID="forgot-resend-button"
-                  accessibilityRole="button">
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isResending }}
+                  disabled={isResending}>
                   <ResendText available={!isTimerActive}>
                     {isResending
                       ? 'Reenviando...'

@@ -7,7 +7,7 @@ const RESEND_INTERVALS_MS = [1, 2, 5, 10, 10].map((minutes) => minutes * MINUTE_
 const MAX_SENDS = RESEND_INTERVALS_MS.length + 1;
 const RESET_AFTER_MS = 60 * MINUTE_MS;
 
-type ResendState = { email: string; sends: number; firstSentAt: number; availableAt: number };
+type ResendState = { sends: number; firstSentAt: number; availableAt: number };
 
 // Em memória e fora da tela: sobrevive à navegação, assim voltar à tela de e-mail não zera a espera.
 const resendStates = new Map<string, ResendState>();
@@ -33,11 +33,14 @@ export function registerCodeSent(email: string) {
   const previous = getState(key);
   const sends = (previous?.sends ?? 0) + 1;
 
+  const firstSentAt = previous?.firstSentAt ?? now;
+
   resendStates.set(key, {
-    email: key,
     sends,
-    firstSentAt: previous?.firstSentAt ?? now,
-    availableAt: sends < MAX_SENDS ? now + RESEND_INTERVALS_MS[sends - 1] : Infinity,
+    firstSentAt,
+    // Ao atingir o limite, a próxima janela abre quando a janela de 60 min fecha.
+    availableAt:
+      sends < MAX_SENDS ? now + RESEND_INTERVALS_MS[sends - 1] : firstSentAt + RESET_AFTER_MS,
   });
 }
 

@@ -2,18 +2,16 @@
 /* eslint-disable global-require */
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import {
-  StatusBar,
-  View,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TouchableOpacity,
-  Text,
-} from 'react-native';
+import { StatusBar, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import Toast from 'react-native-toast-message';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
-import { SignInContainer, SignInForm, SignInInputContainer } from './SignInStyle';
+import {
+  ForgotPasswordLink,
+  ForgotPasswordLinkText,
+  SignInContainer,
+  SignInForm,
+  SignInInputContainer,
+} from './SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import BackButton from '../../components/BackButton/BackButton';
@@ -129,17 +127,14 @@ export default function SignIn({ navigation }: any) {
                   )}
                 />
                 {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
-                <TouchableOpacity
+                <ForgotPasswordLink
                   onPress={() =>
                     navigation.navigate('ForgotPasswordEmail', { email: getValues('email') })
                   }
-                  style={{ alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center' }}
                   accessibilityRole="button"
                   testID="forgot-password-link">
-                  <Text style={{ color: '#160E47', fontSize: 14, fontWeight: '600' }}>
-                    Esqueci minha senha
-                  </Text>
-                </TouchableOpacity>
+                  <ForgotPasswordLinkText>Esqueci minha senha</ForgotPasswordLinkText>
+                </ForgotPasswordLink>
               </SignInInputContainer>
             </View>
             <ButtonCustom

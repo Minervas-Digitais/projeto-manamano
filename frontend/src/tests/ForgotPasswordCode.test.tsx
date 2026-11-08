@@ -7,6 +7,7 @@ import { clearResendCooldown, registerCodeSent } from '../hooks/useResendCooldow
 
 const mockedReplace = jest.fn();
 const mockedGoBack = jest.fn();
+let mockedRouteParams: { email?: string } = { email: 'usuario@email.com' };
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
@@ -15,7 +16,7 @@ jest.mock('@react-navigation/native', () => ({
     goBack: mockedGoBack,
   }),
   useRoute: () => ({
-    params: { email: 'usuario@email.com' },
+    params: mockedRouteParams,
   }),
 }));
 
@@ -37,6 +38,7 @@ describe('ForgotPasswordCode', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     clearResendCooldown();
+    mockedRouteParams = { email: 'usuario@email.com' };
   });
 
   it('deve renderizar os textos, as caixas do código e o botão confirmar inicialmente desabilitado', () => {
@@ -145,7 +147,7 @@ describe('ForgotPasswordCode', () => {
     });
   });
 
-  it('deve exibir mensagem de limite atingido quando estourar os reenvios permitidos', () => {
+  it('deve exibir mensagem de limite atingido com o tempo restante', () => {
     // Registra 6 envios para simular limite atingido
     for (let i = 0; i < 6; i++) {
       registerCodeSent('usuario@email.com');
@@ -153,7 +155,83 @@ describe('ForgotPasswordCode', () => {
 
     const { getByText, queryByTestId } = render(<ForgotPasswordCode />);
 
-    expect(getByText('Limite de reenvios atingido. Tente novamente mais tarde.')).toBeTruthy();
+    expect(
+      getByText(/Limite de reenvios atingido\. Tente novamente em \d{2}:\d{2}\./),
+    ).toBeTruthy();
     expect(queryByTestId('forgot-resend-button')).toBeNull();
+  });
+
+  it('deve voltar para a tela de e-mail quando o e-mail não vier nos params', async () => {
+    mockedRouteParams = {};
+
+    render(<ForgotPasswordCode />);
+
+    await waitFor(() => {
+      expect(mockedReplace).toHaveBeenCalledWith('ForgotPasswordEmail');
+    });
+  });
+
+  it('não deve navegar para a nova senha se a API não devolver resetToken', async () => {
+    mockPost.mockResolvedValueOnce({ data: {} });
+
+    const { getByTestId } = render(<ForgotPasswordCode />);
+
+    fireEvent.changeText(getByTestId('forgot-code-input'), '123456');
+    fireEvent.press(getByTestId('forgot-code-submit'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Não foi possível validar o código. Tente novamente.',
+        }),
+      );
+      expect(mockedReplace).not.toHaveBeenCalledWith(
+        'ForgotPasswordNewPassword',
+        expect.anything(),
+      );
+    });
+  });
+
+  it('deve enviar apenas uma requisição ao confirmar rapidamente duas vezes', async () => {
+    let resolveRequest: (value: unknown) => void = () => {};
+    mockPost.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }),
+    );
+
+    const { getByTestId } = render(<ForgotPasswordCode />);
+
+    fireEvent.changeText(getByTestId('forgot-code-input'), '123456');
+    fireEvent.press(getByTestId('forgot-code-submit'));
+    fireEvent.press(getByTestId('forgot-code-submit'));
+
+    expect(mockPost).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveRequest({ data: { resetToken: 'mock-reset-token-123' } });
+    });
+  });
+
+  it('deve exibir toast de erro quando o reenvio falhar', async () => {
+    mockPost.mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 500 },
+    });
+
+    const { getByTestId } = render(<ForgotPasswordCode />);
+
+    fireEvent.press(getByTestId('forgot-resend-button'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Recuperação de senha indisponível no momento. Tente mais tarde.',
+        }),
+      );
+    });
   });
 });

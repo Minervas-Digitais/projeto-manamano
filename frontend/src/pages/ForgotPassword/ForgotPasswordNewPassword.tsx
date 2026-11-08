@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -13,7 +13,11 @@ import IconPassword from '../../assets/lock-icon.svg';
 import api from '../../services/api';
 import { RootStackParamList } from '../../navigation/types';
 import { clearResendCooldown } from '../../hooks/useResendCooldown';
-import { isBadRequest, showForgotPasswordError } from './forgotPasswordErrors';
+import {
+  EXPIRED_RESET_TOKEN_MESSAGE,
+  isExpiredResetToken,
+  showForgotPasswordError,
+} from './forgotPasswordErrors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ForgotPasswordNewPassword'>;
 type RouteType = RouteProp<RootStackParamList, 'ForgotPasswordNewPassword'>;
@@ -26,7 +30,7 @@ type FormData = {
 export default function ForgotPasswordNewPassword() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
-  const { resetToken } = route.params;
+  const resetToken = route.params?.resetToken;
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,7 +43,23 @@ export default function ForgotPasswordNewPassword() {
     mode: 'onChange',
   });
 
+  useEffect(() => {
+    if (!resetToken) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Solicitação inválida. Solicite um novo código.',
+      });
+      navigation.reset({
+        index: 1,
+        routes: [{ name: 'SignIn' }, { name: 'ForgotPasswordEmail' }],
+      });
+    }
+  }, [navigation, resetToken]);
+
   const onSubmit = async (data: FormData) => {
+    if (!resetToken || isLoading) return;
+
     setIsLoading(true);
     try {
       await api.post('/auth/reset-password', {
@@ -60,11 +80,11 @@ export default function ForgotPasswordNewPassword() {
         text2: 'Senha redefinida com sucesso. Faça login com a nova senha.',
       });
     } catch (error) {
-      if (isBadRequest(error)) {
+      if (isExpiredResetToken(error)) {
         Toast.show({
           type: 'error',
           text1: 'Erro',
-          text2: 'Sua solicitação expirou. Solicite um novo código.',
+          text2: EXPIRED_RESET_TOKEN_MESSAGE,
         });
         navigation.reset({
           index: 1,
@@ -78,6 +98,8 @@ export default function ForgotPasswordNewPassword() {
       setIsLoading(false);
     }
   };
+
+  if (!resetToken) return null;
 
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Redefinir senha' }}>
