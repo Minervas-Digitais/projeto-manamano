@@ -148,4 +148,17 @@ describe('SignIn', () => {
       expect(mockedNavigate).not.toHaveBeenCalled();
     });
   });
+
+  it('Deve navegar para ForgotPasswordEmail ao clicar em Esqueci minha senha', async () => {
+    const { getByLabelText, getByText } = render(
+      <SignIn navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('E-mail'), 'usuario@email.com');
+    fireEvent.press(getByText('Esqueci minha senha'));
+
+    expect(mockedNavigate).toHaveBeenCalledWith('ForgotPasswordEmail', {
+      email: 'usuario@email.com',
+    });
+  });
 });

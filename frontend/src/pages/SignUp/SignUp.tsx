@@ -174,6 +174,10 @@ export default function SignUp({ navigation }: any) {
                   value: 8,
                   message: 'A senha deve ter no mínimo 8 caracteres',
                 },
+                maxLength: {
+                  value: 72,
+                  message: 'A senha deve ter no máximo 72 caracteres',
+                },
               }}
               render={({ field: { onChange, value } }) => (
                 <InputTextCustom

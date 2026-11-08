@@ -162,6 +162,23 @@ describe('SignUp', () => {
     expect(mockedNavigate).not.toHaveBeenCalled();
   });
 
+  it('Deve rejeitar senha com mais de 72 caracteres', async () => {
+    const { getByText, getByLabelText, findByText } = render(
+      <SignUp navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('Nome Completo'), 'Nome Valido');
+    fireEvent.changeText(getByLabelText('E-mail'), 'valido@teste.com');
+    fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 98888-7777');
+    fireEvent.changeText(getByLabelText('Senha'), 'a'.repeat(73));
+
+    fireEvent.press(getByText('Cadastrar'));
+
+    expect(await findByText('A senha deve ter no máximo 72 caracteres')).toBeTruthy();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
   it('Deve rejeitar nome com menos de 3 caracteres', async () => {
     const { getByText, getByLabelText, findByText } = render(
       <SignUp navigation={{ navigate: mockedNavigate }} />,
