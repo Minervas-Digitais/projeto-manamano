@@ -21,3 +21,15 @@ export const SignInInputContainer = styled.View`
   height: fit-content;
   gap: 15px;
 `;
+
+export const ForgotPasswordLink = styled.TouchableOpacity`
+  align-self: flex-end;
+  min-height: 44px;
+  justify-content: center;
+`;
+
+export const ForgotPasswordLinkText = styled.Text`
+  color: #160e47;
+  font-size: 14px;
+  font-family: 'inter-semiBold';
+`;
