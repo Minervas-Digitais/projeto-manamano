@@ -1,8 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { RouteThrottlerGuard } from './route-throttler.guard';
 
 @Injectable()
-export class UserThrottlerGuard extends ThrottlerGuard {
+export class UserThrottlerGuard extends RouteThrottlerGuard {
   protected async getTracker(req: Record<string, any>): Promise<string> {
     const userId = req.user?.id;
 
@@ -10,6 +10,6 @@ export class UserThrottlerGuard extends ThrottlerGuard {
       throw new UnauthorizedException('Usuário não autenticado.');
     }
 
-    return userId;
+    return `user:${userId}`;
   }
 }

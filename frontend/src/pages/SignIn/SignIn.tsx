@@ -54,11 +54,17 @@ export default function SignIn({ navigation }: any) {
     } catch (error) {
       const status = (error as any)?.response?.status;
 
-      if (status === 401 || status === 404) {
+      if (status === 401) {
         Toast.show({
           type: 'error',
           text1: 'Erro ao entrar',
           text2: 'E-mail ou senha incorretos',
+        });
+      } else if (status === 429) {
+        Toast.show({
+          type: 'error',
+          text1: 'Muitas tentativas',
+          text2: 'Aguarde alguns instantes e tente novamente.',
         });
       } else if (status === undefined) {
         Toast.show({
