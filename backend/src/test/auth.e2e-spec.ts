@@ -1,9 +1,10 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { AuthModule } from 'src/auth/auth.module';
-import { AuthService } from 'src/auth/auth.service';
+import { AuthService, DUMMY_PASSWORD_HASH } from 'src/auth/auth.service';
 import {
   PASSWORD_RESET_MAX_ATTEMPTS,
   PASSWORD_RESET_MAX_REQUESTS_PER_WINDOW,
@@ -12,6 +13,7 @@ import { MailService } from 'src/mail/mail.service';
 import { AUTH_MESSAGES } from 'src/messages/auth.messages';
 import { MAIL_MESSAGES } from 'src/messages/mail.messages';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { roundsOfHashing } from 'src/user/user.service';
 import { createUser as baseCreateUser } from './test-helpers';
 
 const AUTH_E2E_PREFIX = `auth_e2e_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
@@ -104,6 +106,11 @@ describe('AuthController (e2e)', () => {
 
     expect(missingUser.status).toBe(wrongPassword.status);
     expect(missingUser.body.message).toBe(wrongPassword.body.message);
+  });
+
+  it('deve manter o hash falso de login com o mesmo custo do hash real', async () => {
+    expect(bcrypt.getRounds(DUMMY_PASSWORD_HASH)).toBe(roundsOfHashing);
+    await expect(bcrypt.compare('senha-qualquer', DUMMY_PASSWORD_HASH)).resolves.toBe(false);
   });
 
   it('deve retornar 400 se dto inválido', async () => {

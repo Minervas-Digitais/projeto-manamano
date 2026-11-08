@@ -29,11 +29,12 @@ export class UserService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<{ message: string }> {
+    const email = createUserDto.email.trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(createUserDto.password, roundsOfHashing);
 
     const existingUser = await this.prismaService.user.findFirst({
       where: {
-        OR: [{ email: createUserDto.email }, { phone: createUserDto.phone }],
+        OR: [{ email: { equals: email, mode: 'insensitive' } }, { phone: createUserDto.phone }],
       },
     });
 
@@ -43,7 +44,7 @@ export class UserService {
 
     const userData = {
       fullName: createUserDto.fullName,
-      email: createUserDto.email,
+      email,
       phone: createUserDto.phone,
       hash: hashedPassword,
       birthday: createUserDto.birthday,

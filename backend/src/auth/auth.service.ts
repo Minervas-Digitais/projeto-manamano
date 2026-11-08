@@ -13,7 +13,7 @@ const REFRESH_TOKEN_EXPIRATION: string = '7d';
 // Hash descartável usado quando o e-mail não existe, para que bcrypt.compare
 // tenha o mesmo custo do caminho com usuário real e não vaze a existência da conta.
 // O custo (10) precisa ficar alinhado a roundsOfHashing.
-const DUMMY_PASSWORD_HASH = '$2b$10$RpmeAafxmnTkrO1B7ByU7.nwSnXpyjAQFYA7PSNUeceVhisyj5sXS';
+export const DUMMY_PASSWORD_HASH = '$2b$10$RpmeAafxmnTkrO1B7ByU7.nwSnXpyjAQFYA7PSNUeceVhisyj5sXS';
 
 @Injectable()
 export class AuthService {
@@ -53,9 +53,10 @@ export class AuthService {
   }
 
   async login(createLoginDto: LoginDto): Promise<AuthEntity> {
-    const user = await this.prismaService.user.findUnique({
+    const email = createLoginDto.email.trim().toLowerCase();
+    const user = await this.prismaService.user.findFirst({
       where: {
-        email: createLoginDto.email,
+        email: { equals: email, mode: 'insensitive' },
       },
     });
 

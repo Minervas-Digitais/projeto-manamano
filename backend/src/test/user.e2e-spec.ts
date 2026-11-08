@@ -101,6 +101,24 @@ describe('User', () => {
       expect(response.body).toEqual({ message: USER_MESSAGES.REGISTRATION_RECEIVED });
     });
 
+    it('deve normalizar o email e permitir login sem diferenciar maiúsculas de minúsculas', async () => {
+      const userDto = makeUserDto({ email: `${USER_E2E_PREFIX}_MixedCase@Email.com` });
+
+      const response = await request(app.getHttpServer()).post('/user').send(userDto);
+      expect(response.status).toBe(201);
+
+      const stored = await prismaService.user.findFirst({
+        where: { email: { equals: userDto.email.toLowerCase(), mode: 'insensitive' } },
+      });
+      expect(stored?.email).toBe(userDto.email.toLowerCase());
+
+      const login = await authService.login({
+        email: userDto.email.toUpperCase(),
+        password: userDto.password,
+      });
+      expect(login.accessToken).toBeDefined();
+    });
+
     it('deve retornar 201 genérico caso o email esteja em uso', async () => {
       const existingUser = await createUser(prismaService);
 
