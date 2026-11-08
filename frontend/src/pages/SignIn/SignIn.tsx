@@ -47,7 +47,7 @@ export default function SignIn({ navigation }: any) {
     } catch (error) {
       const status = (error as any)?.response?.status;
 
-      if (status === 401 || status === 404) {
+      if (status === 401) {
         Toast.show({
           type: 'error',
           text1: 'Erro ao entrar',
