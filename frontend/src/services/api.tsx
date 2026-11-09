@@ -71,6 +71,12 @@ function isAuthEndpoint(url?: string) {
   return Boolean(url && AUTH_ENDPOINTS.some((endpoint) => url.includes(endpoint)));
 }
 
+function isPasswordMismatchError(url?: string, error?: AxiosError<{ message?: unknown }>) {
+  if (!url || !url.includes('/user/change-password')) return false;
+  const message = error?.response?.data?.message;
+  return typeof message === 'string' && message !== 'Unauthorized';
+}
+
 api.interceptors.request.use((config) => {
   const { accessToken } = authStore.getState();
 
@@ -83,7 +89,7 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
+  async (error: AxiosError<{ message?: unknown }>) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
     const status = error.response?.status;
 
@@ -91,6 +97,7 @@ api.interceptors.response.use(
       !originalRequest ||
       status !== 401 ||
       isAuthEndpoint(originalRequest.url) ||
+      isPasswordMismatchError(originalRequest.url, error) ||
       originalRequest.retry
     ) {
       return Promise.reject(error);

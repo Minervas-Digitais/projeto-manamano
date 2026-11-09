@@ -234,4 +234,73 @@ describe('ChangePassword', () => {
     expect(await findByText('A senha deve ter no máximo 72 caracteres')).toBeTruthy();
     expect(mockPatch).not.toHaveBeenCalled();
   });
+
+  it('deve revalidar a confirmação quando a nova senha mudar sem exibir erro prematuro', async () => {
+    const { findByLabelText, findByText, queryByText } = renderWithNavigation();
+
+    const newPasswordInput = await findByLabelText('Digite a nova senha');
+    const confirmPasswordInput = await findByLabelText('Confirme a nova senha');
+
+    fireEvent.changeText(newPasswordInput, 'novaSenha1');
+    expect(queryByText('Campo obrigatório')).toBeNull();
+    expect(queryByText('Senhas não coincidem')).toBeNull();
+
+    fireEvent.changeText(confirmPasswordInput, 'novaSenha12');
+    expect(await findByText('Senhas não coincidem')).toBeTruthy();
+
+    fireEvent.changeText(newPasswordInput, 'novaSenha12');
+    await waitFor(() => {
+      expect(queryByText('Senhas não coincidem')).toBeNull();
+    });
+  });
+
+  it('deve mostrar mensagem amigável ao atingir o limite de tentativas (429)', async () => {
+    mockPatch.mockRejectedValueOnce({
+      response: {
+        status: 429,
+        data: { message: 'ThrottlerException: Too Many Requests' },
+      },
+      isAxiosError: true,
+    });
+
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaErrada');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'novaSenha1');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+        }),
+      );
+    });
+  });
+
+  it('deve mostrar mensagem amigável quando não houver conexão de rede', async () => {
+    mockPatch.mockRejectedValueOnce({
+      isAxiosError: true,
+    });
+
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'novaSenha1');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Não foi possível conectar. Verifique sua internet e tente novamente.',
+        }),
+      );
+    });
+  });
 });

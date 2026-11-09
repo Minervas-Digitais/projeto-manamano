@@ -1,10 +1,8 @@
-/* eslint-disable import/no-duplicates */
-/* eslint-disable global-require */
-/* eslint-disable react/jsx-closing-bracket-location */
-import { View } from 'react-native';
+import React, { useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { isAxiosError } from 'axios';
 import Toast from 'react-native-toast-message';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
@@ -17,6 +15,33 @@ import IconPassword from '../../assets/lock-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 
+type FormData = {
+  oldpassword: string;
+  newpassword: string;
+  confirmedpassword: string;
+};
+
+const GENERIC_ERROR_MESSAGE = 'Erro ao mudar senha. Tente novamente mais tarde.';
+
+function getChangePasswordErrorMessage(error: unknown): string {
+  if (!isAxiosError(error)) return GENERIC_ERROR_MESSAGE;
+  if (!error.response) {
+    return 'Não foi possível conectar. Verifique sua internet e tente novamente.';
+  }
+
+  const { status, data } = error.response;
+  if (status === 429) {
+    return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+  }
+  if (status >= 500) {
+    return GENERIC_ERROR_MESSAGE;
+  }
+
+  const backendMessage = data?.message;
+  if (Array.isArray(backendMessage)) return backendMessage.join('\n');
+  return backendMessage || GENERIC_ERROR_MESSAGE;
+}
+
 export default function ChangePassword() {
   const { loggedId } = useAuth();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -27,11 +52,12 @@ export default function ChangePassword() {
     handleSubmit,
     formState: { errors },
     getValues,
-  } = useForm({
+    trigger,
+  } = useForm<FormData>({
     mode: 'onChange',
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormData) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
@@ -50,16 +76,11 @@ export default function ChangePassword() {
         text2: 'Senha atualizada com sucesso!',
       });
       navigation.navigate('Config');
-    } catch (error: any) {
-      const backendMessage = error?.response?.data?.message;
-      const errorMessage = Array.isArray(backendMessage)
-        ? backendMessage.join('\n')
-        : backendMessage || 'Erro ao mudar senha. Tente novamente mais tarde.';
-
+    } catch (error: unknown) {
       Toast.show({
         type: 'error',
         text1: 'Erro',
-        text2: errorMessage,
+        text2: getChangePasswordErrorMessage(error),
       });
     } finally {
       setIsSubmitting(false);
@@ -68,93 +89,113 @@ export default function ChangePassword() {
 
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Mudar Senha' }}>
-      <View
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{
           flex: 1,
           backgroundColor: '#f2f6fa',
           display: loggedId ? 'flex' : 'none',
-        }}>
-        <SignInForm>
-          <SignInInputContainer>
-            <Controller
-              control={control}
-              name="oldpassword"
-              rules={{
-                required: 'Campo obrigatório',
-              }}
-              render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Digite a senha atual"
-                  imageIcon={<IconPassword />}
-                  isPassword
-                />
-              )}
-            />
-            {errors.oldpassword && (
-              <ErrorWarning errorText={errors.oldpassword.message || 'Campo obrigatório'} />
-            )}
-            <Controller
-              control={control}
-              name="newpassword"
-              rules={{
-                required: 'Campo obrigatório',
-                minLength: {
-                  value: 8,
-                  message: 'A senha deve ter no mínimo 8 caracteres',
-                },
-                maxLength: {
-                  value: 72,
-                  message: 'A senha deve ter no máximo 72 caracteres',
-                },
-                deps: ['confirmedpassword'],
-              }}
-              render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Digite a nova senha"
-                  imageIcon={<IconPassword />}
-                  isPassword
-                />
-              )}
-            />
-            {errors.newpassword && (
-              <ErrorWarning errorText={errors.newpassword.message || 'Campo obrigatório'} />
-            )}
-            <Controller
-              control={control}
-              name="confirmedpassword"
-              rules={{
-                required: 'Campo obrigatório',
-                validate: (value) => value === getValues('newpassword') || 'Senhas não coincidem',
-              }}
-              render={({ field: { onChange, value } }) => (
-                <InputTextCustom
-                  onChangeText={onChange}
-                  value={value}
-                  label="Confirme a nova senha"
-                  imageIcon={<IconPassword />}
-                  isPassword
-                />
-              )}
-            />
-            {errors.confirmedpassword && (
-              <ErrorWarning
-                errorText={errors.confirmedpassword.message || 'Senhas não coincidem'}
+        }}
+        keyboardVerticalOffset={50}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <SignInForm>
+            <SignInInputContainer>
+              <Controller
+                control={control}
+                name="oldpassword"
+                rules={{
+                  required: 'Campo obrigatório',
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <InputTextCustom
+                    onChangeText={onChange}
+                    value={value}
+                    label="Digite a senha atual"
+                    imageIcon={<IconPassword />}
+                    isPassword
+                    testID="change-password-old-input"
+                  />
+                )}
               />
-            )}
-          </SignInInputContainer>
-          <ButtonCustom
-            onPress={handleSubmit(onSubmit)}
-            backColor="#160E47"
-            fontColor="white"
-            text={isSubmitting ? 'Salvando...' : 'Salvar'}
-            disabled={isSubmitting}
-          />
-        </SignInForm>
-      </View>
+              {errors.oldpassword && (
+                <ErrorWarning errorText={errors.oldpassword.message || 'Campo obrigatório'} />
+              )}
+
+              <Controller
+                control={control}
+                name="newpassword"
+                rules={{
+                  required: 'Campo obrigatório',
+                  minLength: {
+                    value: 8,
+                    message: 'A senha deve ter no mínimo 8 caracteres',
+                  },
+                  maxLength: {
+                    value: 72,
+                    message: 'A senha deve ter no máximo 72 caracteres',
+                  },
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <InputTextCustom
+                    onChangeText={(text: string) => {
+                      onChange(text);
+                      if (getValues('confirmedpassword')) {
+                        void trigger('confirmedpassword');
+                      }
+                    }}
+                    value={value}
+                    label="Digite a nova senha"
+                    imageIcon={<IconPassword />}
+                    isPassword
+                    testID="change-password-new-input"
+                  />
+                )}
+              />
+              {errors.newpassword && (
+                <ErrorWarning errorText={errors.newpassword.message || 'Campo obrigatório'} />
+              )}
+
+              <Controller
+                control={control}
+                name="confirmedpassword"
+                rules={{
+                  required: 'Campo obrigatório',
+                  validate: (value) => value === getValues('newpassword') || 'Senhas não coincidem',
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <InputTextCustom
+                    onChangeText={onChange}
+                    value={value}
+                    label="Confirme a nova senha"
+                    imageIcon={<IconPassword />}
+                    isPassword
+                    testID="change-password-confirm-input"
+                  />
+                )}
+              />
+              {errors.confirmedpassword && (
+                <ErrorWarning
+                  errorText={errors.confirmedpassword.message || 'Senhas não coincidem'}
+                />
+              )}
+            </SignInInputContainer>
+
+            <View style={{ marginTop: 24 }}>
+              <ButtonCustom
+                onPress={handleSubmit(onSubmit)}
+                backColor="#160E47"
+                fontColor="white"
+                text={isSubmitting ? 'Salvando...' : 'Salvar'}
+                disabled={isSubmitting}
+                testID="change-password-submit"
+              />
+            </View>
+          </SignInForm>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenWithHeader>
   );
 }
