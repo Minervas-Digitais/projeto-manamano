@@ -545,6 +545,17 @@ describe('User', () => {
       expect(response.status).toBe(400);
     });
 
+    it('deve retornar erro 400 caso a nova senha tenha mais de 72 caracteres', async () => {
+      const { token } = await createUserWithToken(prismaService, authService);
+
+      const response = await request(app.getHttpServer())
+        .patch('/user/change-password')
+        .set('Authorization', 'Bearer ' + token)
+        .send({ oldPassword: 'password123', newPassword: 'a'.repeat(73) });
+
+      expect(response.status).toBe(400);
+    });
+
     it('deve retornar erro 409 caso a nova senha seja igual a antiga', async () => {
       const { token } = await createUserWithToken(prismaService, authService);
 

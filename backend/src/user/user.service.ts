@@ -118,25 +118,28 @@ export class UserService {
   ): Promise<AuthEntity> {
     const user = await this.validator.validateUserExists(id);
 
-    if (oldPassword === newPassword) {
-      throw new ConflictException(USER_MESSAGES.SAME_PASSWORD);
-    }
-
     const isPasswordValid = await bcrypt.compare(oldPassword, user.hash);
     if (!isPasswordValid) {
       throw new UnauthorizedException(USER_MESSAGES.INVALID_PASSWORD);
     }
 
+    if (oldPassword === newPassword) {
+      throw new ConflictException(USER_MESSAGES.SAME_PASSWORD);
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, roundsOfHashing);
 
-    await this.prismaService.user.update({
-      where: { id: id },
-      data: { hash: hashedPassword },
-    });
+    // Atualiza o hash da senha e rotaciona a sessão na mesma transação: o refresh
+    // token anterior (de qualquer aparelho) deixa de valer e o aparelho atual
+    // recebe um novo par de tokens.
+    const tokens = await this.prismaService.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: id },
+        data: { hash: hashedPassword },
+      });
 
-    // Rotaciona a sessão: o refresh token anterior (de qualquer aparelho) deixa
-    // de valer e o aparelho atual recebe um novo par de tokens.
-    const tokens = await this.tokenService.generateTokens(user);
+      return this.tokenService.generateTokens(user, tx);
+    });
 
     this.mailService
       .sendPasswordChangedAlert(user.email, user.fullName, new Date())

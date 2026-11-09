@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { createHash, randomUUID, timingSafeEqual } from 'crypto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -30,7 +30,10 @@ export class TokenService {
    * Gera um novo par de tokens e grava o hash SHA-256 do refresh token.
    * Como só existe um refresh token por usuário, isso revoga qualquer sessão anterior.
    */
-  async generateTokens(user: TokenSubject): Promise<TokenPair> {
+  async generateTokens(
+    user: TokenSubject,
+    tx: Prisma.TransactionClient = this.prismaService,
+  ): Promise<TokenPair> {
     // jti garante tokens distintos mesmo quando emitidos no mesmo segundo
     // (sem ele, a rotação logo após o login reemitiria o mesmo refresh token).
     const payload = {
@@ -50,7 +53,7 @@ export class TokenService {
       expiresIn: REFRESH_TOKEN_EXPIRATION,
     });
 
-    await this.prismaService.user.update({
+    await tx.user.update({
       where: { id: user.id },
       data: { refreshToken: this.hashRefreshToken(refreshToken) },
     });
