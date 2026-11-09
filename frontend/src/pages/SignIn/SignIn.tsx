@@ -5,7 +5,13 @@ import { Controller, useForm } from 'react-hook-form';
 import { StatusBar, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import Toast from 'react-native-toast-message';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
-import { SignInContainer, SignInForm, SignInInputContainer } from './SignInStyle';
+import {
+  ForgotPasswordLink,
+  ForgotPasswordLinkText,
+  SignInContainer,
+  SignInForm,
+  SignInInputContainer,
+} from './SignInStyle';
 import ButtonCustom from '../../components/ButtonCustom/ButtonCustom';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
 import BackButton from '../../components/BackButton/BackButton';
@@ -23,6 +29,7 @@ export default function SignIn({ navigation }: any) {
     control,
     handleSubmit,
     formState: { errors },
+    getValues,
   } = useForm({});
 
   const onSubmit = async (data: any) => {
@@ -47,11 +54,17 @@ export default function SignIn({ navigation }: any) {
     } catch (error) {
       const status = (error as any)?.response?.status;
 
-      if (status === 401 || status === 404) {
+      if (status === 401) {
         Toast.show({
           type: 'error',
           text1: 'Erro ao entrar',
           text2: 'E-mail ou senha incorretos',
+        });
+      } else if (status === 429) {
+        Toast.show({
+          type: 'error',
+          text1: 'Muitas tentativas',
+          text2: 'Aguarde alguns instantes e tente novamente.',
         });
       } else if (status === undefined) {
         Toast.show({
@@ -97,6 +110,8 @@ export default function SignIn({ navigation }: any) {
                       value={value}
                       label="E-mail"
                       imageIcon={<IconEmail />}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
                     />
                   )}
                 />
@@ -118,6 +133,14 @@ export default function SignIn({ navigation }: any) {
                   )}
                 />
                 {errors.password && <ErrorWarning errorText="Campo obrigatório" />}
+                <ForgotPasswordLink
+                  onPress={() =>
+                    navigation.navigate('ForgotPasswordEmail', { email: getValues('email') })
+                  }
+                  accessibilityRole="button"
+                  testID="forgot-password-link">
+                  <ForgotPasswordLinkText>Esqueci minha senha</ForgotPasswordLinkText>
+                </ForgotPasswordLink>
               </SignInInputContainer>
             </View>
             <ButtonCustom

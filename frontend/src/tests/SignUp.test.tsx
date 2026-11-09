@@ -78,15 +78,15 @@ describe('SignUp', () => {
 
     expect(Toast.show).toHaveBeenCalledWith({
       type: 'success',
-      text1: 'Cadastro realizado',
-      text2: 'Seu cadastro foi realizado com sucesso!',
+      text1: 'Cadastro recebido',
+      text2: 'Se você já tinha uma conta, use Entrar ou recupere sua senha.',
     });
   });
 
-  it('Deve exibir um alerta de erro se o email ou celular ja estiver em uso', async () => {
+  it('Deve exibir um alerta de muitas tentativas quando a API responder 429', async () => {
     apiPostMock.mockRejectedValue({
       response: {
-        status: 409,
+        status: 429,
       },
       isAxiosError: true,
     });
@@ -94,10 +94,10 @@ describe('SignUp', () => {
       <SignUp navigation={{ navigate: mockedNavigate }} />,
     );
 
-    fireEvent.changeText(getByLabelText('Nome Completo'), 'Usuário Repetido');
+    fireEvent.changeText(getByLabelText('Nome Completo'), 'Usuário Teste');
     fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 91234-5678');
-    fireEvent.changeText(getByLabelText('Senha'), 'outraSenha');
-    fireEvent.changeText(getByLabelText('E-mail'), 'repetido@teste.com');
+    fireEvent.changeText(getByLabelText('Senha'), 'outraSenha123');
+    fireEvent.changeText(getByLabelText('E-mail'), 'teste@teste.com');
 
     fireEvent.press(getByText('Cadastrar'));
 
@@ -107,8 +107,8 @@ describe('SignUp', () => {
 
     expect(Toast.show).toHaveBeenCalledWith({
       type: 'error',
-      text1: 'Erro no cadastro',
-      text2: 'E-mail ou celular já está associado a outra conta!',
+      text1: 'Muitas tentativas',
+      text2: 'Aguarde alguns minutos e tente novamente.',
     });
 
     expect(mockedNavigate).not.toHaveBeenCalled();
@@ -158,6 +158,23 @@ describe('SignUp', () => {
     fireEvent.press(getByText('Cadastrar'));
 
     expect(await findByText('A senha deve ter no mínimo 8 caracteres')).toBeTruthy();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
+  it('Deve rejeitar senha com mais de 72 caracteres', async () => {
+    const { getByText, getByLabelText, findByText } = render(
+      <SignUp navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('Nome Completo'), 'Nome Valido');
+    fireEvent.changeText(getByLabelText('E-mail'), 'valido@teste.com');
+    fireEvent.changeText(getByLabelText('WhatsApp'), '(21) 98888-7777');
+    fireEvent.changeText(getByLabelText('Senha'), 'a'.repeat(73));
+
+    fireEvent.press(getByText('Cadastrar'));
+
+    expect(await findByText('A senha deve ter no máximo 72 caracteres')).toBeTruthy();
     expect(api.post).not.toHaveBeenCalled();
     expect(mockedNavigate).not.toHaveBeenCalled();
   });

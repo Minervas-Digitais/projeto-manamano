@@ -1,12 +1,22 @@
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsDateString,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   fullName: string;
 
+  @IsEmail()
   @IsNotEmpty()
-  @IsString()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   email: string;
 
   @IsNotEmpty()
@@ -15,6 +25,8 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   @IsString()
+  @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres.' })
+  @MaxLength(72, { message: 'A senha deve ter no máximo 72 caracteres.' })
   password: string;
 
   @IsDateString()
