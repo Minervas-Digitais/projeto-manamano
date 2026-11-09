@@ -1,11 +1,14 @@
 import './load-env';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { resolveTrustProxy } from './common/throttling/trust-proxy';
 import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.set('trust proxy', resolveTrustProxy());
 
   // Configurar limite de tamanho para requisições (100MB)
   app.use(express.json({ limit: '100mb' }));

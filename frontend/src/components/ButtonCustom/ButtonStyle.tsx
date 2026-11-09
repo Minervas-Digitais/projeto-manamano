@@ -21,4 +21,5 @@ export const ButtonContainer = styled.TouchableOpacity<{
   flex-direction: row;
   gap: 20px;
   border: ${(prop) => (prop.border ? 'solid 2px #160E47' : 'none')};
+  opacity: ${(prop) => (prop.disabled ? 0.5 : 1)};
 `;

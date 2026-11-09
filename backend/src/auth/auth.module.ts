@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ThrottlingModule } from 'src/common/throttling/throttling.module';
+import { MailModule } from 'src/mail/mail.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { UserModule } from 'src/user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { TokenModule } from './token.module';
+import { PasswordResetService } from './password-reset.service';
 
 @Module({
   imports: [
@@ -18,8 +21,10 @@ import { TokenModule } from './token.module';
     }),
     UserModule,
     TokenModule,
+    MailModule,
+    ThrottlingModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, PasswordResetService],
 })
 export class AuthModule {}

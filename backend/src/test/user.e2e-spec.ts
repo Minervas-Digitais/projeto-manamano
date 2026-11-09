@@ -4,24 +4,49 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UserModule } from '../user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
 import request from 'supertest';
+import { randomUUID } from 'crypto';
 import { RoleType } from '@prisma/client';
 import { AuthService } from 'src/auth/auth.service';
+import { THROTTLE_PASSWORD_LIMIT } from 'src/common/throttling/throttling.constants';
 import { UpdateUserDto } from 'src/user/dto/update-user.dto';
 import { USER_MESSAGES } from 'src/messages/user.messages';
 import { MAIL_MESSAGES } from 'src/messages/mail.messages';
 import { MailService } from 'src/mail/mail.service';
-import { createUser, createUserWithToken } from './test-helpers';
+import {
+  createUser as baseCreateUser,
+  createUserWithToken as baseCreateUserWithToken,
+} from './test-helpers';
+
+const USER_E2E_PREFIX = `user_e2e_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
 function makeUserDto(overrides = {}) {
-  const unique = Date.now() + Math.floor(Math.random() * 1000);
+  const unique = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
   return {
     fullName: 'Test User',
-    email: `test_${unique}@email.com`,
-    phone: `${unique}`,
+    email: `${USER_E2E_PREFIX}_${unique}@email.com`,
+    phone: unique,
     password: 'password123',
     ...overrides,
   };
+}
+
+function createUser(prisma: PrismaService, overrides = {}) {
+  return baseCreateUser(prisma, {
+    email: `${USER_E2E_PREFIX}_${randomUUID()}@test.com`,
+    ...overrides,
+  });
+}
+
+function createUserWithToken(prisma: PrismaService, auth: AuthService, overrides = {}) {
+  return baseCreateUserWithToken(prisma, auth, {
+    email: `${USER_E2E_PREFIX}_${randomUUID()}@test.com`,
+    ...overrides,
+  });
+}
+
+function cleanupUsers(prisma: PrismaService) {
+  return prisma.user.deleteMany({ where: { email: { startsWith: USER_E2E_PREFIX } } });
 }
 
 function createMockFile() {
@@ -58,14 +83,15 @@ describe('User', () => {
     authService = moduleFixture.get<AuthService>(AuthService);
     mailService = moduleFixture.get<MailService>(MailService);
 
-    await prismaService.user.deleteMany({});
+    await cleanupUsers(prismaService);
   });
 
   afterEach(async () => {
-    await prismaService.user.deleteMany({});
+    await cleanupUsers(prismaService);
   });
 
   afterAll(async () => {
+    await cleanupUsers(prismaService);
     await app.close();
   });
 
@@ -76,17 +102,28 @@ describe('User', () => {
       const response = await request(app.getHttpServer()).post('/user').send(userDto);
 
       expect(response.status).toBe(201);
-      expect(response.body).toMatchObject({
-        email: userDto.email,
-        phone: userDto.phone,
-        fullName: userDto.fullName,
-      });
-      expect(response.body).not.toHaveProperty('hash');
-      expect(response.body).not.toHaveProperty('refreshToken');
-      expect(response.body).not.toHaveProperty('pushNotifToken');
+      expect(response.body).toEqual({ message: USER_MESSAGES.REGISTRATION_RECEIVED });
     });
 
-    it('deve retornar erro 409 caso o email esteja em uso', async () => {
+    it('deve normalizar o email e permitir login sem diferenciar maiúsculas de minúsculas', async () => {
+      const userDto = makeUserDto({ email: `${USER_E2E_PREFIX}_MixedCase@Email.com` });
+
+      const response = await request(app.getHttpServer()).post('/user').send(userDto);
+      expect(response.status).toBe(201);
+
+      const stored = await prismaService.user.findFirst({
+        where: { email: { equals: userDto.email.toLowerCase(), mode: 'insensitive' } },
+      });
+      expect(stored?.email).toBe(userDto.email.toLowerCase());
+
+      const login = await authService.login({
+        email: userDto.email.toUpperCase(),
+        password: userDto.password,
+      });
+      expect(login.accessToken).toBeDefined();
+    });
+
+    it('deve retornar 201 genérico caso o email esteja em uso', async () => {
       const existingUser = await createUser(prismaService);
 
       const userDto = makeUserDto({
@@ -96,7 +133,26 @@ describe('User', () => {
 
       const response = await request(app.getHttpServer()).post('/user').send(userDto);
 
-      expect(response.status).toBe(409);
+      expect(response.status).toBe(201);
+      expect(response.body).toEqual({ message: USER_MESSAGES.REGISTRATION_RECEIVED });
+      expect(await prismaService.user.count({ where: { email: existingUser.email } })).toBe(1);
+    });
+
+    it('não deve revelar se o conflito foi por email ou telefone', async () => {
+      const existingUser = await createUser(prismaService);
+
+      const emailConflict = await request(app.getHttpServer())
+        .post('/user')
+        .send(makeUserDto({ email: existingUser.email }));
+
+      const phoneConflict = await request(app.getHttpServer())
+        .post('/user')
+        .send(makeUserDto({ phone: existingUser.phone }));
+
+      expect(emailConflict.status).toBe(201);
+      expect(phoneConflict.status).toBe(201);
+      expect(emailConflict.body).toEqual(phoneConflict.body);
+      expect(emailConflict.body).toEqual({ message: USER_MESSAGES.REGISTRATION_RECEIVED });
     });
 
     it('deve retornar erro 400 se faltar campos obrigatorios', async () => {
@@ -514,6 +570,43 @@ describe('User', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.message).toBe(USER_MESSAGES.INVALID_PASSWORD);
+    });
+
+    it('deve retornar 429 após exceder o limite de troca de senha do usuário', async () => {
+      const { token } = await createUserWithToken(prismaService, authService);
+      const { token: otherToken } = await createUserWithToken(prismaService, authService);
+
+      for (let attempt = 0; attempt < THROTTLE_PASSWORD_LIMIT; attempt++) {
+        const response = await request(app.getHttpServer())
+          .patch('/user/change-password')
+          .set('Authorization', 'Bearer ' + token)
+          .send({
+            oldPassword: 'senhaErrada',
+            newPassword: 'newPassword123',
+          });
+
+        expect(response.status).toBe(401);
+      }
+
+      const blocked = await request(app.getHttpServer())
+        .patch('/user/change-password')
+        .set('Authorization', 'Bearer ' + token)
+        .send({
+          oldPassword: 'senhaErrada',
+          newPassword: 'newPassword123',
+        });
+
+      expect(blocked.status).toBe(429);
+
+      const otherUser = await request(app.getHttpServer())
+        .patch('/user/change-password')
+        .set('Authorization', 'Bearer ' + otherToken)
+        .send({
+          oldPassword: 'senhaErrada',
+          newPassword: 'newPassword123',
+        });
+
+      expect(otherUser.status).toBe(401);
     });
 
     it('deve retornar erro 401 caso o token for invalido', async () => {

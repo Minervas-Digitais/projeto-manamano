@@ -48,16 +48,16 @@ export default function SignUp({ navigation }: any) {
       await api.post('/user', updatedData);
       Toast.show({
         type: 'success',
-        text1: 'Cadastro realizado',
-        text2: 'Seu cadastro foi realizado com sucesso!',
+        text1: 'Cadastro recebido',
+        text2: 'Se você já tinha uma conta, use Entrar ou recupere sua senha.',
       });
       navigation.navigate('SignIn');
     } catch (error: unknown) {
-      if (isAxiosError(error) && error.response?.status === 409) {
+      if (isAxiosError(error) && error.response?.status === 429) {
         Toast.show({
           type: 'error',
-          text1: 'Erro no cadastro',
-          text2: 'E-mail ou celular já está associado a outra conta!',
+          text1: 'Muitas tentativas',
+          text2: 'Aguarde alguns minutos e tente novamente.',
         });
         return;
       }
@@ -173,6 +173,10 @@ export default function SignUp({ navigation }: any) {
                 minLength: {
                   value: 8,
                   message: 'A senha deve ter no mínimo 8 caracteres',
+                },
+                maxLength: {
+                  value: 72,
+                  message: 'A senha deve ter no máximo 72 caracteres',
                 },
               }}
               render={({ field: { onChange, value } }) => (

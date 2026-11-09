@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
+import { ThrottlingModule } from 'src/common/throttling/throttling.module';
 import { ValidatorModule } from 'src/common/validators/validator.module';
 import { TokenModule } from 'src/auth/token.module';
 import { MailModule } from 'src/mail/mail.module';
 
 @Module({
-  imports: [PrismaModule, ValidatorModule, TokenModule, MailModule],
+  imports: [PrismaModule, ValidatorModule, ThrottlingModule, TokenModule, MailModule],
   controllers: [UserController],
   providers: [UserService],
   exports: [UserService],

@@ -15,6 +15,7 @@ import { ArchiveModule } from './archive/archive.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SavedPostModule } from './saved-post/saved-post.module';
 import { VersionModule } from './version/version.module';
+import { ThrottlingModule } from './common/throttling/throttling.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { VersionModule } from './version/version.module';
     PrismaModule,
     SavedPostModule,
     VersionModule,
+    ThrottlingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
