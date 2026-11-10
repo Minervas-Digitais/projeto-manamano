@@ -129,9 +129,6 @@ export class UserService {
 
     const hashedPassword = await bcrypt.hash(newPassword, roundsOfHashing);
 
-    // Atualiza o hash da senha e rotaciona a sessão na mesma transação: o refresh
-    // token anterior (de qualquer aparelho) deixa de valer e o aparelho atual
-    // recebe um novo par de tokens.
     const tokens = await this.prismaService.$transaction(async (tx) => {
       await tx.user.update({
         where: { id: id },

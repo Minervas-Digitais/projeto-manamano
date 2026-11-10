@@ -14,11 +14,6 @@ export interface TokenPair {
   refreshToken: string;
 }
 
-/**
- * Emissão, validação e revogação dos tokens de sessão. Fica separado do
- * AuthService para que outros módulos (ex.: troca de senha no UserModule)
- * possam rotacionar a sessão sem criar dependência circular com o AuthModule.
- */
 @Injectable()
 export class TokenService {
   constructor(
@@ -26,16 +21,10 @@ export class TokenService {
     private jwtService: JwtService,
   ) {}
 
-  /**
-   * Gera um novo par de tokens e grava o hash SHA-256 do refresh token.
-   * Como só existe um refresh token por usuário, isso revoga qualquer sessão anterior.
-   */
   async generateTokens(
     user: TokenSubject,
     tx: Prisma.TransactionClient = this.prismaService,
   ): Promise<TokenPair> {
-    // jti garante tokens distintos mesmo quando emitidos no mesmo segundo
-    // (sem ele, a rotação logo após o login reemitiria o mesmo refresh token).
     const payload = {
       sub: user.id,
       email: user.email,
@@ -64,9 +53,6 @@ export class TokenService {
     };
   }
 
-  /**
-   * Valida o refresh token comparando seu hash SHA-256 em tempo constante.
-   */
   async isRefreshTokenValid(refreshToken: string, storedHash: string): Promise<boolean> {
     const stored = Buffer.from(storedHash, 'hex');
     const candidate = Buffer.from(this.hashRefreshToken(refreshToken), 'hex');
