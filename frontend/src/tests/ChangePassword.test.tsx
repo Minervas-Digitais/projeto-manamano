@@ -4,8 +4,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
 import api from '../services/api';
+import authStore from '../store/authStore';
 import ChangePassword from '../pages/ChangePassword/ChangePassword';
 import Config from '../pages/Configuration/Configuration';
+
+jest.mock('../store/authStore', () => ({
+  __esModule: true,
+  default: {
+    updateTokens: jest.fn(),
+  },
+}));
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
@@ -73,7 +81,12 @@ describe('ChangePassword', () => {
   });
 
   it('deve submeter e navegar após sucesso', async () => {
-    mockPatch.mockResolvedValueOnce({ data: {} });
+    mockPatch.mockResolvedValueOnce({
+      data: {
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+      },
+    });
 
     const { findByLabelText, findByText } = renderWithNavigation();
 
@@ -88,6 +101,7 @@ describe('ChangePassword', () => {
         oldPassword: 'senhaAntiga123',
         newPassword: 'novaSenha1',
       });
+      expect(authStore.updateTokens).toHaveBeenCalledWith('new-access-token', 'new-refresh-token');
       expect(Toast.show).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'success',
@@ -168,7 +182,29 @@ describe('ChangePassword', () => {
     });
   });
 
-  it('deve mostrar mensagem específica do backend para nova senha igual à antiga', async () => {
+  it('deve impedir envio e mostrar erro quando a nova senha for igual à senha atual', async () => {
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'mesmaSenha123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'mesmaSenha123');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'mesmaSenha123');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'A nova senha não pode ser igual à senha antiga.',
+        }),
+      );
+      expect(mockPatch).not.toHaveBeenCalled();
+    });
+
+    expect(await findByText('A nova senha não pode ser igual à senha antiga.')).toBeTruthy();
+  });
+
+  it('deve exibir mensagem do backend caso retorne 409 Conflict', async () => {
     mockPatch.mockRejectedValueOnce({
       response: {
         status: 409,
@@ -179,9 +215,9 @@ describe('ChangePassword', () => {
 
     const { findByLabelText, findByText } = renderWithNavigation();
 
-    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'mesmaSenha123');
-    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'mesmaSenha123');
-    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'mesmaSenha123');
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'outraSenha123');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'outraSenha123');
 
     fireEvent.press(await findByText('Salvar'));
 
@@ -206,5 +242,87 @@ describe('ChangePassword', () => {
 
     expect(await findByText('A senha deve ter no mínimo 8 caracteres')).toBeTruthy();
     expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it('deve rejeitar nova senha com mais de 72 caracteres', async () => {
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'a'.repeat(73));
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'a'.repeat(73));
+
+    fireEvent.press(await findByText('Salvar'));
+
+    expect(await findByText('A senha deve ter no máximo 72 caracteres')).toBeTruthy();
+    expect(mockPatch).not.toHaveBeenCalled();
+  });
+
+  it('deve revalidar a confirmação quando a nova senha mudar sem exibir erro prematuro', async () => {
+    const { findByLabelText, findByText, queryByText } = renderWithNavigation();
+
+    const newPasswordInput = await findByLabelText('Digite a nova senha');
+    const confirmPasswordInput = await findByLabelText('Confirme a nova senha');
+
+    fireEvent.changeText(newPasswordInput, 'novaSenha1');
+    expect(queryByText('Campo obrigatório')).toBeNull();
+    expect(queryByText('Senhas não coincidem')).toBeNull();
+
+    fireEvent.changeText(confirmPasswordInput, 'novaSenha12');
+    expect(await findByText('Senhas não coincidem')).toBeTruthy();
+
+    fireEvent.changeText(newPasswordInput, 'novaSenha12');
+    await waitFor(() => {
+      expect(queryByText('Senhas não coincidem')).toBeNull();
+    });
+  });
+
+  it('deve mostrar mensagem amigável ao atingir o limite de tentativas (429)', async () => {
+    mockPatch.mockRejectedValueOnce({
+      response: {
+        status: 429,
+        data: { message: 'ThrottlerException: Too Many Requests' },
+      },
+      isAxiosError: true,
+    });
+
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaErrada');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'novaSenha1');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+        }),
+      );
+    });
+  });
+
+  it('deve mostrar mensagem amigável quando não houver conexão de rede', async () => {
+    mockPatch.mockRejectedValueOnce({
+      isAxiosError: true,
+    });
+
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'novaSenha1');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'novaSenha1');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'Não foi possível conectar. Verifique sua internet e tente novamente.',
+        }),
+      );
+    });
   });
 });
