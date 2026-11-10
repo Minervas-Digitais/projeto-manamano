@@ -53,12 +53,27 @@ export default function ChangePassword() {
     formState: { errors },
     getValues,
     trigger,
+    setError,
   } = useForm<FormData>({
     mode: 'onChange',
   });
 
   const onSubmit = async (data: FormData) => {
     if (isSubmitting) return;
+
+    if (data.newpassword === data.oldpassword) {
+      setError('newpassword', {
+        type: 'manual',
+        message: 'A nova senha não pode ser igual à senha antiga.',
+      });
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'A nova senha não pode ser igual à senha antiga.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await api.patch('/user/change-password', {

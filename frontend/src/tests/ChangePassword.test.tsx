@@ -182,7 +182,29 @@ describe('ChangePassword', () => {
     });
   });
 
-  it('deve mostrar mensagem específica do backend para nova senha igual à antiga', async () => {
+  it('deve impedir envio e mostrar erro quando a nova senha for igual à senha atual', async () => {
+    const { findByLabelText, findByText } = renderWithNavigation();
+
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'mesmaSenha123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'mesmaSenha123');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'mesmaSenha123');
+
+    fireEvent.press(await findByText('Salvar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text2: 'A nova senha não pode ser igual à senha antiga.',
+        }),
+      );
+      expect(mockPatch).not.toHaveBeenCalled();
+    });
+
+    expect(await findByText('A nova senha não pode ser igual à senha antiga.')).toBeTruthy();
+  });
+
+  it('deve exibir mensagem do backend caso retorne 409 Conflict', async () => {
     mockPatch.mockRejectedValueOnce({
       response: {
         status: 409,
@@ -193,9 +215,9 @@ describe('ChangePassword', () => {
 
     const { findByLabelText, findByText } = renderWithNavigation();
 
-    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'mesmaSenha123');
-    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'mesmaSenha123');
-    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'mesmaSenha123');
+    fireEvent.changeText(await findByLabelText('Digite a senha atual'), 'senhaAntiga123');
+    fireEvent.changeText(await findByLabelText('Digite a nova senha'), 'outraSenha123');
+    fireEvent.changeText(await findByLabelText('Confirme a nova senha'), 'outraSenha123');
 
     fireEvent.press(await findByText('Salvar'));
 
