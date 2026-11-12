@@ -23,3 +23,4 @@
 - [ ] Código revisado antes de abrir o PR
 - [ ] Sem logs/debug desnecessários
 - [ ] Sem arquivos não relacionados
+- [ ] Problemas fora do escopo registrados em "Problemas encontrados"
