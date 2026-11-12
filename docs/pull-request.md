@@ -54,6 +54,25 @@ Todo Pull Request deve possuir uma descrição, feita em bullet points, contendo
 - O que foi feito
 - Problemas encontrados
 
+#### Problemas encontrados
+
+Esta seção documenta problemas identificados durante o desenvolvimento que **não podem ser resolvidos no escopo deste PR** e que **devem virar tasks futuras**.
+
+O objetivo é registrar o problema sem aumentar o escopo do PR, evitando que ele seja esquecido e mantendo o histórico da decisão de adiá-lo.
+
+Use esta seção para:
+
+- Problemas fora do escopo atual (outra área, feature ou camada)
+- Dívidas técnicas percebidas durante a implementação
+- Limitações conhecidas que exigem uma task própria
+- Pendências que dependem de outra pessoa, time ou decisão
+
+Não use esta seção para:
+
+- Problemas já corrigidos neste PR (descreva-os em "O que foi feito")
+- Dúvidas ou pedidos de ajuda ao revisor (use "Observações")
+- Listar tarefas do próprio escopo do PR
+
 #### Exemplo
 
     ## O que foi feito
@@ -64,8 +83,8 @@ Todo Pull Request deve possuir uma descrição, feita em bullet points, contendo
 
     ## Problemas encontrados
 
-    - Push notification não funciona em emulator Android
-    - Necessário HTTPS para produção
+    - Push notification não funciona em emulator Android (exige investigação separada)
+    - Envio de e-mail depende de HTTPS em produção (fora do escopo deste PR)
 
 ---
 
@@ -112,6 +131,7 @@ Verifique:
 - Se não existem logs/debug desnecessários
 - Se não existem arquivos não relacionados
 - Se o PR possui escopo único
+- Se os problemas fora do escopo foram registrados em "Problemas encontrados"
 
 ---
 
