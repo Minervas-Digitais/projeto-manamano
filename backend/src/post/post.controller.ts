@@ -45,8 +45,8 @@ export class PostController {
 
   @HttpCode(200)
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<SerializedPost> {
-    return this.postService.findOne(id);
+  findOne(@Param('id') id: string, @User('id') callerId: string): Promise<SerializedPost> {
+    return this.postService.findOne(id, callerId);
   }
 
   @HttpCode(201)
@@ -85,34 +85,40 @@ export class PostController {
 
   @HttpCode(200)
   @Get('group/pinned/:groupId')
-  async getPinnedPosts(@Param('groupId') groupId: string): Promise<SerializedPost[]> {
-    return this.postService.getPinnedPosts(groupId);
+  async getPinnedPosts(
+    @Param('groupId') groupId: string,
+    @User('id') callerId: string,
+  ): Promise<SerializedPost[]> {
+    return this.postService.getPinnedPosts(groupId, callerId);
   }
 
   @HttpCode(200)
   @Get('group/:groupId')
   async getGroupPosts(
     @Param('groupId') groupId: string,
+    @User('id') callerId: string,
     @Query() pagination: PaginationDto,
   ): Promise<PaginatedResponseDto<SerializedPost>> {
-    return this.postService.getGroupPosts(groupId, pagination);
+    return this.postService.getGroupPosts(groupId, callerId, pagination);
   }
 
   @HttpCode(200)
   @Get('category/:categoryId')
   async getCategoryPosts(
     @Param('categoryId') categoryId: string,
+    @User('id') callerId: string,
     @Query() pagination: PaginationDto,
   ): Promise<PaginatedResponseDto<SerializedPost>> {
-    return this.postService.getCategoryPosts(categoryId, pagination);
+    return this.postService.getCategoryPosts(categoryId, callerId, pagination);
   }
 
   @HttpCode(200)
   @Get(':id/posts')
   async findUserPosts(
     @Param('id') id: string,
+    @User('id') callerId: string,
     @Query() pagination: PaginationDto,
   ): Promise<PaginatedResponseDto<SerializedPost>> {
-    return this.postService.getUserPosts(id, pagination);
+    return this.postService.getUserPosts(id, callerId, pagination);
   }
 }

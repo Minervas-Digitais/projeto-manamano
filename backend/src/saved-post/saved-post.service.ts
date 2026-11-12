@@ -42,6 +42,7 @@ export class SavedPostService {
   async savePost(userId: string, dto: CreateSavedPostDto) {
     await this.validator.validateUserExists(userId);
     const post = await this.validator.validatePostExists(dto.postId);
+    await this.validator.ensureGroupAccess(post.groupId, userId);
 
     if (post.userId === userId) {
       throw new ForbiddenException(POST_MESSAGES.CANNOT_SAVE_OWN);
@@ -108,11 +109,15 @@ export class SavedPostService {
       throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
     }
 
+    const { isAdmin, groupIds } = await this.validator.getAccessibleGroupIds(userId);
+    const where = {
+      userId,
+      ...(isAdmin ? {} : { post: { groupId: { in: groupIds } } }),
+    };
+
     const [savedPosts, total] = await Promise.all([
       this.prismaService.savedPost.findMany({
-        where: {
-          userId,
-        },
+        where,
         include: {
           post: {
             include: postInclude,
@@ -125,9 +130,7 @@ export class SavedPostService {
         take: limit,
       }),
       this.prismaService.savedPost.count({
-        where: {
-          userId,
-        },
+        where,
       }),
     ]);
 

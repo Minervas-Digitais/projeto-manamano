@@ -4,7 +4,13 @@ import { ArchiveModule } from 'src/archive/archive.module';
 import { CreateArchiveDto } from 'src/archive/dto/archive.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import request from 'supertest';
-import { createCategory, createGroup, createPost, createUserWithToken } from './test-helpers';
+import {
+  createCategory,
+  createGroup,
+  createParticipant,
+  createPost,
+  createUserWithToken,
+} from './test-helpers';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthModule } from 'src/auth/auth.module';
 
@@ -47,6 +53,7 @@ describe('Archive', () => {
   describe('uploadArquivo', () => {
     it('deve fazer o upload do arquivo', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const dto: CreateArchiveDto = {
         name: 'arquivo-teste',
@@ -91,6 +98,7 @@ describe('Archive', () => {
   describe('getArchive', () => {
     it('deve retornar um arquivo', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const archive = await prismaService.archive.create({
         data: {
@@ -124,6 +132,7 @@ describe('Archive', () => {
   describe('getArchivesByPostId', () => {
     it('deve retornar arquivos do post', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const category = await createCategory(prismaService, {
         groupId: group.id,
@@ -158,6 +167,7 @@ describe('Archive', () => {
 
     it('deve retornar array vazio se não houver arquivos', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const category = await createCategory(prismaService, {
         groupId: group.id,
@@ -189,6 +199,7 @@ describe('Archive', () => {
   describe('getArchivesByGroupId', () => {
     it('deve retornar arquivos do grupo', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const archive = await prismaService.archive.create({
         data: {
@@ -212,6 +223,7 @@ describe('Archive', () => {
 
     it('deve retornar array vazio se grupo não tiver arquivos', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const res = await request(app.getHttpServer())
         .get(`/archives/group/${group.id}`)

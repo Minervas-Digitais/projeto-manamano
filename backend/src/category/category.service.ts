@@ -13,19 +13,24 @@ export class CategoryService {
     private readonly validator: ValidatorService,
   ) {}
 
-  async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
+  async create(createCategoryDto: CreateCategoryDto, callerId: string): Promise<Category> {
     await this.validator.validateGroupExists(createCategoryDto.groupId);
+    await this.validator.ensureGroupAccess(createCategoryDto.groupId, callerId);
 
     return await this.prismaService.category.create({
       data: createCategoryDto,
     });
   }
 
-  async findAll(): Promise<Category[]> {
-    return this.prismaService.category.findMany();
+  async findAll(callerId: string): Promise<Category[]> {
+    const { isAdmin, groupIds } = await this.validator.getAccessibleGroupIds(callerId);
+
+    return this.prismaService.category.findMany({
+      where: isAdmin ? undefined : { groupId: { in: groupIds } },
+    });
   }
 
-  async findCategoriesInGroup(groupId: string): Promise<Category[]> {
+  async findCategoriesInGroup(groupId: string, callerId: string): Promise<Category[]> {
     const group = await this.prismaService.group.findUnique({
       where: { id: groupId },
     });
@@ -34,12 +39,14 @@ export class CategoryService {
       throw new NotFoundException('Grupo não encontrado.');
     }
 
+    await this.validator.ensureGroupAccess(groupId, callerId);
+
     return this.prismaService.category.findMany({
       where: { groupId },
     });
   }
 
-  async findOne(categoryId: string): Promise<Category> {
+  async findOne(categoryId: string, callerId: string): Promise<Category> {
     const category = await this.prismaService.category.findUnique({
       where: {
         id: categoryId,
@@ -50,14 +57,21 @@ export class CategoryService {
       throw new NotFoundException(CATEGORY_MESSAGES.NOT_FOUND);
     }
 
+    await this.validator.ensureGroupAccess(category.groupId, callerId);
+
     return category;
   }
 
-  async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<Category> {
-    await this.findOne(id);
+  async update(
+    id: string,
+    updateCategoryDto: UpdateCategoryDto,
+    callerId: string,
+  ): Promise<Category> {
+    const category = await this.findOne(id, callerId);
 
-    if (updateCategoryDto.groupId) {
+    if (updateCategoryDto.groupId && updateCategoryDto.groupId !== category.groupId) {
       await this.validator.validateGroupExists(updateCategoryDto.groupId);
+      await this.validator.ensureGroupAccess(updateCategoryDto.groupId, callerId);
     }
 
     return await this.prismaService.category.update({
@@ -68,8 +82,8 @@ export class CategoryService {
     });
   }
 
-  async remove(id: string): Promise<Category> {
-    await this.findOne(id);
+  async remove(id: string, callerId: string): Promise<Category> {
+    await this.findOne(id, callerId);
 
     return await this.prismaService.category.delete({
       where: {

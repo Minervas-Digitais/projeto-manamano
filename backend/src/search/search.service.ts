@@ -12,6 +12,7 @@ import { Prisma } from '@prisma/client';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
 import { BASE_MESSAGES } from 'src/messages/base.messages';
+import { ValidatorService } from 'src/common/validators/validator.service';
 
 export interface SearchPaginationMeta {
   total: number;
@@ -45,9 +46,16 @@ const MAX_LIMIT = 20;
 
 @Injectable()
 export class SearchService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private readonly validator: ValidatorService,
+  ) {}
 
-  async search(createSearchDto: CreateSearchDto, pagination: PaginationDto): Promise<SearchResult> {
+  async search(
+    createSearchDto: CreateSearchDto,
+    callerId: string,
+    pagination: PaginationDto,
+  ): Promise<SearchResult> {
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? SEARCH_DEFAULT_LIMIT;
     const skip = (page - 1) * limit;
@@ -56,9 +64,11 @@ export class SearchService {
       throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
     }
 
+    const { isAdmin, groupIds } = await this.validator.getAccessibleGroupIds(callerId);
+
     const userWhere = this.buildUserWhere(createSearchDto.input);
     const groupWhere = this.buildGroupWhere(createSearchDto.input);
-    const postWhere = this.buildPostWhere(createSearchDto.input);
+    const postWhere = this.buildPostWhere(createSearchDto.input, isAdmin ? undefined : groupIds);
 
     const [users, groups, posts, totalUsers, totalGroups, totalPosts] = await Promise.all([
       this.prismaService.user.findMany({
@@ -98,6 +108,7 @@ export class SearchService {
   async searchByFilter(
     createSearchDto: CreateSearchDto,
     filter: SearchFilter,
+    callerId: string,
     pagination: PaginationDto,
   ): Promise<PaginatedResponseDto<UserPublicFields | GroupPublic | Post>> {
     const page = pagination.page ?? 1;
@@ -107,6 +118,8 @@ export class SearchService {
     if (limit > MAX_LIMIT) {
       throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
     }
+
+    const { isAdmin, groupIds } = await this.validator.getAccessibleGroupIds(callerId);
 
     switch (filter) {
       case SearchFilter.USERS: {
@@ -129,7 +142,7 @@ export class SearchService {
         return new PaginatedResponseDto(groups.map(toPublicGroup), total, { page, limit });
       }
       case SearchFilter.POSTS: {
-        const where = this.buildPostWhere(createSearchDto.input);
+        const where = this.buildPostWhere(createSearchDto.input, isAdmin ? undefined : groupIds);
         const [posts, total] = await Promise.all([
           this.prismaService.post.findMany({ where, skip, take: limit }),
           this.prismaService.post.count({ where }),
@@ -159,8 +172,9 @@ export class SearchService {
     };
   }
 
-  private buildPostWhere(input: string): Prisma.PostWhereInput {
+  private buildPostWhere(input: string, groupIds?: string[]): Prisma.PostWhereInput {
     return {
+      ...(groupIds ? { groupId: { in: groupIds } } : {}),
       OR: [
         {
           title: {

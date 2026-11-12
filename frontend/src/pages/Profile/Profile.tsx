@@ -47,8 +47,8 @@ import ErrorState from '../../components/ErrorState/ErrorState';
 const defaultAvatar = require('../../assets/user-profile.png');
 
 export default function Profile({ navigation, route }: any) {
-  const [profileId, setProfileId] = useState(1);
-  const createDeepLink = () => `manamano://profile/${profileId}`;
+  const { loggedId } = useAuth();
+  const createDeepLink = () => `manamano://profile/${loggedId}`;
   const onShare = async () => {
     const deepLink = createDeepLink();
     try {
@@ -79,8 +79,6 @@ export default function Profile({ navigation, route }: any) {
   const [hasMoreSavedPosts, setHasMoreSavedPosts] = useState(false);
   const [loadingMoreSavedPosts, setLoadingMoreSavedPosts] = useState(false);
   const [profileImage, setProfileImage] = useState<any>(null);
-
-  const { loggedId } = useAuth();
 
   const userQuery = useFetch<any>(
     async () => (await api.get(`/user/${loggedId}`)).data,

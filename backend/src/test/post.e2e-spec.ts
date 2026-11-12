@@ -95,6 +95,11 @@ describe('Posts', () => {
     adminToken = adminResult.token;
 
     group = await createGroup(prismaService, { name: 'Test Group' });
+    await createParticipant(prismaService, {
+      userId: user.id,
+      groupId: group.id,
+      role: UserRole.STUDENT,
+    });
     category = await createCategory(prismaService, {
       name: 'Test Category',
       groupId: group.id,
@@ -467,6 +472,11 @@ describe('Posts', () => {
       const userRes = await createUserWithToken(prismaService, authService, {
         fullName: 'Test User',
       });
+      await createParticipant(prismaService, {
+        userId: userRes.user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
 
       userToken = userRes.token;
 
@@ -536,6 +546,11 @@ describe('Posts', () => {
     it('deve remover um post salvo com sucesso', async () => {
       const userRes = await createUserWithToken(prismaService, authService, {
         fullName: 'Test User',
+      });
+      await createParticipant(prismaService, {
+        userId: userRes.user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
       });
 
       userToken = userRes.token;
@@ -1292,6 +1307,11 @@ describe('Posts', () => {
   describe('getGroupPosts - branching extra', () => {
     it('deve retornar PaginatedResponseDto vazio quando grupo sem posts (branch total 0)', async () => {
       const emptyGroup = await createGroup(prismaService, { name: 'Vazio' });
+      await createParticipant(prismaService, {
+        userId: user.id,
+        groupId: emptyGroup.id,
+        role: UserRole.STUDENT,
+      });
       const res = await request(app.getHttpServer())
         .get(`/post/group/${emptyGroup.id}`)
         .set('Authorization', `Bearer ${userToken}`);

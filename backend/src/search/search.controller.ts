@@ -19,6 +19,7 @@ import { GroupPublic } from 'src/group/group.types';
 import { SEARCH_MESSAGES } from 'src/messages/search.messages';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
+import { User } from 'src/user/user.decorator';
 
 @Controller('search')
 @UseGuards(JwtAuthGuard)
@@ -29,9 +30,10 @@ export class SearchController {
   @Post()
   search(
     @Body() createSearchDto: CreateSearchDto,
+    @User('id') callerId: string,
     @Query() pagination: PaginationDto,
   ): Promise<SearchResult> {
-    return this.searchService.search(createSearchDto, pagination);
+    return this.searchService.search(createSearchDto, callerId, pagination);
   }
 
   @HttpCode(200)
@@ -45,8 +47,9 @@ export class SearchController {
       }),
     )
     filter: SearchFilter,
+    @User('id') callerId: string,
     @Query() pagination: PaginationDto,
   ): Promise<PaginatedResponseDto<UserPublicFields | GroupPublic | PostEntity>> {
-    return this.searchService.searchByFilter(createSearchDto, filter, pagination);
+    return this.searchService.searchByFilter(createSearchDto, filter, callerId, pagination);
   }
 }

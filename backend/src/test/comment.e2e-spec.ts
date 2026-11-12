@@ -7,7 +7,8 @@ import request from 'supertest';
 import { UserModule } from 'src/user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { AuthService } from 'src/auth/auth.service';
-import { createUserWithToken, createPost } from './test-helpers';
+import { createUserWithToken, createPost, createParticipant } from './test-helpers';
+import { UserRole } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
 
 describe('Comment (e2e)', () => {
@@ -57,6 +58,12 @@ describe('Comment (e2e)', () => {
         name: 'Test Group',
         inviteCode: Math.random().toString(36).slice(2, 10),
       },
+    });
+
+    await createParticipant(prismaService, {
+      userId: user.id,
+      groupId: group.id,
+      role: UserRole.STUDENT,
     });
 
     category = await prismaService.category.create({
@@ -112,6 +119,11 @@ describe('Comment (e2e)', () => {
         .mockResolvedValue(undefined as any);
 
       const otherUser = await createUserWithToken(prismaService, authService);
+      await createParticipant(prismaService, {
+        userId: otherUser.user.id,
+        groupId: group.id,
+        role: UserRole.STUDENT,
+      });
 
       const dto: CreateCommentDto = {
         content: 'comentário',

@@ -10,7 +10,12 @@ import { AuthModule } from '../auth/auth.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from 'src/auth/auth.service';
 
-import { createUserWithToken, createGroup, createCategory } from './test-helpers';
+import {
+  createUserWithToken,
+  createGroup,
+  createCategory,
+  createParticipant,
+} from './test-helpers';
 
 describe('Category', () => {
   let app: INestApplication;
@@ -18,6 +23,7 @@ describe('Category', () => {
   let authService: AuthService;
 
   let userToken: string;
+  let user: any;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -41,15 +47,19 @@ describe('Category', () => {
 
   beforeEach(async () => {
     await prismaService.category.deleteMany();
+    await prismaService.participant.deleteMany();
     await prismaService.group.deleteMany();
     await prismaService.user.deleteMany();
 
-    userToken = (await createUserWithToken(prismaService, authService)).token;
+    const userRes = await createUserWithToken(prismaService, authService);
+    user = userRes.user;
+    userToken = userRes.token;
   });
 
   describe('create()', () => {
     it('deve criar uma nova categoria', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const res = await request(app.getHttpServer())
         .post('/category')
@@ -79,6 +89,7 @@ describe('Category', () => {
 
     it('deve retornar erro 400 caso o nome da categoria for invalido', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const res = await request(app.getHttpServer())
         .post('/category')
@@ -94,6 +105,7 @@ describe('Category', () => {
 
     it('deve retornar erro 400 caso o tipo da categoria for invalido', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const res = await request(app.getHttpServer())
         .post('/category')
@@ -109,6 +121,7 @@ describe('Category', () => {
 
     it('deve retornar erro 401 caso o jwt token for invalido', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const res = await request(app.getHttpServer())
         .post('/category')
@@ -126,6 +139,7 @@ describe('Category', () => {
   describe('findAll()', () => {
     it('deve retornar todas as categorias', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       await createCategory(prismaService, { groupId: group.id });
 
@@ -156,6 +170,7 @@ describe('Category', () => {
   describe('findCategoriesInGroup()', () => {
     it('deve retornar todas as categorias do grupo do id', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       await createCategory(prismaService, { groupId: group.id });
       await createCategory(prismaService, { groupId: group.id });
@@ -178,6 +193,7 @@ describe('Category', () => {
 
     it('deve retornar [] caso o grupo nao tenha categorias', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const res = await request(app.getHttpServer())
         .get(`/category/group/${group.id}`)
@@ -197,6 +213,7 @@ describe('Category', () => {
   describe('findOne()', () => {
     it('deve retornar uma categoria existente pelo ID', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const category = await createCategory(prismaService, {
         groupId: group.id,
@@ -228,6 +245,7 @@ describe('Category', () => {
   describe('update()', () => {
     it('deve atualizar uma categoria existente', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const category = await createCategory(prismaService, {
         groupId: group.id,
@@ -256,6 +274,7 @@ describe('Category', () => {
 
     it('deve retornar 400 se o nome for vazio', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const category = await createCategory(prismaService, {
         groupId: group.id,
@@ -279,6 +298,7 @@ describe('Category', () => {
   describe('remove()', () => {
     it('deve remover uma categoria existente', async () => {
       const group = await createGroup(prismaService);
+      await createParticipant(prismaService, { userId: user.id, groupId: group.id });
 
       const category = await createCategory(prismaService, {
         groupId: group.id,

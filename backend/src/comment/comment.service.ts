@@ -27,6 +27,8 @@ export class CommentService {
       throw new NotFoundException(COMMENT_MESSAGES.POST_NOT_FOUND);
     }
 
+    await this.validator.ensureGroupAccess(post.groupId, userId);
+
     const senderUser = await this.validator.validateUserExists(userId);
 
     const comment = await this.prismaService.comment.create({
