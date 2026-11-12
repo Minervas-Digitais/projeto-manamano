@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import Toast from 'react-native-toast-message';
 import SignIn from '../pages/SignIn/SignIn';
 
@@ -61,6 +61,40 @@ describe('SignIn', () => {
       expect(mockedNavigate).toHaveBeenCalledWith('Home');
     });
   });
+  it('Deve exibir feedback de carregamento e bloquear duplo envio', async () => {
+    let resolveLogin: () => void = () => {};
+    mockedLogin.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveLogin = resolve;
+        }),
+    );
+
+    const { getByLabelText, getByText } = render(
+      <SignIn navigation={{ navigate: mockedNavigate }} />,
+    );
+
+    fireEvent.changeText(getByLabelText('E-mail'), 'jorge@gmail.com');
+    fireEvent.changeText(getByLabelText('Senha'), 'senha123');
+
+    fireEvent.press(getByText('Entrar'));
+
+    await waitFor(() => {
+      expect(getByText('Entrando...')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Entrando...'));
+    expect(mockedLogin).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveLogin();
+    });
+
+    await waitFor(() => {
+      expect(mockedNavigate).toHaveBeenCalledWith('Home');
+    });
+  });
+
   it('Deve exibir mensagem de erro se os campos estiverem vazios', async () => {
     const { getByText, queryAllByText } = render(
       <SignIn navigation={{ navigate: mockedNavigate }} />,
