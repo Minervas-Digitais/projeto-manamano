@@ -8,6 +8,7 @@ import { UserModule } from 'src/user/user.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { TokenModule } from './token.module';
 import { PasswordResetService } from './password-reset.service';
 
 @Module({
@@ -19,6 +20,7 @@ import { PasswordResetService } from './password-reset.service';
       signOptions: { expiresIn: '99999999999999999999m' },
     }),
     UserModule,
+    TokenModule,
     MailModule,
     ThrottlingModule,
   ],

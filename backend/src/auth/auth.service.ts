@@ -6,9 +6,7 @@ import { LoginDto } from './dto/login.dto';
 import { AuthEntity } from './entity/auth.entity';
 import { RefreshDto } from './dto/refresh.dto';
 import { BASE_MESSAGES } from 'src/messages/base.messages';
-
-const ACCESS_TOKEN_EXPIRATION: string = '15m';
-const REFRESH_TOKEN_EXPIRATION: string = '7d';
+import { TokenService } from './token.service';
 
 // Hash descartável usado quando o e-mail não existe, para que bcrypt.compare
 // tenha o mesmo custo do caminho com usuário real e não vaze a existência da conta.
@@ -20,37 +18,8 @@ export class AuthService {
   constructor(
     private prismaService: PrismaService,
     private jwtService: JwtService,
+    private tokenService: TokenService,
   ) {}
-
-  private async generateTokens(user: any) {
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      sysRole: user.sysRole,
-    };
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: ACCESS_TOKEN_EXPIRATION,
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: REFRESH_TOKEN_EXPIRATION,
-    });
-
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-
-    await this.prismaService.user.update({
-      where: { id: user.id },
-      data: { refreshToken: hashedRefreshToken },
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-    };
-  }
 
   async login(createLoginDto: LoginDto): Promise<AuthEntity> {
     const email = createLoginDto.email.trim().toLowerCase();
@@ -69,7 +38,7 @@ export class AuthService {
       throw new UnauthorizedException(BASE_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    const tokens = await this.generateTokens(user);
+    const tokens = await this.tokenService.generateTokens(user);
 
     return {
       ...tokens,
@@ -91,23 +60,23 @@ export class AuthService {
         throw new UnauthorizedException(BASE_MESSAGES.UNAUTHORIZED_ACCESS);
       }
 
-      const isValid = await bcrypt.compare(refreshLoginDto.refreshToken, user.refreshToken);
+      const isValid = await this.tokenService.isRefreshTokenValid(
+        refreshLoginDto.refreshToken,
+        user.refreshToken,
+      );
 
       if (!isValid) {
         throw new UnauthorizedException(BASE_MESSAGES.UNAUTHORIZED_ACCESS);
       }
 
-      return this.generateTokens(user);
+      return this.tokenService.generateTokens(user);
     } catch {
       throw new UnauthorizedException();
     }
   }
 
   async logout(userId: string) {
-    await this.prismaService.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
-    });
+    await this.tokenService.revokeRefreshToken(userId);
 
     return { message: BASE_MESSAGES.SUCCESS };
   }
