@@ -1,6 +1,6 @@
 /* eslint-disable global-require */
-import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +30,7 @@ import { useAuth } from '../../context/auth/useAuth';
 
 export default function SideMenu({ display, onPress }: any) {
   const { logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const containerPaddingBottom = Math.max(insets.bottom, 16);
@@ -57,12 +58,19 @@ export default function SideMenu({ display, onPress }: any) {
   }
 
   const handleLogout = async () => {
-    await logout();
+    if (isLoggingOut) return;
 
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'WelcomeScreen' }],
-    });
+    setIsLoggingOut(true);
+    try {
+      await logout();
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'WelcomeScreen' }],
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -125,11 +133,18 @@ export default function SideMenu({ display, onPress }: any) {
             onPress={() => handleNavigate('Config')}
           />
           <SideMenuOptions
-            icon={<OutIcon width={24} height={24} />}
-            text="Sair"
+            icon={
+              isLoggingOut ? (
+                <ActivityIndicator size="small" color="#EF4036" />
+              ) : (
+                <OutIcon width={24} height={24} />
+              )
+            }
+            text={isLoggingOut ? 'Saindo...' : 'Sair'}
             font="inter-bold"
             onPress={handleLogout}
             color="#EF4036"
+            disabled={isLoggingOut}
           />
         </SideMenuBottomOptionsContainer>
       </SideMenuContainer>

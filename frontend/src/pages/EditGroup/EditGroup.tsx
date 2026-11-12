@@ -10,6 +10,7 @@
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View, ActivityIndicator } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { EditGroupContainer, EditGroupForm, EditGroupPage } from './EditGroupStyle';
 import ErrorWarning from '../../components/ErrorWarning/ErrorWarning';
 import InputTextCustom from '../../components/InputText/InputTextCustom';
@@ -21,6 +22,7 @@ import useFetch from '../../hooks/useFetch';
 import ErrorState from '../../components/ErrorState/ErrorState';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 export default function EditGroup({ navigation }: any) {
   const { loggedId } = useAuth();
@@ -65,16 +67,32 @@ export default function EditGroup({ navigation }: any) {
     setValue('description', EditGroupData.description);
   }, [EditGroupData.name, EditGroupData.description, setValue]);
 
-  const onSubmit = (data: any) => {
-    if (loggedId && groupId) {
-      api.patch(`/group/${groupId}`, {
+  const onSubmit = async (data: any) => {
+    if (!loggedId || !groupId) return;
+
+    try {
+      await api.patch(`/group/${groupId}`, {
         name: data.name,
         description: data.description,
       });
 
+      Toast.show({
+        type: 'success',
+        text1: 'Grupo atualizado',
+        text2: 'As alterações foram salvas com sucesso.',
+      });
       navigation.navigate('GroupPage', { groupId, groupName });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao salvar',
+        text2: 'Não foi possível atualizar o grupo. Tente novamente.',
+      });
     }
   };
+
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
+
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Editar Grupo' }}>
       <EditGroupPage>
@@ -132,10 +150,13 @@ export default function EditGroup({ navigation }: any) {
             )}
           </View>
           <ButtonCustom
-            onPress={handleSubmit(onSubmit)}
+            onPress={handleSubmit((data) => execute(data))}
             backColor="#160E47"
             fontColor="#fff"
             text="Salvar alterações"
+            loadingText="Salvando..."
+            loading={isLoading}
+            disabled={isBusy}
             border
           />
         </EditGroupContainer>

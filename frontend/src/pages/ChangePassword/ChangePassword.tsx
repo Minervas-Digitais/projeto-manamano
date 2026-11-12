@@ -15,6 +15,7 @@ import api from '../../services/api';
 import IconPassword from '../../assets/lock-icon.svg';
 import { RootStackParamList } from '../../navigation/types';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 export default function ChangePassword() {
   const { loggedId } = useAuth();
@@ -54,6 +55,8 @@ export default function ChangePassword() {
       });
     }
   };
+
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
 
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Mudar Senha' }}>
@@ -131,10 +134,13 @@ export default function ChangePassword() {
             )}
           </SignInInputContainer>
           <ButtonCustom
-            onPress={handleSubmit(onSubmit)}
+            onPress={handleSubmit((data) => execute(data))}
             backColor="#160E47"
             fontColor="white"
             text="Salvar"
+            loadingText="Salvando..."
+            loading={isLoading}
+            disabled={isBusy}
           />
         </SignInForm>
       </View>

@@ -16,6 +16,7 @@ import IconProfile from '../../assets/profile-icon.svg';
 import IconEmail from '../../assets/e-mail-icon.svg';
 import IconWhats from '../../assets/whats-icon.svg';
 import IconPassword from '../../assets/lock-icon.svg';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 interface SignUpFormData {
   fullName: string;
@@ -69,6 +70,8 @@ export default function SignUp({ navigation }: any) {
       });
     }
   };
+
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
 
   return (
     <SignUpContainer>
@@ -195,10 +198,13 @@ export default function SignUp({ navigation }: any) {
           </SignUpInputContainer>
         </View>
         <ButtonCustom
-          onPress={handleSubmit(onSubmit)}
+          onPress={handleSubmit((data) => execute(data))}
           backColor="#160E47"
           fontColor="white"
           text="Cadastrar"
+          loadingText="Cadastrando..."
+          loading={isLoading}
+          disabled={isBusy}
         />
       </SignUpForm>
     </SignUpContainer>

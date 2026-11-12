@@ -13,6 +13,7 @@ import api from '../../services/api';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 export default function GetInTouch() {
   const { loggedId } = useAuth();
@@ -40,6 +41,8 @@ export default function GetInTouch() {
       });
     }
   };
+
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
 
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Fale Conosco' }}>
@@ -84,10 +87,13 @@ export default function GetInTouch() {
             />
             {errors.getintouch && <ErrorWarning errorText="Campo obrigatório" />}
             <ButtonCustom
-              onPress={handleSubmit(onSubmit)}
+              onPress={handleSubmit((data) => execute(data))}
               backColor="#160E47"
               fontColor="white"
               text="Enviar"
+              loadingText="Enviando..."
+              loading={isLoading}
+              disabled={isBusy}
               rightIcon={<ArrowIcon />}
             />
             <RedText font="inter-regular">

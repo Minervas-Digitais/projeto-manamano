@@ -21,6 +21,7 @@ import IconPassword from '../../assets/lock-icon.svg';
 import ManaManoLogo from '../../assets/logo-boas-vindas.svg';
 import { registerForPushNotificationsAsync } from '../../hooks/useNotification';
 import { useAuth } from '../../context/auth/useAuth';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 export default function SignIn({ navigation }: any) {
   const { login } = useAuth();
@@ -81,6 +82,8 @@ export default function SignIn({ navigation }: any) {
       }
     }
   };
+
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
 
   return (
     <SignInContainer>
@@ -144,10 +147,13 @@ export default function SignIn({ navigation }: any) {
               </SignInInputContainer>
             </View>
             <ButtonCustom
-              onPress={handleSubmit(onSubmit)}
+              onPress={handleSubmit((data) => execute(data))}
               backColor="transparent"
               fontColor="#160E47"
               text="Entrar"
+              loadingText="Entrando..."
+              loading={isLoading}
+              disabled={isBusy}
               border
             />
           </SignInForm>

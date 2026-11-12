@@ -10,6 +10,7 @@ import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import api from '../../services/api';
 import { RootStackParamList } from '../../navigation/types';
 import { useResendCooldown } from '../../hooks/useResendCooldown';
+import useAsyncAction from '../../hooks/useAsyncAction';
 import { showForgotPasswordError } from './forgotPasswordErrors';
 import {
   ForgotPasswordEmailText,
@@ -28,8 +29,6 @@ export default function ForgotPasswordCode() {
   const email = route.params?.email;
 
   const [code, setCode] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isResending, setIsResending] = useState(false);
 
   const { limitReached, remainingMs, registerSent } = useResendCooldown(email ?? '');
 
@@ -47,8 +46,6 @@ export default function ForgotPasswordCode() {
   };
 
   const handleResend = async () => {
-    if (isResending) return;
-
     if (remainingMs > 0) {
       Toast.show({
         type: 'error',
@@ -58,7 +55,6 @@ export default function ForgotPasswordCode() {
       return;
     }
 
-    setIsResending(true);
     try {
       await api.post('/auth/forgot-password', { email });
       registerSent();
@@ -70,15 +66,12 @@ export default function ForgotPasswordCode() {
       });
     } catch (error) {
       showForgotPasswordError(error);
-    } finally {
-      setIsResending(false);
     }
   };
 
   const onSubmit = async () => {
-    if (!email || code.length !== 6 || isSubmitting) return;
+    if (!email || code.length !== 6) return;
 
-    setIsSubmitting(true);
     try {
       const response = await api.post('/auth/verify-reset-code', { email, code });
       const resetToken = response.data?.resetToken;
@@ -96,13 +89,22 @@ export default function ForgotPasswordCode() {
     } catch (error) {
       showForgotPasswordError(error);
       setCode('');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
+  const {
+    execute: submitCode,
+    isLoading: isSubmitting,
+    isBusy: isSubmitBusy,
+  } = useAsyncAction(onSubmit);
+  const {
+    execute: resendCode,
+    isLoading: isResending,
+    isBusy: isResendBusy,
+  } = useAsyncAction(handleResend);
+
   const isTimerActive = remainingMs > 0;
-  const isButtonDisabled = code.length !== 6 || isSubmitting;
+  const isButtonDisabled = code.length !== 6 || isSubmitBusy;
 
   if (!email) return null;
 
@@ -135,11 +137,11 @@ export default function ForgotPasswordCode() {
                 </ForgotPasswordText>
               ) : (
                 <ResendButton
-                  onPress={handleResend}
+                  onPress={resendCode}
                   testID="forgot-resend-button"
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: isResending }}
-                  disabled={isResending}>
+                  accessibilityState={{ disabled: isResendBusy, busy: isResending }}
+                  disabled={isResendBusy}>
                   <ResendText available={!isTimerActive}>
                     {isResending
                       ? 'Reenviando...'
@@ -153,10 +155,12 @@ export default function ForgotPasswordCode() {
 
             <View style={{ marginTop: 24 }}>
               <ButtonCustom
-                onPress={onSubmit}
+                onPress={submitCode}
                 backColor="#160E47"
                 fontColor="white"
-                text={isSubmitting ? 'Confirmando...' : 'Confirmar'}
+                text="Confirmar"
+                loadingText="Confirmando..."
+                loading={isSubmitting}
                 disabled={isButtonDisabled}
                 testID="forgot-code-submit"
               />

@@ -9,7 +9,8 @@ export const ButtonText = styled.Text<{ fontColor?: string; fontFamily?: string 
 
 export const ButtonContainer = styled.TouchableOpacity<{
   backgroundColor?: string;
-  border?: string;
+  border?: boolean;
+  disabled?: boolean;
 }>`
   display: flex;
   background-color: ${(prop) => prop.backgroundColor};

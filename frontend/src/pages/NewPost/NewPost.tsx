@@ -31,6 +31,7 @@ import AttachmentIcon from '../../assets/add-attachment-icon.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 export const validateDateInternal = (dateRef: React.RefObject<any>) => {
   const inputDate = dateRef.current ? new Date(dateRef.current.getRawValue()) : new Date();
@@ -188,6 +189,8 @@ export default function NewPost({ navigation }: any) {
       }
     }
   };
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
+
   const validateDate = () => validateDateInternal(dateRef);
   const validateHour = () => validateHourInternal(dateRef, hourRef);
   const pickFile = async () => {
@@ -318,10 +321,13 @@ export default function NewPost({ navigation }: any) {
               </NewPostInputTextContainer>
               <View style={{ paddingBottom: 30 }}>
                 <ButtonCustom
-                  onPress={handleSubmit(onSubmit)}
+                  onPress={handleSubmit((data) => execute(data))}
                   backColor="#160E47"
                   fontColor="white"
                   text="Publicar"
+                  loadingText="Publicando..."
+                  loading={isLoading}
+                  disabled={isBusy}
                   rightIcon={<ArrowIcon />}
                 />
               </View>
@@ -414,10 +420,13 @@ export default function NewPost({ navigation }: any) {
                 />
                 {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
                 <ButtonCustom
-                  onPress={handleSubmit(onSubmit)}
+                  onPress={handleSubmit((data) => execute(data))}
                   backColor="#160E47"
                   fontColor="white"
                   text="Publicar"
+                  loadingText="Publicando..."
+                  loading={isLoading}
+                  disabled={isBusy}
                   rightIcon={<ArrowIcon />}
                 />
               </BottomPartContainer>

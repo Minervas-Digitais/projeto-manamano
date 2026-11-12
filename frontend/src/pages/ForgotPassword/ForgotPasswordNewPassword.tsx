@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -13,6 +13,7 @@ import IconPassword from '../../assets/lock-icon.svg';
 import api from '../../services/api';
 import { RootStackParamList } from '../../navigation/types';
 import { clearResendCooldown } from '../../hooks/useResendCooldown';
+import useAsyncAction from '../../hooks/useAsyncAction';
 import {
   EXPIRED_RESET_TOKEN_MESSAGE,
   isExpiredResetToken,
@@ -31,8 +32,6 @@ export default function ForgotPasswordNewPassword() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   const resetToken = route.params?.resetToken;
-
-  const [isLoading, setIsLoading] = useState(false);
 
   const {
     control,
@@ -58,9 +57,8 @@ export default function ForgotPasswordNewPassword() {
   }, [navigation, resetToken]);
 
   const onSubmit = async (data: FormData) => {
-    if (!resetToken || isLoading) return;
+    if (!resetToken) return;
 
-    setIsLoading(true);
     try {
       await api.post('/auth/reset-password', {
         resetToken,
@@ -94,10 +92,10 @@ export default function ForgotPasswordNewPassword() {
       }
 
       showForgotPasswordError(error);
-    } finally {
-      setIsLoading(false);
     }
   };
+
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
 
   if (!resetToken) return null;
 
@@ -170,11 +168,13 @@ export default function ForgotPasswordNewPassword() {
 
             <View style={{ marginTop: 24 }}>
               <ButtonCustom
-                onPress={handleSubmit(onSubmit)}
+                onPress={handleSubmit((data) => execute(data))}
                 backColor="#160E47"
                 fontColor="white"
-                text={isLoading ? 'Salvando...' : 'Confirmar'}
-                disabled={isLoading}
+                text="Confirmar"
+                loadingText="Salvando..."
+                loading={isLoading}
+                disabled={isBusy}
                 testID="forgot-new-password-submit"
               />
             </View>
