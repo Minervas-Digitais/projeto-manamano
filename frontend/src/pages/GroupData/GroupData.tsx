@@ -108,10 +108,18 @@ export default function GroupData({ navigation }: any) {
   const loggedUserParticipantRole =
     groupParticipant.find((participant: any) => participant.userId === loggedId)?.role ?? 'MEMBER';
 
-  function handleRemoveParticipant() {
-    api.delete(`/participant/group/${groupId}`).then(() => {
+  async function handleRemoveParticipant() {
+    try {
+      await api.delete(`/participant/group/${groupId}`);
+      setLeaveGroupModal(false);
       navigation.navigate('Home');
-    });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível sair do grupo. Tente novamente mais tarde.',
+      });
+    }
   }
 
   const handleDeleteParticipant = async (participantUserId: string) => {
@@ -359,10 +367,7 @@ export default function GroupData({ navigation }: any) {
         <DeleteOneConfirmation
           visible={deleteModal.visible}
           text={`Tem certeza que deseja remover ${deleteModal.participantName} do grupo?`}
-          onConfirm={() => {
-            handleDeleteParticipant(deleteModal.participantId);
-            setDeleteModal({ visible: false, participantId: '', participantName: '' });
-          }}
+          onConfirm={() => handleDeleteParticipant(deleteModal.participantId)}
           onCancel={() => {
             setDeleteModal({ visible: false, participantId: '', participantName: '' });
           }}
@@ -370,10 +375,7 @@ export default function GroupData({ navigation }: any) {
         <DeleteOneConfirmation
           visible={leaveGroupModal}
           text="Tem certeza que deseja sair do grupo?"
-          onConfirm={() => {
-            handleRemoveParticipant();
-            setLeaveGroupModal(false);
-          }}
+          onConfirm={handleRemoveParticipant}
           onCancel={() => {
             setLeaveGroupModal(false);
           }}

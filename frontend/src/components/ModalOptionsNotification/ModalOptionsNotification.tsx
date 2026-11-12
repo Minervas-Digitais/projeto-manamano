@@ -2,6 +2,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React, { useEffect, useState } from 'react';
+import { ActivityIndicator } from 'react-native';
 import { useFonts } from 'expo-font';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
@@ -29,6 +30,7 @@ export default function ModalOptionsNotification({
 }: any) {
   const [displayConfirm, setDisplayConfirm] = useState(display ?? false);
   const [displayDelete, setDisplayDelete] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'markRead' | 'delete' | null>(null);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { loggedId } = useAuth();
 
@@ -43,16 +45,21 @@ export default function ModalOptionsNotification({
   if (!fontsLoaded) return null;
 
   const optionsMarkAsRead = async () => {
-    if (!loggedId) return;
+    if (!loggedId || pendingAction) return;
 
     if (type === 'header' && loggedId && !admin) {
-      api.patch('notifications/user/').catch(() => {
+      setPendingAction('markRead');
+      try {
+        await api.patch('notifications/user/');
+      } catch (error) {
         Toast.show({
           type: 'error',
           text1: 'Erro ao atualizar as notificações',
           text2: 'Não foi possível marcar todas as notificações como lidas. Tente novamente.',
         });
-      });
+      } finally {
+        setPendingAction(null);
+      }
     } else if (type === 'header' && admin) {
       navigation.navigate('GlobalNotification', { id });
       setDisplayConfirm(false);
@@ -60,17 +67,25 @@ export default function ModalOptionsNotification({
       navigation.navigate('GlobalNotification', { id, body });
       setDisplayConfirm(false);
     } else {
-      api.patch(`notifications/${id}`).catch(() => {
+      setPendingAction('markRead');
+      try {
+        await api.patch(`notifications/${id}`);
+        setDisplayConfirm(false);
+      } catch (error) {
         Toast.show({
           type: 'error',
           text1: 'Erro ao atualizar notificação',
           text2: 'Não foi possível atualizar a notificação. Tente novamente.',
         });
-      });
-      setDisplayConfirm(false);
+      } finally {
+        setPendingAction(null);
+      }
     }
   };
-  const optionsActions = () => {
+
+  const optionsActions = async () => {
+    if (pendingAction) return;
+
     if (type !== 'header' && !admin) {
       localStorage.set('idNotif', id);
       localStorage.set('displayNotif', true);
@@ -80,22 +95,23 @@ export default function ModalOptionsNotification({
     if (type !== 'header' && admin) {
       if (!loggedId) return;
 
-      api
-        .delete(`notifications/${id}`)
-        .then(() => {
-          setDisplayConfirm(false);
-          Toast.show({
-            type: 'success',
-            text1: 'Notificação excluída com sucesso!',
-          });
-        })
-        .catch(() => {
-          Toast.show({
-            type: 'error',
-            text1: 'Erro ao excluir notificação.',
-            text2: 'Tente novamente mais tarde.',
-          });
+      setPendingAction('delete');
+      try {
+        await api.delete(`notifications/${id}`);
+        setDisplayConfirm(false);
+        Toast.show({
+          type: 'success',
+          text1: 'Notificação excluída com sucesso!',
         });
+      } catch (error) {
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao excluir notificação.',
+          text2: 'Tente novamente mais tarde.',
+        });
+      } finally {
+        setPendingAction(null);
+      }
     }
 
     if (type === 'header') {
@@ -119,8 +135,16 @@ export default function ModalOptionsNotification({
       />
       <ModalOptionsNotificationContainer {...modalContainerProps}>
         {!(admin && type === 'header') && (
-          <ModalOptionsNotificationInfo onPress={optionsActions} testID={`delete-button-${id}`}>
-            <Trash />
+          <ModalOptionsNotificationInfo
+            onPress={optionsActions}
+            testID={`delete-button-${id}`}
+            disabled={!!pendingAction}
+            accessibilityState={{ disabled: !!pendingAction, busy: pendingAction === 'delete' }}>
+            {pendingAction === 'delete' ? (
+              <ActivityIndicator size="small" color="#EF4036" />
+            ) : (
+              <Trash />
+            )}
             <ModalOptionsNotificationText color="red" font="inter-regular">
               {type === 'header'
                 ? 'Excluir todas'
@@ -130,8 +154,15 @@ export default function ModalOptionsNotification({
             </ModalOptionsNotificationText>
           </ModalOptionsNotificationInfo>
         )}
-        <ModalOptionsNotificationInfo onPress={optionsMarkAsRead}>
-          <CheckRead />
+        <ModalOptionsNotificationInfo
+          onPress={optionsMarkAsRead}
+          disabled={!!pendingAction}
+          accessibilityState={{ disabled: !!pendingAction, busy: pendingAction === 'markRead' }}>
+          {pendingAction === 'markRead' ? (
+            <ActivityIndicator size="small" color="#515151" />
+          ) : (
+            <CheckRead />
+          )}
           <ModalOptionsNotificationText color="#515151" font="inter-regular">
             {type === 'header'
               ? admin

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -12,6 +12,7 @@ import IconEmail from '../../assets/e-mail-icon.svg';
 import api from '../../services/api';
 import { RootStackParamList } from '../../navigation/types';
 import { isResendBlocked, registerCodeSent } from '../../hooks/useResendCooldown';
+import useAsyncAction from '../../hooks/useAsyncAction';
 import { showForgotPasswordError } from './forgotPasswordErrors';
 import { ForgotPasswordText } from './ForgotPasswordStyle';
 
@@ -25,7 +26,6 @@ type FormData = {
 export default function ForgotPasswordEmail() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
-  const [isLoading, setIsLoading] = useState(false);
 
   const initialEmail = route.params?.email || '';
 
@@ -41,8 +41,6 @@ export default function ForgotPasswordEmail() {
   });
 
   const onSubmit = async (data: FormData) => {
-    if (isLoading) return;
-
     const email = data.email.trim();
 
     if (isResendBlocked(email)) {
@@ -50,17 +48,16 @@ export default function ForgotPasswordEmail() {
       return;
     }
 
-    setIsLoading(true);
     try {
       await api.post('/auth/forgot-password', { email });
       registerCodeSent(email);
       navigation.navigate('ForgotPasswordCode', { email });
     } catch (error) {
       showForgotPasswordError(error);
-    } finally {
-      setIsLoading(false);
     }
   };
+
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
 
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Redefinir senha' }}>
@@ -108,11 +105,13 @@ export default function ForgotPasswordEmail() {
 
             <View style={{ marginTop: 24 }}>
               <ButtonCustom
-                onPress={handleSubmit(onSubmit)}
+                onPress={handleSubmit((data) => execute(data))}
                 backColor="#160E47"
                 fontColor="white"
-                text={isLoading ? 'Enviando...' : 'Enviar'}
-                disabled={isLoading}
+                text="Enviar"
+                loadingText="Enviando..."
+                loading={isLoading}
+                disabled={isBusy}
                 testID="forgot-email-submit"
               />
             </View>

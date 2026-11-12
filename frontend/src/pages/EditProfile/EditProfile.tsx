@@ -1,10 +1,10 @@
 /* eslint-disable global-require */
 import React, { useRef, useState, useEffect } from 'react';
 import {
+  ActivityIndicator,
   TouchableOpacity,
   View,
   Dimensions,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -43,12 +43,13 @@ import Menu from '../../assets/menuw-icon.svg';
 import BackButton from '../../components/BackButton/BackButton';
 import EditButton from '../../assets/edit-button.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 export default function EditProfile() {
   const {
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     setValue,
   } = useForm({
     defaultValues: {
@@ -109,6 +110,8 @@ export default function EditProfile() {
       });
     }
   };
+
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
 
   const phoneInputRef = useRef<TextInputMask | null>(null);
 
@@ -186,6 +189,8 @@ export default function EditProfile() {
       });
     }
   };
+
+  const { execute: uploadPicture, isLoading: isUploading } = useAsyncAction(pickFile);
 
   const formatDateToDDMMYYYY = (dateString: string) => {
     const date = new Date(dateString);
@@ -319,10 +324,19 @@ export default function EditProfile() {
           <UpperPart>
             <EditImageButton
               testID="edit-profile-picture-button"
-              onPress={() => {
-                pickFile();
-              }}
-            />
+              onPress={uploadPicture}
+              disabled={isUploading}
+              accessibilityState={{ disabled: isUploading, busy: isUploading }}>
+              {isUploading && (
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                  <ActivityIndicator
+                    size="large"
+                    color="#32936F"
+                    testID="edit-profile-picture-loading"
+                  />
+                </View>
+              )}
+            </EditImageButton>
             <ProfilePic source={profileData ? profileData.profileImage : defaultProfImage} />
             <PencilButton>
               <TouchableOpacity onPress={() => {}}>
@@ -554,16 +568,15 @@ export default function EditProfile() {
                   </>
                 )}
               />
-              {isSubmitting ? (
-                <ActivityIndicator size="small" color="#32936F" />
-              ) : (
-                <ButtonCustom
-                  onPress={handleSubmit(onSubmit, onInvalid)}
-                  backColor="#32936F"
-                  fontColor="white"
-                  text="Salvar"
-                />
-              )}
+              <ButtonCustom
+                onPress={handleSubmit((data) => execute(data), onInvalid)}
+                backColor="#32936F"
+                fontColor="white"
+                text="Salvar"
+                loadingText="Salvando..."
+                loading={isLoading}
+                disabled={isBusy}
+              />
             </BottomPart>
           </View>
         </WhiteBackground>

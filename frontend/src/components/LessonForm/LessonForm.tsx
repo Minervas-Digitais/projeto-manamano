@@ -19,6 +19,7 @@ import ArchiveCard from '../ArchiveCard/ArchiveCard';
 import ArrowIcon from '../../assets/arrow-icon.svg';
 import LinkIcon from '../../assets/input-link-icon.svg';
 import CalendarIcon from '../../assets/calendar-icon.svg';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 interface InputRef {
   getRawValue: () => string;
@@ -179,6 +180,8 @@ export default function LessonForm({
     await onSubmit(data, files);
   };
 
+  const { execute, isLoading, isBusy } = useAsyncAction(handleFormSubmit);
+
   return (
     <NewLessonContainer>
       <NamePart>
@@ -334,10 +337,13 @@ export default function LessonForm({
         </ScrollView>
         <ButtonCustom
           testID={submitTestID}
-          onPress={handleSubmit(handleFormSubmit)}
+          onPress={handleSubmit((data) => execute(data))}
           backColor="#160E47"
           fontColor="white"
           text={submitLabel}
+          loadingText={submitLabel === 'Salvar' ? 'Salvando...' : 'Publicando...'}
+          loading={isLoading}
+          disabled={isBusy}
           rightIcon={<ArrowIcon />}
         />
       </LinkPart>

@@ -22,6 +22,7 @@ interface SideMenuOptionsProps {
   text: string;
   color?: string;
   onPress?: () => void;
+  disabled?: boolean;
 }
 
 export default function SideMenuOptions({
@@ -32,6 +33,7 @@ export default function SideMenuOptions({
   text,
   color,
   onPress,
+  disabled,
 }: SideMenuOptionsProps) {
   const [hasUnread, setHasUnread] = useState(false);
   const { loggedId } = useAuth();
@@ -63,7 +65,10 @@ export default function SideMenuOptions({
   const chosenIcon = hasUnread ? icon2 : icon;
 
   return (
-    <SideMenuOptionsButtonsContainer onPress={onPress}>
+    <SideMenuOptionsButtonsContainer
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityState={{ disabled: !!disabled }}>
       {chosenIcon}
       <SideMenuOptionsButtonsText font={font} color={color}>
         {text}

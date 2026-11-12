@@ -9,6 +9,7 @@ import { SignInForm, SignInInputContainer } from '../SignIn/SignInStyle';
 import api from '../../services/api';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 export default function EnterGroup({ navigation }: any) {
   const { loggedId } = useAuth();
@@ -63,6 +64,8 @@ export default function EnterGroup({ navigation }: any) {
     }
   };
 
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
+
   return (
     <ScreenWithHeader headerProps={{ font: 'inter-bold', text: 'Entrar em Grupo' }}>
       <View style={{ flex: 1, backgroundColor: '#f2f6fa' }}>
@@ -85,10 +88,13 @@ export default function EnterGroup({ navigation }: any) {
             />
             {errors.inviteCode && <ErrorWarning errorText="Campo obrigatório" />}
             <ButtonCustom
-              onPress={handleSubmit(onSubmit)}
+              onPress={handleSubmit((data) => execute(data))}
               backColor="#160E47"
               fontColor="white"
               text="Entrar"
+              loadingText="Entrando..."
+              loading={isLoading}
+              disabled={isBusy}
             />
           </SignInInputContainer>
         </SignInForm>

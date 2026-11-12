@@ -17,6 +17,7 @@ import api from '../../services/api';
 import { RootStackParamList } from '../../navigation/types';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 export default function CreateGroup() {
   const { loggedId } = useAuth();
@@ -106,6 +107,8 @@ export default function CreateGroup() {
     }
   };
 
+  const { execute, isLoading, isBusy } = useAsyncAction(handleCreateGroup);
+
   return (
     <ScreenWithHeader headerProps={{ menu: true, font: 'inter-bold', text: 'Criar Grupo' }}>
       <Container>
@@ -187,10 +190,13 @@ export default function CreateGroup() {
             </View>
             <View style={{ alignItems: 'center', marginTop: 50 }}>
               <ButtonCustom
-                onPress={handleCreateGroup}
+                onPress={execute}
                 backColor="#160E47"
                 fontColor="white"
                 text="Criar"
+                loadingText="Criando..."
+                loading={isLoading}
+                disabled={isBusy}
                 testID="create-group-button"
               />
             </View>

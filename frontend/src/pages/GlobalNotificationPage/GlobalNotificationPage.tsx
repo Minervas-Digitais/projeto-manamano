@@ -11,6 +11,7 @@ import BigInputTextCustom from '../../components/BigInputText/BigInputText';
 import { GlobalNotificationContainer } from './GlobalNotificationPageStyle';
 import ScreenWithHeader from '../../components/ScreenWithHeader/ScreenWithHeader';
 import { useAuth } from '../../context/auth/useAuth';
+import useAsyncAction from '../../hooks/useAsyncAction';
 
 export default function GlobalNotificationPage({ navigation }: any) {
   const route = useRoute();
@@ -71,6 +72,8 @@ export default function GlobalNotificationPage({ navigation }: any) {
     }
   };
 
+  const { execute, isLoading, isBusy } = useAsyncAction(onSubmit);
+
   return (
     <ScreenWithHeader
       headerProps={{ font: 'inter-bold', text: body ? 'Editar Comunicado' : 'Comunicado' }}>
@@ -93,10 +96,13 @@ export default function GlobalNotificationPage({ navigation }: any) {
           />
           {errors.input && <ErrorWarning errorText="Campo obrigatório" />}
           <ButtonCustom
-            onPress={handleSubmit(onSubmit)}
+            onPress={handleSubmit((data) => execute(data))}
             backColor="#160E47"
             fontColor="white"
             text={body ? 'Atualizar' : 'Publicar'}
+            loadingText={body ? 'Atualizando...' : 'Publicando...'}
+            loading={isLoading}
+            disabled={isBusy}
           />
         </GlobalNotificationContainer>
       </View>

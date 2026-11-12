@@ -1,7 +1,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable global-require */
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import Toast from 'react-native-toast-message';
 import {
@@ -18,26 +18,30 @@ export default function DeleteConfirmation({ text }: any) {
   const current = localStorage.getString('displayNotif');
 
   const [shouldDisplay, setShouldDisplay] = useState(current);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [fontsLoaded] = useFonts({
     'inter-regular': require('../../fonts/Inter-Regular.ttf'),
   });
   const optionsDelete = async () => {
-    const id = localStorage.getString('idNotif');
+    if (isDeleting) return;
 
-    api
-      .delete(`notifications/${id}`)
-      .then(() => {
-        localStorage.delete('displayNotif');
-        setShouldDisplay(undefined);
-      })
-      .catch(() => {
-        Toast.show({
-          type: 'error',
-          text1: 'Erro ao excluir a notificação',
-          text2: 'Não foi possível excluir a notificação. Tente novamente.',
-        });
+    const id = localStorage.getString('idNotif');
+    setIsDeleting(true);
+
+    try {
+      await api.delete(`notifications/${id}`);
+      localStorage.delete('displayNotif');
+      setShouldDisplay(undefined);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao excluir a notificação',
+        text2: 'Não foi possível excluir a notificação. Tente novamente.',
       });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (!fontsLoaded) return null;
@@ -52,12 +56,24 @@ export default function DeleteConfirmation({ text }: any) {
         </View>
 
         <DeleteConfirmationButtonContainer>
-          <DeleteConfirmationButton onPress={optionsDelete}>
-            <ModalOptionsNotificationText font="inter-regular" color="#EF4036">
-              Excluir
-            </ModalOptionsNotificationText>
+          <DeleteConfirmationButton
+            onPress={optionsDelete}
+            disabled={isDeleting}
+            accessibilityState={{ disabled: isDeleting, busy: isDeleting }}>
+            {isDeleting ? (
+              <ActivityIndicator
+                size="small"
+                color="#EF4036"
+                testID="confirm-delete-notification-loading"
+              />
+            ) : (
+              <ModalOptionsNotificationText font="inter-regular" color="#EF4036">
+                Excluir
+              </ModalOptionsNotificationText>
+            )}
           </DeleteConfirmationButton>
           <DeleteConfirmationButton
+            disabled={isDeleting}
             onPress={() => {
               localStorage.delete('displayNotif');
               setShouldDisplay(undefined);
