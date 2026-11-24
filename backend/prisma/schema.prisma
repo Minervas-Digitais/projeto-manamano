@@ -42,6 +42,7 @@ model User {
   post                  Post[]
   savedPosts SavedPost[]
   passwordResets        PasswordReset[]
+  createdInvites        Invite[]       @relation("CreatedInvites")
 }
 
 model PasswordReset {
@@ -72,6 +73,25 @@ model Group {
   Category    Category[]
   Participant Participant[]
   posts       Post[]
+  invites     Invite[]
+}
+
+model Invite {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  groupId     String
+  role        UserRole  @default(STUDENT)
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  usesCount   Int       @default(0)
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  group     Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User?  @relation("CreatedInvites", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([groupId, revokedAt, expiresAt])
 }
 
 model Participant {
