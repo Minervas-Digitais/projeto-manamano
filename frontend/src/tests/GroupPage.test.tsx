@@ -1,10 +1,11 @@
 import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { RefreshControl, TouchableOpacity, Text, View } from 'react-native';
+import { RefreshControl, TouchableOpacity, Text, View, Alert } from 'react-native';
 import GroupPage from '../pages/GroupPage/GroupPage';
 import api from '../services/api';
 import storage from '../services/secureStorage';
 import Toast from 'react-native-toast-message';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 const mockedNavigate = jest.fn();
 const mockedRoute = {
@@ -1029,6 +1030,188 @@ describe('GroupPage', () => {
       await waitFor(() => {
         // Deve chamar PATCH com token null
         expect(apiPatchMock).toHaveBeenCalledWith('/post/pin/post-1');
+      });
+    });
+  });
+
+  // TESTES DE GERENCIAMENTO DE CONVITES (INSTRUCTOR)
+  describe('Invite Management', () => {
+    const apiDeleteMock = api.delete as jest.Mock;
+    const clipboardSetStringMock = (Clipboard as any).setString as jest.Mock;
+    const futureExpiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const mockInstructorWithInvite = (invite: {
+      inviteCode: string | null;
+      inviteExpiresAt: string | null;
+    }) => {
+      apiGetMock.mockImplementation((url: string) => {
+        if (url === '/group/group-123') {
+          return Promise.resolve({ data: invite });
+        }
+        if (url.includes('/participant/')) {
+          return Promise.resolve({ data: { userId: 'user-123', role: 'INSTRUCTOR' } });
+        }
+        if (url.includes('/post/group/')) {
+          return Promise.resolve(buildPostsResponse(mockPosts));
+        }
+        if (url.includes('/category/group/')) {
+          return Promise.resolve({ data: mockCategories });
+        }
+        if (url.includes('/archives/group/')) {
+          return Promise.resolve({ data: mockArchives });
+        }
+        if (url.includes('/saved-post')) {
+          return Promise.resolve({ data: [] });
+        }
+        return Promise.reject(new Error('Unknown endpoint'));
+      });
+    };
+
+    const openOptionsMenu = async () => {
+      const rendered = render(<GroupPage navigation={{ navigate: mockedNavigate }} />);
+
+      // A role só é conhecida após o fetch de participante e o menu só abre
+      // para INSTRUCTOR. O fetch do convite (/group/:id) é habilitado apenas
+      // para INSTRUCTOR, então esperar por ele garante que a role já foi aplicada.
+      await waitFor(() => {
+        expect(apiGetMock).toHaveBeenCalledWith('/group/group-123');
+      });
+
+      const menuButton = rendered.getByTestId('header-notification-button');
+      fireEvent.press(menuButton);
+
+      // Menu só renderiza para INSTRUCTOR.
+      await rendered.findByText('Gerar novo código');
+
+      return rendered;
+    };
+
+    const mockAlertConfirm = () =>
+      jest.spyOn(Alert, 'alert').mockImplementation(((
+        _title: string,
+        _message: string,
+        buttons?: any[],
+      ) => {
+        const confirm = buttons?.find((button) => button.text !== 'Cancelar');
+        confirm?.onPress?.();
+      }) as any);
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('exibe o código e a data de expiração do convite ativo', async () => {
+      mockInstructorWithInvite({
+        inviteCode: 'ABC12345',
+        inviteExpiresAt: futureExpiration,
+      });
+
+      const { findByText } = await openOptionsMenu();
+
+      expect(await findByText(/Expira em \d{2}\/\d{2}\/\d{4}/)).toBeTruthy();
+      expect(await findByText(/Código: ABC12345/)).toBeTruthy();
+    });
+
+    it('exibe "Sem convite ativo" quando não há convite', async () => {
+      mockInstructorWithInvite({ inviteCode: null, inviteExpiresAt: null });
+
+      const { findByText } = await openOptionsMenu();
+
+      expect(await findByText('Sem convite ativo')).toBeTruthy();
+    });
+
+    it('copia o código ativo ao pressionar a opção de copiar', async () => {
+      mockInstructorWithInvite({
+        inviteCode: 'ABC12345',
+        inviteExpiresAt: futureExpiration,
+      });
+
+      const { getByText } = await openOptionsMenu();
+
+      fireEvent.press(getByText('Copiar código do grupo'));
+
+      await waitFor(() => {
+        expect(clipboardSetStringMock).toHaveBeenCalledWith('ABC12345');
+      });
+    });
+
+    it('regenera o código após confirmação', async () => {
+      mockInstructorWithInvite({
+        inviteCode: 'ABC12345',
+        inviteExpiresAt: futureExpiration,
+      });
+      apiPostMock.mockResolvedValueOnce({
+        data: { code: 'NEWCODE1', role: 'STUDENT', expiresAt: futureExpiration },
+      });
+      mockAlertConfirm();
+
+      const { getByText } = await openOptionsMenu();
+
+      fireEvent.press(getByText('Gerar novo código'));
+
+      await waitFor(() => {
+        expect(apiPostMock).toHaveBeenCalledWith('/group/group-123/invite/regenerate');
+      });
+    });
+
+    it('revoga o código após confirmação', async () => {
+      mockInstructorWithInvite({
+        inviteCode: 'ABC12345',
+        inviteExpiresAt: futureExpiration,
+      });
+      apiDeleteMock.mockResolvedValueOnce({
+        data: { message: 'ok', revoked: true },
+      });
+      mockAlertConfirm();
+
+      const { getByText } = await openOptionsMenu();
+
+      fireEvent.press(getByText('Revogar código'));
+
+      await waitFor(() => {
+        expect(apiDeleteMock).toHaveBeenCalledWith('/group/group-123/invite');
+      });
+    });
+
+    it('mostra "Sem permissão" no erro 403', async () => {
+      mockInstructorWithInvite({
+        inviteCode: 'ABC12345',
+        inviteExpiresAt: futureExpiration,
+      });
+      const forbidden = Object.assign(new Error('Forbidden'), { response: { status: 403 } });
+      apiPostMock.mockRejectedValueOnce(forbidden);
+      mockAlertConfirm();
+
+      const { getByText } = await openOptionsMenu();
+
+      fireEvent.press(getByText('Gerar novo código'));
+
+      await waitFor(() => {
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Sem permissão' }),
+        );
+      });
+    });
+
+    it('mostra "Muitas tentativas" no erro 429', async () => {
+      mockInstructorWithInvite({
+        inviteCode: 'ABC12345',
+        inviteExpiresAt: futureExpiration,
+      });
+      const throttled = Object.assign(new Error('Too Many Requests'), {
+        response: { status: 429 },
+      });
+      apiDeleteMock.mockRejectedValueOnce(throttled);
+      mockAlertConfirm();
+
+      const { getByText } = await openOptionsMenu();
+
+      fireEvent.press(getByText('Revogar código'));
+
+      await waitFor(() => {
+        expect(Toast.show).toHaveBeenCalledWith(
+          expect.objectContaining({ type: 'error', text1: 'Muitas tentativas' }),
+        );
       });
     });
   });

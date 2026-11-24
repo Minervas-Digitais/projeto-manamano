@@ -6,6 +6,7 @@
 import React from 'react';
 import {
   ModalGroupOptionsContainer,
+  ModalGroupOptionsInfo,
   ModalGroupOptionsOptionContainer,
   ModalGroupOptionsText,
 } from './ModalGroupOptionsStyle';
@@ -15,11 +16,19 @@ import BellIcon from '../../assets/notification-icon.svg';
 type ModalGroupOptionsProps = {
   onNotification: () => void;
   onCopyInviteCode: () => void;
+  onRegenerateInvite: () => void;
+  onRevokeInvite: () => void;
+  inviteCode?: string | null;
+  inviteExpirationLabel?: string;
 };
 
 export default function ModalGroupOptions({
   onNotification,
   onCopyInviteCode,
+  onRegenerateInvite,
+  onRevokeInvite,
+  inviteCode,
+  inviteExpirationLabel,
 }: ModalGroupOptionsProps) {
   return (
     <ModalGroupOptionsContainer>
@@ -34,6 +43,24 @@ export default function ModalGroupOptions({
         <LinkIcon />
         <ModalGroupOptionsText font="inter-regular" color="#515151" size="13px">
           Copiar código do grupo
+        </ModalGroupOptionsText>
+      </ModalGroupOptionsOptionContainer>
+
+      <ModalGroupOptionsInfo>
+        {inviteCode
+          ? `Código: ${inviteCode}\n${inviteExpirationLabel ?? 'Sem convite ativo'}`
+          : 'Sem convite ativo'}
+      </ModalGroupOptionsInfo>
+
+      <ModalGroupOptionsOptionContainer onPress={onRegenerateInvite}>
+        <ModalGroupOptionsText font="inter-regular" color="#160E47" size="13px">
+          Gerar novo código
+        </ModalGroupOptionsText>
+      </ModalGroupOptionsOptionContainer>
+
+      <ModalGroupOptionsOptionContainer onPress={onRevokeInvite}>
+        <ModalGroupOptionsText font="inter-regular" color="#EF4036" size="13px">
+          Revogar código
         </ModalGroupOptionsText>
       </ModalGroupOptionsOptionContainer>
     </ModalGroupOptionsContainer>

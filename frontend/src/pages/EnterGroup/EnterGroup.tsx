@@ -46,7 +46,7 @@ export default function EnterGroup({ navigation }: any) {
         Toast.show({
           type: 'error',
           text1: 'Erro',
-          text2: 'Código de convite inválido.',
+          text2: 'Código inválido ou expirado. Peça um novo ao instrutor.',
         });
       } else if (error?.response?.status === 409) {
         Toast.show({
@@ -83,6 +83,8 @@ export default function EnterGroup({ navigation }: any) {
                   value={value}
                   label="Código de Convite"
                   imageIcon={null}
+                  maxLength={8}
+                  autoCapitalize="none"
                 />
               )}
             />

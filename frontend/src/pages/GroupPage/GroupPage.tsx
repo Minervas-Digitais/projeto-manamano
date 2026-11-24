@@ -12,6 +12,7 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute } from '@react-navigation/native';
@@ -49,6 +50,19 @@ import useFetch from '../../hooks/useFetch';
 import ErrorState from '../../components/ErrorState/ErrorState';
 import StaleDataBanner from '../../components/StaleDataBanner/StaleDataBanner';
 import EmptyState from '../../components/EmptyState/EmptyState';
+
+function formatInviteExpiration(expiresAt?: string | null) {
+  if (!expiresAt) return 'Sem convite ativo';
+
+  const date = new Date(expiresAt);
+
+  if (Number.isNaN(date.getTime())) return 'Sem convite ativo';
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+
+  return `Expira em ${day}/${month}/${date.getFullYear()}`;
+}
 
 export default function GroupPage({ navigation }: any) {
   const route = useRoute();
@@ -143,6 +157,23 @@ export default function GroupPage({ navigation }: any) {
   const archives = archivesQuery.data ?? [];
   const posts = [...(postsQuery.data?.posts ?? []), ...extraPosts];
   const userRole = roleQuery.data?.role ?? 'MEMBER';
+
+  const inviteQuery = useFetch<{ code: string | null; expiresAt: string | null }>(
+    async () => {
+      const response = await api.get(`/group/${groupId}`);
+
+      return {
+        code: response.data.inviteCode ?? null,
+        expiresAt: response.data.inviteExpiresAt ?? null,
+      };
+    },
+    [groupId, loggedId, userRole],
+    { enabled: fetchEnabled && userRole === 'INSTRUCTOR' },
+  );
+
+  const inviteCode = inviteQuery.data?.code ?? null;
+  const inviteExpiresAt = inviteQuery.data?.expiresAt ?? null;
+  const inviteExpirationLabel = formatInviteExpiration(inviteExpiresAt);
 
   // Paginação por páginas para Aulas (filtrado de posts)
   const classPosts = posts.filter((p: any) => p.type === 'CLASS');
@@ -298,16 +329,124 @@ export default function GroupPage({ navigation }: any) {
     navigation.navigate('Notification');
   };
 
-  const handleCopyInviteCode = async () => {
-    const res = await api.get(`/group/${groupId}`);
+  const showInviteError = (error: any) => {
+    const status = error?.response?.status;
 
-    Clipboard.setString(res.data.inviteCode);
+    if (status === 403) {
+      Toast.show({
+        type: 'error',
+        text1: 'Sem permissão',
+        text2: 'Você não pode gerenciar convites deste grupo.',
+      });
+      return;
+    }
+
+    if (status === 429) {
+      Toast.show({
+        type: 'error',
+        text1: 'Muitas tentativas',
+        text2: 'Aguarde um momento e tente novamente.',
+      });
+      return;
+    }
+
     Toast.show({
-      type: 'success',
-      text1: 'Codigo Copiado!',
-      visibilityTime: 1000,
+      type: 'error',
+      text1: 'Erro',
+      text2: 'Não foi possível atualizar o convite.',
     });
-    setModalOptions(false);
+  };
+
+  const handleCopyInviteCode = async () => {
+    try {
+      const res = await api.get(`/group/${groupId}`);
+      const code = res.data.inviteCode ?? null;
+
+      inviteQuery.mutate({
+        code,
+        expiresAt: res.data.inviteExpiresAt ?? null,
+      });
+
+      if (!code) {
+        Toast.show({
+          type: 'warning',
+          text1: 'Sem convite ativo',
+          text2: 'Gere um novo código para compartilhar.',
+        });
+        return;
+      }
+
+      Clipboard.setString(code);
+      Toast.show({
+        type: 'success',
+        text1: 'Codigo Copiado!',
+        visibilityTime: 1000,
+      });
+    } catch (error) {
+      showInviteError(error);
+    } finally {
+      setModalOptions(false);
+    }
+  };
+
+  const handleRegenerateInvite = () => {
+    Alert.alert(
+      'Gerar novo código',
+      'O código atual será revogado imediatamente. Deseja continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Gerar novo',
+          onPress: async () => {
+            try {
+              const res = await api.post(`/group/${groupId}/invite/regenerate`);
+
+              inviteQuery.mutate({
+                code: res.data.code ?? null,
+                expiresAt: res.data.expiresAt ?? null,
+              });
+
+              Toast.show({
+                type: 'success',
+                text1: 'Código regenerado!',
+                text2: 'O código anterior não funciona mais.',
+              });
+            } catch (error) {
+              showInviteError(error);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleRevokeInvite = () => {
+    Alert.alert(
+      'Revogar código',
+      'O código atual deixará de funcionar imediatamente. Deseja continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Revogar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/group/${groupId}/invite`);
+
+              inviteQuery.mutate({ code: null, expiresAt: null });
+
+              Toast.show({
+                type: 'success',
+                text1: 'Código revogado!',
+                text2: 'Nenhum convite está ativo agora.',
+              });
+            } catch (error) {
+              showInviteError(error);
+            }
+          },
+        },
+      ],
+    );
   };
 
   if (!!postsQuery.error && postsQuery.data === undefined) {
@@ -341,6 +480,10 @@ export default function GroupPage({ navigation }: any) {
         <ModalGroupOptions
           onNotification={handleNotification}
           onCopyInviteCode={handleCopyInviteCode}
+          onRegenerateInvite={handleRegenerateInvite}
+          onRevokeInvite={handleRevokeInvite}
+          inviteCode={inviteCode}
+          inviteExpirationLabel={inviteExpirationLabel}
         />
       ) : (
         ''
