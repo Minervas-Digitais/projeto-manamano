@@ -20,6 +20,7 @@ type ModalGroupOptionsProps = {
   onRevokeInvite: () => void;
   inviteCode?: string | null;
   inviteExpirationLabel?: string;
+  inviteHasError?: boolean;
 };
 
 export default function ModalGroupOptions({
@@ -29,6 +30,7 @@ export default function ModalGroupOptions({
   onRevokeInvite,
   inviteCode,
   inviteExpirationLabel,
+  inviteHasError,
 }: ModalGroupOptionsProps) {
   return (
     <ModalGroupOptionsContainer>
@@ -47,9 +49,11 @@ export default function ModalGroupOptions({
       </ModalGroupOptionsOptionContainer>
 
       <ModalGroupOptionsInfo>
-        {inviteCode
-          ? `Código: ${inviteCode}\n${inviteExpirationLabel ?? 'Sem convite ativo'}`
-          : 'Sem convite ativo'}
+        {inviteHasError
+          ? 'Erro ao carregar convite'
+          : inviteCode
+            ? `Código: ${inviteCode}\n${inviteExpirationLabel ?? 'Sem convite ativo'}`
+            : 'Sem convite ativo'}
       </ModalGroupOptionsInfo>
 
       <ModalGroupOptionsOptionContainer onPress={onRegenerateInvite}>

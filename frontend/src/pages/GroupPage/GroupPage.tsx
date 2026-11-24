@@ -484,6 +484,7 @@ export default function GroupPage({ navigation }: any) {
           onRevokeInvite={handleRevokeInvite}
           inviteCode={inviteCode}
           inviteExpirationLabel={inviteExpirationLabel}
+          inviteHasError={!!inviteQuery.error}
         />
       ) : (
         ''

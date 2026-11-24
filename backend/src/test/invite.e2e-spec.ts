@@ -7,12 +7,21 @@ import { AuthService } from 'src/auth/auth.service';
 import { GroupModule } from 'src/group/group.module';
 import { INVITE_MESSAGES } from 'src/messages/invite.messages';
 import { ParticipantModule } from 'src/participant/participant.module';
+import { ParticipantController } from 'src/participant/participant.controller';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserModule } from 'src/user/user.module';
 import { RoleType, UserRole } from '@prisma/client';
 import { createGroup, createInvite, createParticipant, createUserWithToken } from './test-helpers';
 
 const PREFIX = `invite_e2e_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+// setup-env define THROTTLE_INVITE_LIMIT=1000 para não interferir nas demais
+// suítes. Reduzimos o limite da rota POST /participant apenas em memória nesta
+// suíte para exercitar o 429 sem disparar 1000 requisições. Cada caso usa
+// usuários únicos, então o limite de 2 tentativas por usuário não afeta os
+// demais testes.
+Reflect.defineMetadata('THROTTLER:LIMITdefault', 2, ParticipantController.prototype.joinGroup);
+Reflect.defineMetadata('THROTTLER:TTLdefault', 60000, ParticipantController.prototype.joinGroup);
 
 function uniqueName() {
   return `${PREFIX}_${randomUUID()}`;
@@ -287,6 +296,58 @@ describe('Invite (e2e)', () => {
         .send({ inviteCode: 'codigo-invalido' });
 
       expect(res.status).toBe(400);
+    });
+
+    it('não gera deadlock entre entrada e revogação concorrentes', async () => {
+      // Regressão do lock ordering: revoke trava a linha de Group e depois o
+      // convite; o join trava o convite e, no INSERT de Participant, precisa
+      // de FK (FOR KEY SHARE) em Group. Com FOR UPDATE isso poderia deadlockar.
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { instructor, group } = await makeInstructorGroup();
+        const code = group.invites[0].code;
+        const entrant = await makeUser();
+
+        const [joinRes, revokeRes] = await Promise.all([
+          request(app.getHttpServer())
+            .post('/participant')
+            .set('Authorization', `Bearer ${entrant.token}`)
+            .send({ inviteCode: code }),
+          request(app.getHttpServer())
+            .delete(`/group/${group.id}/invite`)
+            .set('Authorization', `Bearer ${instructor.token}`),
+        ]);
+
+        // Sem deadlock: a entrada entra (201) ou é rejeitada (404) e a
+        // revogação sempre conclui (200). Nunca 500.
+        expect([201, 404]).toContain(joinRes.status);
+        expect(revokeRes.status).toBe(200);
+      }
+    });
+
+    it('aplica rate limit por usuário na entrada (429)', async () => {
+      const entrant = await makeUser();
+      const statuses: number[] = [];
+
+      // Limite reduzido em memória no topo do arquivo (2 tentativas/usuário).
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const res = await request(app.getHttpServer())
+          .post('/participant')
+          .set('Authorization', `Bearer ${entrant.token}`)
+          .send({ inviteCode: 'invalido' });
+
+        statuses.push(res.status);
+      }
+
+      expect(statuses).toEqual([404, 404, 429]);
+
+      // O bloqueio é por usuário (não por IP): outro usuário segue liberado.
+      const anotherUser = await makeUser();
+      const isolated = await request(app.getHttpServer())
+        .post('/participant')
+        .set('Authorization', `Bearer ${anotherUser.token}`)
+        .send({ inviteCode: 'invalido' });
+
+      expect(isolated.status).toBe(404);
     });
   });
 

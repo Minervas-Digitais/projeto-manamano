@@ -60,7 +60,10 @@ export class InviteService {
         const invite = await this.prisma.$transaction(async (tx) => {
           // Serializa regenerates concorrentes: sem isso, dois pedidos podem
           // revogar antes do commit um do outro e terminar com dois ativos.
-          await tx.$queryRaw`SELECT "id" FROM "Group" WHERE "id" = ${groupId} FOR UPDATE`;
+          // FOR NO KEY UPDATE serializa regenerates/revokes entre si mas não
+          // conflita com o FOR KEY SHARE que o INSERT de Participant usa na FK
+          // de Group, evitando deadlock com joins concorrentes.
+          await tx.$queryRaw`SELECT "id" FROM "Group" WHERE "id" = ${groupId} FOR NO KEY UPDATE`;
 
           await tx.invite.updateMany({
             where: { groupId, revokedAt: null },
@@ -94,11 +97,19 @@ export class InviteService {
 
     return this.prisma.$transaction(async (tx) => {
       // Mesma ordem de lock do regenerate para não intercalar revoke/criação.
-      await tx.$queryRaw`SELECT "id" FROM "Group" WHERE "id" = ${groupId} FOR UPDATE`;
+      // FOR NO KEY UPDATE não conflita com a FK (FOR KEY SHARE) de Participant.
+      await tx.$queryRaw`SELECT "id" FROM "Group" WHERE "id" = ${groupId} FOR NO KEY UPDATE`;
 
       const { count } = await tx.invite.updateMany({
         where: { groupId, revokedAt: null },
         data: { revokedAt: new Date() },
+      });
+
+      // Invalida também o espelho legado: sem isso, o código revogado
+      // continuaria gravado em Group.inviteCode até a remoção da coluna.
+      await tx.group.update({
+        where: { id: groupId },
+        data: { inviteCode: generateInviteCode() },
       });
 
       return { revoked: count > 0 };
