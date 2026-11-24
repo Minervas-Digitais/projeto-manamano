@@ -20,6 +20,12 @@ import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
+import { Throttle } from '@nestjs/throttler';
+import { UserThrottlerGuard } from 'src/common/throttling/user-throttler.guard';
+import {
+  THROTTLE_INVITE_LIMIT,
+  THROTTLE_INVITE_TTL_MS,
+} from 'src/common/throttling/throttling.constants';
 
 @Controller('participant')
 @UseGuards(JwtAuthGuard)
@@ -28,6 +34,13 @@ export class ParticipantController {
 
   @HttpCode(201)
   @Post()
+  @UseGuards(UserThrottlerGuard)
+  @Throttle({
+    default: {
+      limit: THROTTLE_INVITE_LIMIT,
+      ttl: THROTTLE_INVITE_TTL_MS,
+    },
+  })
   joinGroup(
     @Body() createParticipantDto: CreateParticipantDto,
     @User('id') userId: string,

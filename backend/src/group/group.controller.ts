@@ -17,19 +17,27 @@ import { GroupService } from './group.service';
 import { RolesGuard } from 'src/auth/roles.guard';
 import { Roles } from 'src/auth/roles.decorator';
 import { Group } from '@prisma/client';
-import { GroupPublic } from './group.types';
+import { GroupPublic, GroupWithInvite } from './group.types';
 import { User } from 'src/user/user.decorator';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
+import { InviteService, RegeneratedInvite } from './invite.service';
+import { INVITE_MESSAGES } from 'src/messages/invite.messages';
 
 @Controller('group')
 @UseGuards(JwtAuthGuard)
 export class GroupController {
-  constructor(private readonly groupService: GroupService) {}
+  constructor(
+    private readonly groupService: GroupService,
+    private readonly inviteService: InviteService,
+  ) {}
 
   @HttpCode(201)
   @Post()
-  create(@User('id') callerId: string, @Body() createGroupDto: CreateGroupDto): Promise<Group> {
+  create(
+    @User('id') callerId: string,
+    @Body() createGroupDto: CreateGroupDto,
+  ): Promise<GroupWithInvite> {
     return this.groupService.create(createGroupDto, callerId);
   }
 
@@ -46,8 +54,28 @@ export class GroupController {
   findOne(
     @Param('groupId') groupId: string,
     @User('id') callerId: string,
-  ): Promise<Group | GroupPublic> {
+  ): Promise<GroupWithInvite | GroupPublic> {
     return this.groupService.findOne(groupId, callerId);
+  }
+
+  @HttpCode(201)
+  @Post(':groupId/invite/regenerate')
+  regenerateInvite(
+    @Param('groupId') groupId: string,
+    @User('id') callerId: string,
+  ): Promise<RegeneratedInvite> {
+    return this.inviteService.regenerate(groupId, callerId);
+  }
+
+  @HttpCode(200)
+  @Delete(':groupId/invite')
+  async revokeInvite(
+    @Param('groupId') groupId: string,
+    @User('id') callerId: string,
+  ): Promise<{ message: string; revoked: boolean }> {
+    const { revoked } = await this.inviteService.revoke(groupId, callerId);
+
+    return { message: INVITE_MESSAGES.REVOKED, revoked };
   }
 
   @HttpCode(201)

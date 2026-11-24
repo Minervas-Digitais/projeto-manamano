@@ -74,6 +74,8 @@ describe('Group (e2e)', () => {
       expect(res.body.description).toBe(dto.description);
       expect(res.body).toHaveProperty('id');
       expect(res.body).toHaveProperty('inviteCode');
+      expect(res.body.inviteCode).toMatch(/^[A-Za-z0-9]{8}$/);
+      expect(res.body).toHaveProperty('inviteExpiresAt');
     });
 
     it('deve criar grupo com inviteCode e categorias padrão', async () => {
@@ -95,6 +97,12 @@ describe('Group (e2e)', () => {
         where: { groupId: res.body.id },
       });
       expect(categories.length).toBe(4);
+
+      const invites = await prismaService.invite.findMany({
+        where: { groupId: res.body.id, revokedAt: null },
+      });
+      expect(invites).toHaveLength(1);
+      expect(invites[0].code).toBe(res.body.inviteCode);
     });
 
     it('deve falhar com payload inválido', async () => {

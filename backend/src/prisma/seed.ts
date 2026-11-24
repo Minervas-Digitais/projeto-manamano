@@ -1,6 +1,8 @@
 import '../load-env';
 import { PrismaClient, PostType, UserRole, Prisma } from '@prisma/client';
 import { faker } from '@faker-js/faker';
+import { generateInviteCode } from '../group/invite-code.util';
+import { INVITE_TTL_MS } from '../group/invite.constants';
 
 const prisma = new PrismaClient();
 
@@ -45,15 +47,24 @@ async function main() {
   console.log('✅ Usuários criados');
 
   const groups = await Promise.all(
-    Array.from({ length: numberOfGroups }).map(() =>
-      prisma.group.create({
+    Array.from({ length: numberOfGroups }).map(() => {
+      const inviteCode = generateInviteCode();
+
+      return prisma.group.create({
         data: {
           name: faker.company.name(),
           description: faker.lorem.sentence(),
-          inviteCode: faker.string.uuid(),
+          inviteCode,
+          invites: {
+            create: {
+              code: inviteCode,
+              role: UserRole.STUDENT,
+              expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+            },
+          },
         },
-      }),
-    ),
+      });
+    }),
   );
   console.log('✅ Grupos criados');
 

@@ -68,39 +68,64 @@ export class ParticipantService {
     createParticipantDto: CreateParticipantDto,
     userId: string,
   ): Promise<Participant> {
-    const group = await this.prismaService.group.findUnique({
-      where: {
-        inviteCode: createParticipantDto.inviteCode,
-      },
-    });
+    return this.prismaService.$transaction(async (tx) => {
+      // Trava a linha do convite: um revoke concorrente espera o join terminar
+      // (e vice-versa), em vez de o usuário entrar com código recém-revogado.
+      const invites = await tx.$queryRaw<
+        Array<{
+          id: string;
+          groupId: string;
+          role: UserRole;
+          expiresAt: Date;
+          revokedAt: Date | null;
+        }>
+      >`SELECT "id", "groupId", "role", "expiresAt", "revokedAt"
+        FROM "Invite"
+        WHERE "code" = ${createParticipantDto.inviteCode}
+        FOR UPDATE`;
 
-    if (!group) {
-      throw new NotFoundException(PARTICIPANT_MESSAGES.INVALID_INVITE_CODE);
-    }
+      const invite = invites[0];
 
-    await this.validator.validateUserExists(userId);
+      // Resposta uniforme para inexistente, revogado ou expirado: não revela
+      // se o código já existiu (evita enumeração).
+      if (!invite || invite.revokedAt || invite.expiresAt.getTime() <= Date.now()) {
+        throw new NotFoundException(PARTICIPANT_MESSAGES.INVALID_INVITE_CODE);
+      }
 
-    const participant = await this.prismaService.participant.findUnique({
-      where: {
-        userId_groupId: {
-          userId: userId,
-          groupId: group.id,
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new NotFoundException(PARTICIPANT_MESSAGES.USER_NOT_FOUND);
+      }
+
+      const participant = await tx.participant.findUnique({
+        where: {
+          userId_groupId: {
+            userId: userId,
+            groupId: invite.groupId,
+          },
         },
-      },
-    });
+      });
 
-    if (participant) {
-      throw new ConflictException(PARTICIPANT_MESSAGES.ALREADY_IN_GROUP);
-    }
+      if (participant) {
+        throw new ConflictException(PARTICIPANT_MESSAGES.ALREADY_IN_GROUP);
+      }
 
-    const participantBody = {
-      groupId: group.id,
-      userId,
-      role: UserRole.STUDENT,
-    };
+      await tx.invite.update({
+        where: { id: invite.id },
+        data: { usesCount: { increment: 1 } },
+      });
 
-    return await this.prismaService.participant.create({
-      data: participantBody,
+      return tx.participant.create({
+        data: {
+          groupId: invite.groupId,
+          userId,
+          role: invite.role,
+        },
+      });
     });
   }
 

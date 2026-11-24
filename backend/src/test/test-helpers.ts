@@ -1,7 +1,9 @@
-import { PostType, UserRole } from '@prisma/client';
+import { PostType, Prisma, UserRole } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { AuthService } from 'src/auth/auth.service';
+import { generateInviteCode } from 'src/group/invite-code.util';
+import { INVITE_TTL_MS } from 'src/group/invite.constants';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 const password = 'password123';
@@ -64,14 +66,50 @@ export async function createCategory(
 }
 
 /**
- * Cria um grupo.
+ * Cria um grupo junto com um convite ativo.
  */
-export async function createGroup(prisma: PrismaService, overrides = {}) {
+export async function createGroup(
+  prisma: PrismaService,
+  overrides: Partial<Prisma.GroupCreateInput> = {},
+) {
+  const code = generateInviteCode();
+
   return prisma.group.create({
     data: {
       name: 'Test Group',
-      inviteCode: Math.random().toString(36).slice(2, 10),
       ...overrides,
+      inviteCode: code,
+      invites: {
+        create: {
+          code,
+          expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+        },
+      },
+    },
+    include: { invites: true },
+  });
+}
+
+/**
+ * Cria um convite avulso (expirado/revogado) para um grupo.
+ */
+export async function createInvite(
+  prisma: PrismaService,
+  data: {
+    groupId: string;
+    code?: string;
+    expiresAt?: Date;
+    revokedAt?: Date | null;
+    role?: UserRole;
+  },
+) {
+  return prisma.invite.create({
+    data: {
+      groupId: data.groupId,
+      code: data.code ?? generateInviteCode(),
+      expiresAt: data.expiresAt ?? new Date(Date.now() + INVITE_TTL_MS),
+      revokedAt: data.revokedAt ?? null,
+      role: data.role ?? UserRole.STUDENT,
     },
   });
 }

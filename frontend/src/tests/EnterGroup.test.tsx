@@ -94,4 +94,32 @@ describe('EnterGroup', () => {
       expect(queryByText('Campo obrigatório')).toBeTruthy();
     });
   });
+
+  it('deve mapear o erro 404 para a mensagem de código inválido/expirado', async () => {
+    const error: any = new Error('Not found');
+    error.response = { status: 404 };
+    mockPost.mockRejectedValueOnce(error);
+
+    const { getByLabelText, getByText } = renderWithNavigation();
+
+    fireEvent.changeText(getByLabelText('Código de Convite'), 'INVALID1');
+    fireEvent.press(getByText('Entrar'));
+
+    await waitFor(() => {
+      expect(Toast.show).toHaveBeenCalledWith({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Código inválido ou expirado. Peça um novo ao instrutor.',
+      });
+    });
+  });
+
+  it('limita o código a 8 caracteres e desativa autocapitalização', () => {
+    const { getByLabelText } = renderWithNavigation();
+
+    const input = getByLabelText('Código de Convite');
+
+    expect(input.props.maxLength).toBe(8);
+    expect(input.props.autoCapitalize).toBe('none');
+  });
 });

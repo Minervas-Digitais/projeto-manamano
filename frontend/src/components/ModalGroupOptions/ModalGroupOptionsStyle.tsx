@@ -13,7 +13,7 @@ export const ModalGroupOptionsContainer = styled.View`
 
   width: 190px;
 
-  height: 90px;
+  min-height: 90px;
 
   background-color: #f2f6fa;
 
@@ -54,6 +54,18 @@ export const ModalGroupOptionsText = styled.Text<{
   font-size: ${(prop) => prop.size};
 
   color: ${(prop) => prop.color};
+
+  flex-shrink: 1;
+`;
+
+export const ModalGroupOptionsInfo = styled.Text`
+  font-family: inter-regular;
+
+  font-size: 11px;
+
+  color: #8f8f8f;
+
+  padding: 0 2px;
 
   flex-shrink: 1;
 `;

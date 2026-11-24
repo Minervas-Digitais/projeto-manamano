@@ -5,6 +5,8 @@ export class CreateGroupDto {
   @IsNotEmpty()
   name: string;
 
+  // Aceito apenas por compatibilidade com clientes antigos; o servidor ignora
+  // e sempre gera o código na tabela Invite.
   @IsString()
   @IsOptional()
   inviteCode: string;
