@@ -87,7 +87,7 @@ describe('Participant (E2E)', () => {
         .post('/participant')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
-          inviteCode: group.inviteCode,
+          inviteCode: group.invites[0].code,
         });
 
       expect(res.status).toBe(201);
@@ -101,11 +101,11 @@ describe('Participant (E2E)', () => {
         .post('/participant')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
-          inviteCode: 'codigo-invalido',
+          inviteCode: 'invalido',
         });
 
       expect(res.status).toBe(404);
-      expect(res.body.message).toBe('Código de convite inválido.');
+      expect(res.body.message).toBe('Código de convite inválido ou expirado.');
     });
 
     it('deve falhar se já estiver no grupo', async () => {
@@ -119,7 +119,7 @@ describe('Participant (E2E)', () => {
         .post('/participant')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
-          inviteCode: group.inviteCode,
+          inviteCode: group.invites[0].code,
         });
 
       expect(res.status).toBe(409);
@@ -131,7 +131,7 @@ describe('Participant (E2E)', () => {
         .post('/participant')
         .set('Authorization', 'Bearer ')
         .send({
-          inviteCode: group.inviteCode,
+          inviteCode: group.invites[0].code,
         });
 
       expect(res.status).toBe(401);
@@ -147,7 +147,7 @@ describe('Participant (E2E)', () => {
         });
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toEqual(['inviteCode should not be empty']);
+      expect(res.body.message).toEqual(expect.arrayContaining(['inviteCode should not be empty']));
     });
   });
 

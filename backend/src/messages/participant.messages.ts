@@ -2,7 +2,7 @@ import { BASE_MESSAGES } from './base.messages';
 
 export const PARTICIPANT_MESSAGES = {
   ...BASE_MESSAGES,
-  INVALID_INVITE_CODE: 'Código de convite inválido.',
+  INVALID_INVITE_CODE: 'Código de convite inválido ou expirado.',
   ALREADY_IN_GROUP: 'Você já está neste grupo.',
   NOT_FOUND: 'Participante não encontrado.',
   DELETE_SUCCESS: 'Usuário removido com sucesso.',

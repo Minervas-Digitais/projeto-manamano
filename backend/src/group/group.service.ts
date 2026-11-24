@@ -1,14 +1,18 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { Group, PostType, RoleType, UserRole } from '@prisma/client';
 import { GROUP_MESSAGES } from 'src/messages/group.messages';
+import { INVITE_MESSAGES } from 'src/messages/invite.messages';
 import { ValidatorService } from 'src/common/validators/validator.service';
-import { GroupPublic } from './group.types';
+import { isUniqueViolation } from 'src/common/prisma/prisma-errors';
+import { GroupPublic, GroupWithInvite } from './group.types';
 import { toPublicGroup } from './group.mapper';
 import { PaginationDto } from 'src/common/pagination/pagination-dto';
 import { PaginatedResponseDto } from 'src/common/pagination/paginated-response-dto';
+import { generateInviteCode, INVITE_CODE_MAX_ATTEMPTS } from './invite-code.util';
+import { InviteService } from './invite.service';
 
 const defaultCategories = [
   { name: 'Geral', type: PostType.NORMAL },
@@ -22,36 +26,59 @@ export class GroupService {
   constructor(
     private prismaService: PrismaService,
     private readonly validator: ValidatorService,
+    private readonly inviteService: InviteService,
   ) {}
 
-  async create(createGroupDto: CreateGroupDto, callerId: string): Promise<Group> {
-    const inviteCode = await this.generateUniqueInviteCode();
+  async create(createGroupDto: CreateGroupDto, callerId: string): Promise<GroupWithInvite> {
+    // Campo aceito por compatibilidade com clientes antigos, mas ignorado:
+    // o código é sempre gerado pelo servidor.
+    const { inviteCode: legacyInviteCode, ...groupData } = createGroupDto;
+    void legacyInviteCode;
 
-    return await this.prismaService.$transaction(async (prisma) => {
-      const group = await prisma.group.create({
-        data: {
-          ...createGroupDto,
-          inviteCode,
-        },
-      });
+    for (let attempt = 0; attempt < INVITE_CODE_MAX_ATTEMPTS; attempt++) {
+      try {
+        return await this.prismaService.$transaction(async (prisma) => {
+          const code = generateInviteCode();
 
-      await prisma.participant.create({
-        data: {
-          groupId: group.id,
-          userId: callerId,
-          role: UserRole.INSTRUCTOR,
-        },
-      });
+          // A coluna legada continua obrigatória nesta fase (migration B a remove).
+          const group = await prisma.group.create({
+            data: {
+              ...groupData,
+              inviteCode: code,
+            },
+          });
 
-      await prisma.category.createMany({
-        data: defaultCategories.map((cat) => ({
-          ...cat,
-          groupId: group.id,
-        })),
-      });
+          await prisma.participant.create({
+            data: {
+              groupId: group.id,
+              userId: callerId,
+              role: UserRole.INSTRUCTOR,
+            },
+          });
 
-      return group;
-    });
+          await prisma.category.createMany({
+            data: defaultCategories.map((cat) => ({
+              ...cat,
+              groupId: group.id,
+            })),
+          });
+
+          const invite = await this.inviteService.createForGroup(prisma, group.id, callerId, code);
+
+          return {
+            ...group,
+            inviteCode: invite.code,
+            inviteExpiresAt: invite.expiresAt,
+          };
+        });
+      } catch (error) {
+        if (isUniqueViolation(error)) continue;
+
+        throw error;
+      }
+    }
+
+    throw new InternalServerErrorException(INVITE_MESSAGES.GENERATION_FAILED);
   }
 
   async findAll(pagination: PaginationDto): Promise<PaginatedResponseDto<Group>> {
@@ -76,10 +103,10 @@ export class GroupService {
     return new PaginatedResponseDto<Group>(groups, total, pagination);
   }
 
-  async findOne(groupId: string, callerId: string): Promise<Group | GroupPublic> {
+  async findOne(groupId: string, callerId: string): Promise<GroupWithInvite | GroupPublic> {
     const group = await this.validator.validateGroupExists(groupId);
 
-    const [caller, participant] = await Promise.all([
+    const [caller, participant, activeInvite] = await Promise.all([
       this.prismaService.user.findUnique({
         where: { id: callerId },
         select: { sysRole: true },
@@ -87,13 +114,18 @@ export class GroupService {
       this.prismaService.participant.findUnique({
         where: { userId_groupId: { userId: callerId, groupId } },
       }),
+      this.inviteService.findActive(groupId),
     ]);
 
     const isAdmin = caller?.sysRole === RoleType.ADMIN;
 
     // O código de convite só é revelado para membros do grupo ou administradores.
     if (isAdmin || participant) {
-      return group;
+      return {
+        ...toPublicGroup(group),
+        inviteCode: activeInvite?.code ?? null,
+        inviteExpiresAt: activeInvite?.expiresAt ?? null,
+      };
     }
 
     return toPublicGroup(group);
@@ -118,35 +150,5 @@ export class GroupService {
       },
     });
     return { message: GROUP_MESSAGES.DELETE_SUCCESS };
-  }
-
-  /* Funções auxiliares */
-  private generateInviteCode(length: number = 8) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
-  }
-
-  private async isInviteCodeUnique(inviteCode: string) {
-    const group = await this.prismaService.group.findUnique({
-      where: { inviteCode },
-    });
-    return !group;
-  }
-
-  private async generateUniqueInviteCode(length: number = 8) {
-    let inviteCode: string;
-    let isUnique = false;
-
-    do {
-      inviteCode = this.generateInviteCode(length);
-      isUnique = await this.isInviteCodeUnique(inviteCode);
-    } while (!isUnique);
-
-    return inviteCode;
   }
 }
