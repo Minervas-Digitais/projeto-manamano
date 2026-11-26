@@ -9,7 +9,14 @@ import { SavedPostModule } from 'src/saved-post/saved-post.module';
 import { PostModule } from 'src/post/post.module';
 import { BASE_MESSAGES } from 'src/messages/base.messages';
 import { POST_MESSAGES } from 'src/messages/post.messages';
-import { createCategory, createGroup, createPost, createUserWithToken } from './test-helpers';
+import {
+  createCategory,
+  createGroup,
+  createParticipant,
+  createPost,
+  createUserWithToken,
+} from './test-helpers';
+import { UserRole } from '@prisma/client';
 import { NotificationService } from 'src/notification/notification.service';
 
 describe('SavedPost (paginado com DTO global)', () => {
@@ -48,6 +55,7 @@ describe('SavedPost (paginado com DTO global)', () => {
   beforeEach(async () => {
     await prismaService.savedPost.deleteMany({});
     await prismaService.post.deleteMany({});
+    await prismaService.participant.deleteMany({});
     await prismaService.category.deleteMany({});
     await prismaService.group.deleteMany({});
     await prismaService.user.deleteMany({});
@@ -63,6 +71,11 @@ describe('SavedPost (paginado com DTO global)', () => {
     });
 
     group = await createGroup(prismaService, { name: 'Test Group' });
+    await createParticipant(prismaService, {
+      userId: user.id,
+      groupId: group.id,
+      role: UserRole.STUDENT,
+    });
     category = await createCategory(prismaService, {
       name: 'Test Category',
       groupId: group.id,

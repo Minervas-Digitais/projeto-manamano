@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateArchiveDto, ResponseArchiveDto } from './dto/archive.dto';
 import { NotificationType } from '@prisma/client';
@@ -17,10 +22,29 @@ export class ArchiveService {
   async createArchive(data: CreateArchiveDto, userId: string): Promise<ResponseArchiveDto> {
     let group = null;
     let sender = null;
+    let postGroupId: string | undefined;
 
-    if (data.postId) await this.validator.validatePostExists(data.postId);
+    if (data.postId) {
+      const post = await this.validator.validatePostExists(data.postId);
+      postGroupId = post.groupId;
+    }
+
     if (data.groupId) group = await this.validator.validateGroupExists(data.groupId);
     if (userId) sender = await this.validator.validateUserExists(userId);
+
+    if (data.groupId && postGroupId && data.groupId !== postGroupId) {
+      throw new BadRequestException(ARCHIVE_MESSAGES.GROUP_MISMATCH);
+    }
+
+    const groupId = data.groupId ?? postGroupId;
+
+    if (groupId) {
+      await this.validator.ensureGroupAccess(groupId, userId);
+
+      if (!group) {
+        group = await this.validator.validateGroupExists(groupId);
+      }
+    }
 
     const createdArchive = await this.prisma.archive.create({
       data: {
@@ -34,31 +58,53 @@ export class ArchiveService {
       },
     });
 
-    const notificationBody = `Novo arquivo enviado no grupo ${group.name}`;
+    if (group) {
+      const notificationBody = `Novo arquivo enviado no grupo ${group.name}`;
 
-    await this.notificationService.createNotification(
-      {
-        recipientId: undefined,
-        groupId: data.groupId,
-        body: notificationBody,
-        type: NotificationType.FIXED,
-        groupName: group.name,
-        senderName: sender.fullName,
-        idContent: createdArchive.id,
-      },
-      userId,
-    );
+      await this.notificationService.createNotification(
+        {
+          recipientId: undefined,
+          groupId: group.id,
+          body: notificationBody,
+          type: NotificationType.FIXED,
+          groupName: group.name,
+          senderName: sender.fullName,
+          idContent: createdArchive.id,
+        },
+        userId,
+      );
+    }
 
     return this.mapToResponseDto(createdArchive);
   }
 
-  async getArchiveById(id: string): Promise<ResponseArchiveDto> {
+  async getArchiveById(id: string, callerId: string): Promise<ResponseArchiveDto> {
     const archive = await this.prisma.archive.findUnique({
       where: { id },
     });
 
     if (!archive) {
       throw new NotFoundException(ARCHIVE_MESSAGES.NOT_FOUND);
+    }
+
+    const groupIds = new Set<string>();
+
+    if (archive.groupId) groupIds.add(archive.groupId);
+
+    if (archive.postId) {
+      const post = await this.validator.validatePostExists(archive.postId);
+      groupIds.add(post.groupId);
+    }
+
+    if (groupIds.size > 0) {
+      await Promise.all(
+        [...groupIds].map((groupId) => this.validator.ensureGroupAccess(groupId, callerId)),
+      );
+    } else if (archive.userId) {
+      const { isAdmin } = await this.validator.getAccessibleGroupIds(callerId);
+      if (!isAdmin && archive.userId !== callerId) {
+        throw new ForbiddenException(ARCHIVE_MESSAGES.UNAUTHORIZED_ACCESS);
+      }
     }
 
     return this.mapToResponseDto(archive);
@@ -77,8 +123,9 @@ export class ArchiveService {
     };
   }
 
-  async getArchivesByPostId(postId: string): Promise<ResponseArchiveDto[]> {
-    await this.validator.validatePostExists(postId);
+  async getArchivesByPostId(postId: string, callerId: string): Promise<ResponseArchiveDto[]> {
+    const post = await this.validator.validatePostExists(postId);
+    await this.validator.ensureGroupAccess(post.groupId, callerId);
 
     const archives = await this.prisma.archive.findMany({
       where: { postId },
@@ -87,8 +134,9 @@ export class ArchiveService {
     return archives.map(this.mapToResponseDto);
   }
 
-  async getArchivesByGroupId(groupId: string): Promise<ResponseArchiveDto[]> {
+  async getArchivesByGroupId(groupId: string, callerId: string): Promise<ResponseArchiveDto[]> {
     await this.validator.validateGroupExists(groupId);
+    await this.validator.ensureGroupAccess(groupId, callerId);
 
     const archives = await this.prisma.archive.findMany({
       where: { groupId },

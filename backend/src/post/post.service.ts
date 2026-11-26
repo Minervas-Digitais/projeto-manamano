@@ -100,6 +100,7 @@ export class PostService {
     const group = await this.validator.validateGroupExists(createPostDto.groupId);
 
     await this.validator.validateUserExists(userId);
+    await this.validator.ensureGroupAccess(createPostDto.groupId, userId);
 
     const category = await this.prismaService.category.findUnique({
       where: { id: createPostDto.categoryId },
@@ -147,7 +148,7 @@ export class PostService {
     return posts.map(this.serializePost);
   }
 
-  async findOne(id: string): Promise<SerializedPost> {
+  async findOne(id: string, callerId: string): Promise<SerializedPost> {
     const post = await this.prismaService.post.findUnique({
       where: { id },
       include: postInclude,
@@ -156,6 +157,8 @@ export class PostService {
     if (!post) {
       throw new NotFoundException(POST_MESSAGES.NOT_FOUND);
     }
+
+    await this.validator.ensureGroupAccess(post.groupId, callerId);
 
     return this.serializePost(post);
   }
@@ -178,6 +181,22 @@ export class PostService {
 
     if (!callerParticipant || callerParticipant.role !== UserRole.INSTRUCTOR) {
       throw new ForbiddenException(POST_MESSAGES.UNAUTHORIZED_ACCESS);
+    }
+
+    const targetGroupId = updatePostDto.groupId ?? existing.groupId;
+
+    if (updatePostDto.groupId && updatePostDto.groupId !== existing.groupId) {
+      await this.validator.validateGroupExists(updatePostDto.groupId);
+      await this.validator.ensureGroupAccess(updatePostDto.groupId, callerId);
+    }
+
+    const targetCategoryId = updatePostDto.categoryId ?? existing.categoryId;
+    const targetCategory = await this.prismaService.category.findUnique({
+      where: { id: targetCategoryId },
+    });
+
+    if (!targetCategory || targetCategory.groupId !== targetGroupId) {
+      throw new BadRequestException(CATEGORY_MESSAGES.NOT_FOUND);
     }
 
     const updated = await this.prismaService.post.update({
@@ -236,7 +255,10 @@ export class PostService {
     return this.serializePost(updatedPost);
   }
 
-  async getPinnedPosts(groupId: string): Promise<SerializedPost[]> {
+  async getPinnedPosts(groupId: string, callerId: string): Promise<SerializedPost[]> {
+    await this.validator.validateGroupExists(groupId);
+    await this.validator.ensureGroupAccess(groupId, callerId);
+
     const posts = await this.findPosts({ groupId, isPinned: true });
 
     return posts.map(this.serializePost);
@@ -244,8 +266,12 @@ export class PostService {
 
   async getGroupPosts(
     groupId: string,
+    callerId: string,
     pagination: PaginationDto,
   ): Promise<PaginatedResponseDto<SerializedPost>> {
+    await this.validator.validateGroupExists(groupId);
+    await this.validator.ensureGroupAccess(groupId, callerId);
+
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? DEFAULT_POST_LIMIT;
     const skip = (page - 1) * limit;
@@ -270,8 +296,19 @@ export class PostService {
 
   async getCategoryPosts(
     categoryId: string,
+    callerId: string,
     pagination: PaginationDto,
   ): Promise<PaginatedResponseDto<SerializedPost>> {
+    const category = await this.prismaService.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      throw new NotFoundException(CATEGORY_MESSAGES.NOT_FOUND);
+    }
+
+    await this.validator.ensureGroupAccess(category.groupId, callerId);
+
     const page = pagination.page ?? 1;
     const limit = pagination.limit ?? DEFAULT_POST_LIMIT;
     const skip = (page - 1) * limit;
@@ -296,6 +333,7 @@ export class PostService {
 
   async getUserPosts(
     userId: string,
+    callerId: string,
     pagination: PaginationDto,
   ): Promise<PaginatedResponseDto<SerializedPost>> {
     const page = pagination.page ?? 1;
@@ -306,15 +344,20 @@ export class PostService {
       throw new BadRequestException(BASE_MESSAGES.EXCEEDED_LIMIT(MAX_LIMIT));
     }
 
+    const { isAdmin, groupIds } = await this.validator.getAccessibleGroupIds(callerId);
+    const where: Prisma.PostWhereInput = isAdmin
+      ? { userId }
+      : { userId, groupId: { in: groupIds } };
+
     const [posts, total] = await Promise.all([
       this.prismaService.post.findMany({
-        where: { userId },
+        where,
         include: postInclude,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      this.prismaService.post.count({ where: { userId } }),
+      this.prismaService.post.count({ where }),
     ]);
 
     return new PaginatedResponseDto(posts.map(this.serializePost), total, { page, limit });

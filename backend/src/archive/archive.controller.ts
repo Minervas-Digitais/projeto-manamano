@@ -28,17 +28,26 @@ export class ArchiveController {
   }
 
   @Get('post/:postId')
-  async getArchivesByPostId(@Param('postId') postId: string): Promise<ResponseArchiveDto[]> {
-    return this.archiveService.getArchivesByPostId(postId);
+  async getArchivesByPostId(
+    @Param('postId') postId: string,
+    @User('id') callerId: string,
+  ): Promise<ResponseArchiveDto[]> {
+    return this.archiveService.getArchivesByPostId(postId, callerId);
   }
 
   @Get('group/:groupId')
-  async getArchivesByGroupId(@Param('groupId') groupId: string): Promise<ResponseArchiveDto[]> {
-    return this.archiveService.getArchivesByGroupId(groupId);
+  async getArchivesByGroupId(
+    @Param('groupId') groupId: string,
+    @User('id') callerId: string,
+  ): Promise<ResponseArchiveDto[]> {
+    return this.archiveService.getArchivesByGroupId(groupId, callerId);
   }
 
   @Get(':archiveId')
-  async getArchive(@Param('archiveId') archiveId: string): Promise<ResponseArchiveDto> {
-    return this.archiveService.getArchiveById(archiveId);
+  async getArchive(
+    @Param('archiveId') archiveId: string,
+    @User('id') callerId: string,
+  ): Promise<ResponseArchiveDto> {
+    return this.archiveService.getArchiveById(archiveId, callerId);
   }
 }

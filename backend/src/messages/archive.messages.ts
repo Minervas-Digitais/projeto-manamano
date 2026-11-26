@@ -4,4 +4,5 @@ export const ARCHIVE_MESSAGES = {
   ...BASE_MESSAGES,
   POST_NOT_FOUND: 'Post relacionado ao arquivo não encontrado.',
   EMPTY_ARCHIVES: 'Nenhum arquivo encontrado.',
+  GROUP_MISMATCH: 'O arquivo deve pertencer ao mesmo grupo da publicação.',
 };

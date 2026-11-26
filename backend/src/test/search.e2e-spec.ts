@@ -15,10 +15,12 @@ import { BASE_MESSAGES } from 'src/messages/base.messages';
 import {
   createCategory,
   createGroup,
+  createParticipant,
   createPost,
   createUser,
   createUserWithToken,
 } from './test-helpers';
+import { UserRole } from '@prisma/client';
 
 describe('SearchController', () => {
   let app: INestApplication;
@@ -50,6 +52,7 @@ describe('SearchController', () => {
 
   beforeEach(async () => {
     await prismaService.post.deleteMany({});
+    await prismaService.participant.deleteMany({});
     await prismaService.category.deleteMany({});
     await prismaService.group.deleteMany({});
     await prismaService.user.deleteMany({});
@@ -61,6 +64,11 @@ describe('SearchController', () => {
     userToken = userResult.token;
 
     group = await createGroup(prismaService, { name: 'Test Group' });
+    await createParticipant(prismaService, {
+      userId: user.id,
+      groupId: group.id,
+      role: UserRole.STUDENT,
+    });
 
     category = await createCategory(prismaService, {
       name: 'Test Category',

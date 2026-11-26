@@ -141,8 +141,10 @@ export async function createParticipant(
     role?: UserRole;
   },
 ) {
-  return prisma.participant.create({
-    data: {
+  return prisma.participant.upsert({
+    where: { userId_groupId: { userId: data.userId, groupId: data.groupId } },
+    update: { role: data.role ?? UserRole.STUDENT },
+    create: {
       role: data.role ?? UserRole.STUDENT,
       userId: data.userId,
       groupId: data.groupId,
