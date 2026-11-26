@@ -10,6 +10,7 @@ export const ButtonText = styled.Text<{ fontColor?: string; fontFamily?: string 
 export const ButtonContainer = styled.TouchableOpacity<{
   backgroundColor?: string;
   border?: string;
+  disabled?: boolean;
 }>`
   display: flex;
   background-color: ${(prop) => prop.backgroundColor};
@@ -21,4 +22,5 @@ export const ButtonContainer = styled.TouchableOpacity<{
   flex-direction: row;
   gap: 20px;
   border: ${(prop) => (prop.border ? 'solid 2px #160E47' : 'none')};
+  opacity: ${(prop) => (prop.disabled ? 0.6 : 1)};
 `;

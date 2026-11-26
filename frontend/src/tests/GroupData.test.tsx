@@ -116,7 +116,9 @@ describe('GroupData', () => {
 
     fireEvent.press(getByTestId('edit-group-button'));
 
-    expect(mockNavigate).toHaveBeenCalledWith('EditGroup');
+    expect(mockNavigate).toHaveBeenCalledWith('EditGroup', {
+      groupId: mockRoute.params.groupId,
+    });
   });
 
   it('deve chamar o endpoint de deletar e voltar pra home quando sair do grupo', async () => {

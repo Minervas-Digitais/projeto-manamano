@@ -11,6 +11,7 @@ export default function ButtonCustom({
   border,
   leftIcon,
   rightIcon,
+  disabled,
   testID,
 }: any) {
   const [fontsLoaded] = useFonts({
@@ -20,7 +21,12 @@ export default function ButtonCustom({
     return undefined;
   }
   return (
-    <ButtonContainer backgroundColor={backColor} onPress={onPress} border={border} testID={testID}>
+    <ButtonContainer
+      backgroundColor={backColor}
+      onPress={onPress}
+      border={border}
+      disabled={disabled}
+      testID={testID}>
       {leftIcon}
       <ButtonText accessibilityLabel={text} fontColor={fontColor} fontFamily="inter-bold">
         {text}

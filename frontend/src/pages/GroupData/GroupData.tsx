@@ -202,7 +202,7 @@ export default function GroupData({ navigation }: any) {
               </GroupDataText>
               <TouchableOpacity
                 testID="edit-group-button"
-                onPress={() => navigation.navigate('EditGroup')}>
+                onPress={() => navigation.navigate('EditGroup', { groupId })}>
                 <EditIcon />
               </TouchableOpacity>
             </View>

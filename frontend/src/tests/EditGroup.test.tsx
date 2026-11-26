@@ -1,38 +1,38 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { View, Text } from 'react-native';
+import Toast from 'react-native-toast-message';
 import EditGroup from '../pages/EditGroup/EditGroup';
 import api from '../services/api';
-import storage from '../services/secureStorage';
-import localStorage from '../services/localStorage';
 
 const mockedNavigate = jest.fn();
+const mockedGoBack = jest.fn();
 
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({
-    navigate: mockedNavigate,
-    goBack: jest.fn(),
-  }),
-}));
+jest.mock('@react-navigation/native', () => {
+  const actualNav = jest.requireActual('@react-navigation/native');
+  (global as any).mockEditGroupRoute = jest.fn(() => ({
+    params: { groupId: 'mock-group-id' },
+  }));
+  return {
+    ...actualNav,
+    useRoute: (...args: any[]) => (global as any).mockEditGroupRoute(...args),
+  };
+});
+
+jest.mock('react-native-toast-message', () => {
+  const show = jest.fn();
+  const hide = jest.fn();
+  const ToastComponent = (props: any) => <View {...props} />;
+  ToastComponent.show = show;
+  ToastComponent.hide = hide;
+  return { __esModule: true, default: ToastComponent, show, hide };
+});
 
 jest.mock('expo-font', () => ({
   useFonts: () => [true],
 }));
 
 jest.mock('../services/api');
-jest.mock('../services/secureStorage', () => ({
-  __esModule: true,
-  default: {
-    getItem: jest.fn(),
-  },
-}));
-jest.mock('../services/localStorage', () => ({
-  __esModule: true,
-  default: {
-    getString: jest.fn(),
-  },
-}));
 
 let mockLoggedId: string | undefined = 'user-123';
 
@@ -53,39 +53,32 @@ jest.mock('../components/HeaderCustom/HeaderCustom', () => {
 
 describe('EditGroup', () => {
   const mockedApi = api as jest.Mocked<typeof api>;
-  const mockedStorage = storage as any;
-  const mockedLocalStorage = localStorage as any;
+
+  const renderScreen = () =>
+    render(<EditGroup navigation={{ navigate: mockedNavigate, goBack: mockedGoBack }} />);
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockLoggedId = 'user-123';
-
-    mockedStorage.getItem.mockImplementation(async (key: string) => {
-      if (key === 'accessToken') return 'mock-access-token';
-      return null;
-    });
-
-    mockedLocalStorage.getString.mockImplementation((key: string) => {
-      if (key === 'groupId') return 'mock-group-id';
-      return null;
+    (global as any).mockEditGroupRoute.mockReturnValue({
+      params: { groupId: 'mock-group-id' },
     });
 
     mockedApi.get.mockResolvedValue({
       data: {
+        id: 'mock-group-id',
         name: 'Grupo de Teste',
         description: 'Descrição do grupo de teste',
       },
-    });
+    } as any);
 
     mockedApi.patch.mockResolvedValue({
       data: { success: true },
-    });
+    } as any);
   });
 
   it('deve renderizar corretamente todos os elementos', async () => {
-    const { getByTestId, getByText } = render(
-      <EditGroup navigation={{ navigate: mockedNavigate }} />,
-    );
+    const { getByTestId, getByText } = renderScreen();
 
     await waitFor(() => {
       expect(getByTestId('header-custom')).toBeTruthy();
@@ -94,95 +87,25 @@ describe('EditGroup', () => {
     });
   });
 
-  it('deve carregar dados do grupo ao montar o componente', async () => {
-    render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
+  it('deve carregar os dados do grupo informado na rota', async () => {
+    renderScreen();
 
     await waitFor(() => {
-      expect(mockedLocalStorage.getString).toHaveBeenCalledWith('groupId');
       expect(mockedApi.get).toHaveBeenCalledWith('/group/mock-group-id');
     });
   });
 
   it('deve preencher os campos com dados existentes do grupo', async () => {
-    const { getByLabelText } = render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
+    const { getByLabelText } = renderScreen();
 
     await waitFor(() => {
-      expect(mockedApi.get).toHaveBeenCalled();
-    });
-
-    await waitFor(() => {
-      const nameInput = getByLabelText('Nome do Grupo');
-      expect(nameInput.props.value).toBe('Grupo de Teste');
-    });
-
-    await waitFor(() => {
-      const descriptionInput = getByLabelText('Descrição do Grupo');
-      expect(descriptionInput.props.value).toBe('Descrição do grupo de teste');
+      expect(getByLabelText('Nome do Grupo').props.value).toBe('Grupo de Teste');
+      expect(getByLabelText('Descrição do Grupo').props.value).toBe('Descrição do grupo de teste');
     });
   });
 
-  it('deve permitir editar o nome do grupo', async () => {
-    const { getByLabelText } = render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
-
-    await waitFor(() => {
-      const nameInput = getByLabelText('Nome do Grupo');
-      fireEvent.changeText(nameInput, 'Novo Nome do Grupo');
-      expect(nameInput.props.value).toBe('Novo Nome do Grupo');
-    });
-  });
-
-  it('deve permitir editar a descrição do grupo', async () => {
-    const { getByLabelText } = render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
-
-    await waitFor(() => {
-      const descriptionInput = getByLabelText('Descrição do Grupo');
-      fireEvent.changeText(descriptionInput, 'Nova descrição do grupo');
-      expect(descriptionInput.props.value).toBe('Nova descrição do grupo');
-    });
-  });
-
-  it('deve exibir erro quando o nome excede 20 caracteres', async () => {
-    const { getByLabelText, getByText } = render(
-      <EditGroup navigation={{ navigate: mockedNavigate }} />,
-    );
-
-    await waitFor(() => {
-      const nameInput = getByLabelText('Nome do Grupo');
-      fireEvent.changeText(nameInput, 'Este é um nome muito longo que excede vinte caracteres');
-
-      const submitButton = getByText('Salvar alterações');
-      fireEvent.press(submitButton);
-    });
-
-    await waitFor(() => {
-      expect(getByText('Máximo de 20 caracteres')).toBeTruthy();
-    });
-  });
-
-  it('deve exibir erro quando a descrição excede 500 caracteres', async () => {
-    const { getByLabelText, getByText } = render(
-      <EditGroup navigation={{ navigate: mockedNavigate }} />,
-    );
-
-    const longDescription = 'a'.repeat(501);
-
-    await waitFor(() => {
-      const descriptionInput = getByLabelText('Descrição do Grupo');
-      fireEvent.changeText(descriptionInput, longDescription);
-
-      const submitButton = getByText('Salvar alterações');
-      fireEvent.press(submitButton);
-    });
-
-    await waitFor(() => {
-      expect(getByText('Máximo de 500 caracteres')).toBeTruthy();
-    });
-  });
-
-  it('deve submeter dados válidos com sucesso', async () => {
-    const { getByLabelText, getByText } = render(
-      <EditGroup navigation={{ navigate: mockedNavigate }} />,
-    );
+  it('deve permitir editar o nome e a descrição do grupo', async () => {
+    const { getByLabelText } = renderScreen();
 
     await waitFor(() => {
       expect(getByLabelText('Nome do Grupo').props.value).toBe('Grupo de Teste');
@@ -190,74 +113,116 @@ describe('EditGroup', () => {
 
     const nameInput = getByLabelText('Nome do Grupo');
     const descriptionInput = getByLabelText('Descrição do Grupo');
+    fireEvent.changeText(nameInput, 'Novo Nome do Grupo');
+    fireEvent.changeText(descriptionInput, 'Nova descrição do grupo');
 
-    fireEvent.changeText(nameInput, 'Grupo Editado');
-    fireEvent.changeText(descriptionInput, 'Descrição editada');
+    expect(nameInput.props.value).toBe('Novo Nome do Grupo');
+    expect(descriptionInput.props.value).toBe('Nova descrição do grupo');
+  });
+
+  it('deve exibir erro quando o nome excede 20 caracteres', async () => {
+    const { getByLabelText, getByText } = renderScreen();
 
     await waitFor(() => {
-      expect(nameInput.props.value).toBe('Grupo Editado');
-      expect(descriptionInput.props.value).toBe('Descrição editada');
+      expect(getByLabelText('Nome do Grupo').props.value).toBe('Grupo de Teste');
     });
 
-    const submitButton = getByText('Salvar alterações');
-    fireEvent.press(submitButton);
+    fireEvent.changeText(
+      getByLabelText('Nome do Grupo'),
+      'Este é um nome muito longo que excede vinte caracteres',
+    );
+    fireEvent.press(getByText('Salvar alterações'));
+
+    await waitFor(() => {
+      expect(getByText('Máximo de 20 caracteres')).toBeTruthy();
+    });
+    expect(mockedApi.patch).not.toHaveBeenCalled();
+  });
+
+  it('deve exibir erro quando a descrição excede 500 caracteres', async () => {
+    const { getByLabelText, getByText } = renderScreen();
+
+    await waitFor(() => {
+      expect(getByLabelText('Nome do Grupo').props.value).toBe('Grupo de Teste');
+    });
+
+    fireEvent.changeText(getByLabelText('Descrição do Grupo'), 'a'.repeat(501));
+    fireEvent.press(getByText('Salvar alterações'));
+
+    await waitFor(() => {
+      expect(getByText('Máximo de 500 caracteres')).toBeTruthy();
+    });
+    expect(mockedApi.patch).not.toHaveBeenCalled();
+  });
+
+  it('deve salvar as alterações do grupo da rota com aviso de sucesso', async () => {
+    const { getByLabelText, getByText } = renderScreen();
+
+    await waitFor(() => {
+      expect(getByLabelText('Nome do Grupo').props.value).toBe('Grupo de Teste');
+    });
+
+    fireEvent.changeText(getByLabelText('Nome do Grupo'), 'Grupo Editado');
+    fireEvent.changeText(getByLabelText('Descrição do Grupo'), 'Descrição editada');
+    fireEvent.press(getByText('Salvar alterações'));
 
     await waitFor(() => {
       expect(mockedApi.patch).toHaveBeenCalledWith('/group/mock-group-id', {
         name: 'Grupo Editado',
         description: 'Descrição editada',
       });
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'success', text1: 'Grupo atualizado!' }),
+      );
+      expect(mockedGoBack).toHaveBeenCalled();
     });
   });
 
-  it('deve navegar para GroupPage após submissão bem-sucedida', async () => {
-    const { getByText, getByLabelText } = render(
-      <EditGroup navigation={{ navigate: mockedNavigate }} />,
-    );
-
-    await waitFor(() => {
-      expect(mockedApi.get).toHaveBeenCalled();
+  it('deve mostrar aviso de erro e permanecer na tela quando o salvamento falha', async () => {
+    mockedApi.patch.mockRejectedValueOnce({
+      response: { data: { message: 'Sem permissão para editar este grupo.' } },
     });
+
+    const { getByLabelText, getByText } = renderScreen();
 
     await waitFor(() => {
       expect(getByLabelText('Nome do Grupo').props.value).toBe('Grupo de Teste');
     });
 
-    const submitButton = getByText('Salvar alterações');
-    fireEvent.press(submitButton);
+    fireEvent.changeText(getByLabelText('Nome do Grupo'), 'Grupo Editado');
+    fireEvent.press(getByText('Salvar alterações'));
 
     await waitFor(() => {
-      expect(mockedNavigate).toHaveBeenCalledWith('GroupPage', {
-        groupId: 'mock-group-id',
-        groupName: 'Grupo de Teste',
-      });
+      expect(Toast.show).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          text1: 'Erro ao salvar',
+          text2: 'Sem permissão para editar este grupo.',
+        }),
+      );
     });
+    expect(mockedGoBack).not.toHaveBeenCalled();
   });
 
-  it('não deve carregar dados quando não há token de acesso', async () => {
-    mockLoggedId = undefined;
-    mockedStorage.getItem.mockResolvedValue(undefined);
-    mockedLocalStorage.getString.mockReturnValue('mock-group-id');
+  it('não deve carregar nem salvar quando a rota não informa o grupo', async () => {
+    (global as any).mockEditGroupRoute.mockReturnValue({ params: {} });
 
-    render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
+    const { getByText } = renderScreen();
+
+    await waitFor(() => {
+      expect(getByText('Não foi possível identificar o grupo que deve ser editado.')).toBeTruthy();
+    });
+    expect(mockedApi.get).not.toHaveBeenCalled();
+    expect(mockedApi.patch).not.toHaveBeenCalled();
+  });
+
+  it('não deve carregar dados do grupo quando não há usuário logado', async () => {
+    mockLoggedId = undefined;
+
+    renderScreen();
 
     await waitFor(() => {
       expect(mockedApi.get).not.toHaveBeenCalled();
-    });
-  });
-
-  it('não deve submeter quando não há dados de autenticação', async () => {
-    mockLoggedId = undefined;
-    mockedStorage.getItem.mockResolvedValue(undefined);
-    mockedLocalStorage.getString.mockReturnValue('mock-group-id');
-
-    const { getByText } = render(<EditGroup navigation={{ navigate: mockedNavigate }} />);
-
-    await waitFor(() => {
-      const submitButton = getByText('Salvar alterações');
-      fireEvent.press(submitButton);
-
-      expect(mockedApi.patch).not.toHaveBeenCalled();
     });
   });
 });
